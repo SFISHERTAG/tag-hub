@@ -132,6 +132,8 @@ export default async function TodayPage({
                 locationId={locationId}
                 appointmentId={appointment.id}
                 current={appointment.status}
+                startTime={appointment.startTime}
+                endTime={appointment.endTime}
               />
             </div>
           ))}

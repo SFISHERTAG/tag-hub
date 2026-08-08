@@ -83,3 +83,70 @@ export async function listStoredLocationIds(): Promise<string[]> {
     .listDocuments();
   return snapshot.map((doc) => doc.id);
 }
+
+/* ------------------------------------------------------------------ */
+/* Appointment outcome context                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * When an outcome was recorded, relative to the appointment itself.
+ *
+ * GHL stores the status but not when it was set, and the two DQ cases mean
+ * opposite things: disqualifying before the call is a targeting failure with
+ * no call attached, while disqualifying during one means a real person showed
+ * and did not qualify. Collapsing them corrupts show rate — the first should
+ * leave the denominator entirely, the second counts as showed.
+ *
+ * This is exactly the kind of thing Firestore is for here: GHL remains the
+ * system of record for the status, and we store only what it has no concept of.
+ */
+export type OutcomeTiming = "pre-call" | "on-call" | "post-call";
+
+export type AppointmentOutcome = {
+  status: string;
+  timing: OutcomeTiming;
+  /** Epoch milliseconds. */
+  markedAt: number;
+  appointmentStartsAt: number;
+  appointmentEndsAt: number;
+};
+
+export function classifyTiming(
+  markedAt: number,
+  startsAt: number,
+  endsAt: number,
+): OutcomeTiming {
+  if (markedAt < startsAt) return "pre-call";
+  if (markedAt <= endsAt) return "on-call";
+  return "post-call";
+}
+
+export async function saveAppointmentOutcome(
+  locationId: string,
+  appointmentId: string,
+  outcome: AppointmentOutcome,
+): Promise<void> {
+  await firestore()
+    .doc(`locations/${locationId}/appointmentOutcomes/${appointmentId}`)
+    .set(outcome);
+}
+
+export async function loadAppointmentOutcomes(
+  locationId: string,
+  appointmentIds: string[],
+): Promise<Map<string, AppointmentOutcome>> {
+  const found = new Map<string, AppointmentOutcome>();
+  if (appointmentIds.length === 0) return found;
+
+  const refs = appointmentIds.map((id) =>
+    firestore().doc(`locations/${locationId}/appointmentOutcomes/${id}`),
+  );
+
+  const snapshots = await firestore().getAll(...refs);
+  for (const snapshot of snapshots) {
+    if (snapshot.exists) {
+      found.set(snapshot.id, snapshot.data() as AppointmentOutcome);
+    }
+  }
+  return found;
+}
