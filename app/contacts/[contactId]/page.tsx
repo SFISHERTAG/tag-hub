@@ -15,48 +15,46 @@ import { NoteForm } from "./note-form";
 
 export const dynamic = "force-dynamic";
 
-function Field({ label, value }: { label: string; value?: string }) {
-  return (
-    <div>
-      <dt className="text-xs text-neutral-500">{label}</dt>
-      <dd className="mt-0.5 text-sm break-words text-neutral-900">
-        {value || "—"}
-      </dd>
-    </div>
-  );
-}
-
-/**
- * Attribution answers the question a closer asks first — where did this person
- * come from — and `utmAdId` is the key that later ties a closed deal back to
- * the exact ad that produced it.
- */
-function AttributionColumn({
-  heading,
+function AttributionPanel({
+  label,
   attribution,
 }: {
-  heading: string;
-  attribution: Attribution;
+  label: string;
+  attribution: Attribution | undefined;
 }) {
-  const rows: [string, string | undefined][] = [
-    ["Source", attribution.utmSource ?? attribution.sessionSource ?? attribution.medium],
-    ["Campaign", attribution.utmCampaign ?? attribution.campaign],
-    ["Ad ID", attribution.utmAdId],
-    ["Content", attribution.utmContent],
-    ["Landing page", attribution.pageUrl ?? attribution.url],
-  ];
+  if (!attribution) return null;
 
-  const present = rows.filter(([, value]) => value);
-  if (present.length === 0) return null;
+  const rows = (
+    [
+      ["Source", attribution.utmSource ?? attribution.sessionSource],
+      ["Medium", attribution.utmMedium ?? attribution.medium],
+      ["Campaign", attribution.utmCampaign ?? attribution.campaign],
+      ["Content", attribution.utmContent],
+      ["Ad ID", attribution.utmAdId],
+    ] satisfies [string, string | undefined][]
+  ).filter(([, value]) => Boolean(value));
+
+  if (rows.length === 0) return null;
 
   return (
-    <div>
-      <h3 className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
-        {heading}
-      </h3>
-      <dl className="mt-2 space-y-2">
-        {present.map(([label, value]) => (
-          <Field key={label} label={label} value={value} />
+    <div className="rounded-lg border border-neutral-200 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">{label}</h3>
+        {hasMetaIdentifiers(attribution) && (
+          <span
+            title="Carries fbc/fbp — conversions can be attributed back to Meta"
+            className="rounded-full bg-[#ebc507] px-2 py-0.5 text-[11px] font-semibold text-black"
+          >
+            Meta trackable
+          </span>
+        )}
+      </div>
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
+        {rows.map(([key, value]) => (
+          <div key={key} className="contents">
+            <dt className="text-neutral-500">{key}</dt>
+            <dd className="truncate font-mono text-neutral-800">{value}</dd>
+          </div>
         ))}
       </dl>
     </div>
@@ -113,7 +111,6 @@ export default async function ContactPage({
 
   const first = firstTouch(contact);
   const last = lastTouch(contact);
-  const metaReady = hasMetaIdentifiers(first) || hasMetaIdentifiers(last);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -124,7 +121,7 @@ export default async function ContactPage({
         >
           ← Contacts
         </Link>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight">
+        <h1 className="mt-2 text-xl font-semibold tracking-tight">
           {displayName(contact)}
         </h1>
         {contact.companyName && (
@@ -132,72 +129,70 @@ export default async function ContactPage({
         )}
       </div>
 
-      <section className="rounded-lg border border-neutral-200 p-4">
-        <dl className="grid gap-3 sm:grid-cols-2">
-          <Field label="Email" value={contact.email} />
-          <Field label="Phone" value={contact.phone} />
-          <Field label="Source" value={contact.source} />
-          <Field label="Added" value={formatDate(contact.dateAdded)} />
-        </dl>
-        {contact.tags && contact.tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {contact.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-700"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {(first || last) && (
-        <section className="rounded-lg border border-neutral-200 p-4">
-          <h2 className="text-sm font-semibold">Attribution</h2>
-          <div className="mt-3 grid gap-6 sm:grid-cols-2">
-            {first && (
-              <AttributionColumn heading="First touch" attribution={first} />
-            )}
-            {last && (
-              <AttributionColumn heading="Last touch" attribution={last} />
-            )}
-          </div>
-          {metaReady && (
-            <p className="mt-4 border-t border-neutral-200 pt-3 text-xs text-neutral-500">
-              Meta click identifiers present — a closed deal on this contact can
-              be attributed back to the exact ad that produced it.
-            </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-neutral-200 p-4">
+          <h3 className="text-sm font-semibold">Details</h3>
+          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
+            {[
+              ["Email", contact.email],
+              ["Phone", contact.phone],
+              ["Source", contact.source],
+              ["Added", formatDate(contact.dateAdded)],
+            ]
+              .filter(([, value]) => Boolean(value))
+              .map(([key, value]) => (
+                <div key={String(key)} className="contents">
+                  <dt className="text-neutral-500">{key}</dt>
+                  <dd className="truncate text-neutral-800">{value}</dd>
+                </div>
+              ))}
+          </dl>
+          {contact.tags && contact.tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1">
+              {contact.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-700"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           )}
-        </section>
-      )}
+        </div>
 
-      <section className="rounded-lg border border-neutral-200 p-4">
+        <AttributionPanel label="First touch" attribution={first} />
+        <AttributionPanel label="Last touch" attribution={last} />
+      </div>
+
+      <div className="space-y-3">
         <h2 className="text-sm font-semibold">
           Notes{" "}
           <span className="font-normal text-neutral-500">({notes.length})</span>
         </h2>
 
-        <div className="mt-3">
-          <NoteForm locationId={locationId} contactId={contactId} />
-        </div>
+        <NoteForm locationId={locationId} contactId={contactId} />
 
-        {notes.length > 0 && (
-          <ul className="mt-5 space-y-3 border-t border-neutral-200 pt-4">
+        {notes.length === 0 ? (
+          <p className="text-sm text-neutral-500">No notes yet.</p>
+        ) : (
+          <ul className="space-y-2">
             {notes.map((note) => (
-              <li key={note.id}>
-                <p className="text-sm whitespace-pre-wrap text-neutral-900">
+              <li
+                key={note.id}
+                className="rounded-lg border border-neutral-200 p-3"
+              >
+                <p className="text-sm whitespace-pre-wrap text-neutral-800">
                   {note.body}
                 </p>
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1.5 text-xs text-neutral-400">
                   {formatDate(note.dateAdded)}
                 </p>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </div>
     </div>
   );
 }

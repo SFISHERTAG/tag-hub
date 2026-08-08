@@ -23,7 +23,6 @@ export function NoteForm({
       if (result.ok) {
         if (textareaRef.current) textareaRef.current.value = "";
       } else {
-        // Leave the text in place so nothing typed is lost on failure.
         setError(result.error);
       }
     });
