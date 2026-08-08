@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TAG Hub
 
-## Getting Started
+Internal acquisition hub for Tax Advisory Growth. Pipeline, appointments, and
+notes across agency sub-accounts, with GoHighLevel as the system of record.
 
-First, run the development server:
+## Running locally
 
 ```bash
+npm install
+cp .env.example .env.local   # then fill in credentials
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local` is gitignored and must stay that way — it holds live credentials.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Purpose |
+| --- | --- |
+| `GHL_CLIENT_ID` / `GHL_CLIENT_SECRET` | Marketplace OAuth app (agency install) |
+| `GHL_REDIRECT_URI` | Must match a Redirect URL registered on the app |
+| `GHL_PIT` | Private Integration Token — single-location development fallback |
+| `GHL_LOCATION_ID` | The sub-account the PIT belongs to |
+| `GOOGLE_CLOUD_PROJECT` | Firestore project (`tag-success-hub`) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Firestore access locally needs application default credentials:
 
-## Learn More
+```bash
+gcloud auth application-default login
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Screens
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Route | What it does |
+| --- | --- |
+| `/` | Pipeline board — deals by stage, status filters, stage totals, staleness |
+| `/today` | Appointments with Confirmed / Showed / No-show / DQ / Cancelled |
+| `/contacts` | Searchable contact list |
+| `/contacts/[id]` | Attribution, tags, and notes |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How credentials resolve
 
-## Deploy on Vercel
+Callers ask for a token by location and never learn where it came from
+(`lib/ghl/tokens.ts`). Resolution order:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. A cached location token that is still valid
+2. A direct-install token, refreshed with its own refresh token
+3. A token minted from the agency install
+4. `GHL_PIT`, for the single location in `GHL_LOCATION_ID`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+That indirection is what lets one agency OAuth install serve every sub-account.
+A Private Integration Token reaches exactly one location, so at 40+ clients it
+would mean 40 secrets and a manual step per client — fine for development,
+unworkable in production.
+
+Every GHL request names its location explicitly. There is no ambient "current
+location", so a query cannot read another tenant's data by omission.
+
+## What lives where
+
+GoHighLevel stays the system of record for contacts, opportunities,
+appointments, and notes. Firestore holds only what GHL has no concept of:
+
+- OAuth tokens
+- Appointment outcome timing — GHL stores the status but not when it was set,
+  and for a DQ that timing is the meaning. Marked before the appointment starts,
+  no call happened and the lead should never have been booked. Marked during it,
+  a real person showed and did not qualify. The first belongs outside the
+  show-rate denominator; the second counts as showed.
+
+Keeping that boundary tight is what stops this becoming a data-reconciliation
+project.
+
+## Notes
+
+Calendar endpoints are pinned to API version `2021-04-15`; everything else uses
+`2021-07-28`. GHL returns appointment status under both `appointmentStatus` and
+the misspelled `appoinmentStatus`, and both are read.
