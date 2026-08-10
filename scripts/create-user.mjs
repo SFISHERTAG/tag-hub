@@ -1,56 +1,73 @@
 #!/usr/bin/env node
 /**
- * Creates a Hub user in Identity Platform.
+ * Creates or updates a Hub user.
  *
- * There is no self-signup — accounts are created by TAG. This is that.
+ * There is no self-signup — accounts are created by TAG. Sign-in is by
+ * six-digit email code, so no password is set or needed.
  *
  * Usage:
- *   read -rs "PW?Password: " && printf '%s' "$PW" \
- *     | node scripts/create-user.mjs someone@taxadvisorygrowth.net && unset PW
+ *   node scripts/create-user.mjs someone@taxadvisorygrowth.net
+ *   node scripts/create-user.mjs someone@taxadvisorygrowth.net --role tag_exec
  *
- * The password arrives on stdin so it never lands in shell history or in a
- * process argument list visible to `ps`.
+ * Roles are the full set from docs/prd.md. `tag_exec` is the closest thing to
+ * a super admin: it reaches every location rather than an enumerated list.
+ * Location claims arrive properly in Story 1.4; this sets the role now.
  */
 
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
-const email = process.argv[2];
+const ROLES = [
+  "tag_sales",
+  "tag_sales_manager",
+  "tag_csm",
+  "tag_exec",
+  "client_closer",
+  "client_manager",
+  "client_owner",
+];
 
-if (!email) {
-  console.error("Usage: node scripts/create-user.mjs <email>   (password on stdin)");
+const args = process.argv.slice(2);
+const email = args.find((a) => !a.startsWith("--"));
+const roleIndex = args.indexOf("--role");
+const role = roleIndex !== -1 ? args[roleIndex + 1] : undefined;
+
+if (!email || !email.includes("@")) {
+  console.error("Usage: node scripts/create-user.mjs <email> [--role <role>]");
+  console.error(`Roles: ${ROLES.join(", ")}`);
   process.exit(1);
 }
 
-const password = await new Promise((resolve) => {
-  let data = "";
-  process.stdin.setEncoding("utf8");
-  process.stdin.on("data", (chunk) => (data += chunk));
-  process.stdin.on("end", () => resolve(data.trim()));
-});
-
-if (password.length < 12) {
-  console.error("Password must be at least 12 characters.");
+if (role && !ROLES.includes(role)) {
+  console.error(`Unknown role "${role}".`);
+  console.error(`Roles: ${ROLES.join(", ")}`);
   process.exit(1);
 }
 
 const projectId = process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub";
 if (getApps().length === 0) initializeApp({ projectId });
+const auth = getAuth();
 
+let user;
 try {
-  const user = await getAuth().createUser({
+  user = await auth.getUserByEmail(email);
+  console.log(`Found existing user ${user.email}`);
+} catch {
+  user = await auth.createUser({
     email,
-    password,
     emailVerified: true, // created by TAG, not self-registered
   });
   console.log(`Created ${user.email}`);
-  console.log(`  uid: ${user.uid}`);
-  console.log("\nRole and location claims land in Story 1.4.");
-} catch (error) {
-  if (error.code === "auth/email-already-exists") {
-    console.error(`${email} already exists.`);
-  } else {
-    console.error(`Failed: ${error.message}`);
-  }
-  process.exit(1);
+}
+
+console.log(`  uid: ${user.uid}`);
+
+if (role) {
+  await auth.setCustomUserClaims(user.uid, { ...(user.customClaims ?? {}), role });
+  console.log(`  role: ${role}`);
+  console.log("\nClaims refresh on next sign-in. Sign out and back in if already signed in.");
+} else if (user.customClaims?.role) {
+  console.log(`  role: ${user.customClaims.role} (unchanged)`);
+} else {
+  console.log("  role: none — pass --role to set one");
 }

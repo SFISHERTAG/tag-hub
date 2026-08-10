@@ -24,14 +24,23 @@ function app(): App {
   const projectId =
     process.env.GOOGLE_CLOUD_PROJECT?.trim() || "tag-success-hub";
 
-  // An explicit key is supported for environments without ADC, but is not the
-  // expected path — Cloud Run and local ADC both work without one.
+  // Minting a custom token means signing a JWT, and signing needs a service
+  // account — user credentials cannot do it. Naming the account here lets the
+  // SDK sign through the IAM signBlob API instead of holding a private key, so
+  // no key file exists to leak. Locally this works because the developer holds
+  // Token Creator on the account; on Cloud Run it is the runtime identity.
+  const serviceAccountId =
+    process.env.FIREBASE_SERVICE_ACCOUNT_ID?.trim() ||
+    `hub-app@${projectId}.iam.gserviceaccount.com`;
+
+  // An explicit key is supported for environments with neither ADC nor a
+  // metadata server, but is not the expected path.
   const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
 
   cachedApp = initializeApp(
     rawKey
       ? { projectId, credential: cert(JSON.parse(rawKey)) }
-      : { projectId },
+      : { projectId, serviceAccountId },
   );
 
   return cachedApp;

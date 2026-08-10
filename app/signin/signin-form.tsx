@@ -2,85 +2,167 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithCustomToken } from "firebase/auth";
 import { clientAuth } from "@/lib/auth/client";
+
+type Step = "email" | "code";
 
 export function SignInForm({ next }: { next: string }) {
   const router = useRouter();
+  const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function requestCode(event?: React.FormEvent) {
+    event?.preventDefault();
+    setPending(true);
+    setError(null);
+    setNotice(null);
+
+    try {
+      const response = await fetch("/api/auth/otp/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data?.error ?? "Could not send a code.");
+        setPending(false);
+        return;
+      }
+
+      if (data?.cooldown) {
+        setNotice(
+          `A code was already sent. You can request another in ${data.retryAfterSeconds}s.`,
+        );
+      }
+
+      setStep("code");
+    } catch {
+      setError("Network problem. Try again.");
+    }
+    setPending(false);
+  }
+
+  async function submitCode(event: React.FormEvent) {
     event.preventDefault();
     setPending(true);
     setError(null);
 
     try {
-      const credential = await signInWithEmailAndPassword(
+      const response = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data?.error ?? "That code is not right.");
+        setPending(false);
+        return;
+      }
+
+      const credential = await signInWithCustomToken(
         clientAuth(),
-        email,
-        password,
+        data.customToken,
       );
       const idToken = await credential.user.getIdToken();
 
-      const response = await fetch("/api/auth/session", {
+      const session = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
       });
 
-      if (!response.ok) {
+      if (!session.ok) {
         setError("Could not start a session. Try again.");
         setPending(false);
         return;
       }
 
-      // The session cookie is set; server components re-resolve on navigation.
       router.replace(next);
       router.refresh();
-    } catch (err) {
-      // One message for every failure mode on purpose — distinguishing "no such
-      // user" from "wrong password" tells an attacker which emails are real.
-      setError("Email or password is incorrect.");
+    } catch {
+      setError("Could not complete sign-in. Try again.");
       setPending(false);
-      void err;
     }
   }
 
+  const inputClass =
+    "w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-[#ebc507]";
+
+  if (step === "email") {
+    return (
+      <form onSubmit={requestCode} className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-sm text-neutral-300">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoFocus
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        {error && (
+          <p role="alert" className="text-sm text-red-400">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full rounded-md bg-[#ebc507] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
+        >
+          {pending ? "Sending…" : "Send code"}
+        </button>
+
+        <p className="text-xs text-neutral-500">
+          Accounts are created by TAG. There is no self-signup.
+        </p>
+      </form>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={submitCode} className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="email" className="block text-sm text-neutral-300">
-          Email
+        <label htmlFor="code" className="block text-sm text-neutral-300">
+          Six-digit code
         </label>
+        <p className="text-xs text-neutral-500">
+          Sent to {email} · expires in 10 minutes
+        </p>
         <input
-          id="email"
-          type="email"
+          id="code"
+          // `text` with a numeric mode, so a leading zero is never dropped.
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]{6}"
+          maxLength={6}
           required
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-[#ebc507]"
+          autoFocus
+          autoComplete="one-time-code"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+          className={`${inputClass} text-center font-mono text-lg tracking-[0.4em]`}
         />
       </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="password" className="block text-sm text-neutral-300">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-[#ebc507]"
-        />
-      </div>
-
+      {notice && <p className="text-xs text-neutral-400">{notice}</p>}
       {error && (
         <p role="alert" className="text-sm text-red-400">
           {error}
@@ -89,15 +171,34 @@ export function SignInForm({ next }: { next: string }) {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || code.length !== 6}
         className="w-full rounded-md bg-[#ebc507] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
       >
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Verifying…" : "Sign in"}
       </button>
 
-      <p className="text-xs text-neutral-500">
-        Accounts are created by TAG. There is no self-signup.
-      </p>
+      <div className="flex justify-between text-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setStep("email");
+            setCode("");
+            setError(null);
+            setNotice(null);
+          }}
+          className="text-neutral-400 underline-offset-2 hover:text-white hover:underline"
+        >
+          Use a different email
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => requestCode()}
+          className="text-neutral-400 underline-offset-2 hover:text-white hover:underline disabled:opacity-60"
+        >
+          Resend code
+        </button>
+      </div>
     </form>
   );
 }
