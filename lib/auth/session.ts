@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "./admin";
+import { effectiveHat, isRole, type Role } from "./roles";
 
 /**
  * Server-side session resolution.
@@ -11,14 +12,22 @@ import { adminAuth, SESSION_COOKIE } from "./admin";
  * Every server component and action that touches data calls through here, so a
  * forged or expired cookie is rejected at the point it would matter.
  *
- * Role and permitted locations land on the session in Story 1.4. Until then a
- * verified session carries identity only, and no route makes a decision based
- * on more than "is this a real, current user".
+ * `role` comes from the verified custom claim and is the permission ceiling.
+ * `hat` is the view currently chosen and comes from a plain cookie — it is not
+ * a permission and is never trusted as one. `effectiveHat` refuses any hat the
+ * role may not wear, so tampering with that cookie changes nothing.
+ *
+ * Permitted locations land on the session in Story 1.4. Until then a verified
+ * session carries identity and role only.
  */
+
+export const HAT_COOKIE = "hub_hat";
 
 export type Session = {
   uid: string;
   email: string | null;
+  role: Role;
+  hat: Role;
 };
 
 /** Returns the verified session, or null. Never throws for an absent session. */
@@ -31,7 +40,13 @@ export async function getSession(): Promise<Session | null> {
     // checkRevoked: a disabled or signed-out user is rejected on their next
     // request rather than lingering until the cookie expires.
     const decoded = await adminAuth().verifySessionCookie(cookie, true);
-    return { uid: decoded.uid, email: decoded.email ?? null };
+
+    // A user with no role claim gets the least privileged one rather than a
+    // default that happens to be convenient.
+    const role: Role = isRole(decoded.role) ? decoded.role : "client_closer";
+    const hat = effectiveHat(role, jar.get(HAT_COOKIE)?.value);
+
+    return { uid: decoded.uid, email: decoded.email ?? null, role, hat };
   } catch {
     // Expired, revoked, malformed, or forged — all mean "not signed in".
     return null;

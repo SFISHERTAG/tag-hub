@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { getSession } from "@/lib/auth/session";
+import {
+  wearableHats,
+  HAT_LABELS,
+  HAT_DESCRIPTIONS,
+} from "@/lib/auth/roles";
+import { HatSwitcher } from "./hat-switcher";
 
 export const metadata: Metadata = {
   title: "TAG Hub",
@@ -32,6 +38,17 @@ export default async function RootLayout({
                 <div className="text-lg font-semibold tracking-tight">
                   <span className="text-[#ebc507]">TAG</span> Hub
                 </div>
+              </div>
+
+              <div className="px-3 pb-4">
+                <HatSwitcher
+                  current={session.hat}
+                  options={wearableHats(session.role).map((hat) => ({
+                    value: hat,
+                    label: HAT_LABELS[hat],
+                    description: HAT_DESCRIPTIONS[hat],
+                  }))}
+                />
               </div>
 
               <nav className="flex flex-col gap-1 px-3">
