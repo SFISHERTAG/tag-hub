@@ -44,7 +44,12 @@ async function sendViaConsole(mail: Mail): Promise<void> {
 }
 
 export async function sendMail(mail: Mail): Promise<void> {
-  const provider = process.env.MAIL_PROVIDER?.trim();
+  const provider = process.env.MAIL_PROVIDER?.trim() || undefined;
+
+  if (provider === "gmail") {
+    const { sendViaGmail } = await import("./gmail");
+    return sendViaGmail(mail);
+  }
 
   if (!provider) {
     if (process.env.NODE_ENV === "production") {
