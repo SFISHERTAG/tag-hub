@@ -127,6 +127,32 @@ step showing exactly what will be created, app-side budget ceilings per client,
 idempotency keys so a retry cannot double-create, and an audit record. Low
 volume does not make a mistyped budget cheaper.
 
+**Why not GHL's Ad Manager.** GHL has an in-app Ad Manager (GA as of mid-2026)
+that connects a Meta ad account and lets a human create, publish, pause, edit,
+and duplicate campaigns from inside GHL's own UI. Checked it against GHL's
+full published API v2 endpoint list — every category they expose (Contacts,
+Opportunities, Calendars, Campaigns [SMS/email, not ads], Funnels, Social
+Planner, Workflows, and the rest) — and there is no Ad Manager, Meta, or
+Facebook Ads category anywhere in it. It is not scriptable; a person has to
+click through it. Two consequences:
+
+- *Reporting is a non-issue either way.* Spend and delivery data has to come
+  from Meta's Marketing API directly regardless of who launched the campaign,
+  since GHL exposes no API for Ad Manager's data either. The Read section
+  above isn't optional under any version of this plan.
+- *Launch stays direct, on purpose.* GHL's Ad Manager is a generic third-party
+  UI with no visibility into a per-client budget ceiling, no idempotency
+  guarantee this app controls, and no audit record tied to this app's audit
+  log. Routing the one step that spends real money through a tool with none of
+  those guardrails would undo the whole point of the paragraph above it.
+
+**Genuine complement, different feature.** GHL's Ad Manager also syncs Meta
+Instant Form leads into GHL's CRM. If TAG ever runs lead-gen-objective
+campaigns (as opposed to landing-page conversion campaigns), that sync is
+worth using as-is — GHL is already the system of record for contacts, and
+there's no reason to build a second Meta Lead Ads webhook receiver to
+duplicate it.
+
 ---
 
 ## GHL API notes

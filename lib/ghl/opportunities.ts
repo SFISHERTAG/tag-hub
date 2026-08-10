@@ -54,6 +54,23 @@ export async function getOpportunities(
   return data.opportunities ?? [];
 }
 
+/** Get an opportunity by contact ID. Returns the first match (contacts may have multiple). */
+export async function getOpportunityForContact(
+  locationId: string,
+  contactId: string,
+): Promise<Opportunity | null> {
+  const data = await ghl<SearchResponse>(locationId, "/opportunities/search", {
+    searchParams: {
+      location_id: locationId,
+      contact_id: contactId,
+      limit: 1,
+      status: "all",
+    },
+  });
+
+  return data.opportunities?.[0] ?? null;
+}
+
 /** Groups opportunities by stage id for board rendering. */
 export function groupByStage(
   opportunities: Opportunity[],
@@ -68,17 +85,53 @@ export function groupByStage(
 }
 
 /** Whole days since a timestamp, or null when absent/unparseable. */
-export function daysSince(timestamp: string | undefined): number | null {
-  if (!timestamp) return null;
-  const then = Date.parse(timestamp);
-  if (Number.isNaN(then)) return null;
-  return Math.floor((Date.now() - then) / 86_400_000);
+
+
+/** Updates an opportunity's pipeline stage. Returns updated `lastStageChangeAt` timestamp. */
+export async function updateOpportunityStage(
+  locationId: string,
+  opportunityId: string,
+  pipelineStageId: string,
+): Promise<{ lastStageChangeAt: string }> {
+  const data = await ghl<{ lastStageChangeAt?: string }>(
+    locationId,
+    `/opportunities/${opportunityId}`,
+    {
+      method: "PUT",
+      body: { pipelineStageId },
+    },
+  );
+
+  return {
+    lastStageChangeAt: data.lastStageChangeAt ?? new Date().toISOString(),
+  };
 }
 
-export function formatMoney(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value || 0);
+/** Marks an opportunity won or lost with a monetary value. */
+export async function closeOpportunity(
+  locationId: string,
+  opportunityId: string,
+  status: "won" | "lost",
+  monetaryValue: number,
+): Promise<{ status: OpportunityStatus; monetaryValue: number }> {
+  if (status === "won" && monetaryValue === null) {
+    throw new Error("Monetary value is required when marking an opportunity won.");
+  }
+
+  const data = await ghl<{ status?: OpportunityStatus; monetaryValue?: number }>(
+    locationId,
+    `/opportunities/${opportunityId}`,
+    {
+      method: "PUT",
+      body: { status, monetaryValue: monetaryValue ?? 0 },
+    },
+  );
+
+  return {
+    status: data.status ?? status,
+    monetaryValue: data.monetaryValue ?? monetaryValue,
+  };
 }
+
+// Re-exported so existing server-side callers keep their import path.
+export { daysSince, formatMoney } from "./format";

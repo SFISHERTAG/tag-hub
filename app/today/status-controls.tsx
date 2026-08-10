@@ -21,9 +21,9 @@ const OUTCOMES: { value: AppointmentStatus; label: string; tone: "good" | "bad" 
 ];
 
 const ACTIVE_STYLES: Record<string, string> = {
-  good: "bg-[#ebc507] text-black",
-  bad: "bg-neutral-900 text-white",
-  neutral: "bg-neutral-200 text-neutral-900",
+  good: "bg-accent text-accent-ink",
+  bad: "bg-chrome-hover text-white",
+  neutral: "bg-raised text-ink",
 };
 
 export function StatusControls({
@@ -74,7 +74,7 @@ export function StatusControls({
               className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-60 ${
                 active
                   ? ACTIVE_STYLES[outcome.tone]
-                  : "border border-neutral-300 text-neutral-600 hover:border-neutral-400"
+                  : "border border-line-strong text-ink-2 hover:border-line-strong"
               }`}
             >
               {outcome.label}
@@ -83,7 +83,7 @@ export function StatusControls({
         })}
       </div>
       {error && (
-        <p className="max-w-xs text-right text-xs text-red-600">{error}</p>
+        <p className="max-w-xs text-right text-xs text-danger">{error}</p>
       )}
     </div>
   );

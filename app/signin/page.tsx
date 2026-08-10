@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { SignInForm } from "./signin-form";
+import { Logo } from "../logo";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +23,11 @@ export default async function SignInPage({
   if (await getSession()) redirect(safeNext(next));
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-4">
+    <div className="flex min-h-screen items-center justify-center bg-chrome px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-          <div className="text-2xl font-semibold tracking-tight">
-            <span className="text-[#ebc507]">TAG</span>{" "}
-            <span className="text-white">Hub</span>
-          </div>
-          <p className="mt-1 text-sm text-neutral-500">
+          <Logo width={260} />
+          <p className="mt-4 text-sm text-chrome-ink-2">
             From ad spend to closed won, in one place.
           </p>
         </div>

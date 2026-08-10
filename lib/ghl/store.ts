@@ -1,5 +1,5 @@
 import "server-only";
-import { Firestore } from "@google-cloud/firestore";
+import { firestore } from "@/lib/firestore";
 
 /**
  * Persistence for OAuth credentials.
@@ -17,17 +17,7 @@ import { Firestore } from "@google-cloud/firestore";
  * token resolution does not care which one produced it.
  */
 
-let db: Firestore | null = null;
-
-function firestore(): Firestore {
-  if (!db) {
-    db = new Firestore({
-      projectId: process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub",
-      ignoreUndefinedProperties: true,
-    });
-  }
-  return db;
-}
+export { firestore };
 
 const AGENCY_DOC = "ghl/agency";
 const locationDoc = (locationId: string) =>
@@ -150,3 +140,49 @@ export async function loadAppointmentOutcomes(
   }
   return found;
 }
+
+/** Follow-up candidate: appointment marked no-show or DQ with no newer appointment on same contact. */
+export type FollowUpCandidate = {
+  appointmentId: string;
+  contactId: string;
+  markedAt: number;
+  status: "noshow" | "invalid";
+  timing: OutcomeTiming;
+};
+
+/**
+ * Get follow-up candidates.
+ * TODO: make this dynamically configurable from cockpit for aging and definition.
+ */
+export async function getFollowUpCandidates(
+  locationId: string,
+): Promise<FollowUpCandidate[]> {
+  const outcomes = await firestore()
+    .collection(`locations/${locationId}/appointmentOutcomes`)
+    .orderBy("markedAt", "desc")
+    .limit(1000) // reasonable recent window
+    .get();
+
+  const candidates: FollowUpCandidate[] = [];
+  for (const doc of outcomes.docs) {
+    const outcome = doc.data() as AppointmentOutcome;
+    if (outcome.status === "noshow" || outcome.status === "invalid") {
+      candidates.push({
+        appointmentId: doc.id,
+        contactId: "", // will be filled by caller with appointment data
+        markedAt: outcome.markedAt,
+        status: outcome.status as "noshow" | "invalid",
+        timing: outcome.timing,
+      });
+    }
+  }
+  return candidates;
+}
+
+/*
+ * Audit logging moved to lib/audit/store.ts — generalized beyond
+ * impersonation enter/exit to any actor/action/target, per story 3.5.
+ * Nothing outside this file called saveAuditLogEntry/getAuditLogEntries yet
+ * (checked before moving), so this is a clean relocation, not a breaking
+ * change.
+ */

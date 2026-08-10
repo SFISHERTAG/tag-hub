@@ -1,0 +1,33 @@
+# Secrets first — this is the line that matters most in this file.
+# `.env.local` holds the GHL private token and the OAuth client secret. Without
+# this entry Docker copies it into the image, where it survives in a layer even
+# if a later step deletes it, and anyone who can pull the image can read it.
+# Story 1.7 AC #3 exists because of exactly this failure mode.
+.env
+.env.*
+!.env.example
+
+# Build output and caches — regenerated inside the image.
+.next
+node_modules
+.turbo
+
+# Never needed at runtime.
+.git
+.github
+.claude
+.vscode
+.idea
+_bmad
+_bmad-output
+docs
+test
+*.md
+!README.md
+
+# Local scratch
+.DS_Store
+*.log
+probe.tmp
+preview-screenshot.png
+tsconfig.tsbuildinfo

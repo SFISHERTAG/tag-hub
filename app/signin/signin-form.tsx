@@ -95,13 +95,13 @@ export function SignInForm({ next }: { next: string }) {
   }
 
   const inputClass =
-    "w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-[#ebc507]";
+    "w-full rounded-md border border-chrome-line bg-chrome-hover px-3 py-2 text-sm text-white outline-none focus:border-accent";
 
   if (step === "email") {
     return (
       <form onSubmit={requestCode} className="space-y-4">
         <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-sm text-neutral-300">
+          <label htmlFor="email" className="block text-sm text-chrome-ink-2">
             Email
           </label>
           <input
@@ -117,7 +117,7 @@ export function SignInForm({ next }: { next: string }) {
         </div>
 
         {error && (
-          <p role="alert" className="text-sm text-red-400">
+          <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         )}
@@ -125,12 +125,12 @@ export function SignInForm({ next }: { next: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-md bg-[#ebc507] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
+          className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink disabled:opacity-60"
         >
           {pending ? "Sending…" : "Send code"}
         </button>
 
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-ink-3">
           Accounts are created by TAG. There is no self-signup.
         </p>
       </form>
@@ -140,10 +140,10 @@ export function SignInForm({ next }: { next: string }) {
   return (
     <form onSubmit={submitCode} className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="code" className="block text-sm text-neutral-300">
+        <label htmlFor="code" className="block text-sm text-chrome-ink-2">
           Six-digit code
         </label>
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-ink-3">
           Sent to {email} · expires in 10 minutes
         </p>
         <input
@@ -162,9 +162,9 @@ export function SignInForm({ next }: { next: string }) {
         />
       </div>
 
-      {notice && <p className="text-xs text-neutral-400">{notice}</p>}
+      {notice && <p className="text-xs text-chrome-ink-2">{notice}</p>}
       {error && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
@@ -172,7 +172,7 @@ export function SignInForm({ next }: { next: string }) {
       <button
         type="submit"
         disabled={pending || code.length !== 6}
-        className="w-full rounded-md bg-[#ebc507] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
+        className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink disabled:opacity-60"
       >
         {pending ? "Verifying…" : "Sign in"}
       </button>
@@ -186,7 +186,7 @@ export function SignInForm({ next }: { next: string }) {
             setError(null);
             setNotice(null);
           }}
-          className="text-neutral-400 underline-offset-2 hover:text-white hover:underline"
+          className="text-chrome-ink-2 underline-offset-2 hover:text-white hover:underline"
         >
           Use a different email
         </button>
@@ -194,7 +194,7 @@ export function SignInForm({ next }: { next: string }) {
           type="button"
           disabled={pending}
           onClick={() => requestCode()}
-          className="text-neutral-400 underline-offset-2 hover:text-white hover:underline disabled:opacity-60"
+          className="text-chrome-ink-2 underline-offset-2 hover:text-white hover:underline disabled:opacity-60"
         >
           Resend code
         </button>

@@ -35,17 +35,17 @@ export function NoteForm({
         name="body"
         rows={3}
         placeholder="Add a note…"
-        className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+        className="w-full rounded-md border border-line-strong px-3 py-2 text-sm outline-none focus:border-accent"
       />
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-black px-4 py-2 text-sm font-semibold text-[#ebc507] disabled:opacity-60"
+          className="rounded-md bg-chrome px-4 py-2 text-sm font-semibold text-accent disabled:opacity-60"
         >
           {pending ? "Saving…" : "Add note"}
         </button>
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
       </div>
     </form>
   );

@@ -38,13 +38,13 @@ function AttributionPanel({
   if (rows.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-neutral-200 p-4">
+    <div className="rounded-lg border border-line p-4">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">{label}</h3>
         {hasMetaIdentifiers(attribution) && (
           <span
             title="Carries fbc/fbp — conversions can be attributed back to Meta"
-            className="rounded-full bg-[#ebc507] px-2 py-0.5 text-[11px] font-semibold text-black"
+            className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-accent-ink"
           >
             Meta trackable
           </span>
@@ -53,8 +53,8 @@ function AttributionPanel({
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
         {rows.map(([key, value]) => (
           <div key={key} className="contents">
-            <dt className="text-neutral-500">{key}</dt>
-            <dd className="truncate font-mono text-neutral-800">{value}</dd>
+            <dt className="text-ink-3">{key}</dt>
+            <dd className="truncate font-mono text-ink">{value}</dd>
           </div>
         ))}
       </dl>
@@ -74,7 +74,7 @@ export default async function ContactPage({
   const locationId = devLocationId();
   if (!locationId) {
     return (
-      <div className="max-w-2xl rounded-lg border border-amber-300 bg-amber-50 p-6 text-amber-900">
+      <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Setup needed</h2>
         <p className="mt-2 text-sm">
           No location configured. Set <code>GHL_LOCATION_ID</code> in{" "}
@@ -94,14 +94,14 @@ export default async function ContactPage({
   } catch (error) {
     if (error instanceof GhlConfigError) {
       return (
-        <div className="max-w-2xl rounded-lg border border-amber-300 bg-amber-50 p-6 text-amber-900">
+        <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
           <h2 className="text-base font-semibold">Setup needed</h2>
           <p className="mt-2 text-sm">{error.message}</p>
         </div>
       );
     }
     return (
-      <div className="max-w-2xl rounded-lg border border-red-300 bg-red-50 p-6 text-red-900">
+      <div className="max-w-2xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
         <h2 className="text-base font-semibold">Could not load contact</h2>
         <p className="mt-2 font-mono text-xs whitespace-pre-wrap">
           {error instanceof Error ? error.message : String(error)}
@@ -120,7 +120,7 @@ export default async function ContactPage({
       <div>
         <Link
           href="/contacts"
-          className="text-xs text-neutral-500 underline-offset-2 hover:underline"
+          className="text-xs text-ink-3 underline-offset-2 hover:underline"
         >
           ← Contacts
         </Link>
@@ -128,12 +128,12 @@ export default async function ContactPage({
           {displayName(contact)}
         </h1>
         {contact.companyName && (
-          <p className="text-sm text-neutral-500">{contact.companyName}</p>
+          <p className="text-sm text-ink-3">{contact.companyName}</p>
         )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-neutral-200 p-4">
+        <div className="rounded-lg border border-line p-4">
           <h3 className="text-sm font-semibold">Details</h3>
           <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
             {[
@@ -145,8 +145,8 @@ export default async function ContactPage({
               .filter(([, value]) => Boolean(value))
               .map(([key, value]) => (
                 <div key={String(key)} className="contents">
-                  <dt className="text-neutral-500">{key}</dt>
-                  <dd className="truncate text-neutral-800">{value}</dd>
+                  <dt className="text-ink-3">{key}</dt>
+                  <dd className="truncate text-ink">{value}</dd>
                 </div>
               ))}
           </dl>
@@ -155,7 +155,7 @@ export default async function ContactPage({
               {contact.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-700"
+                  className="rounded bg-raised px-1.5 py-0.5 text-[11px] text-ink-2"
                 >
                   {tag}
                 </span>
@@ -171,24 +171,24 @@ export default async function ContactPage({
       <div className="space-y-3">
         <h2 className="text-sm font-semibold">
           Notes{" "}
-          <span className="font-normal text-neutral-500">({notes.length})</span>
+          <span className="font-normal text-ink-3">({notes.length})</span>
         </h2>
 
         <NoteForm locationId={locationId} contactId={contactId} />
 
         {notes.length === 0 ? (
-          <p className="text-sm text-neutral-500">No notes yet.</p>
+          <p className="text-sm text-ink-3">No notes yet.</p>
         ) : (
           <ul className="space-y-2">
             {notes.map((note) => (
               <li
                 key={note.id}
-                className="rounded-lg border border-neutral-200 p-3"
+                className="rounded-lg border border-line p-3"
               >
-                <p className="text-sm whitespace-pre-wrap text-neutral-800">
+                <p className="text-sm whitespace-pre-wrap text-ink">
                   {note.body}
                 </p>
-                <p className="mt-1.5 text-xs text-neutral-400">
+                <p className="mt-1.5 text-xs text-chrome-ink-2">
                   {formatDate(note.dateAdded)}
                 </p>
               </li>

@@ -1,56 +1,96 @@
 import "server-only";
-import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
+import { initializeApp, getApp, cert } from "firebase-admin/app";
+import type { Role } from "./roles";
 
 /**
- * Firebase Admin, used only on the server.
- *
- * Credentials come from application default credentials — the Cloud Run service
- * account in production, `gcloud auth application-default login` locally. No
- * service-account key file is committed or needed.
+ * Firebase Admin SDK for user management.
+ * Credentials must come from env (GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_ADMIN_KEY).
  */
 
-let cachedApp: App | null = null;
+/**
+ * Name of the session cookie.
+ *
+ * `proxy.ts` declares this same literal independently, and must keep doing so:
+ * middleware runs on the edge runtime and importing this module — which is
+ * `server-only` and pulls in the whole Admin SDK — would not bundle there. The
+ * duplication is deliberate; the comment in each file points at the other.
+ */
+export const SESSION_COOKIE = "hub_session";
 
-function app(): App {
-  if (cachedApp) return cachedApp;
+/** Fourteen days, in milliseconds. Firebase caps session cookies at 14 days. */
+export const SESSION_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
-  const existing = getApps();
-  if (existing.length > 0) {
-    cachedApp = existing[0];
-    return cachedApp;
+let cached: Auth | null = null;
+
+/**
+ * The Admin Auth handle, initialised on first use.
+ *
+ * Lazy rather than module-scope so importing this file does not throw in
+ * environments without credentials — a build step or a unit test that only
+ * needs `SESSION_COOKIE` should not need a service account.
+ */
+export function adminAuth(): Auth {
+  if (cached) return cached;
+
+  let app;
+  try {
+    app = getApp();
+  } catch {
+    /**
+     * Two credential paths, and the production one carries no secret.
+     *
+     * On Cloud Run the runtime service account supplies Application Default
+     * Credentials, so `initializeApp()` with no argument is both sufficient and
+     * preferable: there is no service-account JSON to store, rotate, or leak,
+     * and the identity is the one Story 1.7 AC #4 asks for — Firestore user and
+     * Secret Manager accessor, nothing more.
+     *
+     * `FIREBASE_ADMIN_KEY` is the local-development path only. The previous
+     * form always called `cert()` and fell back to `JSON.parse("{}")` when the
+     * variable was absent, which throws an opaque credential error rather than
+     * saying what is missing — and would have failed on Cloud Run, where the
+     * variable is deliberately not set.
+     */
+    const key = process.env.FIREBASE_ADMIN_KEY;
+    app = key
+      ? initializeApp({ credential: cert(JSON.parse(key)) })
+      : initializeApp();
   }
 
-  const projectId =
-    process.env.GOOGLE_CLOUD_PROJECT?.trim() || "tag-success-hub";
-
-  // Minting a custom token means signing a JWT, and signing needs a service
-  // account — user credentials cannot do it. Naming the account here lets the
-  // SDK sign through the IAM signBlob API instead of holding a private key, so
-  // no key file exists to leak. Locally this works because the developer holds
-  // Token Creator on the account; on Cloud Run it is the runtime identity.
-  const serviceAccountId =
-    process.env.FIREBASE_SERVICE_ACCOUNT_ID?.trim() ||
-    `hub-app@${projectId}.iam.gserviceaccount.com`;
-
-  // An explicit key is supported for environments with neither ADC nor a
-  // metadata server, but is not the expected path.
-  const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
-
-  cachedApp = initializeApp(
-    rawKey
-      ? { projectId, credential: cert(JSON.parse(rawKey)) }
-      : { projectId, serviceAccountId },
-  );
-
-  return cachedApp;
+  cached = getAuth(app);
+  return cached;
 }
 
-export function adminAuth(): Auth {
-  return getAuth(app());
+/** @deprecated Use `adminAuth()`. Kept so in-flight callers keep compiling. */
+export const getAdminAuth = adminAuth;
+
+/**
+ * Set role and locations custom claims on a user.
+ * Admin action — only call from server-side operations.
+ */
+export async function setUserClaims(
+  uid: string,
+  role: Role,
+  locations: string[],
+): Promise<void> {
+  await getAdminAuth().setCustomUserClaims(uid, {
+    role,
+    locations,
+  });
 }
 
-/** How long a session cookie stays valid. */
-export const SESSION_MAX_AGE_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
+/**
+ * Set a user's role to tag_exec (all locations).
+ */
+export async function promoteToExec(uid: string): Promise<void> {
+  await setUserClaims(uid, "tag_exec", []);
+}
 
-export const SESSION_COOKIE = "hub_session";
+/**
+ * Get a user's custom claims.
+ */
+export async function getUserClaims(uid: string): Promise<Record<string, unknown> | undefined> {
+  const user = await getAdminAuth().getUser(uid);
+  return user.customClaims;
+}

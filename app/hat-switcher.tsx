@@ -41,27 +41,27 @@ export function HatSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 rounded-md border border-neutral-700 px-3 py-2 text-left text-xs text-neutral-200 hover:border-neutral-500 disabled:opacity-60"
+        className="flex w-full items-center justify-between gap-2 rounded-md border border-chrome-line px-3 py-2 text-left text-xs text-chrome-ink hover:border-line-strong disabled:opacity-60"
       >
         <span>
-          <span className="block text-[10px] tracking-wide text-neutral-500 uppercase">
+          <span className="block text-[10px] tracking-wide text-ink-3 uppercase">
             Viewing as
           </span>
-          <span className="block font-medium text-[#ebc507]">
+          <span className="block font-medium text-accent">
             {active?.label ?? current}
           </span>
         </span>
-        <span aria-hidden className="text-neutral-500">
+        <span aria-hidden className="text-ink-3">
           {open ? "▲" : "▼"}
         </span>
       </button>
 
-      {error && <p className="mt-1 text-[11px] text-red-400">{error}</p>}
+      {error && <p className="mt-1 text-[11px] text-danger">{error}</p>}
 
       {open && (
         <ul
           role="listbox"
-          className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-neutral-700 bg-neutral-950 shadow-xl"
+          className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-chrome-line bg-chrome lift-lg"
         >
           {options.map((option) => {
             const selected = option.value === current;
@@ -70,18 +70,18 @@ export function HatSwitcher({
                 <button
                   type="button"
                   onClick={() => choose(option.value)}
-                  className={`w-full px-3 py-2 text-left hover:bg-neutral-900 ${
-                    selected ? "bg-neutral-900" : ""
+                  className={`w-full px-3 py-2 text-left hover:bg-chrome-hover ${
+                    selected ? "bg-chrome-hover" : ""
                   }`}
                 >
                   <span
                     className={`block text-xs font-medium ${
-                      selected ? "text-[#ebc507]" : "text-neutral-200"
+                      selected ? "text-accent" : "text-chrome-ink"
                     }`}
                   >
                     {option.label}
                   </span>
-                  <span className="block text-[11px] text-neutral-500">
+                  <span className="block text-[11px] text-ink-3">
                     {option.description}
                   </span>
                 </button>

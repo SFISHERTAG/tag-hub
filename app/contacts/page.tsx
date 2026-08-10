@@ -22,7 +22,7 @@ export default async function ContactsPage({
   const locationId = devLocationId();
   if (!locationId) {
     return (
-      <div className="max-w-2xl rounded-lg border border-amber-300 bg-amber-50 p-6 text-amber-900">
+      <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Setup needed</h2>
         <p className="mt-2 text-sm">
           No location configured. Set <code>GHL_LOCATION_ID</code> in{" "}
@@ -38,14 +38,14 @@ export default async function ContactsPage({
   } catch (error) {
     if (error instanceof GhlConfigError) {
       return (
-        <div className="max-w-2xl rounded-lg border border-amber-300 bg-amber-50 p-6 text-amber-900">
+        <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
           <h2 className="text-base font-semibold">Setup needed</h2>
           <p className="mt-2 text-sm">{error.message}</p>
         </div>
       );
     }
     return (
-      <div className="max-w-2xl rounded-lg border border-red-300 bg-red-50 p-6 text-red-900">
+      <div className="max-w-2xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
         <h2 className="text-base font-semibold">Could not load contacts</h2>
         <p className="mt-2 font-mono text-xs whitespace-pre-wrap">
           {error instanceof Error ? error.message : String(error)}
@@ -58,7 +58,7 @@ export default async function ContactsPage({
     <div className="space-y-5">
       <div className="flex flex-wrap items-baseline gap-3">
         <h1 className="text-xl font-semibold tracking-tight">Contacts</h1>
-        <span className="text-sm text-neutral-500">
+        <span className="text-sm text-ink-3">
           {contacts.length}
           {contacts.length === 50 ? "+" : ""} shown
         </span>
@@ -70,24 +70,24 @@ export default async function ContactsPage({
           name="q"
           defaultValue={query ?? ""}
           placeholder="Search name, email, or phone"
-          className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="flex-1 rounded-md border border-line-strong px-3 py-2 text-sm outline-none focus:border-accent"
         />
         <button
           type="submit"
-          className="rounded-md bg-black px-4 py-2 text-sm font-semibold text-[#ebc507]"
+          className="rounded-md bg-chrome px-4 py-2 text-sm font-semibold text-accent"
         >
           Search
         </button>
       </form>
 
       {contacts.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-ink-3">
           {query ? `No contacts matching "${query}".` : "No contacts found."}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-neutral-200">
+        <div className="overflow-x-auto rounded-lg border border-line">
           <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-left text-xs text-neutral-500">
+            <thead className="bg-raised text-left text-xs text-ink-3">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Name</th>
                 <th className="px-4 py-2.5 font-medium">Email</th>
@@ -100,31 +100,31 @@ export default async function ContactsPage({
               {contacts.map((contact) => (
                 <tr
                   key={contact.id}
-                  className="border-t border-neutral-200 hover:bg-neutral-50"
+                  className="border-t border-line hover:bg-raised"
                 >
                   <td className="px-4 py-2.5">
                     <Link
                       href={`/contacts/${contact.id}`}
-                      className="font-medium text-neutral-900 underline-offset-2 hover:underline"
+                      className="font-medium text-ink underline-offset-2 hover:underline"
                     >
                       {displayName(contact)}
                     </Link>
                     {contact.companyName && (
-                      <span className="ml-2 text-xs text-neutral-500">
+                      <span className="ml-2 text-xs text-ink-3">
                         {contact.companyName}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-neutral-600">
+                  <td className="px-4 py-2.5 text-ink-2">
                     {contact.email || "—"}
                   </td>
-                  <td className="px-4 py-2.5 text-neutral-600">
+                  <td className="px-4 py-2.5 text-ink-2">
                     {contact.phone || "—"}
                   </td>
-                  <td className="max-w-[14rem] truncate px-4 py-2.5 text-neutral-500">
+                  <td className="max-w-[14rem] truncate px-4 py-2.5 text-ink-3">
                     {contact.source || "—"}
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-neutral-500">
+                  <td className="px-4 py-2.5 whitespace-nowrap text-ink-3">
                     {formatDate(contact.dateAdded)}
                   </td>
                 </tr>

@@ -1,4 +1,4 @@
-import { getPipelines } from "@/lib/ghl/pipelines";
+import { getPipelines, type PipelineStage } from "@/lib/ghl/pipelines";
 import {
   getOpportunities,
   groupByStage,
@@ -13,6 +13,8 @@ import {
   LocationNotAuthorizedError,
 } from "@/lib/ghl/tokens";
 import { requireSession } from "@/lib/auth/session";
+import { StageControl } from "./stage-control";
+import { CloseControl } from "./close-control";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +31,8 @@ function Notice({
 }) {
   const styles =
     tone === "warn"
-      ? "border-amber-300 bg-amber-50 text-amber-900"
-      : "border-red-300 bg-red-50 text-red-900";
+      ? "border-warn/30 bg-warn-tint text-warn"
+      : "border-danger/30 bg-danger-tint text-danger";
   return (
     <div className={`max-w-2xl rounded-lg border p-6 ${styles}`}>
       <h2 className="text-base font-semibold">{title}</h2>
@@ -39,7 +41,15 @@ function Notice({
   );
 }
 
-function Card({ opportunity }: { opportunity: Opportunity }) {
+function Card({
+  locationId,
+  opportunity,
+  stages,
+}: {
+  locationId: string;
+  opportunity: Opportunity;
+  stages: PipelineStage[];
+}) {
   const days = daysSince(opportunity.lastStageChangeAt ?? opportunity.updatedAt);
   const stale = days !== null && days >= 14;
   const title =
@@ -48,25 +58,25 @@ function Card({ opportunity }: { opportunity: Opportunity }) {
     "Unnamed opportunity";
 
   return (
-    <div className="rounded-md border border-neutral-200 bg-white p-3 shadow-xs">
+    <div className="rounded-md border border-line bg-surface p-3 lift">
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium text-neutral-900">{title}</span>
+        <span className="text-sm font-medium text-ink">{title}</span>
         {opportunity.monetaryValue > 0 && (
-          <span className="shrink-0 text-sm font-semibold tabular-nums text-neutral-900">
+          <span className="shrink-0 text-sm font-semibold tabular-nums text-ink">
             {formatMoney(opportunity.monetaryValue)}
           </span>
         )}
       </div>
 
       {opportunity.contact?.companyName && (
-        <p className="mt-1 truncate text-xs text-neutral-500">
+        <p className="mt-1 truncate text-xs text-ink-3">
           {opportunity.contact.companyName}
         </p>
       )}
 
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
         {opportunity.source && (
-          <span className="truncate text-neutral-500">
+          <span className="truncate text-ink-3">
             {opportunity.source}
           </span>
         )}
@@ -74,13 +84,28 @@ function Card({ opportunity }: { opportunity: Opportunity }) {
           <span
             className={
               stale
-                ? "rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800"
-                : "text-neutral-400"
+                ? "rounded bg-warn-tint px-1.5 py-0.5 font-medium text-warn"
+                : "text-chrome-ink-2"
             }
           >
             {days}d in stage
           </span>
         )}
+      </div>
+
+      <div className="mt-3 flex flex-col gap-2 border-t border-line pt-2">
+        <StageControl
+          locationId={locationId}
+          opportunityId={opportunity.id}
+          currentStageId={opportunity.pipelineStageId}
+          allStages={stages}
+        />
+        <CloseControl
+          locationId={locationId}
+          opportunityId={opportunity.id}
+          currentStatus={opportunity.status}
+          currentValue={opportunity.monetaryValue}
+        />
       </div>
     </div>
   );
@@ -148,7 +173,7 @@ export default async function PipelinePage({
   return (
     <div className="space-y-10">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-neutral-500">Showing</span>
+        <span className="text-sm text-ink-3">Showing</span>
         {STATUS_FILTERS.map((option) => {
           const active = option === status;
           return (
@@ -157,8 +182,8 @@ export default async function PipelinePage({
               href={`/?status=${option}`}
               className={
                 active
-                  ? "rounded-full bg-black px-3 py-1 text-xs font-semibold text-[#ebc507]"
-                  : "rounded-full border border-neutral-300 px-3 py-1 text-xs text-neutral-600 hover:border-neutral-400"
+                  ? "rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-ink"
+                  : "rounded-full border border-line px-3 py-1 text-xs text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
               }
             >
               {option}
@@ -180,12 +205,12 @@ export default async function PipelinePage({
               <h1 className="text-xl font-semibold tracking-tight">
                 {pipeline.name}
               </h1>
-              <span className="text-sm text-neutral-500">
+              <span className="text-sm text-ink-3">
                 {opportunities.length} {status === "all" ? "" : status}{" "}
                 {opportunities.length === 1 ? "deal" : "deals"}
               </span>
               {total > 0 && (
-                <span className="text-sm font-medium tabular-nums text-neutral-700">
+                <span className="text-sm font-medium tabular-nums text-ink-2">
                   {formatMoney(total)}
                 </span>
               )}
@@ -202,19 +227,19 @@ export default async function PipelinePage({
                 return (
                   <div
                     key={stage.id}
-                    className="flex w-64 shrink-0 flex-col rounded-lg border border-neutral-200 bg-neutral-50"
+                    className="flex w-64 shrink-0 flex-col rounded-lg border border-line bg-sunken"
                   >
-                    <div className="border-b border-neutral-200 px-3 py-2.5">
+                    <div className="border-b border-line px-3 py-2.5">
                       <div className="flex items-baseline justify-between gap-2">
                         <h2 className="truncate text-sm font-medium">
                           {stage.name}
                         </h2>
-                        <span className="shrink-0 text-xs text-neutral-500">
+                        <span className="shrink-0 text-xs text-ink-3">
                           {cards.length}
                         </span>
                       </div>
                       {stageTotal > 0 && (
-                        <p className="mt-0.5 text-xs tabular-nums text-neutral-500">
+                        <p className="mt-0.5 text-xs tabular-nums text-ink-3">
                           {formatMoney(stageTotal)}
                         </p>
                       )}
@@ -222,14 +247,16 @@ export default async function PipelinePage({
 
                     <div className="flex flex-col gap-2 p-2">
                       {cards.length === 0 ? (
-                        <p className="px-1 py-3 text-xs text-neutral-400">
+                        <p className="px-1 py-3 text-xs text-chrome-ink-2">
                           Empty
                         </p>
                       ) : (
                         cards.map((opportunity) => (
                           <Card
                             key={opportunity.id}
+                            locationId={locationId}
                             opportunity={opportunity}
+                            stages={pipeline.stages}
                           />
                         ))
                       )}

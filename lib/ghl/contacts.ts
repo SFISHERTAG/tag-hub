@@ -61,25 +61,12 @@ export type Note = {
  * the lead, the other the ad that brought them back. Attributing revenue to
  * either alone misreads which creative is doing the work.
  */
-export function firstTouch(contact: Contact): Attribution | undefined {
-  return contact.attributionSource ?? contact.attributions?.[0];
-}
 
-export function lastTouch(contact: Contact): Attribution | undefined {
-  return contact.lastAttributionSource;
-}
 
 export function hasMetaIdentifiers(attribution: Attribution | undefined): boolean {
   return Boolean(attribution?.fbc || attribution?.fbp || attribution?.utmFbclid);
 }
 
-export function displayName(contact: Contact): string {
-  const composed = [contact.firstName, contact.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-  return contact.contactName?.trim() || composed || contact.email || "Unnamed";
-}
 
 export async function searchContacts(
   locationId: string,
@@ -137,14 +124,6 @@ export async function addNote(
   });
 }
 
-export function formatDate(iso: string | undefined): string {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime())
-    ? "—"
-    : date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-}
+
+// Re-exported so existing server-side callers keep their import path.
+export { firstTouch, lastTouch, displayName, formatDate } from "./format";

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "./admin";
 import { effectiveHat, isRole, type Role } from "./roles";
+import { listAllLocationIds } from "../ghl/tenants";
 
 /**
  * Server-side session resolution.
@@ -28,6 +29,7 @@ export type Session = {
   email: string | null;
   role: Role;
   hat: Role;
+  locations: string[];
 };
 
 /** Returns the verified session, or null. Never throws for an absent session. */
@@ -46,7 +48,16 @@ export async function getSession(): Promise<Session | null> {
     const role: Role = isRole(decoded.role) ? decoded.role : "client_closer";
     const hat = effectiveHat(role, jar.get(HAT_COOKIE)?.value);
 
-    return { uid: decoded.uid, email: decoded.email ?? null, role, hat };
+    // Locations come from custom claims. tag_exec gets all known locations.
+    // Other roles get an explicit list from claims.
+    let locations: string[] = [];
+    if (role === "tag_exec") {
+      locations = await listAllLocationIds();
+    } else if (Array.isArray(decoded.locations)) {
+      locations = decoded.locations.filter((l) => typeof l === "string");
+    }
+
+    return { uid: decoded.uid, email: decoded.email ?? null, role, hat, locations };
   } catch {
     // Expired, revoked, malformed, or forged — all mean "not signed in".
     return null;
@@ -58,4 +69,23 @@ export async function requireSession(): Promise<Session> {
   const session = await getSession();
   if (!session) redirect("/signin");
   return session;
+}
+
+/**
+ * Enforces that the session has access to the requested location.
+ * Throws 403 if not permitted. Call this before every GHL request.
+ */
+export async function requireLocationAccess(locationId: string): Promise<void> {
+  const session = await getSession();
+  if (!session) redirect("/signin");
+
+  // tag_exec can access any location
+  if (session.role === "tag_exec") return;
+
+  // Other roles must have the location in their permitted list
+  if (!session.locations.includes(locationId)) {
+    throw new Error(
+      `403 Forbidden: location ${locationId} not in permitted locations: ${session.locations.join(", ")}`,
+    );
+  }
 }

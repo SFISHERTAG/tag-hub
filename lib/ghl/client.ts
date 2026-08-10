@@ -1,5 +1,6 @@
 import "server-only";
 import { resolveToken } from "./tokens";
+import { requireLocationAccess } from "../auth/session";
 
 const BASE_URL = "https://services.leadconnectorhq.com";
 
@@ -39,6 +40,9 @@ export async function ghl<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
+  // Enforce location access control before any GHL call
+  await requireLocationAccess(locationId);
+
   const token = await resolveToken(locationId);
   const {
     method = "GET",
