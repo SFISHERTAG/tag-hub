@@ -6,7 +6,15 @@
 substitutions:
   _REGION: us-central1
   _REPO: hub
-  _SERVICE: hub
+  # Deploys over the service already live at this name rather than standing up
+  # a second one under a fresh URL. Two reasons this matters, not just one:
+  # the existing revision there predates auth entirely and is reachable with
+  # no login (safe today only because GHL_LOCATION_ID happens to be unset on
+  # it — this deploy is what actually closes that), and the redirect URI
+  # registered on the GHL marketplace app is pinned to this exact URL, so a
+  # different service name would mean a different URL and a broken OAuth
+  # callback until the marketplace app's redirect URI was updated to match.
+  _SERVICE: tag-hub-git
   # Must match an SA that actually exists — this one already holds
   # datastore.user, firebaseauth.admin, secretmanager.secretAccessor.
   # (Verified by listing service accounts, not assumed — the first name
@@ -16,6 +24,21 @@ substitutions:
   _FIREBASE_API_KEY: ""
   _FIREBASE_AUTH_DOMAIN: ""
   _FIREBASE_PROJECT_ID: tag-success-hub
+  # None of these four are secrets — a Marketplace app's Client ID is visible
+  # in the OAuth redirect URL itself, a GHL location id is visible in that
+  # location's own dashboard URL, the callback path is public by definition,
+  # and the sender is a support inbox. GHL_CLIENT_SECRET is the only one of
+  # this group that actually needed Secret Manager, and it already has it.
+  _GHL_CLIENT_ID: 6a765592e3f2f8638204f294-msji5k0u
+  # TAG's own GHL sub-account — what the closer workspace (Epic 2) runs
+  # against. Not a stand-in for per-client multi-tenant routing; that is
+  # Story 1.2/1.6, still blocked on GHL account consolidation.
+  _GHL_LOCATION_ID: rb6hPt8Ue77L4abghRMc
+  # Must exactly match what's registered as the redirect URI on the
+  # Marketplace app, and must be pinned to the _SERVICE name above — changing
+  # one without the other breaks the OAuth callback.
+  _GHL_REDIRECT_URI: https://tag-hub-git-vdsoboedgq-uc.a.run.app/api/oauth/callback
+  _GMAIL_SENDER: support@taxadvisorygrowth.net
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -67,7 +90,7 @@ steps:
       # service-account JSON is stored anywhere.
       - --service-account=${_RUNTIME_SA}
       - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest
-      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail
+      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER}
       # GHL_PIT is deliberately absent. It is a single-location development
       # fallback, and leaving it set in production would let a token-resolution
       # bug silently serve one tenant's credential for every other tenant.
