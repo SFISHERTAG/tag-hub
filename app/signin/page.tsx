@@ -1,0 +1,41 @@
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth/session";
+import { SignInForm } from "./signin-form";
+
+export const dynamic = "force-dynamic";
+
+/** Only allow internal paths, so `?next=` cannot become an open redirect. */
+function safeNext(raw: string | undefined): string {
+  if (!raw) return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/";
+  return raw;
+}
+
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+
+  // Already signed in — no reason to show the form.
+  if (await getSession()) redirect(safeNext(next));
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-black px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-8">
+          <div className="text-2xl font-semibold tracking-tight">
+            <span className="text-[#ebc507]">TAG</span>{" "}
+            <span className="text-white">Hub</span>
+          </div>
+          <p className="mt-1 text-sm text-neutral-500">
+            From ad spend to closed won, in one place.
+          </p>
+        </div>
+
+        <SignInForm next={safeNext(next)} />
+      </div>
+    </div>
+  );
+}

@@ -12,6 +12,7 @@ import {
   GhlConfigError,
   LocationNotAuthorizedError,
 } from "@/lib/ghl/tokens";
+import { requireSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,8 @@ export default async function PipelinePage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  await requireSession();
+
   const { status: statusParam } = await searchParams;
   const status = (
     STATUS_FILTERS.includes(statusParam as never) ? statusParam : "open"

@@ -4,6 +4,7 @@ import {
   dayRange,
   formatTime,
 } from "@/lib/ghl/appointments";
+import { requireSession } from "@/lib/auth/session";
 import { devLocationId, GhlConfigError } from "@/lib/ghl/tokens";
 import { StatusControls } from "./status-controls";
 
@@ -20,6 +21,8 @@ export default async function TodayPage({
 }: {
   searchParams: Promise<{ day?: string }>;
 }) {
+  await requireSession();
+
   const { day } = await searchParams;
   const selected = OFFSET_LABELS[day ?? "today"] ?? OFFSET_LABELS.today;
 

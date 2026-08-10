@@ -4,6 +4,7 @@ import {
   displayName,
   formatDate,
 } from "@/lib/ghl/contacts";
+import { requireSession } from "@/lib/auth/session";
 import { devLocationId, GhlConfigError } from "@/lib/ghl/tokens";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,8 @@ export default async function ContactsPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  await requireSession();
+
   const { q } = await searchParams;
   const query = q?.trim() || undefined;
 

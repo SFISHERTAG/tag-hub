@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getSession } from "@/lib/auth/session";
 import {
   setAppointmentStatus,
   type AppointmentStatus,
@@ -26,6 +27,12 @@ export async function markAppointment(
   status: AppointmentStatus,
   appointment: { startTime: string; endTime: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Server actions are callable endpoints in their own right. Guarding the page
+  // that renders the button does not guard this, so it checks for itself.
+  if (!(await getSession())) {
+    return { ok: false, error: "Not signed in." };
+  }
+
   try {
     await setAppointmentStatus(locationId, appointmentId, status);
   } catch (error) {

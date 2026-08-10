@@ -10,6 +10,7 @@ import {
   hasMetaIdentifiers,
   type Attribution,
 } from "@/lib/ghl/contacts";
+import { requireSession } from "@/lib/auth/session";
 import { devLocationId, GhlConfigError } from "@/lib/ghl/tokens";
 import { NoteForm } from "./note-form";
 
@@ -66,6 +67,8 @@ export default async function ContactPage({
 }: {
   params: Promise<{ contactId: string }>;
 }) {
+  await requireSession();
+
   const { contactId } = await params;
 
   const locationId = devLocationId();
