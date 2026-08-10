@@ -125,6 +125,7 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.2 | Field catalog and per-role defaults | Draft |
 | 7.3 | Dashboard configuration UI | Draft |
 | 7.4 | Client-visibility allowlist at the query layer | Draft |
+| 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
 
 Field definitions live in `docs/client-fields.md` (68 fields, 41 shipping
 without Meta).
@@ -135,6 +136,21 @@ blocklist applied where it is rendered. A forgotten conditional in a component
 is how `contract.mrr` and `econ.feeToSpendRatio` — TAG's own margin — end up on
 a client's screen. A query that cannot return the column has no such failure
 mode.
+
+Most clients start self-managed: `Tenant.services.closingTeam` is `false` and
+their own person works their own pipeline wearing the `client_closer` hat that
+Epic 2's workspace already supports generically per `locationId` — no separate
+mini-CRM to build. Selling them the fractional closing team afterward is a real
+revenue lever, and it needs a mechanism that is not a manual Firestore edit.
+
+**The lever is a tag, not a button.** A rep closes the sales-enablement upsell
+in GHL — where the sales team already lives — and applies a tag on the
+contact. A webhook consumes that tag event and flips
+`Tenant.services.closingTeam` to `true`. `lib/webhooks/` already has the
+receiving side built (HMAC signature verification, idempotency, a dead-letter
+queue) — this is a new handler on that existing path, not a new subsystem. A
+Hub-only "flip this switch" screen would be a second place the flip has to be
+remembered, next to the GHL side reps already work from every day.
 
 ## Epic 8 — Operational instrumentation
 
