@@ -7,7 +7,12 @@ substitutions:
   _REGION: us-central1
   _REPO: hub
   _SERVICE: hub
-  _RUNTIME_SA: hub-runtime@tag-success-hub.iam.gserviceaccount.com
+  # Must match an SA that actually exists — this one already holds
+  # datastore.user, firebaseauth.admin, secretmanager.secretAccessor.
+  # (Verified by listing service accounts, not assumed — the first name
+  # written here, hub-runtime@, does not exist and would have failed the
+  # deploy step on first real run.)
+  _RUNTIME_SA: hub-app@tag-success-hub.iam.gserviceaccount.com
   _FIREBASE_API_KEY: ""
   _FIREBASE_AUTH_DOMAIN: ""
   _FIREBASE_PROJECT_ID: tag-success-hub
