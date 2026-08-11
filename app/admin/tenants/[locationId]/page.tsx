@@ -1,6 +1,7 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireSession } from "@/lib/auth/session";
-import { getTenant } from "@/lib/ghl/tenants";
+import { getTenant, tenantDocExists, isValidLocationId } from "@/lib/ghl/tenants";
 import { TenantForm } from "./tenant-form";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,12 @@ export default async function TenantAdminPage({
   const session = await requireSession();
   const { locationId } = await params;
 
+  // A location id is about to become a Firestore document id. Reject
+  // anything a typed-in URL could smuggle through that a form's own
+  // client-side check wouldn't have — a `/` above all, which Firestore reads
+  // as a path separator rather than a literal character.
+  if (!isValidLocationId(locationId)) notFound();
+
   if (session.role !== "tag_exec") {
     return (
       <div className="max-w-2xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
@@ -22,8 +29,11 @@ export default async function TenantAdminPage({
     );
   }
 
-  const tenant = await getTenant(locationId);
-  const isNew = tenant.name === `Tenant ${locationId}`;
+  const [tenant, exists] = await Promise.all([
+    getTenant(locationId),
+    tenantDocExists(locationId),
+  ]);
+  const isNew = !exists;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -45,7 +55,9 @@ export default async function TenantAdminPage({
         )}
       </div>
 
-      <TenantForm tenant={tenant} />
+      {/* Keyed on locationId so navigating between two tenants' edit pages
+          remounts the form instead of reusing state seeded from the last one. */}
+      <TenantForm key={tenant.locationId} tenant={tenant} />
     </div>
   );
 }

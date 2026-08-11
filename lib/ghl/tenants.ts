@@ -15,6 +15,17 @@ export type Tenant = {
 
 const TENANTS_COLLECTION = "locations";
 
+/**
+ * Whether a string is safe to use as a Firestore document id for this
+ * collection. GHL location ids are alphanumeric; rejecting everything else
+ * — `/` above all, which Firestore reads as a path separator — keeps a typed
+ * or pasted id from ever addressing something other than a flat document
+ * under `locations/`.
+ */
+export function isValidLocationId(value: string): boolean {
+  return /^[A-Za-z0-9_-]{1,128}$/.test(value);
+}
+
 /** Get a tenant by location ID. Returns defaults if document missing (fail closed). */
 export async function getTenant(locationId: string): Promise<Tenant> {
   const db = firestore();
@@ -52,6 +63,17 @@ export async function getTenant(locationId: string): Promise<Tenant> {
     metaBusinessId: data.metaBusinessId,
     metaPixelId: data.metaPixelId,
   };
+}
+
+/**
+ * Whether a tenant document actually exists, independent of `getTenant()`'s
+ * fail-closed defaults — those make a missing tenant indistinguishable from
+ * a real one whose fields happen to match the placeholder values.
+ */
+export async function tenantDocExists(locationId: string): Promise<boolean> {
+  const db = firestore();
+  const doc = await db.collection(TENANTS_COLLECTION).doc(locationId).get();
+  return doc.exists;
 }
 
 /** Save/update a tenant. Admin operation. */

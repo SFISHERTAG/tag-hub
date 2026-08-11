@@ -50,7 +50,10 @@ export function TenantForm({ tenant }: { tenant: Tenant }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <fieldset disabled={pending} className="space-y-6">
+      {/* Native change events bubble, so this catches every field below in
+          one place rather than clearing `saved` in each handler — otherwise
+          "Saved." keeps showing next to edits made after the last save. */}
+      <fieldset disabled={pending} className="space-y-6" onChange={() => setSaved(false)}>
         <div>
           <h3 className="text-sm font-medium text-ink">Services</h3>
           <p className="mt-1 text-xs text-ink-3">

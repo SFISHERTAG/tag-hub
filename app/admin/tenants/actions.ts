@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth/session";
-import { getTenant, saveTenant, type Service } from "@/lib/ghl/tenants";
+import { getTenant, saveTenant, isValidLocationId, type Service } from "@/lib/ghl/tenants";
 
 export type TenantEdits = {
   services: Record<Service, boolean>;
@@ -30,6 +30,11 @@ export async function saveTenantAction(
   if (!session) return { ok: false, error: "Not signed in." };
   if (session.role !== "tag_exec") {
     return { ok: false, error: "Only executives can manage tenants." };
+  }
+  // A server action is directly callable and doesn't have to go through the
+  // page's own guard, so the id gets checked again here rather than trusted.
+  if (!isValidLocationId(locationId)) {
+    return { ok: false, error: "Invalid location id." };
   }
 
   try {
