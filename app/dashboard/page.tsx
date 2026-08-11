@@ -16,7 +16,9 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const session = await requireSession();
 
-  if (!session || !["client_owner", "client_manager"].includes(session.role)) {
+  // Gated on the effective hat, not the raw role — see the identical comment
+  // in app/portfolio/page.tsx for why.
+  if (!session || !["client_owner", "client_manager"].includes(session.hat)) {
     return (
       <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Access denied</h2>

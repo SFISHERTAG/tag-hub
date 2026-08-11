@@ -48,7 +48,9 @@ function serviceSegments(rows: Row[]): Segment[] {
 export default async function ClientSuccessPage() {
   const session = await requireSession();
 
-  if (!["tag_exec", "tag_csm"].includes(session.role)) {
+  // Gated on the effective hat, not the raw role — see the identical comment
+  // in app/portfolio/page.tsx for why.
+  if (!["tag_exec", "tag_csm"].includes(session.hat)) {
     return (
       <Panel title="Access denied">
         <p className="text-sm text-ink-2">

@@ -20,7 +20,9 @@ export default async function TenantAdminPage({
   // as a path separator rather than a literal character.
   if (!isValidLocationId(locationId)) notFound();
 
-  if (session.role !== "tag_exec") {
+  // Gated on the effective hat — see the identical comment in
+  // app/admin/tenants/page.tsx for why this is safe.
+  if (session.hat !== "tag_exec") {
     return (
       <div className="max-w-2xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
         <h2 className="text-base font-semibold">Access denied</h2>

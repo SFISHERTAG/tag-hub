@@ -28,7 +28,8 @@ export async function saveTenantAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const session = await getSession();
   if (!session) return { ok: false, error: "Not signed in." };
-  if (session.role !== "tag_exec") {
+  // Effective hat, not raw role — see app/admin/tenants/page.tsx for why.
+  if (session.hat !== "tag_exec") {
     return { ok: false, error: "Only executives can manage tenants." };
   }
   // A server action is directly callable and doesn't have to go through the

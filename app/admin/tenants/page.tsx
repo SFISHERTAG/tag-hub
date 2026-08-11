@@ -8,8 +8,13 @@ export const dynamic = "force-dynamic";
 export default async function TenantsAdminPage() {
   const session = await requireSession();
 
-  // Only tag_exec can manage tenants
-  if (session.role !== "tag_exec") {
+  // Only tag_exec can manage tenants. Gated on the effective hat rather than
+  // the raw role — see the identical comment in app/portfolio/page.tsx for
+  // why — which is safe here specifically because only a real tag_exec role
+  // can ever set their hat to "tag_exec" in the first place (roles.ts's
+  // canWear/effectiveHat enforce that); this does not loosen who can reach
+  // tenant management, only requires switching back to that hat first.
+  if (session.hat !== "tag_exec") {
     return (
       <div className="max-w-2xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
         <h2 className="text-base font-semibold">Access denied</h2>
