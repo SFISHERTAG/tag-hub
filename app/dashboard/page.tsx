@@ -1,5 +1,15 @@
 import { requireSession } from "@/lib/auth/session";
 import { devLocationId } from "@/lib/ghl/tokens";
+import { getLocationConfig } from "@/lib/dashboard/location-config";
+import { MOCK_METRICS } from "@/lib/dashboard/mock-metrics";
+import { DarkScope } from "./dark-scope";
+import { SampleDataBanner } from "./widgets/sample-data-banner";
+import { KpiTiles } from "./widgets/kpi-tiles";
+import { SpendCharts } from "./widgets/spend-charts";
+import { FunnelTable } from "./widgets/funnel-table";
+import { TopDeals } from "./widgets/top-deals";
+import { DocumentsWidget } from "./widgets/documents-widget";
+import { SlackWidget } from "./widgets/slack-widget";
 
 export const dynamic = "force-dynamic";
 
@@ -15,77 +25,49 @@ export default async function DashboardPage() {
     );
   }
 
-  const locationId = devLocationId();
+  // Per-client location routing (Story 1.2/1.6) isn't built yet, so a real
+  // client_owner claim wins when present and single-location dev falls back
+  // to GHL_LOCATION_ID — same fallback every other page in the app already
+  // uses.
+  const locationId = session.locations[0] ?? devLocationId();
   if (!locationId) {
     return (
       <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Setup needed</h2>
         <p className="mt-2 text-sm">
           No location configured. Set <code>GHL_LOCATION_ID</code> in{" "}
-          <code>hub/.env.local</code>.
+          <code>hub/.env.local</code>, or assign this account a location.
         </p>
       </div>
     );
   }
 
+  const { slackChannelId, driveFolderId } = await getLocationConfig(locationId);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
-      </div>
+    <DarkScope>
+      <div className="mx-auto max-w-6xl space-y-6">
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Dashboard</h1>
 
-      <div className="max-w-4xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
-        <h2 className="text-base font-semibold">Blocked on Meta setup</h2>
-        <p className="mt-2 text-sm">
-          Dashboard requires <code>Story 4.1</code> (Meta Business Manager + Marketing API setup).
-          Once Austyn completes the Meta setup, the following will be available:
-        </p>
-        <ul className="mt-3 list-inside space-y-1 text-sm">
-          <li>✗ Story 4.2 — Spend and delivery by ad</li>
-          <li>✗ Story 4.3 — Funnel counts (leads, booked, showed, closed)</li>
-          <li>✗ Story 4.4 — ROAS per ad</li>
-          <li>✗ Story 4.5 — &ldquo;As of&rdquo; freshness indicator</li>
-          <li>✓ Story 4.6 — Owner&rsquo;s calendar view (ready)</li>
-        </ul>
-      </div>
+        <SampleDataBanner />
 
-      {/* Placeholder sections for stories 4.2-4.6 */}
-      <div className="space-y-4">
-        <div className="rounded-lg border border-line bg-raised p-4">
-          <h2 className="text-sm font-semibold text-ink-2">
-            4.2 Spend and delivery by ad
-          </h2>
-          <p className="mt-1 text-xs text-ink-3">Awaiting Meta API setup</p>
+        <KpiTiles kpis={MOCK_METRICS.kpis} />
+
+        <SpendCharts
+          spendByChannel={MOCK_METRICS.spendByChannel}
+          spendByAd={MOCK_METRICS.spendByAd}
+        />
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <FunnelTable funnel={MOCK_METRICS.funnel} />
+          <TopDeals deals={MOCK_METRICS.topDeals} />
         </div>
 
-        <div className="rounded-lg border border-line bg-raised p-4">
-          <h2 className="text-sm font-semibold text-ink-2">
-            4.3 Funnel counts
-          </h2>
-          <p className="mt-1 text-xs text-ink-3">Awaiting Meta API setup</p>
-        </div>
-
-        <div className="rounded-lg border border-line bg-raised p-4">
-          <h2 className="text-sm font-semibold text-ink-2">
-            4.4 ROAS per ad
-          </h2>
-          <p className="mt-1 text-xs text-ink-3">Awaiting Meta API setup</p>
-        </div>
-
-        <div className="rounded-lg border border-line bg-raised p-4">
-          <h2 className="text-sm font-semibold text-ink-2">
-            4.5 Freshness indicator
-          </h2>
-          <p className="mt-1 text-xs text-ink-3">Awaiting Meta API setup</p>
-        </div>
-
-        <div className="rounded-lg border border-line bg-raised p-4">
-          <h2 className="text-sm font-semibold text-ink-2">
-            4.6 Owner&rsquo;s calendar
-          </h2>
-          <p className="mt-1 text-xs text-ink-3">Ready — awaiting implementation</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <DocumentsWidget folderId={driveFolderId} />
+          <SlackWidget channelId={slackChannelId} />
         </div>
       </div>
-    </div>
+    </DarkScope>
   );
 }

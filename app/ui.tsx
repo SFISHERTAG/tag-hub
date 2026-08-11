@@ -256,6 +256,72 @@ export function Donut({
   );
 }
 
+export type BarSeries = { label: string; value: number; tone: keyof typeof TONE_VAR };
+export type BarGroup = { label: string; series: BarSeries[] };
+
+/**
+ * Grouped horizontal bars, same reasoning as `Donut` — plain CSS widths
+ * rather than a charting library. Horizontal rather than vertical because bar
+ * labels here are ad names and lead-source names, which run long; a vertical
+ * bar chart would need to rotate them, and rotated axis labels are the
+ * single most common charting-library readability complaint there is.
+ */
+export function BarChart({
+  groups,
+  legend,
+}: {
+  groups: BarGroup[];
+  /** One entry per series key, in the order each group's `series` uses. */
+  legend: { label: string; tone: keyof typeof TONE_VAR }[];
+}) {
+  const max = Math.max(1, ...groups.flatMap((g) => g.series.map((s) => s.value)));
+
+  return (
+    <div className="space-y-4">
+      {legend.length > 1 && (
+        <ul className="flex flex-wrap gap-3 text-xs">
+          {legend.map((l) => (
+            <li key={l.label} className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: TONE_VAR[l.tone] }}
+              />
+              <span className="text-ink-2">{l.label}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <ul className="space-y-3">
+        {groups.map((g) => (
+          <li key={g.label}>
+            <p className="mb-1 truncate text-xs text-ink-2">{g.label}</p>
+            <div className="space-y-1">
+              {g.series.map((s) => (
+                <div key={s.label} className="flex items-center gap-2">
+                  <div className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-line/60">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.max(2, (s.value / max) * 100)}%`,
+                        background: TONE_VAR[s.tone],
+                      }}
+                    />
+                  </div>
+                  <span className="w-16 shrink-0 text-right text-xs tabular-nums text-ink-3">
+                    {s.value.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /**
  * Explicit empty state.
  *
