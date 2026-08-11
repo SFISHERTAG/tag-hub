@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { requireSession } from "@/lib/auth/session";
 import { listAllLocationIds, getTenant } from "@/lib/ghl/tenants";
+import { NewTenantForm } from "./new-tenant-form";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +23,14 @@ export default async function TenantsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">Tenants</h1>
-        <span className="text-sm text-ink-3">
-          {tenants.length} {tenants.length === 1 ? "tenant" : "tenants"}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-xl font-semibold tracking-tight">Tenants</h1>
+          <span className="text-sm text-ink-3">
+            {tenants.length} {tenants.length === 1 ? "tenant" : "tenants"}
+          </span>
+        </div>
+        <NewTenantForm />
       </div>
 
       <div className="overflow-x-auto">
@@ -55,23 +60,26 @@ export default async function TenantsAdminPage() {
                     {tenant.metaPixelId || "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <a
+                    <Link
                       href={`/admin/tenants/${tenant.locationId}`}
-                      className="text-blue-600 hover:underline"
+                      className="text-accent hover:underline"
                     >
                       Edit
-                    </a>
+                    </Link>
                   </td>
                 </tr>
               );
             })}
+            {tenants.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-sm text-ink-3">
+                  No tenants yet. Add one by GHL location id above.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-
-      <p className="text-xs text-ink-3">
-        TODO: Edit page to toggle services and update Meta IDs. Admin actions stored in Firestore.
-      </p>
     </div>
   );
 }
