@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 import { getSession } from "@/lib/auth/session";
 import {
@@ -10,6 +11,7 @@ import { HatSwitcher } from "./hat-switcher";
 import { Nav } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
 import { Logo } from "./logo";
+import { SignOutIcon } from "./icons";
 
 export const metadata: Metadata = {
   title: "TAG Hub",
@@ -61,59 +63,60 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen bg-canvas text-ink antialiased">
         {session ? (
-          <div className="flex min-h-screen">
-            {/* Rail — black in both themes. See globals.css for why. */}
-            <aside className="flex w-60 shrink-0 flex-col border-r border-chrome-line bg-chrome text-white">
-              <div className="px-5 py-5">
-                <Logo />
-              </div>
+          <div className="min-h-screen">
+            {/* Top bar and bottom nav — black in both themes. See globals.css for why. */}
+            <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-chrome-line bg-chrome px-4 text-white">
+              <Link href="/" className="shrink-0">
+                <Logo width={112} />
+              </Link>
 
-              <div className="px-3 pb-3">
-                <HatSwitcher
-                  current={session.hat}
-                  options={wearableHats(session.role).map((hat) => ({
-                    value: hat,
-                    label: HAT_LABELS[hat],
-                    description: HAT_DESCRIPTIONS[hat],
-                  }))}
+              <span className="hidden flex-1 items-center justify-center gap-2 text-xs text-chrome-ink-2 sm:flex">
+                <span
+                  aria-hidden
+                  className="inline-block h-1.5 w-1.5 rounded-full bg-ok"
                 />
-              </div>
+                Connected to GoHighLevel
+              </span>
+              <span className="flex-1 sm:hidden" />
 
-              <Nav hat={session.hat} />
+              <div className="flex shrink-0 items-center gap-2">
+                {wearableHats(session.role).length > 1 && (
+                  <div className="w-44">
+                    <HatSwitcher
+                      current={session.hat}
+                      options={wearableHats(session.role).map((hat) => ({
+                        value: hat,
+                        label: HAT_LABELS[hat],
+                        description: HAT_DESCRIPTIONS[hat],
+                      }))}
+                    />
+                  </div>
+                )}
 
-              <div className="mt-auto space-y-3 px-3 py-4">
                 <ThemeToggle />
-                <div className="space-y-1.5 px-2">
-                  <p className="truncate text-xs text-chrome-ink-2">
-                    {session.email ?? session.uid}
-                  </p>
-                  <form action="/api/auth/signout" method="post">
-                    <button
-                      type="submit"
-                      className="text-xs text-chrome-ink-2 underline-offset-2 transition-colors hover:text-white hover:underline"
-                    >
-                      Sign out
-                    </button>
-                  </form>
-                </div>
+
+                <p className="hidden max-w-[10rem] truncate text-xs text-chrome-ink-2 md:block">
+                  {session.email ?? session.uid}
+                </p>
+
+                <form action="/api/auth/signout" method="post">
+                  <button
+                    type="submit"
+                    aria-label="Sign out"
+                    title="Sign out"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-chrome-ink-2 transition-colors hover:bg-chrome-hover hover:text-white"
+                  >
+                    <SignOutIcon className="h-4 w-4" />
+                  </button>
+                </form>
               </div>
-            </aside>
+            </header>
 
-            <div className="flex min-w-0 flex-1 flex-col">
-              <header className="flex h-12 shrink-0 items-center gap-3 border-b border-chrome-line bg-chrome px-6">
-                <span className="flex items-center gap-2 text-xs text-chrome-ink-2">
-                  <span
-                    aria-hidden
-                    className="inline-block h-1.5 w-1.5 rounded-full bg-ok"
-                  />
-                  Connected to GoHighLevel
-                </span>
-              </header>
+            <Nav hat={session.hat} />
 
-              <main className="flex-1 overflow-x-auto bg-canvas p-6">
-                {children}
-              </main>
-            </div>
+            <main className="min-h-screen overflow-x-auto bg-canvas px-4 pt-[calc(3.5rem+1.5rem)] pb-[calc(3.5rem+1.5rem+env(safe-area-inset-bottom))] sm:px-6">
+              {children}
+            </main>
           </div>
         ) : (
           children

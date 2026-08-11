@@ -100,24 +100,24 @@ export function SignInForm({ next }: { next: string }) {
   if (step === "email") {
     return (
       <form onSubmit={requestCode} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-sm text-chrome-ink-2">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            autoFocus
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
-          />
-        </div>
+        <input
+          id="email"
+          type="email"
+          required
+          autoFocus
+          autoComplete="email"
+          placeholder="Email"
+          // The placeholder is the only remaining label, so the accessible name
+          // has to come from here — a placeholder alone is not one, and it
+          // disappears the moment anything is typed.
+          aria-label="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={`${inputClass} text-center placeholder:text-chrome-ink-2`}
+        />
 
         {error && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-center text-sm text-danger">
             {error}
           </p>
         )}
@@ -127,12 +127,8 @@ export function SignInForm({ next }: { next: string }) {
           disabled={pending}
           className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink disabled:opacity-60"
         >
-          {pending ? "Sending…" : "Send code"}
+          {pending ? "Signing in…" : "Sign in"}
         </button>
-
-        <p className="text-xs text-ink-3">
-          Accounts are created by TAG. There is no self-signup.
-        </p>
       </form>
     );
   }
@@ -140,10 +136,13 @@ export function SignInForm({ next }: { next: string }) {
   return (
     <form onSubmit={submitCode} className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="code" className="block text-sm text-chrome-ink-2">
+        <label
+          htmlFor="code"
+          className="block text-center text-sm text-chrome-ink-2"
+        >
           Six-digit code
         </label>
-        <p className="text-xs text-ink-3">
+        <p className="text-center text-xs text-ink-3">
           Sent to {email} · expires in 10 minutes
         </p>
         <input
@@ -162,9 +161,11 @@ export function SignInForm({ next }: { next: string }) {
         />
       </div>
 
-      {notice && <p className="text-xs text-chrome-ink-2">{notice}</p>}
+      {notice && (
+        <p className="text-center text-xs text-chrome-ink-2">{notice}</p>
+      )}
       {error && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-center text-sm text-danger">
           {error}
         </p>
       )}
@@ -177,7 +178,7 @@ export function SignInForm({ next }: { next: string }) {
         {pending ? "Verifying…" : "Sign in"}
       </button>
 
-      <div className="flex justify-between text-xs">
+      <div className="flex justify-center gap-5 text-xs">
         <button
           type="button"
           onClick={() => {

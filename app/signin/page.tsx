@@ -25,11 +25,8 @@ export default async function SignInPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-chrome px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8">
-          <Logo width={260} />
-          <p className="mt-4 text-sm text-chrome-ink-2">
-            From ad spend to closed won, in one place.
-          </p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Logo fluid />
         </div>
 
         <SignInForm next={safeNext(next)} />

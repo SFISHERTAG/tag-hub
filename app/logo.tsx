@@ -21,17 +21,38 @@ import Image from "next/image";
  * paint of every navigation.
  */
 
-const LOCKUP_RATIO = 688 / 1574;
+const LOCKUP_W = 1574;
+const LOCKUP_H = 688;
+const LOCKUP_RATIO = LOCKUP_H / LOCKUP_W;
 
-export function Logo({ width = 200 }: { width?: number }) {
+/**
+ * `fluid` fills the container instead of taking a pixel width, so the lockup
+ * tracks whatever it sits above — on sign-in that is the input and button, and
+ * a fixed width would drift out of alignment the moment the card's width or
+ * breakpoints change. The rail keeps the fixed form: it has a stable width and
+ * a logo that stretched with it would be doing something nobody asked for.
+ */
+export function Logo({
+  width = 200,
+  fluid = false,
+}: {
+  width?: number;
+  fluid?: boolean;
+}) {
   return (
     <Image
       src="/lockup.png"
       alt="Tax Advisory Growth"
-      width={width}
-      height={Math.round(width * LOCKUP_RATIO)}
+      /**
+       * When fluid these are the intrinsic dimensions, not the rendered ones —
+       * CSS decides the size, and Next only needs the ratio to reserve space
+       * and avoid a layout shift on first paint.
+       */
+      width={fluid ? LOCKUP_W : width}
+      height={fluid ? LOCKUP_H : Math.round(width * LOCKUP_RATIO)}
       priority
-      className="h-auto"
+      sizes={fluid ? "(max-width: 24rem) 100vw, 24rem" : undefined}
+      className={fluid ? "h-auto w-full" : "h-auto"}
     />
   );
 }

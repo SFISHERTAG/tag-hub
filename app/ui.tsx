@@ -68,7 +68,7 @@ export function Fold({
           {meta && (
             <span className="text-xs tabular-nums text-ink-3">{meta}</span>
           )}
-          <ChevronIcon className="shrink-0 text-ink-3 transition-transform duration-150 group-open:rotate-180" />
+          <ChevronIcon className="h-4 w-4 shrink-0 text-ink-3 transition-transform duration-150 group-open:rotate-180" />
         </span>
       </summary>
       <div className="border-t border-line px-4 py-3">{children}</div>

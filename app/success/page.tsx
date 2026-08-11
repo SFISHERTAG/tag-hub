@@ -256,7 +256,7 @@ export default async function ClientSuccessPage() {
               </table>
 
               <p className="mt-3 flex items-start gap-2 text-[11px] text-ink-3">
-                <EscalationIcon className="mt-px shrink-0 text-warn" />
+                <EscalationIcon className="mt-px h-3.5 w-3.5 shrink-0 text-warn" />
                 <span>
                   A missing pixel is silent: that client&apos;s dashboard reports
                   zero conversions while every other account looks fine and the
@@ -270,7 +270,7 @@ export default async function ClientSuccessPage() {
 
         <Fold title="Onboarding pipeline" meta="PR1 → AP2">
           <p className="flex items-start gap-2 text-xs text-ink-2">
-            <OnboardingIcon className="mt-px shrink-0 text-accent" />
+            <OnboardingIcon className="mt-px h-3.5 w-3.5 shrink-0 text-accent" />
             <span>
               Renders as the kanban once Story 5.1 lands — same client records,
               filtered on Fulfillment stage rather than a second status field.
