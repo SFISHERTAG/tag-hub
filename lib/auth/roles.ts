@@ -1,4 +1,5 @@
 import "server-only";
+import { ROLES, HAT_LABELS, HAT_DESCRIPTIONS, type Role } from "./role-labels";
 
 /**
  * Roles and hats.
@@ -18,43 +19,19 @@ import "server-only";
  * and may wear anything. Sales reps hold `tag_sales` and wear one hat, because
  * a rep switching into an executive view is a permissions question, not a
  * convenience one.
+ *
+ * `ROLES` / `Role` / `HAT_LABELS` / `HAT_DESCRIPTIONS` live in role-labels.ts
+ * and are re-exported here — that file has no `server-only` marker because
+ * it is pure display data, safe in client bundles, and admin UI needs it
+ * there to render a role dropdown. Everything below that actually trusts a
+ * hat cookie stays here, server-only.
  */
 
-export const ROLES = [
-  "tag_exec",
-  "tag_csm",
-  "tag_sales_manager",
-  "tag_sales",
-  "client_owner",
-  "client_manager",
-  "client_closer",
-] as const;
-
-export type Role = (typeof ROLES)[number];
+export { ROLES, HAT_LABELS, HAT_DESCRIPTIONS, type Role };
 
 export function isRole(value: unknown): value is Role {
   return typeof value === "string" && (ROLES as readonly string[]).includes(value);
 }
-
-export const HAT_LABELS: Record<Role, string> = {
-  tag_exec: "Executive",
-  tag_csm: "Client services",
-  tag_sales_manager: "Sales manager",
-  tag_sales: "Sales",
-  client_owner: "Client owner",
-  client_manager: "Closing manager",
-  client_closer: "Closer",
-};
-
-export const HAT_DESCRIPTIONS: Record<Role, string> = {
-  tag_exec: "Every client, escalation signals, revenue",
-  tag_csm: "Assigned clients, onboarding, health",
-  tag_sales_manager: "Rep performance across TAG's pipeline",
-  tag_sales: "TAG's own pipeline",
-  client_owner: "One client's spend, ROAS, and outcomes",
-  client_manager: "Closer performance and pipeline health",
-  client_closer: "Today's calls, pipeline, notes",
-};
 
 /**
  * Hats a role may wear.

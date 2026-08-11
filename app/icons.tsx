@@ -108,6 +108,16 @@ export const AdminIcon = (p: IconProps) => (
   </Svg>
 );
 
+/** User admin — a person plus a settings badge, distinct from Contacts' plain people mark */
+export const UserAdminIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="9.5" cy="7.5" r="3.5" />
+    <path d="M3.5 20a6 6 0 0 1 12 0" />
+    <circle cx="18.5" cy="17.5" r="3" />
+    <path d="M18.5 13v1.1M18.5 20.9V22M22 17.5h-1.1M16.1 17.5H15M20.7 14.8l-.8.8M17.1 19.9l-.8.8M20.7 20.2l-.8-.8M17.1 15.1l-.8-.8" />
+  </Svg>
+);
+
 /** Escalation — needs attention */
 export const EscalationIcon = (p: IconProps) => (
   <Svg {...p}>

@@ -13,6 +13,7 @@ import {
   FollowUpIcon,
   OnboardingIcon,
   AdminIcon,
+  UserAdminIcon,
   EscalationIcon,
   MoreIcon,
   CloseIcon,
@@ -84,6 +85,12 @@ const ITEMS: {
     href: "/admin/tenants",
     label: "Admin",
     icon: AdminIcon,
+    hats: ["tag_exec"],
+  },
+  {
+    href: "/admin/users",
+    label: "Users",
+    icon: UserAdminIcon,
     hats: ["tag_exec"],
   },
 ];
