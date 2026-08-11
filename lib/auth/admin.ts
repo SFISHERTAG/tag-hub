@@ -53,9 +53,32 @@ export function adminAuth(): Auth {
      * variable is deliberately not set.
      */
     const key = process.env.FIREBASE_ADMIN_KEY;
+
+    /**
+     * `serviceAccountId` is what lets `createCustomToken` work without a key
+     * file, and sign-in cannot complete without it.
+     *
+     * Minting a custom token means signing a JWT, and user credentials cannot
+     * sign. With nothing named here the SDK asks the GCE metadata server which
+     * service account it is; on a laptop that is `ENOTFOUND metadata` surfacing
+     * as an opaque `auth/invalid-credential`, after the code has already been
+     * accepted and consumed. Naming the account sends the signing to the IAM
+     * API instead — the keyless path `gmail.ts` already uses, on the same
+     * `serviceAccountTokenCreator` binding.
+     *
+     * The default is not a guess: `cloudbuild.yaml` deploys Cloud Run with
+     * `--service-account=hub-app@…`, so naming it here is the same identity
+     * metadata discovery would return in production, and the same one
+     * `gmail.ts` already signs as. Production behaviour is unchanged; local
+     * development stops needing a key file.
+     */
+    const serviceAccountId =
+      process.env.FIREBASE_SERVICE_ACCOUNT_ID?.trim() ||
+      "hub-app@tag-success-hub.iam.gserviceaccount.com";
+
     app = key
       ? initializeApp({ credential: cert(JSON.parse(key)) })
-      : initializeApp();
+      : initializeApp({ serviceAccountId });
   }
 
   cached = getAuth(app);
