@@ -71,6 +71,18 @@ steps:
       - -t=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest
       - .
 
+  # The top-level `images:` list at the bottom of this file pushes only after
+  # every step finishes — deploy cannot wait for that, so it needs its own
+  # explicit push in between. Without this the deploy step asks Cloud Run for
+  # an image that exists in this job's local Docker daemon but not yet in
+  # Artifact Registry, and fails with "Image ... not found".
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}
+
   - id: deploy
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
