@@ -168,6 +168,15 @@ export const CloseIcon = (p: IconProps) => (
   </Svg>
 );
 
+/** Bug — report a problem */
+export const BugIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="7" y="8" width="10" height="11" rx="5" />
+    <path d="M9.5 8a2.5 2.5 0 0 1 5 0" />
+    <path d="M12 8v11M3.5 13h3.5M17 13h3.5M4.5 8.5l2.5 2M19.5 8.5l-2.5 2M4.5 19l2.7-2.3M19.5 19l-2.7-2.3" />
+  </Svg>
+);
+
 /** Sign out — leave the session */
 export const SignOutIcon = (p: IconProps) => (
   <Svg {...p}>

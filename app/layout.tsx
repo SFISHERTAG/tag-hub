@@ -11,7 +11,7 @@ import { HatSwitcher } from "./hat-switcher";
 import { Nav } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
 import { Logo } from "./logo";
-import { SignOutIcon } from "./icons";
+import { SignOutIcon, BugIcon } from "./icons";
 
 export const metadata: Metadata = {
   title: "TAG Hub",
@@ -70,12 +70,14 @@ export default async function RootLayout({
                 <Logo width={112} />
               </Link>
 
-              <span className="hidden flex-1 items-center justify-center gap-2 text-xs text-chrome-ink-2 sm:flex">
-                <span
-                  aria-hidden
-                  className="inline-block h-1.5 w-1.5 rounded-full bg-ok"
-                />
-                Connected to GoHighLevel
+              <span className="hidden flex-1 items-center justify-center sm:flex">
+                <Link
+                  href="/bug-reports"
+                  className="flex items-center gap-1.5 text-xs text-chrome-ink-2 underline-offset-2 transition-colors hover:text-white hover:underline"
+                >
+                  <BugIcon className="h-3.5 w-3.5" />
+                  Report a bug
+                </Link>
               </span>
               <span className="flex-1 sm:hidden" />
 
