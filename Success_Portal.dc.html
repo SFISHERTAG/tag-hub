@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="design_doc_mode" content="canvas">
+  <title>Success Portal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background: #0b0a09; color: #f0ede4; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    button { cursor: pointer; border: none; font-family: inherit; }
+    input, select, textarea { font-family: inherit; }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; min-height: 100vh; background: #0b0a09;">
+  <main style="flex: 1; display: flex; flex-direction: column;">
+    <header style="padding: 16px 24px; border-bottom: 1px solid #2a2724; display: flex; align-items: center; justify-content: space-between; color: #a8a49a; font-size: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 32px; height: 32px; background: #3f9d73; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #f0ede4; font-size: 14px;">📊</div>
+        <div>
+          <p style="font-size: 12px; font-weight: 600; color: #f0ede4; margin-bottom: 2px;">Success Portal</p>
+          <p style="font-size: 11px; color: #a8a49a;">{{ accountName }}</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button style="width: 32px; height: 32px; background: #207f7f; border: none; border-radius: 50%; color: #f0ede4; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">🔔</button>
+        <button style="width: 32px; height: 32px; background: #e0a324; border: none; border-radius: 50%; color: #050505; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">🔧</button>
+        <button style="width: 32px; height: 32px; background: #3f9d73; border: none; border-radius: 50%; color: #f0ede4; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">❓</button>
+        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #d9a88c 0%, #b8956a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #f0ede4; font-weight: 700; font-size: 13px; cursor: pointer;">SC</div>
+      </div>
+    </header>
+    <div style="flex: 1; overflow-y: auto; padding: 32px;">
+      <sc-if value="{{  showDashboard }}" hint-placeholder-val="true">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px;">
+          <div>
+            <h1 style="font-size: 32px; font-weight: 600; margin-bottom: 4px; color: #f0ede4;">Dashboard</h1>
+            <p style="font-size: 13px; color: #a8a49a;">Your campaign performance and key metrics</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button style="padding: 8px 16px; background: transparent; border: 1px solid #2a2724; border-radius: 4px; color: #f0ede4; font-size: 12px; font-weight: 600; cursor: pointer;">📊 Export</button>
+            <button style="padding: 8px 16px; background: #e0a324; border: none; border-radius: 4px; color: #050505; font-size: 12px; font-weight: 600; cursor: pointer;">⚙️ Custom KPIs</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px;">
+            <p style="font-size: 12px; font-weight: 600; color: #a8a49a; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">ROAS</p>
+            <p style="font-size: 32px; font-weight: 700; color: #e0a324; margin-bottom: 8px;">4.2x</p>
+            <p style="font-size: 12px; color: #3f9d73; font-weight: 600;">↑ 12% vs last month</p>
+          </div>
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px;">
+            <p style="font-size: 12px; font-weight: 600; color: #a8a49a; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Monthly Spend</p>
+            <p style="font-size: 32px; font-weight: 700; color: #f0ede4; margin-bottom: 8px;">$24,580</p>
+            <p style="font-size: 12px; color: #a8a49a;">On budget</p>
+          </div>
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px;">
+            <p style="font-size: 12px; font-weight: 600; color: #a8a49a; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Conversion Rate</p>
+            <p style="font-size: 32px; font-weight: 700; color: #f0ede4; margin-bottom: 8px;">3.8%</p>
+            <p style="font-size: 12px; color: #dd8244; font-weight: 600;">⚠️ 0.2% below target</p>
+          </div>
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px;">
+            <p style="font-size: 12px; font-weight: 600; color: #a8a49a; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Cost per Lead</p>
+            <p style="font-size: 32px; font-weight: 700; color: #f0ede4; margin-bottom: 8px;">$42</p>
+            <p style="font-size: 12px; color: #3f9d73; font-weight: 600;">↓ 8% optimized</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 24px;">
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 24px;">
+            <h2 style="font-size: 14px; font-weight: 600; color: #f0ede4; margin-bottom: 20px;">30-Day Performance</h2>
+            <div style="height: 240px; background: #1c1a18; border-radius: 6px; display: flex; align-items: flex-end; justify-content: space-around; padding: 20px 12px; gap: 4px;">
+              <sc-for list="{{ chartData }}" as="bar" hint-placeholder-count="7">
+                <div style="flex: 1; background: {{ bar.color }}; height: {{ bar.height }}%; border-radius: 3px; opacity: {{ bar.opacity }}; transition: all 0.2s;"></div>
+              </sc-for>
+            </div>
+            <p style="font-size: 11px; color: #a8a49a; margin-top: 12px; text-align: center;">Daily ROAS trend</p>
+          </div>
+
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 24px;">
+            <h2 style="font-size: 14px; font-weight: 600; color: #f0ede4; margin-bottom: 20px;">Health Check</h2>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 12px; font-weight: 600; color: #f0ede4;">ROAS Target</span>
+                  <span style="font-size: 11px; background: rgb(63 157 115 / 0.2); color: #3f9d73; padding: 2px 8px; border-radius: 12px; font-weight: 600;">On track</span>
+                </div>
+                <div style="height: 6px; background: #1c1a18; border-radius: 3px; overflow: hidden;">
+                  <div style="height: 100%; width: 85%; background: #3f9d73; border-radius: 3px;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 12px; font-weight: 600; color: #f0ede4;">Conversion</span>
+                  <span style="font-size: 11px; background: rgb(221 130 68 / 0.2); color: #dd8244; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Watch</span>
+                </div>
+                <div style="height: 6px; background: #1c1a18; border-radius: 3px; overflow: hidden;">
+                  <div style="height: 100%; width: 65%; background: #dd8244; border-radius: 3px;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 12px; font-weight: 600; color: #f0ede4;">CAC Ratio</span>
+                  <span style="font-size: 11px; background: rgb(63 157 115 / 0.2); color: #3f9d73; padding: 2px 8px; border-radius: 12px; font-weight: 600;">On track</span>
+                </div>
+                <div style="height: 6px; background: #1c1a18; border-radius: 3px; overflow: hidden;">
+                  <div style="height: 100%; width: 78%; background: #3f9d73; border-radius: 3px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 320px; gap: 20px; margin-bottom: 24px;">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: linear-gradient(135deg, #1c1a18 0%, #141311 100%); border: 1px solid #2a2724; border-radius: 8px; padding: 24px;">
+              <div style="font-size: 11px; font-weight: 700; color: #a8a49a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">AVG CONTRACT VALUE</div>
+              <div style="font-size: 36px; font-weight: 700; color: #e0a324; margin-bottom: 4px;">$3,863</div>
+              <div style="font-size: 12px; color: #3f9d73; font-weight: 600;">↑ +2%</div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #1c1a18 0%, #141311 100%); border: 1px solid #2a2724; border-radius: 8px; padding: 24px;">
+              <div style="font-size: 11px; font-weight: 700; color: #a8a49a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">AVG SALES CYCLE</div>
+              <div style="font-size: 36px; font-weight: 700; color: #f0ede4; margin-bottom: 4px;">22.2 days</div>
+              <div style="font-size: 12px; color: #3f9d73; font-weight: 600;">↑ +11%</div>
+            </div>
+
+            <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: #a8a49a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">SALES CYCLE STEPS (DAYS)</div>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; color: #f0ede4;">Opportunity</span>
+                  <div style="display: flex; align-items: center; gap: 8px; flex: 1; margin: 0 12px;">
+                    <div style="flex: 1; height: 22px; background: #3f9d73; border-radius: 3px;"></div>
+                    <span style="font-size: 12px; font-weight: 700; color: #3f9d73; min-width: 28px; text-align: right;">4.7</span>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; color: #f0ede4;">Proposal</span>
+                  <div style="display: flex; align-items: center; gap: 8px; flex: 1; margin: 0 12px;">
+                    <div style="width: 80px; height: 22px; background: #9a958a; border-radius: 3px;"></div>
+                    <span style="font-size: 12px; font-weight: 700; color: #9a958a; min-width: 28px; text-align: right;">4.1</span>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; color: #f0ede4;">Negotiation</span>
+                  <div style="display: flex; align-items: center; gap: 8px; flex: 1; margin: 0 12px;">
+                    <div style="width: 130px; height: 22px; background: #e0a324; border-radius: 3px;"></div>
+                    <span style="font-size: 12px; font-weight: 700; color: #e0a324; min-width: 28px; text-align: right;">8.8</span>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; color: #f0ede4;">Closing</span>
+                  <div style="display: flex; align-items: center; gap: 8px; flex: 1; margin: 0 12px;">
+                    <div style="width: 68px; height: 22px; background: #3f9d73; border-radius: 3px;"></div>
+                    <span style="font-size: 12px; font-weight: 700; color: #3f9d73; min-width: 28px; text-align: right;">4.6</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: #a8a49a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">SALES ACTIVITY BY TYPE</div>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <svg style="width: 120px; height: 120px;" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#1c1a18" stroke-width="2"></circle>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#3f9d73" stroke-width="12" stroke-dasharray="61.6 157" stroke-dashoffset="0" transform="rotate(-90 60 60)"></circle>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#2d8b7f" stroke-width="12" stroke-dasharray="55 157" stroke-dashoffset="-61.6" transform="rotate(-90 60 60)"></circle>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#207f7f" stroke-width="12" stroke-dasharray="47.3 157" stroke-dashoffset="-116.6" transform="rotate(-90 60 60)"></circle>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#e0a324" stroke-width="12" stroke-dasharray="23.6 157" stroke-dashoffset="-163.9" transform="rotate(-90 60 60)"></circle>
+                </svg>
+                <div style="font-size: 12px; flex: 1; margin-left: 20px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div style="width: 10px; height: 10px; background: #3f9d73; border-radius: 2px;"></div>
+                    <span style="color: #f0ede4;">Call</span>
+                    <span style="color: #a8a49a; margin-left: auto;">35%</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div style="width: 10px; height: 10px; background: #2d8b7f; border-radius: 2px;"></div>
+                    <span style="color: #f0ede4;">Prep</span>
+                    <span style="color: #a8a49a; margin-left: auto;">26%</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div style="width: 10px; height: 10px; background: #207f7f; border-radius: 2px;"></div>
+                    <span style="color: #f0ede4;">Email</span>
+                    <span style="color: #a8a49a; margin-left: auto;">22%</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 10px; height: 10px; background: #e0a324; border-radius: 2px;"></div>
+                    <span style="color: #f0ede4;">Other</span>
+                    <span style="color: #a8a49a; margin-left: auto;">5%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: #a8a49a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">AVG RESPONSE TIME</div>
+              <div style="font-size: 28px; font-weight: 700; color: #f0ede4; margin-bottom: 2px;">1.0 hours</div>
+              <div style="font-size: 11px; color: #d9584c; margin-bottom: 14px;">↓ -3% vs last month</div>
+              <div style="font-size: 10px; font-weight: 600; color: #a8a49a; text-transform: uppercase; margin-bottom: 10px;">By Rep (hrs)</div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 11px; color: #f0ede4;">Ryan Ramos</span>
+                  <span style="font-size: 11px; font-weight: 700; color: #e0a324;">1.6h</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 11px; color: #f0ede4;">Kaleb Wallis</span>
+                  <span style="font-size: 11px; font-weight: 700; color: #e0a324;">1.4h</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 11px; color: #f0ede4;">Bradley William</span>
+                  <span style="font-size: 11px; font-weight: 700; color: #3f9d73;">1.0h</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 11px; color: #f0ede4;">Isabell Ramirez</span>
+                  <span style="font-size: 11px; font-weight: 700; color: #3f9d73;">0.9h</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 16px;">
+              <div style="font-size: 11px; font-weight: 700; color: #a8a49a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">TOP 5 DEALS</div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <sc-for list="{{ topDeals }}" as="deal" hint-placeholder-count="3">
+                  <div style="padding: 10px; background: #1c1a18; border-radius: 6px; border-left: 3px solid #e0a324;">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                      <div style="width: 32px; height: 32px; background: #e0a324; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; color: #050505; font-size: 14px;">{{ $index + 1 }}</div>
+                      <div style="flex: 1; min-width: 0;">
+                        <p style="font-size: 12px; font-weight: 600; color: #f0ede4; margin-bottom: 2px;">{{ deal.name }}</p>
+                        <p style="font-size: 13px; font-weight: 700; color: #e0a324; margin-bottom: 4px;">{{ deal.value }}</p>
+                        <p style="font-size: 10px; color: #a8a49a; margin-bottom: 2px;">Rep: {{ deal.rep }}</p>
+                        <p style="font-size: 10px; color: #a8a49a;">{{ deal.cycle }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 16px;">
+              <div style="font-size: 11px; font-weight: 700; color: #a8a49a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">GET IN TOUCH</div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <p style="font-size: 10px; color: #a8a49a; text-transform: uppercase; margin-bottom: 4px;">Account Manager</p>
+                  <p style="font-size: 12px; font-weight: 600; color: #f0ede4; margin-bottom: 4px;">Sarah Chen</p>
+                  <a href="mailto:sarah@taxadvisorgrowth.com" style="font-size: 11px; color: #e0a324; text-decoration: none;">sarah@taxadvisorgrowth.com</a>
+                </div>
+                <div style="border-top: 1px solid #2a2724; padding-top: 10px;">
+                  <p style="font-size: 10px; color: #a8a49a; text-transform: uppercase; margin-bottom: 8px;">QUICK LINKS</p>
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <button onClick="{{ setScreen('scheduling') }}" style="text-align: left; padding: 8px; background: transparent; border: 1px solid #2a2724; border-radius: 4px; color: #f0ede4; font-size: 11px; font-weight: 600; cursor: pointer;">📞 Book a Call</button>
+                    <button onClick="{{ setScreen('approvals') }}" style="text-align: left; padding: 8px; background: transparent; border: 1px solid #2a2724; border-radius: 4px; color: #f0ede4; font-size: 11px; font-weight: 600; cursor: pointer;">📋 Review Proofs</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showOnboarding }}" hint-placeholder-val="true">
+        <h1 style="font-size: 28px; font-weight: 600; margin-bottom: 8px; color: #f0ede4;">Onboarding</h1>
+        <p style="font-size: 14px; color: #a8a49a; margin-bottom: 28px;">{{ accountName }}</p>
+        <div style="max-width: 600px;">
+          <sc-for list="{{ onboardingStages }}" as="stage" hint-placeholder-count="5">
+            <div style="margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: {{ stage.completed ? '#3f9d73' : stage.active ? '#e0a324' : '#2a2724' }}; display: flex; align-items: center; justify-content: center; color: {{ stage.completed ? '#ffffff' : '#050505' }}; font-weight: 700; font-size: 12px;">{{ stage.completed ? '✓' : stage.active ? '●' : $index + 1 }}</div>
+                <div style="flex: 1;">
+                  <p style="font-size: 14px; font-weight: 600; color: #f0ede4;">{{ stage.title }}</p>
+                  <p style="font-size: 12px; color: #a8a49a;">{{ stage.description }}</p>
+                </div>
+                <span style="font-size: 11px; color: #9a958a;">{{ stage.dueDate }}</span>
+              </div>
+              <sc-if value="{{ stage.active }}" hint-placeholder-val="true">
+                <div style="margin-left: 36px; padding-top: 8px;">
+                  <button onClick="{{ completeStage($index) }}" style="padding: 8px 14px; background: #3f9d73; color: #ffffff; border-radius: 4px; font-weight: 600; font-size: 12px; cursor: pointer;">Mark Complete</button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showApprovals }}" hint-placeholder-val="true">
+        <h1 style="font-size: 28px; font-weight: 600; margin-bottom: 8px; color: #f0ede4;">Ad Creatives</h1>
+        <p style="font-size: 14px; color: #a8a49a; margin-bottom: 28px;">Review and approve ad designs</p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1000px;">
+          <sc-for list="{{ proofItems }}" as="item" hint-placeholder-count="3">
+            <div onClick="{{ setModal(item) }}" style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; overflow: hidden; cursor: pointer; transition: border 0.2s;">
+              <div style="height: 200px; background: {{ item.color }}; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #f0ede4; font-weight: 600;">{{ item.platform }}</div>
+              <div style="padding: 16px;">
+                <p style="font-size: 13px; font-weight: 600; color: #f0ede4; margin-bottom: 4px;">{{ item.title }}</p>
+                <p style="font-size: 11px; color: #a8a49a;">{{ item.format }}</p>
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                  <span style="font-size: 10px; padding: 4px 8px; background: {{ item.status === 'pending' ? 'rgb(224 163 36 / 0.2)' : item.status === 'approved' ? 'rgb(63 157 115 / 0.2)' : 'rgb(217 88 76 / 0.2)' }}; color: {{ item.status === 'pending' ? '#e0a324' : item.status === 'approved' ? '#3f9d73' : '#d9584c' }}; border-radius: 4px;">{{ item.status }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showModal }}" hint-placeholder-val="true">
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 5, 5, 0.8); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 1000;">
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;">
+            <div style="position: sticky; top: 0; padding: 20px; border-bottom: 1px solid #2a2724; display: flex; justify-content: space-between; align-items: center; background: #141311;">
+              <h2 style="font-size: 18px; font-weight: 600; color: #f0ede4;">{{ modalItem.title }}</h2>
+              <button onClick="{{ setModal(null) }}" style="background: transparent; color: #a8a49a; font-size: 20px; cursor: pointer;">✕</button>
+            </div>
+            <div style="padding: 24px;">
+              <div style="height: 300px; background: {{ modalItem.color }}; border-radius: 6px; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #f0ede4; font-weight: 600;">{{ modalItem.platform }} - {{ modalItem.format }}</div>
+              <div style="margin-bottom: 24px;">
+                <p style="font-size: 12px; color: #a8a49a; margin-bottom: 8px;">NOTES</p>
+                <p style="font-size: 13px; color: #f0ede4; line-height: 1.6;">{{ modalItem.notes }}</p>
+              </div>
+              <div style="display: flex; gap: 12px;">
+                <button onClick="{{ approveProof($index) }}" style="flex: 1; padding: 12px; background: #3f9d73; color: #ffffff; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;">Approve</button>
+                <button onClick="{{ rejectProof($index) }}" style="flex: 1; padding: 12px; background: #d9584c; color: #ffffff; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;">Request Changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showCsmDetail }}" hint-placeholder-val="true">
+        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px;">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px;">
+              <h2 style="font-size: 16px; font-weight: 600; color: #f0ede4; margin-bottom: 16px;">{{ selectedAccount.name }}</h2>
+              <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+                <div>
+                  <p style="color: #a8a49a; margin-bottom: 4px; text-transform: uppercase; font-weight: 600; font-size: 10px;">Status</p>
+                  <span style="display: inline-block; padding: 4px 10px; background: {{ selectedAccount.health === 'healthy' ? 'rgb(63 157 115 / 0.2)' : selectedAccount.health === 'at-risk' ? 'rgb(221 130 68 / 0.2)' : 'rgb(217 88 76 / 0.2)' }}; color: {{ selectedAccount.health === 'healthy' ? '#3f9d73' : selectedAccount.health === 'at-risk' ? '#dd8244' : '#d9584c' }}; border-radius: 12px; font-weight: 600; text-transform: capitalize;">{{ selectedAccount.health }}</span>
+                </div>
+                <div>
+                  <p style="color: #a8a49a; margin-bottom: 4px; text-transform: uppercase; font-weight: 600; font-size: 10px;">Stage</p>
+                  <p style="color: #f0ede4;">{{ selectedAccount.stage }}</p>
+                </div>
+                <div>
+                  <p style="color: #a8a49a; margin-bottom: 4px; text-transform: uppercase; font-weight: 600; font-size: 10px;">Revenue</p>
+                  <p style="color: #f0ede4; font-size: 14px; font-weight: 700;">{{ selectedAccount.revenue }}</p>
+                </div>
+                <div>
+                  <p style="color: #a8a49a; margin-bottom: 4px; text-transform: uppercase; font-weight: 600; font-size: 10px;">Account Manager</p>
+                  <p style="color: #f0ede4;">{{ selectedAccount.csm }}</p>
+                </div>
+                <div style="border-top: 1px solid #2a2724; padding-top: 12px;">
+                  <p style="color: #a8a49a; margin-bottom: 8px; text-transform: uppercase; font-weight: 600; font-size: 10px;">Quick Actions</p>
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <button style="padding: 8px 12px; background: #e0a324; color: #050505; border: none; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer;">📞 Call</button>
+                    <button style="padding: 8px 12px; background: transparent; border: 1px solid #2a2724; color: #f0ede4; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer;">✉️ Email</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 24px;">
+            <h2 style="font-size: 16px; font-weight: 600; color: #f0ede4; margin-bottom: 20px;">Account Activity</h2>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <sc-for list="{{ selectedAccount.activity }}" as="evt" hint-placeholder-count="6">
+                <div style="display: flex; gap: 12px;">
+                  <div style="width: 32px; height: 32px; background: {{ evt.color }}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;">{{ evt.icon }}</div>
+                  <div style="flex: 1;">
+                    <p style="font-size: 13px; font-weight: 600; color: #f0ede4; margin-bottom: 2px;">{{ evt.title }}</p>
+                    <p style="font-size: 12px; color: #a8a49a; margin-bottom: 4px;">{{ evt.desc }}</p>
+                    <p style="font-size: 11px; color: #9a958a;">{{ evt.date }}</p>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showResources }}" hint-placeholder-val="true">
+        <h1 style="font-size: 28px; font-weight: 600; margin-bottom: 8px; color: #f0ede4;">Resources</h1>
+        <p style="font-size: 14px; color: #a8a49a; margin-bottom: 28px;">Documents, collateral, and team communication</p>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 24px;">
+              <h2 style="font-size: 16px; font-weight: 600; color: #f0ede4; margin-bottom: 16px;">📁 Shared Drive</h2>
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 12px; font-size: 13px; color: #f0ede4; font-weight: 600;">Upload Documents</label>
+                <div style="border: 2px dashed #2a2724; border-radius: 8px; padding: 32px; text-align: center; background: #1c1a18; cursor: pointer; transition: all 0.2s;">
+                  <div style="font-size: 32px; margin-bottom: 8px;">📄</div>
+                  <p style="font-size: 13px; color: #f0ede4; margin-bottom: 4px; font-weight: 600;">Drop files here or click to upload</p>
+                  <p style="font-size: 11px; color: #a8a49a;">PDF, DOC, XLS, PPT (up to 50MB)</p>
+                </div>
+              </div>
+              <div style="border-top: 1px solid #2a2724; padding-top: 16px;">
+                <p style="font-size: 12px; font-weight: 600; color: #a8a49a; text-transform: uppercase; margin-bottom: 12px;">Recent Files</p>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <sc-for list="{{ driveFiles }}" as="file" hint-placeholder-count="4">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #1c1a18; border-radius: 6px;">
+                      <div style="font-size: 20px; min-width: 24px;">{{ file.icon }}</div>
+                      <div style="flex: 1; min-width: 0;">
+                        <p style="font-size: 12px; font-weight: 600; color: #f0ede4; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ file.name }}</p>
+                        <p style="font-size: 10px; color: #a8a49a;">{{ file.size }} · {{ file.date }}</p>
+                      </div>
+                      <a href="{{ file.url }}" style="padding: 4px 8px; background: transparent; border: 1px solid #2a2724; border-radius: 4px; color: #e0a324; font-size: 10px; font-weight: 600; text-decoration: none; cursor: pointer;">Download</a>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 0; overflow: hidden; height: 600px; display: flex; flex-direction: column;">
+              <div style="padding: 16px; border-bottom: 1px solid #2a2724; background: #1c1a18;">
+                <h2 style="font-size: 14px; font-weight: 600; color: #f0ede4;">💬 Team Chat</h2>
+                <p style="font-size: 11px; color: #a8a49a; margin-top: 4px;">#tag-success-team</p>
+              </div>
+              <div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+                <sc-for list="{{ slackMessages }}" as="msg" hint-placeholder-count="5">
+                  <div style="display: flex; gap: 8px;">
+                    <div style="width: 32px; height: 32px; background: {{ msg.avatarBg }}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #f0ede4; font-size: 12px; font-weight: 700; flex-shrink: 0;">{{ msg.initials }}</div>
+                    <div style="flex: 1; min-width: 0;">
+                      <p style="font-size: 11px; font-weight: 600; color: #f0ede4; margin-bottom: 2px;">{{ msg.name }} <span style="color: #a8a49a; font-weight: 400; font-size: 10px;">{{ msg.time }}</span></p>
+                      <p style="font-size: 12px; color: #f0ede4; line-height: 1.4;">{{ msg.text }}</p>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="padding: 12px; border-top: 1px solid #2a2724; background: #1c1a18;">
+                <input type="text" placeholder="Message..." style="width: 100%; padding: 8px 12px; background: #141311; border: 1px solid #2a2724; border-radius: 4px; color: #f0ede4; font-size: 12px;" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showScheduling }}" hint-placeholder-val="true">
+        <h1 style="font-size: 28px; font-weight: 600; margin-bottom: 8px; color: #f0ede4;">Book a Call</h1>
+        <p style="font-size: 14px; color: #a8a49a; margin-bottom: 28px;">Schedule your strategy session with a TAG specialist</p>
+        <div style="max-width: 700px;">
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+            <h2 style="font-size: 16px; font-weight: 600; color: #f0ede4; margin-bottom: 16px;">Available Times</h2>
+            <div style="display: grid; gap: 12px;">
+              <sc-for list="{{ availableSlots }}" as="slot" hint-placeholder-count="3">
+                <button onClick="{{ bookSlot(slot) }}" style="text-align: left; padding: 14px 16px; background: {{ slot.booked ? '#2a2724' : '#1c1a18' }}; border: 1px solid {{ slot.booked ? '#2a2724' : '#2a2724' }}; border-radius: 6px; color: {{ slot.booked ? '#9a958a' : '#f0ede4' }}; cursor: {{ slot.booked ? 'default' : 'pointer' }}; font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <p style="font-weight: 600; margin-bottom: 2px;">{{ slot.date }} at {{ slot.time }}</p>
+                    <p style="font-size: 11px; color: #a8a49a;">with {{ slot.csmName }}</p>
+                  </div>
+                  <span style="font-size: 11px; background: {{ slot.booked ? 'rgba(217, 88, 76, 0.2)' : 'rgba(63, 157, 115, 0.2)' }}; color: {{ slot.booked ? '#d9584c' : '#3f9d73' }}; padding: 4px 8px; border-radius: 4px;">{{ slot.booked ? 'Booked' : 'Available' }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ bookedSlot }}" hint-placeholder-val="true">
+            <div style="background: rgb(63 157 115 / 0.1); border: 1px solid #3f9d73; border-radius: 8px; padding: 16px;">
+              <p style="font-size: 13px; color: #3f9d73; font-weight: 600; margin-bottom: 4px;">✓ Call Confirmed</p>
+              <p style="font-size: 12px; color: #a8a49a;">{{ bookedSlot.date }} at {{ bookedSlot.time }} with {{ bookedSlot.csmName }}</p>
+              <p style="font-size: 11px; color: #a8a49a; margin-top: 8px;">You'll receive a calendar invite and Zoom link shortly.</p>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+
+  <nav style="background: #141311; border-top: 1px solid #2a2724; padding: 16px 24px; display: flex; gap: 32px; align-items: center; justify-content: space-between;">
+    <div style="display: flex; gap: 32px; flex: 1;">
+      <button onClick="{{ setScreen('dashboard') }}" style="padding: 12px 0; background: transparent; border: none; color: {{ screen === 'dashboard' ? '#e0a324' : '#d9d6cc' }}; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid {{ screen === 'dashboard' ? '#e0a324' : 'transparent' }}; transition: all 0.2s;">Dashboard</button>
+      <button onClick="{{ setScreen('onboarding') }}" style="padding: 12px 0; background: transparent; border: none; color: {{ screen === 'onboarding' ? '#e0a324' : '#d9d6cc' }}; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid {{ screen === 'onboarding' ? '#e0a324' : 'transparent' }}; transition: all 0.2s;">Onboarding</button>
+      <button onClick="{{ setScreen('approvals') }}" style="padding: 12px 0; background: transparent; border: none; color: {{ screen === 'approvals' ? '#e0a324' : '#d9d6cc' }}; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid {{ screen === 'approvals' ? '#e0a324' : 'transparent' }}; transition: all 0.2s;">Creatives</button>
+      <button onClick="{{ setScreen('scheduling') }}" style="padding: 12px 0; background: transparent; border: none; color: {{ screen === 'scheduling' ? '#e0a324' : '#d9d6cc' }}; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid {{ screen === 'scheduling' ? '#e0a324' : 'transparent' }}; transition: all 0.2s;">Calls</button>
+      <button onClick="{{ setScreen('resources') }}" style="padding: 12px 0; background: transparent; border: none; color: {{ screen === 'resources' ? '#e0a324' : '#d9d6cc' }}; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid {{ screen === 'resources' ? '#e0a324' : 'transparent' }}; transition: all 0.2s;">Resources</button>
+      <sc-if value="{{ isCsm }}" hint-placeholder-val="false">
+        <button onClick="{{ setScreen('csm-detail') }}" style="padding: 12px 0; background: transparent; border: none; color: {{ screen === 'csm-detail' ? '#e0a324' : '#d9d6cc' }}; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid {{ screen === 'csm-detail' ? '#e0a324' : 'transparent' }}; transition: all 0.2s;">Account</button>
+      </sc-if>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <button onClick="{{ signOut }}" style="padding: 6px 12px; background: transparent; border: 1px solid #2a2724; border-radius: 4px; color: #d9d6cc; font-size: 11px; font-weight: 500; cursor: pointer;">Sign Out</button>
+    </div>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    screen: 'dashboard',
+    accountName: 'Acme Growth Marketing',
+    lastUpdate: '2 hours ago',
+    topDeals: [
+      { name: 'Lakeman Corp', value: '$15,600', rep: 'Steve Gomez', cycle: 'Cycle: 34.1 days' },
+      { name: 'McMary Jones', value: '$9,800', rep: 'Ryan Ramos', cycle: 'Cycle: 36.9 days' },
+      { name: 'Alice Chan Associates', value: '$8,700', rep: 'Kaleb Wallis', cycle: 'Cycle: 18.4 days' },
+      { name: 'Khan Industries', value: '$6,500', rep: 'Isabell Ramirez', cycle: 'Cycle: 23.2 days' },
+      { name: 'Clean Culture', value: '$6,200', rep: 'Isabell Ramirez', cycle: 'Cycle: 39.5 days' },
+    ],
+    onboardingStages: [
+      { title: 'Account Setup', description: 'GoHighLevel integration & account configuration', dueDate: 'Today', completed: true, active: false },
+      { title: 'Funnel Build', description: 'Landing page and lead capture setup', dueDate: 'Mar 1', completed: false, active: true },
+      { title: 'Ad Creative', description: 'Ads review and approval', dueDate: 'Mar 5', completed: false, active: false },
+      { title: 'Go Live', description: 'Campaigns launch and monitoring', dueDate: 'Mar 8', completed: false, active: false },
+      { title: '30-Day Review', description: 'Performance review and optimization', dueDate: 'Apr 5', completed: false, active: false },
+    ],
+    proofItems: [
+      { title: 'Facebook Feed Ad', platform: 'Facebook', format: '1200x628', color: '#1e3a8a', status: 'pending', notes: 'Blue background with white text. Headline: "Grow Your Law Practice Today" with CTA button.' },
+      { title: 'Instagram Story', platform: 'Instagram', format: '1080x1920', color: '#7c2d12', status: 'approved', notes: 'Vertical format with gradient overlay. Testimonial video with client quote.' },
+      { title: 'LinkedIn Banner', platform: 'LinkedIn', format: '1500x500', color: '#164e63', status: 'rejected', notes: 'Company header banner with updated branding. Requires revision on logo placement.' },
+    ],
+    selectedCreative: null,
+    showModal: false,
+    availableSlots: [
+      { date: 'Mar 3', time: '10:00 AM', csmName: 'Sarah Chen', booked: false },
+      { date: 'Mar 3', time: '2:00 PM', csmName: 'David Marcus', booked: false },
+      { date: 'Mar 4', time: '9:00 AM', csmName: 'Sarah Chen', booked: true },
+      { date: 'Mar 4', time: '3:00 PM', csmName: 'Emma Rodriguez', booked: false },
+      { date: 'Mar 5', time: '11:00 AM', csmName: 'David Marcus', booked: false },
+      { date: 'Mar 5', time: '1:00 PM', csmName: 'Emma Rodriguez', booked: false },
+    ],
+    bookedSlot: null,
+    driveFiles: [
+      { name: 'Q1_Campaign_Strategy.pdf', icon: '📄', size: '2.4 MB', date: 'Mar 10', url: '#' },
+      { name: 'Brand_Guidelines_2024.pdf', icon: '📄', size: '5.1 MB', date: 'Mar 8', url: '#' },
+      { name: 'Performance_Report_Feb.xlsx', icon: '📊', size: '1.2 MB', date: 'Mar 5', url: '#' },
+      { name: 'Ad_Creative_Templates.pptx', icon: '🎨', size: '8.7 MB', date: 'Mar 1', url: '#' },
+    ],
+    slackMessages: [
+      { name: 'Sarah Chen', initials: 'SC', avatarBg: '#3f9d73', time: '10:24 AM', text: 'Great progress on the Q2 campaign! Love the creative direction.' },
+      { name: 'You', initials: 'Y', avatarBg: '#e0a324', time: '10:42 AM', text: 'Thanks! We\\'re launching the beta next week. Really excited about the metrics.' },
+      { name: 'David Marcus', initials: 'DM', avatarBg: '#207f7f', time: '11:05 AM', text: 'I\\'ve reviewed the landing page. A few tweaks on the copy, but overall solid.' },
+      { name: 'Sarah Chen', initials: 'SC', avatarBg: '#3f9d73', time: '11:18 AM', text: 'Perfect! Let\\'s sync Friday to finalize. I\\'ll send calendar invite.' },
+      { name: 'Emma Rodriguez', initials: 'ER', avatarBg: '#dd8244', time: '11:31 AM', text: 'Also confirming the budget allocation for paid ads is approved ✓' },
+    ],
+    chartData: [
+      { height: 42, color: '#3f9d73', opacity: 0.6 },
+      { height: 55, color: '#3f9d73', opacity: 0.7 },
+      { height: 65, color: '#3f9d73', opacity: 0.8 },
+      { height: 72, color: '#e0a324', opacity: 1 },
+      { height: 78, color: '#e0a324', opacity: 1 },
+      { height: 85, color: '#e0a324', opacity: 1 },
+      { height: 92, color: '#207f7f', opacity: 1 },
+    ],
+    selectedAccount: {
+      name: 'Acme Growth Marketing',
+      stage: 'Scaling',
+      health: 'healthy',
+      revenue: '$48,200',
+      csm: 'Sarah Chen',
+      activity: [
+        { icon: '📞', color: '#3f9d73', title: 'Strategy Call', desc: 'Quarterly business review completed', date: '2 hours ago' },
+        { icon: '📧', color: '#207f7f', title: 'Email Sent', desc: 'Performance report sent to stakeholders', date: 'Yesterday' },
+        { icon: '✅', color: '#3f9d73', title: 'Milestone Reached', desc: 'Hit Q1 revenue target', date: '3 days ago' },
+        { icon: '📋', color: '#e0a324', title: 'Contract Updated', desc: 'Renewal signed for additional services', date: '1 week ago' },
+        { icon: '🚀', color: '#3f9d73', title: 'Campaign Launched', desc: 'New ad campaign went live', date: '2 weeks ago' },
+        { icon: '💬', color: '#207f7f', title: 'Team Sync', desc: 'Account kickoff meeting held', date: '1 month ago' },
+      ],
+    },
+    isCsm: false,
+  };
+
+  renderVals() {
+    return {
+      screen: this.state.screen,
+      accountName: this.state.accountName,
+      lastUpdate: this.state.lastUpdate,
+      topDeals: this.state.topDeals,
+      onboardingStages: this.state.onboardingStages,
+      proofItems: this.state.proofItems,
+      selectedCreative: this.state.selectedCreative,
+      showModal: this.state.showModal,
+      modalItem: this.state.selectedCreative || {},
+      availableSlots: this.state.availableSlots,
+      bookedSlot: this.state.bookedSlot,
+      driveFiles: this.state.driveFiles,
+      slackMessages: this.state.slackMessages,
+      selectedAccount: this.state.selectedAccount,
+      isCsm: this.state.isCsm,
+      showDashboard: this.state.screen === 'dashboard',
+      showOnboarding: this.state.screen === 'onboarding',
+      showApprovals: this.state.screen === 'approvals',
+      showScheduling: this.state.screen === 'scheduling',
+      showResources: this.state.screen === 'resources',
+      showCsmDetail: this.state.screen === 'csm-detail',
+      chartData: this.state.chartData,
+      setScreen: (scr) => this.setState({ screen: scr }),
+      setModal: (item) => this.setState({ selectedCreative: item, showModal: !!item }),
+      completeStage: (idx) => this.setState(s => {
+        const updated = [...s.onboardingStages];
+        if (idx >= 0 && idx < updated.length) {
+          updated[idx] = { ...updated[idx], completed: true, active: false };
+          if (idx + 1 < updated.length) updated[idx + 1] = { ...updated[idx + 1], active: true };
+        }
+        return { onboardingStages: updated };
+      }),
+      approveProof: (idx) => {
+        const items = [...this.state.proofItems];
+        if (idx >= 0 && idx < items.length) {
+          items[idx].status = 'approved';
+          this.setState({ proofItems: items, selectedCreative: null, showModal: false });
+        }
+      },
+      rejectProof: (idx) => {
+        const items = [...this.state.proofItems];
+        if (idx >= 0 && idx < items.length) {
+          items[idx].status = 'rejected';
+          this.setState({ proofItems: items, selectedCreative: null, showModal: false });
+        }
+      },
+      bookSlot: (slot) => {
+        if (!slot.booked) {
+          this.setState({ bookedSlot: slot });
+        }
+      },
+      signOut: () => this.setState({ screen: 'dashboard' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="design_doc_mode" content="canvas">
+  <title>TAG Design System</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background: #ffffff; color: #050505; line-height: 1.6; }
+    h1 { font-size: 28px; font-weight: 600; margin: 32px 0 16px; }
+    h2 { font-size: 20px; font-weight: 600; margin: 24px 0 12px; }
+    h3 { font-size: 16px; font-weight: 600; margin: 16px 0 8px; }
+    p { margin-bottom: 12px; max-width: 70ch; }
+    ul { margin-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 6px; }
+    .section { padding: 40px; max-width: 1200px; margin: 0 auto; }
+  </style>
+</helmet>
+
+<div class="section">
+  <h1>TAG Design System</h1>
+  <p style="color: #5c6370; font-size: 16px; margin-bottom: 40px;">Brand palette, components, and usage guidelines for Tax Advisory Growth products.</p>
+
+  <!-- Colors -->
+  <h2>Color Palette</h2>
+
+  <h3>Primary — Gold (Brand & Interactive)</h3>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px;">
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #e0a324; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">#e0a324</p>
+        <p style="font-size: 12px; color: #5c6370;">Brand gold (primary)</p>
+      </div>
+    </div>
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #cc901b; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">#cc901b</p>
+        <p style="font-size: 12px; color: #5c6370;">Gold (secondary)</p>
+      </div>
+    </div>
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #a3730f; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">#a3730f</p>
+        <p style="font-size: 12px; color: #5c6370;">Deep gold (pressed)</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Semantic — Status Colors</h3>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px;">
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #1a6b45; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">OK / Healthy</p>
+        <p style="font-size: 12px; color: #5c6370;">#1a6b45</p>
+        <p style="font-size: 11px; color: #8b8f99; margin-top: 4px;">Tint: #eef7f2</p>
+      </div>
+    </div>
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #be5d1d; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">Warn / At Risk</p>
+        <p style="font-size: 12px; color: #5c6370;">#be5d1d</p>
+        <p style="font-size: 11px; color: #8b8f99; margin-top: 4px;">Derived amber</p>
+      </div>
+    </div>
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #b02a1f; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">Danger / Critical</p>
+        <p style="font-size: 12px; color: #5c6370;">#b02a1f</p>
+        <p style="font-size: 11px; color: #8b8f99; margin-top: 4px;">Tint: #fdf1ef</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Neutrals — Light Mode</h3>
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px;">
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #ffffff; height: 80px; border-bottom: 1px solid rgb(5 5 5 / 0.2);"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">Canvas</p>
+        <p style="font-size: 12px; color: #5c6370;">#ffffff</p>
+      </div>
+    </div>
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #050505; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px; color: #f0ede4;">Chrome</p>
+        <p style="font-size: 12px; color: #5c6370;">#050505</p>
+      </div>
+    </div>
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #050505; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">Ink (Primary)</p>
+        <p style="font-size: 12px; color: #5c6370;">#050505</p>
+      </div>
+    </div>
+    <div style="border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; overflow: hidden;">
+      <div style="background: #5c6370; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px; color: #f0ede4;">Ink 2 (Secondary)</p>
+        <p style="font-size: 12px; color: #5c6370;">#5c6370</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Neutrals — Dark Mode</h3>
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px;">
+    <div style="border: 1px solid #2a2724; border-radius: 8px; overflow: hidden;">
+      <div style="background: #0b0a09; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px; color: #f0ede4;">Canvas</p>
+        <p style="font-size: 12px; color: #a8a49a;">#0b0a09</p>
+      </div>
+    </div>
+    <div style="border: 1px solid #2a2724; border-radius: 8px; overflow: hidden;">
+      <div style="background: #141311; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px; color: #f0ede4;">Surface</p>
+        <p style="font-size: 12px; color: #a8a49a;">#141311</p>
+      </div>
+    </div>
+    <div style="border: 1px solid #2a2724; border-radius: 8px; overflow: hidden;">
+      <div style="background: #f0ede4; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">Ink (Primary)</p>
+        <p style="font-size: 12px; color: #5c6370;">#f0ede4</p>
+      </div>
+    </div>
+    <div style="border: 1px solid #2a2724; border-radius: 8px; overflow: hidden;">
+      <div style="background: #a8a49a; height: 80px;"></div>
+      <div style="padding: 12px;">
+        <p style="font-weight: 600; margin-bottom: 4px;">Ink 2 (Secondary)</p>
+        <p style="font-size: 12px; color: #5c6370;">#a8a49a</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Components -->
+  <h2>Components</h2>
+
+  <h3>Buttons</h3>
+  <div style="display: flex; gap: 12px; margin-bottom: 32px; flex-wrap: wrap;">
+    <button style="padding: 11px 16px; background: #e0a324; color: #050505; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;">Primary</button>
+    <button style="padding: 11px 16px; background: #1a6b45; color: #ffffff; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;">Success</button>
+    <button style="padding: 11px 16px; background: #b02a1f; color: #ffffff; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;">Danger</button>
+    <button style="padding: 11px 16px; background: #ffffff; color: #050505; border: 1px solid rgb(5 5 5 / 0.2); border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;">Secondary</button>
+  </div>
+
+  <h3>Cards & Panels</h3>
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px;">
+    <div style="background: #ffffff; border: 1px solid rgb(5 5 5 / 0.2); border-radius: 8px; padding: 20px; box-shadow: 0 1px 1px 0 rgb(5 5 5 / 0.03);">
+      <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">Light Card</h4>
+      <p style="font-size: 13px; color: #5c6370;">Clean white surface with hairline border.</p>
+    </div>
+    <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 20px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.6); color: #f0ede4;">
+      <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">Dark Card</h4>
+      <p style="font-size: 13px; color: #a8a49a;">Stepped surface with lifted shadow.</p>
+    </div>
+  </div>
+
+  <h3>Badges & Pills</h3>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px;">
+    <span style="display: inline-flex; align-items: center; padding: 4px 10px; background: #eef7f2; color: #1a6b45; border-radius: 12px; font-size: 12px; font-weight: 600; border: 1px solid #1a6b45;">✓ Healthy</span>
+    <span style="display: inline-flex; align-items: center; padding: 4px 10px; background: rgb(190 93 29 / 0.1); color: #be5d1d; border-radius: 12px; font-size: 12px; font-weight: 600; border: 1px solid #be5d1d;">⚠ At Risk</span>
+    <span style="display: inline-flex; align-items: center; padding: 4px 10px; background: #fdf1ef; color: #b02a1f; border-radius: 12px; font-size: 12px; font-weight: 600; border: 1px solid #b02a1f;">✗ Critical</span>
+    <span style="display: inline-flex; align-items: center; padding: 4px 10px; background: rgb(204 144 27 / 0.14); color: #cc901b; border-radius: 12px; font-size: 12px; font-weight: 600; border: 1px solid #cc901b;">◆ Active</span>
+  </div>
+
+  <h3>Forms</h3>
+  <div style="max-width: 400px; margin-bottom: 32px;">
+    <label style="display: block; font-size: 13px; font-weight: 600; color: #050505; margin-bottom: 6px;">Email Address</label>
+    <input type="email" placeholder="your@email.com" style="width: 100%; padding: 10px 12px; border: 1px solid rgb(5 5 5 / 0.2); border-radius: 6px; font-size: 14px; margin-bottom: 16px;" />
+
+    <label style="display: block; font-size: 13px; font-weight: 600; color: #050505; margin-bottom: 6px;">Status</label>
+    <select style="width: 100%; padding: 10px 12px; border: 1px solid rgb(5 5 5 / 0.2); border-radius: 6px; font-size: 14px;">
+      <option>Select an option</option>
+      <option>Option 1</option>
+      <option>Option 2</option>
+    </select>
+  </div>
+
+  <h3>Typography</h3>
+  <div style="margin-bottom: 32px;">
+    <p style="font-size: 28px; font-weight: 600; margin-bottom: 4px;">Heading 1 (28px, 600)</p>
+    <p style="font-size: 20px; font-weight: 600; margin-bottom: 4px;">Heading 2 (20px, 600)</p>
+    <p style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Heading 3 (16px, 600)</p>
+    <p style="font-size: 14px; font-weight: 400; margin-bottom: 4px;">Body text (14px, 400)</p>
+    <p style="font-size: 13px; font-weight: 400; color: #5c6370; margin-bottom: 4px;">Secondary text (13px, 400)</p>
+    <p style="font-size: 12px; font-weight: 400; color: #8b8f99;">Tertiary text (12px, 400)</p>
+    <p style="font-size: 12px; font-weight: 600; font-family: monospace; color: #050505;">Monospace / code (12px, 600)</p>
+  </div>
+
+  <h3>Spacing Scale</h3>
+  <p style="margin-bottom: 16px; color: #5c6370; font-size: 13px;">4px, 8px, 12px, 16px, 20px, 24px, 28px, 32px, 40px, 48px, 56px, 64px</p>
+
+  <!-- Usage -->
+  <h2>Usage Guidelines</h2>
+
+  <h3>Gold (Interactive Only)</h3>
+  <p>Gold (#e0a324) is reserved for interactive elements and brand identity. Never use it for status indication—it would be confused with "selected" state. Use the semantic colors (green, warn, red) for status instead.</p>
+
+  <h3>Light vs Dark Mode</h3>
+  <p><strong>Light mode:</strong> White surfaces, black hairlines for structure, minimal shadows.</p>
+  <p><strong>Dark mode:</strong> Stepped surface colors, less visible borders, lifted shadows for depth.</p>
+
+  <h3>Contrast & Accessibility</h3>
+  <ul>
+    <li>Text on #cc901b should be #050505 (black)</li>
+    <li>Text on #1a6b45 should be #ffffff (white)</li>
+    <li>Text on #b02a1f should be #ffffff (white)</li>
+    <li>All interactive elements have focus ring: 2px solid #cc901b with 2px offset</li>
+    <li>Minimum tap target size: 44x44px (mobile accessibility)</li>
+    <li>Link underlines visible by default; remove only when context is clear</li>
+  </ul>
+
+  <h3>Component Spacing</h3>
+  <ul>
+    <li>Button padding: 11px (vertical) × 16px (horizontal)</li>
+    <li>Button gap: 12px minimum</li>
+    <li>Form field padding: 10px × 12px</li>
+    <li>Card padding: 20px</li>
+    <li>Section padding: 40px</li>
+  </ul>
+
+  <h3>Best Practices</h3>
+  <ul>
+    <li><strong>Status badges:</strong> Always pair color with an icon (✓, ⚠, ✗) for colorblind accessibility</li>
+    <li><strong>Buttons:</strong> Use Primary for main actions, Secondary for alternatives, Success/Danger for semantic actions</li>
+    <li><strong>Forms:</strong> Always label inputs; use placeholder text as hints only, not labels</li>
+    <li><strong>Typography:</strong> Never go below 12px; use secondary/tertiary text colors for reduced emphasis</li>
+    <li><strong>Dark mode:</strong> Test contrast ratios; ensure 4.5:1 for body text, 3:1 for large text</li>
+  </ul>
+</div>
+
+</x-dc>
+</body>
+</html>
