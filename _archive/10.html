@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reminder automations — TAG CSM Operating Manual</title>
+<style>
+
+:root{
+  --ink:#050505;
+  --paper:#fbf9f4;
+  --signal:#cc901b;
+  --signal-deep:#a3730f;
+  --stop:#b02a1f;
+  --stop-tint:#fdf1ef;
+  --go:#1a6b45;
+  --go-tint:#eef7f2;
+  --graphite:#5c6370;
+  --field:#f0ede4;
+  --line:#ddd8cb;
+  --line-soft:#e9e5da;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --disp:Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  padding:44px 52px 120px;
+  max-width:1020px;
+  margin:0 auto;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--signal-deep);
+  margin-bottom:9px;
+}
+h1{font-family:var(--disp);font-size:32px;font-weight:600;letter-spacing:0;line-height:1.15;margin-bottom:12px;}
+h2{
+  font-size:15px;font-weight:600;margin:38px 0 12px;
+  padding-bottom:7px;border-bottom:2px solid var(--ink);
+  letter-spacing:-.005em;
+  display:flex;align-items:baseline;gap:10px;
+}
+h2 .n{font-family:var(--mono);font-size:11.5px;color:var(--graphite);font-weight:500;}
+h3{font-size:14px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:12px;max-width:74ch;}
+.lede{font-size:16.5px;color:var(--graphite);max-width:70ch;margin-bottom:26px;line-height:1.5;}
+ul,ol{margin:0 0 14px 20px;max-width:74ch;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+em{font-style:italic;color:var(--graphite);}
+table{
+  width:100%;border-collapse:collapse;margin:14px 0 22px;
+  font-size:13px;background:#fff;
+  border:1px solid var(--line);
+}
+th{
+  background:var(--field);
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--graphite);
+  text-align:left;padding:9px 12px;
+  border-bottom:1px solid var(--line);
+}
+td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+td.v{font-family:var(--mono);font-size:12.5px;}
+.stop{color:var(--stop);font-weight:600;}
+.go{color:var(--go);font-weight:600;}
+.note{
+  border-left:3px solid var(--signal);
+  background:#fffdf0;
+  padding:13px 17px;margin:16px 0;font-size:14px;max-width:76ch;
+}
+.note.hard{border-left-color:var(--stop);background:var(--stop-tint);}
+.note.good{border-left-color:var(--go);background:var(--go-tint);}
+.note-tag{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;display:block;margin-bottom:5px;color:var(--signal-deep);
+}
+.note.hard .note-tag{color:var(--stop);}
+.note.good .note-tag{color:var(--go);}
+.note p:last-child{margin-bottom:0;}
+.proc{border:1px solid var(--line);background:#fff;margin:14px 0;}
+.proc-head{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 16px;background:var(--field);
+  border-bottom:1px solid var(--line);
+}
+.proc-ref{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  color:#fff;background:var(--ink);padding:2px 7px;
+}
+.proc-title{font-size:13.5px;font-weight:600;}
+.proc-body{padding:14px 17px;}
+.proc-body ol{margin-bottom:0;}
+.proc-body p:last-child{margin-bottom:0;}
+.instrument{
+  border:1px solid var(--line);background:#fff;margin:18px 0;
+}
+.instrument-head{
+  padding:11px 17px;background:var(--ink);color:#fff;
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;
+}
+.instrument-body{padding:18px;}
+.inputs{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;}
+.fieldset{flex:1;min-width:150px;}
+label{
+  display:block;font-family:var(--mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--graphite);margin-bottom:5px;
+}
+input[type=number],select{
+  width:100%;padding:8px 10px;
+  border:1px solid var(--line);background:var(--field);
+  font-family:var(--mono);font-size:14px;color:var(--ink);
+  border-radius:0;
+}
+input[type=number]:focus,select:focus{
+  outline:2px solid var(--signal);outline-offset:-1px;background:#fff;
+}
+.readout{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);}
+.cell{flex:1;min-width:110px;background:#fff;padding:13px 15px;}
+.cell-k{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--graphite);margin-bottom:4px;
+}
+.cell-v{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em;}
+.verdict{
+  margin-top:14px;padding:12px 15px;font-size:13.5px;
+  border-left:3px solid var(--graphite);background:var(--field);
+}
+.verdict.pass{border-left-color:var(--go);background:var(--go-tint);}
+.verdict.fail{border-left-color:var(--stop);background:var(--stop-tint);}
+.verdict b{font-weight:600;}
+.kbd{
+  font-family:var(--mono);font-size:11.5px;background:var(--field);
+  border:1px solid var(--line);padding:1px 6px;
+}
+.pill{
+  display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;
+  background:var(--ink);color:#fff;vertical-align:middle;
+}
+.pill.warn{background:var(--stop);}
+footer{
+  margin-top:52px;padding-top:16px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--graphite);
+}
+@media (max-width:900px){
+  body{padding:28px 20px 80px;}
+  h1{font-size:26px;}
+  .inputs{flex-direction:column;}
+}
+
+</style>
+</head>
+<body>
+  <div class="eyebrow">Part B · Section 10</div>
+  <h1>Reminder automations</h1>
+  <p class="lede">Built in GoHighLevel Workflows. Reduces no-shows, which directly protects cost per held call.</p>
+
+  
+        <table>
+          <caption style="text-align:left;caption-side:top;padding-bottom:10px;font-weight:600;">Configuration overview</caption>
+          <thead>
+            <tr>
+              <th>Component</th><th>Configuration</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>Trigger</td><td>Customer Booked Appointment</td>
+              </tr>
+            
+              <tr>
+                <td>Filter</td><td>Calendar equals the specific strategy session calendar</td>
+              </tr>
+            
+              <tr>
+                <td>First action</td><td>Add tag reminders</td>
+              </tr>
+            
+              <tr>
+                <td>Wait step type</td><td>Until Scheduled Time → Appointment Time → X hours before</td>
+              </tr>
+            
+              <tr>
+                <td>Cadence</td><td>12h · 6h · 3h · 1h before</td>
+              </tr>
+            
+              <tr>
+                <td>Channels</td><td>SMS and email at every interval</td>
+              </tr>
+            
+              <tr>
+                <td>Email from</td><td>The Client's own address, verified before building</td>
+              </tr>
+            
+              <tr>
+                <td>Signature</td><td>[Company] Team</td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+        <div>
+          <h2><span class="n">§10.1</span> Custom values to insert</h2>
+          <p>- Contact → Full Name
+- Appointment → Start Date and Time
+- Appointment → Meeting Location</p><p>Paste operations frequently drop or mangle these tokens. Re-insert from the Custom Values menu rather than typing them, and read every message before enabling the workflow.</p>
+        </div>
+      
+
+        <div class="note ">
+          <span class="note-tag">Why both channels every time</span>
+          <p>If A2P 10DLC registration isn't approved, SMS won't deliver and a text-only sequence fails silently — the Client sees no-shows and no explanation. Email duplication means reminder coverage works on day one regardless.
+
+Note: the founder calls this "HTTP" in the recordings. The actual item is A2P 10DLC carrier registration. Search that term, not the other one.</p>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">10.2.1</span>
+            <span class="proc-title">Trigger and calendar</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Trigger: Customer Booked Appointment. No extra trigger filters needed beyond the calendar itself.</li><li>Name the calendar after the Client's business, never the personal calendar GoHighLevel creates by default — e.g. [Firm Name] Tax Strategy Assessment Call.</li><li>Add the Client's logo to the calendar. Small effort, visibly raises perceived quality.</li><li>Name the workflow itself after the client, e.g. TAG Reminders or [Firm Name] Reminders.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">10.2.2</span>
+            <span class="proc-title">Immediate confirmation — SMS and email</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Build the SMS action first, then the email action directly beneath it in the same workflow step.</li>
+            </ol>
+            <p style="margin-top:12px;"><em>SMS — immediate: Hey {{contact.name}}, It's [Company Name]. Thanks for booking a time to speak with us; your call is at {{appointment.start_time}} Meeting Link: {{appointment.meeting_location}} Please reply back with "YES" to confirm you'll show up.
+
+Email — immediate: Hey {{contact.name}}, It's [Company Name]. Thanks for booking a time to speak with us; your call is at {{appointment.start_time}} Meeting Link: {{appointment.meeting_location}}
+
+Set the sender email to the Client's own business address — it must be added to their GoHighLevel staff list first. Subject line pattern: Important message from [Company Name].</em></p>
+            
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">10.2.3</span>
+            <span class="proc-title">Wait steps and the reminder cadence</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>After the immediate confirmation, insert a Wait step: Until Scheduled Time → Appointment Time → 12 hours before, with Skip all outbound communications until the next one selected. Repeat this wait-then-send pattern for each interval.</li>
+            </ol>
+            <p style="margin-top:12px;"><em>12 hours before: Hey {{contact.name}}, It's [Company Name]. Thanks for booking a time to speak with us; your call is at {{appointment.start_time}} Meeting Link: {{appointment.meeting_location}}
+
+6 hours before: Hey {{contact.name}} just another friendly reminder of our call coming up soon in the next 6 hours. Here's the meeting link just to make it easier! {{appointment.meeting_location}}
+
+3 hours before: Hey {{contact.name}} Just sending the link again just in case you missed it. {{appointment.meeting_location}}
+
+1 hour before: Hey {{contact.name}} I'm hopping on in an hour. Here is the link below! {{appointment.meeting_location}}</em></p>
+            
+          </div>
+        </div>
+      
+
+        <div class="note hard">
+          <span class="note-tag">Token discipline</span>
+          <p>Always re-insert {{contact.name}}, {{appointment.start_time}}, and {{appointment.meeting_location}} from the Custom Values menu rather than typing or pasting them — paste operations frequently mangle the braces. Read every message in the workflow before turning it on.</p>
+        </div>
+      
+
+        <div class="note ">
+          <span class="note-tag">If A2P isn't approved yet</span>
+          <p>Run every one of these as email-only until approval comes through. Same cadence, same copy, drop the SMS actions.</p>
+        </div>
+      
+
+  <footer>
+    <p>TAG CSM Operating Manual · Section 10 · v1.0</p>
+  </footer>
+</body>
+</html>

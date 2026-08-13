@@ -1,0 +1,352 @@
+<!-- Custom booking page wrapping a GoHighLevel / LeadConnector calendar embed -->
+<div class="tag-booking">
+  <div class="tag-bg">
+    <div class="tag-blob tag-blob--a"></div>
+    <div class="tag-blob tag-blob--b"></div>
+    <div class="tag-blob tag-blob--c"></div>
+    <div class="tag-grain"></div>
+    <div class="tag-grid"></div>
+  </div>
+
+  <div class="tag-wrap">
+    <header class="tag-hero">
+      <div class="tag-eyebrow">
+        <span class="tag-dot"></span>
+        <span>Booking a slot takes 45 seconds</span>
+      </div>
+      <h1>
+        Let's put something
+        <span class="tag-highlight">on the calendar<svg class="tag-underline" viewBox="0 0 300 12" preserveAspectRatio="none"><path d="M2 9C60 2 240 2 298 9" stroke="url(#tag-grad)" stroke-width="4" stroke-linecap="round" fill="none"/><defs><linearGradient id="tag-grad" x1="0" y1="0" x2="300" y2="0"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#c084fc"/></linearGradient></defs></svg></span>
+      </h1>
+      <p class="tag-sub">Pick a time that works for you. No forms to hunt for, no back-and-forth emails — just grab a spot below and I'll see you there.</p>
+
+      <div class="tag-trust">
+        <div class="tag-trust-item"><strong>60 min</strong><span>Typical call length</span></div>
+        <div class="tag-trust-divider"></div>
+        <div class="tag-trust-item"><strong>Instant</strong><span>Confirmation & reminders</span></div>
+        <div class="tag-trust-divider"></div>
+        <div class="tag-trust-item"><strong>Zero</strong><span>Awkward small talk required</span></div>
+      </div>
+    </header>
+
+    <main class="tag-panel">
+      <div class="tag-panel-glow"></div>
+      <div class="tag-panel-inner">
+        <div class="tag-panel-head">
+          <div class="tag-panel-title">
+            <span class="tag-pulse"></span>
+            Choose your time
+          </div>
+          <div class="tag-panel-tz" id="tag-tz"></div>
+        </div>
+
+        <div class="tag-embed-shell">
+          <div class="tag-skeleton" id="tag-skeleton">
+            <div class="tag-skel-row tag-skel-row--wide"></div>
+            <div class="tag-skel-grid">
+              <div class="tag-skel-cell"></div>
+              <div class="tag-skel-cell"></div>
+              <div class="tag-skel-cell"></div>
+              <div class="tag-skel-cell"></div>
+              <div class="tag-skel-cell"></div>
+              <div class="tag-skel-cell"></div>
+            </div>
+            <div class="tag-skel-label">Loading available times…</div>
+          </div>
+
+          <iframe
+            src="https://api.leadconnectorhq.com/widget/booking/kzsvnsN2aAfNHBMLz7hz"
+            style="width: 100%;border:none;overflow: hidden;"
+            scrolling="no"
+            id="UacSoY1UezQKoyEbG8T6_1785960023772"
+            class="tag-iframe"
+            title="Book a time"
+          ></iframe>
+        </div>
+      </div>
+    </main>
+
+    <footer class="tag-foot">
+      <p>Can't find a time that fits? <a href="mailto:therealsamfisherofficial@gmail.com">Email me directly</a> and we'll sort something out.</p>
+    </footer>
+  </div>
+</div>
+
+<script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
+<script>
+  (function () {
+    var tzEl = document.getElementById('tag-tz');
+    if (tzEl) {
+      try {
+        var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        tzEl.textContent = tz.replace(/_/g, ' ');
+      } catch (e) {
+        tzEl.style.display = 'none';
+      }
+    }
+
+    var skeleton = document.getElementById('tag-skeleton');
+    var iframe = document.querySelector('.tag-iframe');
+    if (skeleton && iframe) {
+      var reveal = function () {
+        skeleton.classList.add('tag-skel-hide');
+        iframe.classList.add('tag-iframe-show');
+        setTimeout(function () { skeleton.style.display = 'none'; }, 500);
+      };
+      iframe.addEventListener('load', reveal);
+      setTimeout(reveal, 4000); // safety fallback if load event is swallowed
+    }
+  })();
+</script>
+
+<style>
+  .tag-booking {
+    --bg: #05060a;
+    --panel: rgba(255, 255, 255, 0.04);
+    --panel-border: rgba(255, 255, 255, 0.09);
+    --ink: #f5f6fa;
+    --ink-dim: rgba(245, 246, 250, 0.62);
+    --ink-faint: rgba(245, 246, 250, 0.38);
+    --accent-a: #7dd3fc;
+    --accent-b: #c084fc;
+    --accent-c: #fca5f1;
+    position: relative;
+    isolation: isolate;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: clamp(2.5rem, 6vw, 5.5rem) clamp(1.25rem, 5vw, 2rem) clamp(3rem, 8vw, 6rem);
+    overflow: hidden;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+  .tag-booking *, .tag-booking *::before, .tag-booking *::after { box-sizing: border-box; }
+
+  @font-face {
+    font-family: "Space Grotesk";
+    src: local("Space Grotesk");
+    font-display: swap;
+  }
+
+  .tag-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+  .tag-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.55;
+    will-change: transform;
+  }
+  .tag-blob--a {
+    width: 46vw; height: 46vw; max-width: 640px; max-height: 640px;
+    top: -14%; left: -10%;
+    background: radial-gradient(circle at 30% 30%, var(--accent-a), transparent 70%);
+    animation: tag-float-a 22s ease-in-out infinite;
+  }
+  .tag-blob--b {
+    width: 40vw; height: 40vw; max-width: 560px; max-height: 560px;
+    bottom: -18%; right: -8%;
+    background: radial-gradient(circle at 60% 40%, var(--accent-b), transparent 70%);
+    animation: tag-float-b 26s ease-in-out infinite;
+  }
+  .tag-blob--c {
+    width: 26vw; height: 26vw; max-width: 380px; max-height: 380px;
+    top: 40%; left: 55%;
+    background: radial-gradient(circle at 50% 50%, var(--accent-c), transparent 70%);
+    opacity: 0.35;
+    animation: tag-float-c 18s ease-in-out infinite;
+  }
+  @keyframes tag-float-a {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(4%, 6%) scale(1.08); }
+  }
+  @keyframes tag-float-b {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-5%, -4%) scale(1.1); }
+  }
+  @keyframes tag-float-c {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-8%, 5%) scale(0.9); }
+  }
+  .tag-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent 75%);
+  }
+  .tag-grain {
+    position: absolute; inset: 0;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .tag-wrap { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; }
+
+  .tag-hero { text-align: center; margin-bottom: clamp(2.25rem, 5vw, 3.5rem); }
+  .tag-eyebrow {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.01em;
+    margin-bottom: 1.5rem;
+  }
+  .tag-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+    animation: tag-pulse-dot 2s infinite;
+  }
+  @keyframes tag-pulse-dot {
+    0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  }
+
+  .tag-hero h1 {
+    font-size: clamp(2.1rem, 5.4vw, 3.6rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.1rem;
+    font-weight: 600;
+  }
+  .tag-highlight {
+    position: relative;
+    display: inline-block;
+    background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .tag-underline { position: absolute; left: 0; bottom: -0.28em; width: 100%; height: 0.4em; }
+
+  .tag-sub {
+    font-size: clamp(1rem, 1.6vw, 1.15rem);
+    color: var(--ink-dim);
+    max-width: 540px;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+
+  .tag-trust {
+    display: flex; align-items: center; justify-content: center;
+    gap: clamp(1rem, 3vw, 2.25rem);
+    margin-top: 2.25rem;
+    flex-wrap: wrap;
+  }
+  .tag-trust-item { display: flex; flex-direction: column; gap: 0.15rem; }
+  .tag-trust-item strong { font-size: 1rem; font-weight: 600; }
+  .tag-trust-item span { font-size: 0.78rem; color: var(--ink-faint); }
+  .tag-trust-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.12); }
+
+  .tag-panel {
+    position: relative;
+    border-radius: 28px;
+    padding: 1px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.02) 40%, rgba(255,255,255,0.08));
+  }
+  .tag-panel-glow {
+    position: absolute; inset: -40px;
+    background: radial-gradient(circle at 50% 0%, rgba(125, 211, 252, 0.18), transparent 60%);
+    z-index: -1;
+    filter: blur(10px);
+  }
+  .tag-panel-inner {
+    position: relative;
+    border-radius: 27px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--panel-border);
+    overflow: hidden;
+  }
+  .tag-panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.4rem;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .tag-panel-title {
+    display: flex; align-items: center; gap: 0.55rem;
+    font-size: 0.92rem; font-weight: 600; letter-spacing: 0.01em;
+  }
+  .tag-pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+  }
+  .tag-panel-tz {
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .tag-embed-shell { position: relative; min-height: 560px; }
+
+  .tag-iframe {
+    position: relative;
+    z-index: 2;
+    display: block;
+    min-height: 560px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    color-scheme: light;
+  }
+  .tag-iframe-show { opacity: 1; transform: translateY(0); }
+
+  .tag-skeleton {
+    position: absolute; inset: 0; z-index: 1;
+    padding: 1.5rem;
+    display: flex; flex-direction: column; gap: 1rem;
+    transition: opacity 0.4s ease;
+  }
+  .tag-skel-hide { opacity: 0; pointer-events: none; }
+  .tag-skel-row { height: 40px; border-radius: 10px; }
+  .tag-skel-row--wide { width: 60%; }
+  .tag-skel-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;
+    flex: 1;
+  }
+  .tag-skel-cell { border-radius: 12px; min-height: 64px; }
+  .tag-skel-row, .tag-skel-cell {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 37%, rgba(255,255,255,0.04) 63%);
+    background-size: 400% 100%;
+    animation: tag-shimmer 1.6s ease infinite;
+  }
+  @keyframes tag-shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+  }
+  .tag-skel-label {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+  }
+
+  .tag-foot {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.88rem;
+    color: var(--ink-faint);
+  }
+  .tag-foot a { color: var(--accent-a); text-decoration: none; border-bottom: 1px solid rgba(125,211,252,0.35); }
+  .tag-foot a:hover { border-color: var(--accent-a); }
+
+  @media (max-width: 640px) {
+    .tag-trust-divider { display: none; }
+    .tag-panel-head { flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tag-blob, .tag-dot { animation: none !important; }
+    .tag-skel-row, .tag-skel-cell { animation: none !important; }
+  }
+</style>

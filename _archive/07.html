@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Funnel build — TAG CSM Operating Manual</title>
+<style>
+
+:root{
+  --ink:#050505;
+  --paper:#fbf9f4;
+  --signal:#cc901b;
+  --signal-deep:#a3730f;
+  --stop:#b02a1f;
+  --stop-tint:#fdf1ef;
+  --go:#1a6b45;
+  --go-tint:#eef7f2;
+  --graphite:#5c6370;
+  --field:#f0ede4;
+  --line:#ddd8cb;
+  --line-soft:#e9e5da;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --disp:Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  padding:44px 52px 120px;
+  max-width:1020px;
+  margin:0 auto;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--signal-deep);
+  margin-bottom:9px;
+}
+h1{font-family:var(--disp);font-size:32px;font-weight:600;letter-spacing:0;line-height:1.15;margin-bottom:12px;}
+h2{
+  font-size:15px;font-weight:600;margin:38px 0 12px;
+  padding-bottom:7px;border-bottom:2px solid var(--ink);
+  letter-spacing:-.005em;
+  display:flex;align-items:baseline;gap:10px;
+}
+h2 .n{font-family:var(--mono);font-size:11.5px;color:var(--graphite);font-weight:500;}
+h3{font-size:14px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:12px;max-width:74ch;}
+.lede{font-size:16.5px;color:var(--graphite);max-width:70ch;margin-bottom:26px;line-height:1.5;}
+ul,ol{margin:0 0 14px 20px;max-width:74ch;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+em{font-style:italic;color:var(--graphite);}
+table{
+  width:100%;border-collapse:collapse;margin:14px 0 22px;
+  font-size:13px;background:#fff;
+  border:1px solid var(--line);
+}
+th{
+  background:var(--field);
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--graphite);
+  text-align:left;padding:9px 12px;
+  border-bottom:1px solid var(--line);
+}
+td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+td.v{font-family:var(--mono);font-size:12.5px;}
+.stop{color:var(--stop);font-weight:600;}
+.go{color:var(--go);font-weight:600;}
+.note{
+  border-left:3px solid var(--signal);
+  background:#fffdf0;
+  padding:13px 17px;margin:16px 0;font-size:14px;max-width:76ch;
+}
+.note.hard{border-left-color:var(--stop);background:var(--stop-tint);}
+.note.good{border-left-color:var(--go);background:var(--go-tint);}
+.note-tag{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;display:block;margin-bottom:5px;color:var(--signal-deep);
+}
+.note.hard .note-tag{color:var(--stop);}
+.note.good .note-tag{color:var(--go);}
+.note p:last-child{margin-bottom:0;}
+.proc{border:1px solid var(--line);background:#fff;margin:14px 0;}
+.proc-head{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 16px;background:var(--field);
+  border-bottom:1px solid var(--line);
+}
+.proc-ref{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  color:#fff;background:var(--ink);padding:2px 7px;
+}
+.proc-title{font-size:13.5px;font-weight:600;}
+.proc-body{padding:14px 17px;}
+.proc-body ol{margin-bottom:0;}
+.proc-body p:last-child{margin-bottom:0;}
+.instrument{
+  border:1px solid var(--line);background:#fff;margin:18px 0;
+}
+.instrument-head{
+  padding:11px 17px;background:var(--ink);color:#fff;
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;
+}
+.instrument-body{padding:18px;}
+.inputs{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;}
+.fieldset{flex:1;min-width:150px;}
+label{
+  display:block;font-family:var(--mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--graphite);margin-bottom:5px;
+}
+input[type=number],select{
+  width:100%;padding:8px 10px;
+  border:1px solid var(--line);background:var(--field);
+  font-family:var(--mono);font-size:14px;color:var(--ink);
+  border-radius:0;
+}
+input[type=number]:focus,select:focus{
+  outline:2px solid var(--signal);outline-offset:-1px;background:#fff;
+}
+.readout{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);}
+.cell{flex:1;min-width:110px;background:#fff;padding:13px 15px;}
+.cell-k{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--graphite);margin-bottom:4px;
+}
+.cell-v{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em;}
+.verdict{
+  margin-top:14px;padding:12px 15px;font-size:13.5px;
+  border-left:3px solid var(--graphite);background:var(--field);
+}
+.verdict.pass{border-left-color:var(--go);background:var(--go-tint);}
+.verdict.fail{border-left-color:var(--stop);background:var(--stop-tint);}
+.verdict b{font-weight:600;}
+.kbd{
+  font-family:var(--mono);font-size:11.5px;background:var(--field);
+  border:1px solid var(--line);padding:1px 6px;
+}
+.pill{
+  display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;
+  background:var(--ink);color:#fff;vertical-align:middle;
+}
+.pill.warn{background:var(--stop);}
+footer{
+  margin-top:52px;padding-top:16px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--graphite);
+}
+@media (max-width:900px){
+  body{padding:28px 20px 80px;}
+  h1{font-size:26px;}
+  .inputs{flex-direction:column;}
+}
+
+</style>
+</head>
+<body>
+  <div class="eyebrow">Part B · Section 07</div>
+  <h1>Funnel build</h1>
+  <p class="lede">Three pages in GoHighLevel. Roughly three minutes once you have a snapshot.</p>
+
+  
+        <div class="note good">
+          <span class="note-tag">Do this once, save it forever</span>
+          <p>After your first clean build, take a snapshot and deploy every subsequent funnel from it. This is the single biggest time saver available to you.</p>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">07.1</span>
+            <span class="proc-title">Create the shell</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Sites → Funnels → New Funnel, name it, build from scratch.</li><li>Add the first step, name the page VSL, path /VSL.</li><li>Connect the Client's domain.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">07.2</span>
+            <span class="proc-title">VSL page</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Headline — attention statement naming the audience. Size 21, heavy.</li><li>Headline — guarantee and offer. Size 39, 900 heavy.</li><li>Video — set type to Custom Embed, paste the Wistia embed code.</li><li>Button — "Schedule a Free Demo", subtext "Limited spots available." Sizes 22 and 15, heavy then bold. Link to next step. Background #EBC507, black text.</li><li>Headline — disclaimer, rewritten for the Client. Size 12, with spacing above.</li><li>Save, or confirm autosave is on.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">07.3</span>
+            <span class="proc-title">Mobile sizing — before you clone</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Switch to Mobile mode on the VSL page.</li><li>Headline 1 → 14. Headline 2 → 16.</li><li>Button → unchanged. Disclaimer → 8.</li><li>Now clone, and mobile settings carry through.</li>
+            </ol>
+            
+            <p class="stop" style="margin-bottom:10px;">Do this on step one before cloning anything. Mobile layout does not carry over once you've already cloned. Fixing it afterward means redoing every step by hand.</p>
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">07.4</span>
+            <span class="proc-title">Application page</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Clone Funnel Step from VSL. Rename immediately: step name "App", path /app. Update the step.</li><li>Rewrite the top headline via ChatGPT to close the loop. Size stays 39.</li><li>Delete the original headline and the button. Keep the disclaimer.</li><li>Add Calendar, select the Client's GoHighLevel calendar, set redirect to "Go to Next Step."</li><li>Add an underlined line above it, e.g. "Schedule a strategy call", with a blank spacer.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">07.5</span>
+            <span class="proc-title">Pre-call page</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Clone Funnel Step from Application. Rename to "Pre-Call", path /ty.</li><li>Replace the headline: "Important — after adding the event to your calendar, watch the video below so we can hit the ground running on your call." Size 20.</li><li>Delete the calendar element.</li><li>Add Video, Custom Embed, for the pre-call video.</li><li>Add a second headline: "Add the event to your calendar — go to your email and click Add to Calendar." Size 23, bold.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+        <div class="note hard">
+          <span class="note-tag">Rename before you edit</span>
+          <p>Cloned steps keep the word "clone" in the name and inherit the wrong path. Rename and update the path immediately after cloning, before touching content. Leftover clone names in a live URL are visible to the Client's prospects.</p>
+        </div>
+      
+
+  <footer>
+    <p>TAG CSM Operating Manual · Section 07 · v1.0</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel install — TAG CSM Operating Manual</title>
+<style>
+
+:root{
+  --ink:#050505;
+  --paper:#fbf9f4;
+  --signal:#cc901b;
+  --signal-deep:#a3730f;
+  --stop:#b02a1f;
+  --stop-tint:#fdf1ef;
+  --go:#1a6b45;
+  --go-tint:#eef7f2;
+  --graphite:#5c6370;
+  --field:#f0ede4;
+  --line:#ddd8cb;
+  --line-soft:#e9e5da;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --disp:Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  padding:44px 52px 120px;
+  max-width:1020px;
+  margin:0 auto;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--signal-deep);
+  margin-bottom:9px;
+}
+h1{font-family:var(--disp);font-size:32px;font-weight:600;letter-spacing:0;line-height:1.15;margin-bottom:12px;}
+h2{
+  font-size:15px;font-weight:600;margin:38px 0 12px;
+  padding-bottom:7px;border-bottom:2px solid var(--ink);
+  letter-spacing:-.005em;
+  display:flex;align-items:baseline;gap:10px;
+}
+h2 .n{font-family:var(--mono);font-size:11.5px;color:var(--graphite);font-weight:500;}
+h3{font-size:14px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:12px;max-width:74ch;}
+.lede{font-size:16.5px;color:var(--graphite);max-width:70ch;margin-bottom:26px;line-height:1.5;}
+ul,ol{margin:0 0 14px 20px;max-width:74ch;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+em{font-style:italic;color:var(--graphite);}
+table{
+  width:100%;border-collapse:collapse;margin:14px 0 22px;
+  font-size:13px;background:#fff;
+  border:1px solid var(--line);
+}
+th{
+  background:var(--field);
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--graphite);
+  text-align:left;padding:9px 12px;
+  border-bottom:1px solid var(--line);
+}
+td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+td.v{font-family:var(--mono);font-size:12.5px;}
+.stop{color:var(--stop);font-weight:600;}
+.go{color:var(--go);font-weight:600;}
+.note{
+  border-left:3px solid var(--signal);
+  background:#fffdf0;
+  padding:13px 17px;margin:16px 0;font-size:14px;max-width:76ch;
+}
+.note.hard{border-left-color:var(--stop);background:var(--stop-tint);}
+.note.good{border-left-color:var(--go);background:var(--go-tint);}
+.note-tag{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;display:block;margin-bottom:5px;color:var(--signal-deep);
+}
+.note.hard .note-tag{color:var(--stop);}
+.note.good .note-tag{color:var(--go);}
+.note p:last-child{margin-bottom:0;}
+.proc{border:1px solid var(--line);background:#fff;margin:14px 0;}
+.proc-head{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 16px;background:var(--field);
+  border-bottom:1px solid var(--line);
+}
+.proc-ref{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  color:#fff;background:var(--ink);padding:2px 7px;
+}
+.proc-title{font-size:13.5px;font-weight:600;}
+.proc-body{padding:14px 17px;}
+.proc-body ol{margin-bottom:0;}
+.proc-body p:last-child{margin-bottom:0;}
+.instrument{
+  border:1px solid var(--line);background:#fff;margin:18px 0;
+}
+.instrument-head{
+  padding:11px 17px;background:var(--ink);color:#fff;
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;
+}
+.instrument-body{padding:18px;}
+.inputs{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;}
+.fieldset{flex:1;min-width:150px;}
+label{
+  display:block;font-family:var(--mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--graphite);margin-bottom:5px;
+}
+input[type=number],select{
+  width:100%;padding:8px 10px;
+  border:1px solid var(--line);background:var(--field);
+  font-family:var(--mono);font-size:14px;color:var(--ink);
+  border-radius:0;
+}
+input[type=number]:focus,select:focus{
+  outline:2px solid var(--signal);outline-offset:-1px;background:#fff;
+}
+.readout{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);}
+.cell{flex:1;min-width:110px;background:#fff;padding:13px 15px;}
+.cell-k{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--graphite);margin-bottom:4px;
+}
+.cell-v{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em;}
+.verdict{
+  margin-top:14px;padding:12px 15px;font-size:13.5px;
+  border-left:3px solid var(--graphite);background:var(--field);
+}
+.verdict.pass{border-left-color:var(--go);background:var(--go-tint);}
+.verdict.fail{border-left-color:var(--stop);background:var(--stop-tint);}
+.verdict b{font-weight:600;}
+.kbd{
+  font-family:var(--mono);font-size:11.5px;background:var(--field);
+  border:1px solid var(--line);padding:1px 6px;
+}
+.pill{
+  display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;
+  background:var(--ink);color:#fff;vertical-align:middle;
+}
+.pill.warn{background:var(--stop);}
+footer{
+  margin-top:52px;padding-top:16px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--graphite);
+}
+@media (max-width:900px){
+  body{padding:28px 20px 80px;}
+  h1{font-size:26px;}
+  .inputs{flex-direction:column;}
+}
+
+</style>
+</head>
+<body>
+  <div class="eyebrow">Part B · Section 08</div>
+  <h1>Pixel install</h1>
+  <p class="lede">The step most likely to be done wrong. When it's wrong, the campaign optimizes against nothing and the spend is wasted silently.</p>
+
+  
+        <div class="note hard">
+          <span class="note-tag">Non-obvious requirement</span>
+          <p>Create the data set from inside the ad account — not from Events Manager, not from Business Settings. Created elsewhere, it won't appear correctly as a selectable option in the campaign.</p>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">08.1</span>
+            <span class="proc-title">Create the data set</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>In Ads Manager at ad set level, under Data Set, choose Create Data Set.</li><li>Name it after the Client's company. Keep it simple.</li><li>Select Meta Pixel only, not Conversions API.</li><li>Choose Install code manually, then copy the code.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">08.2</span>
+            <span class="proc-title">Install in GoHighLevel</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Funnel → Settings.</li><li>Paste into Head Tracking Code. Not Body Tracking Code. This is a silent failure that costs days.</li><li>Scroll to the bottom and save. Allow a minute to propagate.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">08.3</span>
+            <span class="proc-title">Map the conversion event</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Back in Events Manager, hit Continue. Leave the toggle Meta offers off.</li><li>Add Events → paste the full VSL page URL → continue. Meta loads the live page.</li><li>Use Track Button, not URL tracking. Click the schedule button on the loaded page.</li><li>Map it to the standard event Schedule. Confirm.</li><li>Finish setup → Finish → Skip → Done.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+        <div class="proc">
+          <div class="proc-head">
+            <span class="proc-ref">08.4</span>
+            <span class="proc-title">Verify before you spend</span>
+          </div>
+          <div class="proc-body">
+            <ol>
+              <li>Return to Ads Manager and refresh. The data set should now be selectable.</li><li>Set conversion event to Schedule. It will show "no data" — expected on a fresh pixel.</li><li>Run a test booking through the live funnel and confirm the event fires in Test Events.</li><li>Use the standard TAG test record. Never personal contact details.</li><li>If events don't appear: re-copy the pixel code, delete the old code from Head Tracking, paste fresh, save, retest. Propagation delay is common — wait a minute before assuming failure.</li>
+            </ol>
+            
+            
+          </div>
+        </div>
+      
+
+  <footer>
+    <p>TAG CSM Operating Manual · Section 08 · v1.0</p>
+  </footer>
+</body>
+</html>

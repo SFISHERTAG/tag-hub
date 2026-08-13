@@ -1,0 +1,695 @@
+{
+  "meta": {
+    "title": "TAG CSM Operating Manual",
+    "version": "1.0",
+    "updated": "2026-08-06"
+  },
+  "pages": [
+    {
+      "id": "p0",
+      "num": "00",
+      "title": "How to use this",
+      "eyebrow": "Start here",
+      "lede": "Everything needed to take a Client from signed to launched, plus the reference tables you will want open while you work.",
+      "status": "v1.0 · consolidates three prior documents",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "title": "Two ways to read this",
+          "content": "This manual replaces the three separate documents that came before it. It is built for two different moments, and it is worth knowing which one you are in.\n\nReading it through: work sections 01 through 13 in order during your first week. Part A explains why the system works, which matters more than it sounds — most launch mistakes come from someone executing a step correctly without understanding what it is for. Part B is the build. Part C is how we read performance once ads are live.\n\nGrabbing something mid-launch: use Settings lookup when you need one exact value and you have a Client on the phone. Use the Launch runsheet as a live checklist on launch day. Section numbers are stable, so \"check 09.4\" is a valid thing to say to a colleague.",
+          "caveatLabel": "The one idea to hold onto",
+          "caveat": "The build is not the hard part. A funnel takes about three minutes once you have a snapshot. What separates a launch that works from one that burns a Client's budget is settings discipline in Meta and the quality of the callout. Everything else is assembly."
+        },
+        {
+          "type": "table",
+          "title": "§00.1 What each part covers",
+          "headers": ["Part", "Covers", "You'll use it"],
+          "rows": [
+            ["A · 01–04", "The strategy: what we actually sell, how offers get repositioned, the economics, and which funnel model fits a given Client", "Onboarding, and on Client strategy calls"],
+            ["B · 05–11", "The build: assets, funnel, pixel, campaign, automations, qualification logic", "Every launch"],
+            ["C · 12–13", "Reading performance and deciding the next move", "Days 1–3 post-launch, then ongoing"],
+            ["Tools", "Runsheet, settings lookup, unresolved policy items", "Constantly"]
+          ]
+        },
+        {
+          "type": "note",
+          "severity": "hard",
+          "title": "Before you train anyone from this",
+          "content": "The Open items section lists practices that appear in the source recordings but need a decision from leadership before they go into anyone's training. Two of them carry real exposure. Read that section before you pass this manual to a new hire."
+        }
+      ]
+    },
+    {
+      "id": "p1",
+      "num": "01",
+      "title": "What we actually sell",
+      "eyebrow": "Part A · Section 01",
+      "lede": "Not ads. Not a funnel. A client acquisition system built for a market that is skeptical, informed, and outcome-driven.",
+      "status": "Verified · standard framing",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "title": "One niche, calibrated benchmarks",
+          "content": "TAG is niched entirely to the accounting world. Every Client is an accounting firm, and the repositioning work described in section 02 always runs in one direction: from compliance work toward tax advisory as the differentiator. That specificity is what makes the rest of the system work. The messaging patterns, the funnel models, and the cost-per-call benchmarks are all calibrated against this one niche."
+        },
+        {
+          "type": "table",
+          "title": "§01.1 The five jobs",
+          "headers": ["#", "Job", "What it means in practice"],
+          "rows": [
+            ["1", "Engineer the offer", "Reposition compliance work as advisory. Section 02."],
+            ["2", "Crack the messaging", "Test angles, hooks, and callouts until one converts. We own this, not the Client."],
+            ["3", "Build the funnel", "Sections 07 and 08."],
+            ["4", "Optimize to a winner", "Sections 12 and 13."],
+            ["5", "Scale once the math works", "Repeat a known-good configuration as far as the Client's capacity allows."]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": "Results from this don't grow linearly. Until the message is cracked, performance looks flat or noisy. Once it lands, sales accelerate quickly because the rest of the system was already built and waiting."
+        },
+        {
+          "type": "note",
+          "title": "Why this framing matters on calls",
+          "content": "Clients who think they bought ads will judge you on ad metrics from day one. Clients who understand they bought a system will give the messaging phase the room it needs. Set this expectation during onboarding, not after a slow first week."
+        }
+      ]
+    },
+    {
+      "id": "p2",
+      "num": "02",
+      "title": "Offer conversion",
+      "eyebrow": "Part A · Section 02",
+      "lede": "The most important part of the system, and the first thing you should be able to explain to a Client.",
+      "status": "Verified · offer model",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "heading",
+          "title": "§02.1 Why compliance-only stopped working",
+          "content": "An accounting firm selling pure compliance — bookkeeping, tax prep, filing — is running out of room. The market is saturated with commodity firms, buyers have been burned by firms that just do the numbers with no strategic input, and clients increasingly expect more than historical reporting.\n\nStanding out on compliance alone requires a strong personal brand, heavy trust upfront, and long nurturing cycles. Most Clients don't have that and don't need it."
+        },
+        {
+          "type": "heading",
+          "title": "§02.2 Compliance becomes advisory",
+          "content": "We convert the Client's offer from compliance-based accounting to advisory-based service, specifically tax advisory. We don't sell bookkeeping and filing as the headline. We sell the tax strategy and the savings outcome.\n\nWhat changes: the Client takes on strategic ownership, the offer reads as higher value, the buying decision gets easier, price resistance drops, and they stop competing on hourly rates against every other firm in their market."
+        },
+        {
+          "type": "table",
+          "headers": ["Compliance framing", "Advisory framing"],
+          "rows": [
+            ["\"We'll handle your bookkeeping and file your taxes on time.\"", "\"A done-for-you tax advisory engagement where we restructure your finances to legally minimize what you owe, so more of what you make stays with you.\""]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": "Same firm. Same underlying work. Different packaging, higher perceived value, more visible results, better margins per engagement. The positioning is the difference, not the accounting."
+        },
+        {
+          "type": "heading",
+          "title": "§02.3 Why advisory converts cold traffic",
+          "content": "Advisory offers don't require blind trust. They deliver something tangible — a strategy, a savings number, a plan — and they shift execution risk off the buyer. Trust gets built through clear process, defined outcomes, strong positioning, and risk reversal, rather than through personal brand or social proof alone.\n\nThat's why these offers survive cold traffic, support higher ad spend, and scale faster than a generic \"we do your books\" pitch."
+        },
+        {
+          "type": "note",
+          "severity": "hard",
+          "title": "Guardrail",
+          "content": "Repositioning affects what a Client is allowed to claim. Our Clients are licensed practitioners. Section 09.6 covers what can and cannot go into a guarantee — read it before writing any advisory copy."
+        },
+        {
+          "type": "heading",
+          "title": "§02.4 Financing",
+          "content": "We help Clients connect financing options for their own clients. This lowers friction, raises close rates, and improves cash flow, because buyers evaluate monthly affordability rather than total price."
+        }
+      ]
+    },
+    {
+      "id": "p3",
+      "num": "03",
+      "title": "Unit economics",
+      "eyebrow": "Part A · Section 03",
+      "lede": "You should be able to run this math live on a call without notes.",
+      "status": "Verified · standard metrics",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "table",
+          "title": "Core metrics",
+          "headers": ["Metric", "Definition", "Worked example"],
+          "rows": [
+            ["CAC", "Cost to acquire one paying client", "$2,000 in spend to land a $10,000 client = $2,000 CAC"],
+            ["Gross profit", "Client value minus CAC, before fulfillment", "$10,000 − $2,000 = $8,000"],
+            ["ROAS", "Revenue returned per dollar spent", "$10,000 ÷ $2,000 = 5x"]
+          ]
+        },
+        {
+          "type": "note",
+          "severity": "good",
+          "title": "The reframe that closes Clients",
+          "content": "A $2,000 CAC on a $10,000 client is not $2,000 lost. It's $2,000 deployed to buy $10,000. Once that holds, the only remaining question is how many times it can be repeated — and the answer should be: as many times as the business can handle. That's scaling."
+        },
+        {
+          "type": "instrument",
+          "title": "Unit economics calculator",
+          "fields": [
+            {"label": "Ad spend", "id": "ue-spend", "type": "number", "default": "2000"},
+            {"label": "Client value", "id": "ue-value", "type": "number", "default": "10000"},
+            {"label": "Clients closed", "id": "ue-clients", "type": "number", "default": "1"}
+          ],
+          "outputs": [
+            {"label": "CAC", "id": "ue-cac"},
+            {"label": "Revenue", "id": "ue-rev"},
+            {"label": "Gross profit", "id": "ue-gp"},
+            {"label": "ROAS", "id": "ue-roas"}
+          ]
+        },
+        {
+          "type": "heading",
+          "title": "§03.1 Why high ticket wins with paid ads",
+          "content": "Ads carry fixed costs, and low-ticket offers break under that pressure. High-ticket offers absorb CAC, fund aggressive testing, scale faster, outbid competitors, and leave more net profit.\n\nOnce CAC and ROAS are known, spend becomes predictable, risk becomes calculated, and growth becomes a decision rather than a gamble. Ads stop feeling risky and start functioning as leverage."
+        }
+      ]
+    },
+    {
+      "id": "p4",
+      "num": "04",
+      "title": "Funnel models",
+      "eyebrow": "Part A · Section 04",
+      "lede": "Three variations. Which one a Client gets depends on their offer, price point, and team.",
+      "status": "Verified · model selection",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "instrument",
+          "title": "Model selector",
+          "fields": [
+            {"label": "Expected lead volume", "id": "fm-vol", "type": "select", "options": [{"value": "low", "text": "Low — quality over quantity"}, {"value": "high", "text": "High — significant daily flow"}]},
+            {"label": "Sales team", "id": "fm-team", "type": "select", "options": [{"value": "owner", "text": "Owner sells, no support"}, {"value": "setter", "text": "Has setter(s)"}, {"value": "full", "text": "Setter and closer on demand"}]},
+            {"label": "Speed sensitivity", "id": "fm-speed", "type": "select", "options": [{"value": "std", "text": "Standard"}, {"value": "hot", "text": "Intent decays fast"}]}
+          ],
+          "outputs": []
+        },
+        {
+          "type": "heading",
+          "title": "§04.1 Direct application to call booking",
+          "content": "Flow: Ads → VSL → Application → Booked call\n\nBest for high-ticket offers, owner-led sales, lower volume at higher quality. Prioritizes intent, efficiency, and qualified conversations. This is the default build described in sections 07 through 09."
+        },
+        {
+          "type": "heading",
+          "title": "§04.2 Application plus setter follow-up",
+          "content": "Flow: Ads → VSL → Application, then a setter calls everyone who didn't book, qualifies them, and books the call.\n\nBest for higher lead volume, accounts leaking missed bookings, and growing sales teams. Raises booking rate, improves ROAS, and gets more out of the same ad spend."
+        },
+        {
+          "type": "heading",
+          "title": "§04.3 Live transfer",
+          "content": "Flow: Lead opts in → setter calls immediately → qualifies in real time → live transfer into Zoom or Google Meet → Client or rep closes while intent is highest.\n\nBest for aggressive scaling, speed-sensitive offers, and high daily spend. Speed is the whole mechanism here."
+        },
+        {
+          "type": "table",
+          "headers": ["Model", "Volume", "Speed need", "Team required"],
+          "rows": [
+            ["Direct application", "Lower", "Standard", "Owner-led, minimal team"],
+            ["Application + setter", "Higher", "Standard to fast", "Setter on staff"],
+            ["Live transfer", "Highest", "Real time", "Setter and closer available on demand"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p5",
+      "num": "05",
+      "title": "Pre-launch gate",
+      "eyebrow": "Part B · Section 05",
+      "lede": "Missing Client assets are the most common cause of a stalled launch. Chasing them mid-build wastes hours.",
+      "status": "Verified · launch blocking",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": ["Item", "Owner", "Blocks"],
+          "rows": [
+            ["Intake form completed in full", "Client", "All asset scripting"],
+            ["Offer, mechanism, and guarantee documented", "Client", "Copy"],
+            ["Ad creative delivered", "Editor", "Campaign build"],
+            ["VSL filmed", "Client", "Funnel go-live"],
+            ["Pre-call video filmed", "Client", "Pre-call page — see below"],
+            ["Ad account access granted", "Client", "Everything in Meta"],
+            ["GoHighLevel sub-account access", "TAG", "Funnel, pixel, automations"],
+            ["Domain connected", "TAG", "Funnel go-live"],
+            ["A2P 10DLC registration approved", "Client / TAG", "SMS reminders"],
+            ["Calendar configured, 5–7 day booking window", "TAG", "Booking quality"]
+          ]
+        },
+        {
+          "type": "note",
+          "title": "If the pre-call video isn't filmed",
+          "content": "Don't hold the launch for it. Clone the step, strip the video block, replace it with a short thank-you headline, and publish it as a plain thank-you page. Swap the real video in when it arrives. A Client waiting on their own asset shouldn't cost them a week of spend."
+        }
+      ]
+    },
+    {
+      "id": "p6",
+      "num": "06",
+      "title": "Asset scripting",
+      "eyebrow": "Part B · Section 06",
+      "lede": "Scripting the VSL, the ad, and the pre-call video with ChatGPT.",
+      "status": "Verified · asset workflow",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "procedure",
+          "ref": "06.1",
+          "title": "One asset at a time",
+          "steps": ["Script each asset as a separate prompt in a separate pass. Batching all three into one request reliably produces worse output — the structure flattens and the results need more rework than the time you saved."]
+        },
+        {
+          "type": "procedure",
+          "ref": "06.2",
+          "title": "The modeling prompt",
+          "steps": [
+            "Copy the entire completed intake form.",
+            "Paste into ChatGPT with: \"Rewrite this, modeling the exact structure of the text I am about to send you.\"",
+            "Wait for it to confirm, then send the proven template for that asset type.",
+            "Iterate: feed in the unique mechanism, tighten the callout, make it more assertive, name the specific audience."
+          ],
+          "note": "This works because output is modeled on structures already proven in market rather than generated from scratch."
+        },
+        {
+          "type": "procedure",
+          "ref": "06.3",
+          "title": "Headline pattern",
+          "steps": ["Three components: an attention statement naming a specific audience, the guarantee, and an aggressive offer paired with an aggressive guarantee. If ChatGPT drifts, give it a direct example in that format rather than describing what you want."]
+        },
+        {
+          "type": "note",
+          "title": "Check before it goes in the builder",
+          "content": "Copy is ready when it names a specific audience, states the guarantee, and reflects the Client's approved unique mechanism. Copy written against an unconverted offer — see section 02 — will underperform no matter how good the media buying is."
+        },
+        {
+          "type": "procedure",
+          "ref": "06.4",
+          "title": "Wistia upload standard",
+          "steps": [
+            "Naming. Label the video with the client's business name, not a generic label like \"call\" or \"VSL.\" This is what keeps the shared Wistia account navigable as the client list grows.",
+            "Color code. Go to Appearances and set the player color to the team's standard code (editor's reference is yellow). We pay for Wistia specifically to get branded, trackable players — an unbranded default-blue player defeats the point of the paid account.",
+            "Thumbnail. Actually pick one. Don't accept a black frame or a frame that's just floating text. Pick a frame that looks presentable at a glance.",
+            "Controls — turn on: Auto Play, Play with Sound, Big Play Button, Full Screen.",
+            "Controls — turn off: Control Bar, Play Bar, Captions, Settings."
+          ],
+          "note": "Why Captions is off: The editor already burns captions into the creative itself. Leaving Wistia's native captions on stacks a second, unstyled caption layer on top of the editor's — turn it off every time."
+        }
+      ]
+    },
+    {
+      "id": "p7",
+      "num": "07",
+      "title": "Funnel build",
+      "eyebrow": "Part B · Section 07",
+      "lede": "Three pages in GoHighLevel. Roughly three minutes once you have a snapshot.",
+      "status": "Verified · funnel build",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "note",
+          "severity": "good",
+          "title": "Do this once, save it forever",
+          "content": "After your first clean build, take a snapshot and deploy every subsequent funnel from it. This is the single biggest time saver available to you."
+        },
+        {
+          "type": "procedure",
+          "ref": "07.1",
+          "title": "Create the shell",
+          "steps": [
+            "Sites → Funnels → New Funnel, name it, build from scratch.",
+            "Add the first step, name the page VSL, path /VSL.",
+            "Connect the Client's domain."
+          ]
+        },
+        {
+          "type": "procedure",
+          "ref": "07.2",
+          "title": "VSL page",
+          "steps": [
+            "Headline — attention statement naming the audience. Size 21, heavy.",
+            "Headline — guarantee and offer. Size 39, 900 heavy.",
+            "Video — set type to Custom Embed, paste the Wistia embed code.",
+            "Button — \"Schedule a Free Demo\", subtext \"Limited spots available.\" Sizes 22 and 15, heavy then bold. Link to next step. Background #EBC507, black text.",
+            "Headline — disclaimer, rewritten for the Client. Size 12, with spacing above.",
+            "Save, or confirm autosave is on."
+          ]
+        },
+        {
+          "type": "procedure",
+          "ref": "07.3",
+          "title": "Mobile sizing — before you clone",
+          "steps": [
+            "Switch to Mobile mode on the VSL page.",
+            "Headline 1 → 14. Headline 2 → 16.",
+            "Button → unchanged. Disclaimer → 8.",
+            "Now clone, and mobile settings carry through."
+          ],
+          "warning": "Do this on step one before cloning anything. Mobile layout does not carry over once you've already cloned. Fixing it afterward means redoing every step by hand."
+        },
+        {
+          "type": "procedure",
+          "ref": "07.4",
+          "title": "Application page",
+          "steps": [
+            "Clone Funnel Step from VSL. Rename immediately: step name \"App\", path /app. Update the step.",
+            "Rewrite the top headline via ChatGPT to close the loop. Size stays 39.",
+            "Delete the original headline and the button. Keep the disclaimer.",
+            "Add Calendar, select the Client's GoHighLevel calendar, set redirect to \"Go to Next Step.\"",
+            "Add an underlined line above it, e.g. \"Schedule a strategy call\", with a blank spacer."
+          ]
+        },
+        {
+          "type": "procedure",
+          "ref": "07.5",
+          "title": "Pre-call page",
+          "steps": [
+            "Clone Funnel Step from Application. Rename to \"Pre-Call\", path /ty.",
+            "Replace the headline: \"Important — after adding the event to your calendar, watch the video below so we can hit the ground running on your call.\" Size 20.",
+            "Delete the calendar element.",
+            "Add Video, Custom Embed, for the pre-call video.",
+            "Add a second headline: \"Add the event to your calendar — go to your email and click Add to Calendar.\" Size 23, bold."
+          ]
+        },
+        {
+          "type": "note",
+          "severity": "hard",
+          "title": "Rename before you edit",
+          "content": "Cloned steps keep the word \"clone\" in the name and inherit the wrong path. Rename and update the path immediately after cloning, before touching content. Leftover clone names in a live URL are visible to the Client's prospects."
+        }
+      ]
+    },
+    {
+      "id": "p8",
+      "num": "08",
+      "title": "Pixel install",
+      "eyebrow": "Part B · Section 08",
+      "lede": "The step most likely to be done wrong. When it's wrong, the campaign optimizes against nothing and the spend is wasted silently.",
+      "status": "Verified · pixel tracking",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "note",
+          "severity": "hard",
+          "title": "Non-obvious requirement",
+          "content": "Create the data set from inside the ad account — not from Events Manager, not from Business Settings. Created elsewhere, it won't appear correctly as a selectable option in the campaign."
+        },
+        {
+          "type": "procedure",
+          "ref": "08.1",
+          "title": "Create the data set",
+          "steps": [
+            "In Ads Manager at ad set level, under Data Set, choose Create Data Set.",
+            "Name it after the Client's company. Keep it simple.",
+            "Select Meta Pixel only, not Conversions API.",
+            "Choose Install code manually, then copy the code."
+          ]
+        },
+        {
+          "type": "procedure",
+          "ref": "08.2",
+          "title": "Install in GoHighLevel",
+          "steps": [
+            "Funnel → Settings.",
+            "Paste into Head Tracking Code. Not Body Tracking Code. This is a silent failure that costs days.",
+            "Scroll to the bottom and save. Allow a minute to propagate."
+          ]
+        },
+        {
+          "type": "procedure",
+          "ref": "08.3",
+          "title": "Map the conversion event",
+          "steps": [
+            "Back in Events Manager, hit Continue. Leave the toggle Meta offers off.",
+            "Add Events → paste the full VSL page URL → continue. Meta loads the live page.",
+            "Use Track Button, not URL tracking. Click the schedule button on the loaded page.",
+            "Map it to the standard event Schedule. Confirm.",
+            "Finish setup → Finish → Skip → Done."
+          ]
+        },
+        {
+          "type": "procedure",
+          "ref": "08.4",
+          "title": "Verify before you spend",
+          "steps": [
+            "Return to Ads Manager and refresh. The data set should now be selectable.",
+            "Set conversion event to Schedule. It will show \"no data\" — expected on a fresh pixel.",
+            "Run a test booking through the live funnel and confirm the event fires in Test Events.",
+            "Use the standard TAG test record. Never personal contact details.",
+            "If events don't appear: re-copy the pixel code, delete the old code from Head Tracking, paste fresh, save, retest. Propagation delay is common — wait a minute before assuming failure."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p9",
+      "num": "09",
+      "title": "Campaign build",
+      "eyebrow": "Part B · Section 09",
+      "lede": "The settings that get changed most often and cost most when wrong. Treat the Never column as non-negotiable.",
+      "status": "Verified · campaign settings",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "table",
+          "title": "§09.1 Full settings table",
+          "headers": ["Level", "Setting", "TAG standard", "Never"],
+          "rows": [
+            ["Campaign", "Objective", "Leads", "Sales, Traffic"],
+            ["Campaign", "Budget location", "Campaign level (CBO)", "Ad set level"],
+            ["Campaign", "Naming", "[Company] — Iteration 1", "Unlabeled"],
+            ["Ad set", "Conversion location", "Website, single conversion", "Calls, Instant Forms"],
+            ["Ad set", "Performance goal", "Maximize number of leads", "—"],
+            ["Ad set", "Conversion event", "Schedule", "Lead, Purchase"],
+            ["Ad set", "Start time", "12:00 AM next day, Client's time zone", "Late evening starts"],
+            ["Ad set", "Minimum age", "25", "18 default for B2B"],
+            ["Ad set", "Detailed targeting", "Open — let Meta find the audience", "Manual interest stacking"],
+            ["Ad set", "Languages", "Untouched", "—"],
+            ["Ad set", "Audience Network", "Off", "Leaving it on"],
+            ["Ad set", "Placements", "Manual — the six in 09.2", "Advantage+ placements"],
+            ["Ad", "Multi-advertiser ads", "Off", "Meta's default"],
+            ["Ad", "AI / Advantage+ creative", "All off", "Any text-altering feature"],
+            ["Ad", "Lead method", "None", "Instant Forms, Calls"],
+            ["Ad", "Setup", "Manual upload, single", "—"],
+            ["Ad", "Destination", "Website → VSL page URL", "—"]
+          ]
+        },
+        {
+          "type": "heading",
+          "title": "§09.2 The six placements",
+          "content": "Everything else is unselected. The rest is treated as wasted spend.\n\nFacebook: Feed, Stories, Reels\nInstagram: Feed, Stories, Reels"
+        },
+        {
+          "type": "note",
+          "severity": "hard",
+          "title": "Audience Network re-toggles itself",
+          "content": "After you switch it off, Meta frequently turns it back on when you change another setting. Turn it off, then check it again immediately before you publish. Same applies to multi-advertiser ads."
+        },
+        {
+          "type": "heading",
+          "title": "§09.3 Starting budgets",
+          "content": "Constrained budget floor: $50/day — Workable with one creative, slower to signal\nStandard recommendation: $100/day — Reaches a decision point in 1–3 days\nThree or more creatives: $100–150/day — Bump so each creative gets data\nAggressive first launch: $150–200/day — Where the Client's budget supports it\nIteration 2 audience split: ~$25/day each — e.g. four callout variants at $25\n\nFaster spend produces faster clarity. A Client at $100/day reaches a working configuration meaningfully sooner than one at $50/day — worth saying out loud when they're deciding."
+        },
+        {
+          "type": "heading",
+          "title": "§09.4 Ad copy structure",
+          "content": "1. Callout — name the exact person. \"Business owners earning $500K+ only.\"\n2. Offer and guarantee — the outcome plus the risk reversal.\n3. CTA — \"Click the link below to book your strategy call.\"\n\nThe callout also does targeting work. Because detailed targeting is left open, the copy is the primary signal telling Meta who should see this ad. That's why we test the callout and leave the targeting alone."
+        },
+        {
+          "type": "note",
+          "title": "Be specific, not generic",
+          "content": "\"High income attorneys\" is weak. \"Attorneys making over $400,000 a year\" is the callout. The more specific the income or role qualifier in the copy, the tighter the audience Meta delivers to — vague callouts pull in browsers, specific ones pull in the Client's actual buyer."
+        },
+        {
+          "type": "heading",
+          "title": "§09.5 Creative handling",
+          "content": "- Editor delivers assets. Clients request revisions directly in the editing tool rather than routing through you.\n- Default is one ad, modeled on a proven template. More only when the Client wants aggression and can fund it.\n- Set thumbnails manually. Auto-selected frames are frequently unflattering. No measured performance impact, but it affects how the Client perceives the work.\n- Publishing multiple ads may require publishing each one individually."
+        },
+        {
+          "type": "note",
+          "severity": "hard",
+          "title": "Guarantee language",
+          "content": "Source material includes a guarantee promising to reduce tax liability by a specific large percentage or refund. That carries two risks. The first is Meta rejection, which is recoverable. The second is not: our Clients are licensed accountants and CPAs governed by IRS Circular 230, state board advertising rules, and AICPA conduct standards. An ad guaranteeing a specific tax outcome can create licensure exposure for the Client — a far worse failure than a rejected ad.\n\nStandard: no specific percentage or dollar tax-savings guarantee without written sign-off from the Client's licensed practitioner. Guarantee the process and the engagement, not the number."
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "num": "10",
+      "title": "Reminder automations",
+      "eyebrow": "Part B · Section 10",
+      "lede": "Built in GoHighLevel Workflows. Reduces no-shows, which directly protects cost per held call.",
+      "status": "Verified · automation workflow",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "table",
+          "title": "Configuration overview",
+          "headers": ["Component", "Configuration"],
+          "rows": [
+            ["Trigger", "Customer Booked Appointment"],
+            ["Filter", "Calendar equals the specific strategy session calendar"],
+            ["First action", "Add tag reminders"],
+            ["Wait step type", "Until Scheduled Time → Appointment Time → X hours before"],
+            ["Cadence", "12h · 6h · 3h · 1h before"],
+            ["Channels", "SMS and email at every interval"],
+            ["Email from", "The Client's own address, verified before building"],
+            ["Signature", "[Company] Team"]
+          ]
+        },
+        {
+          "type": "heading",
+          "title": "§10.1 Custom values to insert",
+          "content": "- Contact → Full Name\n- Appointment → Start Date and Time\n- Appointment → Meeting Location\n\nPaste operations frequently drop or mangle these tokens. Re-insert from the Custom Values menu rather than typing them, and read every message before enabling the workflow."
+        },
+        {
+          "type": "note",
+          "title": "Why both channels every time",
+          "content": "If A2P 10DLC registration isn't approved, SMS won't deliver and a text-only sequence fails silently — the Client sees no-shows and no explanation. Email duplication means reminder coverage works on day one regardless.\n\nNote: the founder calls this \"HTTP\" in the recordings. The actual item is A2P 10DLC carrier registration. Search that term, not the other one."
+        },
+        {
+          "type": "procedure",
+          "ref": "10.2.1",
+          "title": "Trigger and calendar",
+          "steps": [
+            "Trigger: Customer Booked Appointment. No extra trigger filters needed beyond the calendar itself.",
+            "Name the calendar after the Client's business, never the personal calendar GoHighLevel creates by default — e.g. [Firm Name] Tax Strategy Assessment Call.",
+            "Add the Client's logo to the calendar. Small effort, visibly raises perceived quality.",
+            "Name the workflow itself after the client, e.g. TAG Reminders or [Firm Name] Reminders."
+          ]
+        },
+        {
+          "type": "procedure",
+          "ref": "10.2.2",
+          "title": "Immediate confirmation — SMS and email",
+          "steps": ["Build the SMS action first, then the email action directly beneath it in the same workflow step."],
+          "note": "SMS — immediate: Hey {{contact.name}}, It's [Company Name]. Thanks for booking a time to speak with us; your call is at {{appointment.start_time}} Meeting Link: {{appointment.meeting_location}} Please reply back with \"YES\" to confirm you'll show up.\n\nEmail — immediate: Hey {{contact.name}}, It's [Company Name]. Thanks for booking a time to speak with us; your call is at {{appointment.start_time}} Meeting Link: {{appointment.meeting_location}}\n\nSet the sender email to the Client's own business address — it must be added to their GoHighLevel staff list first. Subject line pattern: Important message from [Company Name]."
+        },
+        {
+          "type": "procedure",
+          "ref": "10.2.3",
+          "title": "Wait steps and the reminder cadence",
+          "steps": ["After the immediate confirmation, insert a Wait step: Until Scheduled Time → Appointment Time → 12 hours before, with Skip all outbound communications until the next one selected. Repeat this wait-then-send pattern for each interval."],
+          "note": "12 hours before: Hey {{contact.name}}, It's [Company Name]. Thanks for booking a time to speak with us; your call is at {{appointment.start_time}} Meeting Link: {{appointment.meeting_location}}\n\n6 hours before: Hey {{contact.name}} just another friendly reminder of our call coming up soon in the next 6 hours. Here's the meeting link just to make it easier! {{appointment.meeting_location}}\n\n3 hours before: Hey {{contact.name}} Just sending the link again just in case you missed it. {{appointment.meeting_location}}\n\n1 hour before: Hey {{contact.name}} I'm hopping on in an hour. Here is the link below! {{appointment.meeting_location}}"
+        },
+        {
+          "type": "note",
+          "severity": "hard",
+          "title": "Token discipline",
+          "content": "Always re-insert {{contact.name}}, {{appointment.start_time}}, and {{appointment.meeting_location}} from the Custom Values menu rather than typing or pasting them — paste operations frequently mangle the braces. Read every message in the workflow before turning it on."
+        },
+        {
+          "type": "note",
+          "title": "If A2P isn't approved yet",
+          "content": "Run every one of these as email-only until approval comes through. Same cadence, same copy, drop the SMS actions."
+        }
+      ]
+    },
+    {
+      "id": "p11",
+      "num": "11",
+      "title": "Qualification and DQ",
+      "eyebrow": "Part B · Section 11",
+      "lede": "Stopping unqualified prospects from consuming the Client's calendar.",
+      "status": "Verified · qualification logic",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "heading",
+          "title": "§11.1 Form fields",
+          "content": "A strong reference set from a live tax advisory Client:\n\n- Name, email, phone number\n- Company website\n- States taxed in\n- Industry\n- Services of interest — tax reduction, preparation, accounting, other\n- Estimated net taxable income, current year, business + personal\n- Estimated revenue, current year\n\nThe income and revenue fields are what the conditional logic keys off. Build the form with the Client on their launch call. Use a single Full Name field rather than splitting first and last, and include the consent checkbox for text messages."
+        },
+        {
+          "type": "heading",
+          "title": "§11.2 DQ page and routing",
+          "content": "1. Clone an existing funnel step, rename to DQ, update the path.\n2. Strip it to a short headline. Keep the tone professional — this page still represents the Client to someone who may qualify later.\n3. Optional: a \"what happens next\" paragraph with resources, and a closing appreciation line.\n4. Publish and copy the URL.\n5. In the form, open conditional logic on the income field: if under threshold, redirect to the DQ URL.\n6. Alternative: display an inline custom message instead of redirecting. Faster to build, less polished.\n\nTest the logic end to end with a dummy under-threshold submission before go-live."
+        },
+        {
+          "type": "note",
+          "title": "Set expectations on this",
+          "content": "Raising the qualification bar raises cost per booked call, because you're filtering more traffic out. That's expected and is not a signal the campaign is failing. Agree the threshold with the Client explicitly so the resulting number isn't a surprise in week one."
+        }
+      ]
+    },
+    {
+      "id": "p12",
+      "num": "12",
+      "title": "KPIs",
+      "eyebrow": "Part C · Section 12",
+      "lede": "What good looks like, and how quickly you can tell.",
+      "status": "Verified · performance metrics",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": ["Metric", "Target", "Read"],
+          "rows": [
+            ["Cost per call — B2C", "Under $100", "Under $80 is strong. $32–60 observed on healthy accounts."],
+            ["Cost per call — B2B", "$150–200", "Higher is expected and acceptable"],
+            ["ROAS floor", "4x", "Worst-case target, not the ceiling"],
+            ["Time to first read", "1–3 days", "At $100/day, enough signal to decide the next move"]
+          ]
+        },
+        {
+          "type": "instrument",
+          "title": "Cost per call check",
+          "fields": [
+            {"label": "Spend to date", "id": "cpc-spend", "type": "number", "default": "300"},
+            {"label": "Calls booked", "id": "cpc-calls", "type": "number", "default": "4"},
+            {"label": "Offer type", "id": "cpc-type", "type": "select", "options": [{"value": "b2c", "text": "B2C"}, {"value": "b2b", "text": "B2B"}]}
+          ],
+          "outputs": [
+            {"label": "Cost per call", "id": "cpc-out"},
+            {"label": "Threshold", "id": "cpc-thresh"}
+          ]
+        },
+        {
+          "type": "note",
+          "title": "Rising cost per call isn't automatically a problem",
+          "content": "One reference account opened around $37 and settled higher while staying well inside target. Judge against the threshold, not against the opening number. Drift upward over time is normal."
+        }
+      ]
+    },
+    {
+      "id": "p13",
+      "num": "13",
+      "title": "Iteration",
+      "eyebrow": "Part C · Section 13",
+      "lede": "What to change, in what order, and what to leave alone.",
+      "status": "Verified · optimization strategy",
+      "level": "verified",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": ["Stage", "Change", "Rationale"],
+          "rows": [
+            ["Iteration 1", "Open targeting, one creative, single callout", "Establish a baseline and let Meta find the audience"],
+            ["Iteration 2", "Split the callout into separate ad sets by segment", "Isolate which audience the copy actually converts"],
+            ["Iteration 3", "Creative variation against the winning callout", "Only once the audience is known"],
+            ["Diagnostic", "Device or connection filters", "Use when lead quality is poor, as a test — not a default"]
+          ]
+        },
+        {
+          "type": "note",
+          "title": "The operating principle",
+          "content": "We test copy, not targeting. The assumption is that Meta's delivery optimization outperforms manual audience construction, so the lever we pull is the callout. If a Client's ad names five different audiences at once, that's a signal to split it into a proper test rather than a finished ad."
+        },
+        {
+          "type": "heading",
+          "title": "§13.1 Worked example",
+          "content": "An ad calling out executives, leaders, CEOs, and doctors simultaneously isn't one ad — it's four untested hypotheses in a trench coat. Iteration 2 for that account is four ad sets at $25/day, each naming one audience, running the same three creatives. Within a few days you know which callout carries the account, and iteration 3 puts full budget behind it."
+        },
+        {
+          "type": "heading",
+          "title": "§13.2 Efficiency notes",
+          "content": "- Build a snapshot and deploy every funnel from it.\n- Clone, don't build. Every additional step should be a clone, stripped and edited.\n- Set mobile sizing before cloning. See 07.3.\n- Add the Client's logo to calendar settings. Quick, and visibly raises perceived quality.\n- Cap the booking window at 5–7 days. Longer windows produce cold, low-show bookings."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campaign build — TAG CSM Operating Manual</title>
+<style>
+
+:root{
+  --ink:#050505;
+  --paper:#fbf9f4;
+  --signal:#cc901b;
+  --signal-deep:#a3730f;
+  --stop:#b02a1f;
+  --stop-tint:#fdf1ef;
+  --go:#1a6b45;
+  --go-tint:#eef7f2;
+  --graphite:#5c6370;
+  --field:#f0ede4;
+  --line:#ddd8cb;
+  --line-soft:#e9e5da;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --disp:Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  padding:44px 52px 120px;
+  max-width:1020px;
+  margin:0 auto;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--signal-deep);
+  margin-bottom:9px;
+}
+h1{font-family:var(--disp);font-size:32px;font-weight:600;letter-spacing:0;line-height:1.15;margin-bottom:12px;}
+h2{
+  font-size:15px;font-weight:600;margin:38px 0 12px;
+  padding-bottom:7px;border-bottom:2px solid var(--ink);
+  letter-spacing:-.005em;
+  display:flex;align-items:baseline;gap:10px;
+}
+h2 .n{font-family:var(--mono);font-size:11.5px;color:var(--graphite);font-weight:500;}
+h3{font-size:14px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:12px;max-width:74ch;}
+.lede{font-size:16.5px;color:var(--graphite);max-width:70ch;margin-bottom:26px;line-height:1.5;}
+ul,ol{margin:0 0 14px 20px;max-width:74ch;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+em{font-style:italic;color:var(--graphite);}
+table{
+  width:100%;border-collapse:collapse;margin:14px 0 22px;
+  font-size:13px;background:#fff;
+  border:1px solid var(--line);
+}
+th{
+  background:var(--field);
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--graphite);
+  text-align:left;padding:9px 12px;
+  border-bottom:1px solid var(--line);
+}
+td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+td.v{font-family:var(--mono);font-size:12.5px;}
+.stop{color:var(--stop);font-weight:600;}
+.go{color:var(--go);font-weight:600;}
+.note{
+  border-left:3px solid var(--signal);
+  background:#fffdf0;
+  padding:13px 17px;margin:16px 0;font-size:14px;max-width:76ch;
+}
+.note.hard{border-left-color:var(--stop);background:var(--stop-tint);}
+.note.good{border-left-color:var(--go);background:var(--go-tint);}
+.note-tag{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;display:block;margin-bottom:5px;color:var(--signal-deep);
+}
+.note.hard .note-tag{color:var(--stop);}
+.note.good .note-tag{color:var(--go);}
+.note p:last-child{margin-bottom:0;}
+.proc{border:1px solid var(--line);background:#fff;margin:14px 0;}
+.proc-head{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 16px;background:var(--field);
+  border-bottom:1px solid var(--line);
+}
+.proc-ref{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  color:#fff;background:var(--ink);padding:2px 7px;
+}
+.proc-title{font-size:13.5px;font-weight:600;}
+.proc-body{padding:14px 17px;}
+.proc-body ol{margin-bottom:0;}
+.proc-body p:last-child{margin-bottom:0;}
+.instrument{
+  border:1px solid var(--line);background:#fff;margin:18px 0;
+}
+.instrument-head{
+  padding:11px 17px;background:var(--ink);color:#fff;
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;
+}
+.instrument-body{padding:18px;}
+.inputs{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;}
+.fieldset{flex:1;min-width:150px;}
+label{
+  display:block;font-family:var(--mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--graphite);margin-bottom:5px;
+}
+input[type=number],select{
+  width:100%;padding:8px 10px;
+  border:1px solid var(--line);background:var(--field);
+  font-family:var(--mono);font-size:14px;color:var(--ink);
+  border-radius:0;
+}
+input[type=number]:focus,select:focus{
+  outline:2px solid var(--signal);outline-offset:-1px;background:#fff;
+}
+.readout{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);}
+.cell{flex:1;min-width:110px;background:#fff;padding:13px 15px;}
+.cell-k{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--graphite);margin-bottom:4px;
+}
+.cell-v{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em;}
+.verdict{
+  margin-top:14px;padding:12px 15px;font-size:13.5px;
+  border-left:3px solid var(--graphite);background:var(--field);
+}
+.verdict.pass{border-left-color:var(--go);background:var(--go-tint);}
+.verdict.fail{border-left-color:var(--stop);background:var(--stop-tint);}
+.verdict b{font-weight:600;}
+.kbd{
+  font-family:var(--mono);font-size:11.5px;background:var(--field);
+  border:1px solid var(--line);padding:1px 6px;
+}
+.pill{
+  display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;
+  background:var(--ink);color:#fff;vertical-align:middle;
+}
+.pill.warn{background:var(--stop);}
+footer{
+  margin-top:52px;padding-top:16px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--graphite);
+}
+@media (max-width:900px){
+  body{padding:28px 20px 80px;}
+  h1{font-size:26px;}
+  .inputs{flex-direction:column;}
+}
+
+</style>
+</head>
+<body>
+  <div class="eyebrow">Part B · Section 09</div>
+  <h1>Campaign build</h1>
+  <p class="lede">The settings that get changed most often and cost most when wrong. Treat the Never column as non-negotiable.</p>
+
+  
+        <table>
+          <caption style="text-align:left;caption-side:top;padding-bottom:10px;font-weight:600;">§09.1 Full settings table</caption>
+          <thead>
+            <tr>
+              <th>Level</th><th>Setting</th><th>TAG standard</th><th>Never</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>Campaign</td><td>Objective</td><td>Leads</td><td>Sales, Traffic</td>
+              </tr>
+            
+              <tr>
+                <td>Campaign</td><td>Budget location</td><td>Campaign level (CBO)</td><td>Ad set level</td>
+              </tr>
+            
+              <tr>
+                <td>Campaign</td><td>Naming</td><td>[Company] — Iteration 1</td><td>Unlabeled</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Conversion location</td><td>Website, single conversion</td><td>Calls, Instant Forms</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Performance goal</td><td>Maximize number of leads</td><td>—</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Conversion event</td><td>Schedule</td><td>Lead, Purchase</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Start time</td><td>12:00 AM next day, Client's time zone</td><td>Late evening starts</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Minimum age</td><td>25</td><td>18 default for B2B</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Detailed targeting</td><td>Open — let Meta find the audience</td><td>Manual interest stacking</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Languages</td><td>Untouched</td><td>—</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Audience Network</td><td>Off</td><td>Leaving it on</td>
+              </tr>
+            
+              <tr>
+                <td>Ad set</td><td>Placements</td><td>Manual — the six in 09.2</td><td>Advantage+ placements</td>
+              </tr>
+            
+              <tr>
+                <td>Ad</td><td>Multi-advertiser ads</td><td>Off</td><td>Meta's default</td>
+              </tr>
+            
+              <tr>
+                <td>Ad</td><td>AI / Advantage+ creative</td><td>All off</td><td>Any text-altering feature</td>
+              </tr>
+            
+              <tr>
+                <td>Ad</td><td>Lead method</td><td>None</td><td>Instant Forms, Calls</td>
+              </tr>
+            
+              <tr>
+                <td>Ad</td><td>Setup</td><td>Manual upload, single</td><td>—</td>
+              </tr>
+            
+              <tr>
+                <td>Ad</td><td>Destination</td><td>Website → VSL page URL</td><td>—</td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+        <div>
+          <h2><span class="n">§09.2</span> The six placements</h2>
+          <p>Everything else is unselected. The rest is treated as wasted spend.</p><p>Facebook: Feed, Stories, Reels
+Instagram: Feed, Stories, Reels</p>
+        </div>
+      
+
+        <div class="note hard">
+          <span class="note-tag">Audience Network re-toggles itself</span>
+          <p>After you switch it off, Meta frequently turns it back on when you change another setting. Turn it off, then check it again immediately before you publish. Same applies to multi-advertiser ads.</p>
+        </div>
+      
+
+        <div>
+          <h2><span class="n">§09.3</span> Starting budgets</h2>
+          <p>Constrained budget floor: $50/day — Workable with one creative, slower to signal
+Standard recommendation: $100/day — Reaches a decision point in 1–3 days
+Three or more creatives: $100–150/day — Bump so each creative gets data
+Aggressive first launch: $150–200/day — Where the Client's budget supports it
+Iteration 2 audience split: ~$25/day each — e.g. four callout variants at $25</p><p>Faster spend produces faster clarity. A Client at $100/day reaches a working configuration meaningfully sooner than one at $50/day — worth saying out loud when they're deciding.</p>
+        </div>
+      
+
+        <div>
+          <h2><span class="n">§09.4</span> Ad copy structure</h2>
+          <p>1. Callout — name the exact person. "Business owners earning $500K+ only."
+2. Offer and guarantee — the outcome plus the risk reversal.
+3. CTA — "Click the link below to book your strategy call."</p><p>The callout also does targeting work. Because detailed targeting is left open, the copy is the primary signal telling Meta who should see this ad. That's why we test the callout and leave the targeting alone.</p>
+        </div>
+      
+
+        <div class="note ">
+          <span class="note-tag">Be specific, not generic</span>
+          <p>"High income attorneys" is weak. "Attorneys making over $400,000 a year" is the callout. The more specific the income or role qualifier in the copy, the tighter the audience Meta delivers to — vague callouts pull in browsers, specific ones pull in the Client's actual buyer.</p>
+        </div>
+      
+
+        <div>
+          <h2><span class="n">§09.5</span> Creative handling</h2>
+          <p>- Editor delivers assets. Clients request revisions directly in the editing tool rather than routing through you.
+- Default is one ad, modeled on a proven template. More only when the Client wants aggression and can fund it.
+- Set thumbnails manually. Auto-selected frames are frequently unflattering. No measured performance impact, but it affects how the Client perceives the work.
+- Publishing multiple ads may require publishing each one individually.</p>
+        </div>
+      
+
+        <div class="note hard">
+          <span class="note-tag">Guarantee language</span>
+          <p>Source material includes a guarantee promising to reduce tax liability by a specific large percentage or refund. That carries two risks. The first is Meta rejection, which is recoverable. The second is not: our Clients are licensed accountants and CPAs governed by IRS Circular 230, state board advertising rules, and AICPA conduct standards. An ad guaranteeing a specific tax outcome can create licensure exposure for the Client — a far worse failure than a rejected ad.
+
+Standard: no specific percentage or dollar tax-savings guarantee without written sign-off from the Client's licensed practitioner. Guarantee the process and the engagement, not the number.</p>
+        </div>
+      
+
+  <footer>
+    <p>TAG CSM Operating Manual · Section 09 · v1.0</p>
+  </footer>
+</body>
+</html>
