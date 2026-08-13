@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Success Portal - TAG</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background: #0b0a09; color: #f0ede4; min-height: 100vh; }
+
+    .container { display: flex; flex-direction: column; min-height: 100vh; }
+
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #2a2724;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #a8a49a;
+      font-size: 12px;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-avatar { width: 32px; height: 32px; background: #3f9d73; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #f0ede4; font-size: 14px; }
+    .header-right { display: flex; gap: 12px; align-items: center; }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      color: #f0ede4;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #207f7f;
+      transition: opacity 0.2s;
+    }
+    .btn-icon:hover { opacity: 0.8; }
+    .btn-icon.settings { background: #e0a324; color: #050505; }
+    .btn-icon.help { background: #3f9d73; }
+
+    main { flex: 1; overflow-y: auto; padding: 32px; }
+
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeIn 0.2s; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .screen-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+    .screen-header h1 { font-size: 32px; font-weight: 600; margin-bottom: 4px; color: #f0ede4; }
+    .screen-header p { font-size: 13px; color: #a8a49a; }
+    .screen-buttons { display: flex; gap: 8px; }
+
+    .btn {
+      padding: 8px 16px;
+      border: 1px solid #2a2724;
+      border-radius: 4px;
+      color: #f0ede4;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: #1c1a18; }
+    .btn.primary {
+      background: #e0a324;
+      color: #050505;
+      border: none;
+    }
+    .btn.primary:hover { opacity: 0.9; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-card {
+      background: #141311;
+      border: 1px solid #2a2724;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .kpi-label { font-size: 12px; font-weight: 600; color: #a8a49a; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 32px; font-weight: 700; color: #e0a324; margin-bottom: 8px; }
+    .kpi-change { font-size: 12px; color: #3f9d73; font-weight: 600; }
+    .kpi-change.warning { color: #dd8244; }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(5, 5, 5, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: #141311;
+      border: 1px solid #2a2724;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #2a2724;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #141311;
+      position: sticky;
+      top: 0;
+    }
+
+    .modal-header h2 { font-size: 18px; font-weight: 600; color: #f0ede4; }
+    .modal-close {
+      background: transparent;
+      color: #a8a49a;
+      font-size: 20px;
+      cursor: pointer;
+      border: none;
+    }
+    .modal-close:hover { color: #f0ede4; }
+
+    .modal-body { padding: 24px; }
+    .modal-preview {
+      height: 300px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e3a8a 100%);
+      border-radius: 6px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #f0ede4;
+      font-weight: 600;
+    }
+
+    .modal-section { margin-bottom: 24px; }
+    .modal-section-label { font-size: 12px; color: #a8a49a; margin-bottom: 8px; text-transform: uppercase; }
+    .modal-section p { font-size: 13px; color: #f0ede4; line-height: 1.6; }
+
+    .modal-buttons { display: flex; gap: 12px; }
+    .btn-approve {
+      flex: 1;
+      padding: 12px;
+      background: #3f9d73;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-approve:hover { opacity: 0.9; }
+
+    .btn-reject {
+      flex: 1;
+      padding: 12px;
+      background: #d9584c;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-reject:hover { opacity: 0.9; }
+
+    .proof-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+    .proof-card {
+      background: #141311;
+      border: 1px solid #2a2724;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border 0.2s;
+    }
+    .proof-card:hover { border-color: #3f9d73; }
+    .proof-preview {
+      height: 200px;
+      background: #1e3a8a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #f0ede4;
+      font-weight: 600;
+    }
+    .proof-info { padding: 16px; }
+    .proof-title { font-size: 13px; font-weight: 600; color: #f0ede4; margin-bottom: 4px; }
+    .proof-format { font-size: 11px; color: #a8a49a; margin-bottom: 12px; }
+    .proof-status { font-size: 10px; padding: 4px 8px; background: rgb(224 163 36 / 0.2); color: #e0a324; border-radius: 4px; display: inline-block; }
+    .proof-status.approved { background: rgb(63 157 115 / 0.2); color: #3f9d73; }
+
+    nav {
+      background: #141311;
+      border-top: 1px solid #2a2724;
+      padding: 16px 24px;
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-tabs { display: flex; gap: 32px; flex: 1; }
+    .nav-tab {
+      padding: 12px 0;
+      background: transparent;
+      border: none;
+      color: #d9d6cc;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav-tab.active { color: #e0a324; border-bottom-color: #e0a324; }
+    .nav-tab:hover { color: #f0ede4; }
+
+    .chart-bars {
+      height: 240px;
+      background: #1c1a18;
+      border-radius: 6px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      padding: 20px 12px;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .chart-bar {
+      flex: 1;
+      background: #3f9d73;
+      border-radius: 3px;
+      min-height: 4px;
+      transition: all 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-left">
+        <div class="header-avatar">📊</div>
+        <div>
+          <p style="font-size: 12px; font-weight: 600; color: #f0ede4; margin-bottom: 2px;">Success Portal</p>
+          <p style="font-size: 11px; color: #a8a49a;">Acme Growth Marketing</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn-icon">🔔</button>
+        <button class="btn-icon settings">🔧</button>
+        <button class="btn-icon help">❓</button>
+        <div class="header-avatar" style="background: linear-gradient(135deg, #d9a88c 0%, #b8956a 100%);">SC</div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Dashboard Screen -->
+      <div id="screen-dashboard" class="screen active">
+        <div class="screen-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Your campaign performance and key metrics</p>
+          </div>
+          <div class="screen-buttons">
+            <button class="btn">📊 Export</button>
+            <button class="btn primary">⚙️ Custom KPIs</button>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">ROAS</div>
+            <div class="kpi-value">4.2x</div>
+            <div class="kpi-change">↑ 12% vs last month</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Monthly Spend</div>
+            <div class="kpi-value" style="color: #f0ede4;">$24,580</div>
+            <div class="kpi-change" style="color: #a8a49a;">On budget</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Conversion Rate</div>
+            <div class="kpi-value" style="color: #f0ede4;">3.8%</div>
+            <div class="kpi-change warning">⚠️ 0.2% below target</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Cost per Lead</div>
+            <div class="kpi-value" style="color: #f0ede4;">$42</div>
+            <div class="kpi-change">↓ 8% optimized</div>
+          </div>
+        </div>
+
+        <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+          <h2 style="font-size: 14px; font-weight: 600; color: #f0ede4; margin-bottom: 20px;">30-Day Performance</h2>
+          <div class="chart-bars">
+            <div class="chart-bar" style="height: 42%;"></div>
+            <div class="chart-bar" style="height: 55%;"></div>
+            <div class="chart-bar" style="height: 65%;"></div>
+            <div class="chart-bar" style="height: 72%; background: #e0a324;"></div>
+            <div class="chart-bar" style="height: 78%; background: #e0a324;"></div>
+            <div class="chart-bar" style="height: 85%; background: #e0a324;"></div>
+            <div class="chart-bar" style="height: 92%; background: #207f7f;"></div>
+          </div>
+          <p style="font-size: 11px; color: #a8a49a; text-align: center;">Daily ROAS trend</p>
+        </div>
+      </div>
+
+      <!-- Creatives Screen -->
+      <div id="screen-creatives" class="screen">
+        <div class="screen-header">
+          <div>
+            <h1>Ad Creatives</h1>
+            <p>Review and approve ad designs</p>
+          </div>
+        </div>
+
+        <div class="proof-grid">
+          <div class="proof-card" onclick="openModal({title: 'Facebook Feed Ad', platform: 'Facebook', format: '1200x628', status: 'pending'})">
+            <div class="proof-preview" style="background: #1e3a8a;">Facebook</div>
+            <div class="proof-info">
+              <div class="proof-title">Facebook Feed Ad</div>
+              <div class="proof-format">1200x628</div>
+              <span class="proof-status">pending</span>
+            </div>
+          </div>
+          <div class="proof-card" onclick="openModal({title: 'Instagram Story', platform: 'Instagram', format: '1080x1920', status: 'approved'})">
+            <div class="proof-preview" style="background: #7c2d12;">Instagram</div>
+            <div class="proof-info">
+              <div class="proof-title">Instagram Story</div>
+              <div class="proof-format">1080x1920</div>
+              <span class="proof-status approved">approved</span>
+            </div>
+          </div>
+          <div class="proof-card" onclick="openModal({title: 'LinkedIn Banner', platform: 'LinkedIn', format: '1500x500', status: 'rejected'})">
+            <div class="proof-preview" style="background: #164e63;">LinkedIn</div>
+            <div class="proof-info">
+              <div class="proof-title">LinkedIn Banner</div>
+              <div class="proof-format">1500x500</div>
+              <span class="proof-status" style="background: rgb(217 88 76 / 0.2); color: #d9584c;">rejected</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheduling Screen -->
+      <div id="screen-scheduling" class="screen">
+        <div class="screen-header">
+          <div>
+            <h1>Book a Call</h1>
+            <p>Schedule your strategy session with a TAG specialist</p>
+          </div>
+        </div>
+
+        <div style="max-width: 700px;">
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 24px;">
+            <h2 style="font-size: 16px; font-weight: 600; color: #f0ede4; margin-bottom: 16px;">Available Times</h2>
+            <div style="display: grid; gap: 12px;">
+              <button onclick="bookSlot('Mar 3, 10:00 AM')" style="text-align: left; padding: 14px 16px; background: #1c1a18; border: 1px solid #2a2724; border-radius: 6px; color: #f0ede4; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <div><p style="font-weight: 600; margin-bottom: 2px;">Mar 3 at 10:00 AM</p><p style="font-size: 11px; color: #a8a49a;">with Sarah Chen</p></div>
+                <span style="font-size: 11px; background: rgba(63 157 115 / 0.2); color: #3f9d73; padding: 4px 8px; border-radius: 4px;">Available</span>
+              </button>
+              <button onclick="bookSlot('Mar 3, 2:00 PM')" style="text-align: left; padding: 14px 16px; background: #1c1a18; border: 1px solid #2a2724; border-radius: 6px; color: #f0ede4; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <div><p style="font-weight: 600; margin-bottom: 2px;">Mar 3 at 2:00 PM</p><p style="font-size: 11px; color: #a8a49a;">with David Marcus</p></div>
+                <span style="font-size: 11px; background: rgba(63 157 115 / 0.2); color: #3f9d73; padding: 4px 8px; border-radius: 4px;">Available</span>
+              </button>
+            </div>
+            <div id="booking-confirmation" style="display: none; background: rgb(63 157 115 / 0.1); border: 1px solid #3f9d73; border-radius: 8px; padding: 16px; margin-top: 24px;">
+              <p style="font-size: 13px; color: #3f9d73; font-weight: 600; margin-bottom: 4px;">✓ Call Confirmed</p>
+              <p id="confirmation-text" style="font-size: 12px; color: #a8a49a;"></p>
+              <p style="font-size: 11px; color: #a8a49a; margin-top: 8px;">You'll receive a calendar invite and Zoom link shortly.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resources Screen -->
+      <div id="screen-resources" class="screen">
+        <div class="screen-header">
+          <div>
+            <h1>Resources</h1>
+            <p>Documents, collateral, and team communication</p>
+          </div>
+        </div>
+
+        <div style="max-width: 1200px;">
+          <div style="background: #141311; border: 1px solid #2a2724; border-radius: 8px; padding: 24px;">
+            <h2 style="font-size: 16px; font-weight: 600; color: #f0ede4; margin-bottom: 16px;">📁 Shared Drive</h2>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #1c1a18; border-radius: 6px;">
+                <div style="font-size: 20px;">📄</div>
+                <div style="flex: 1;">
+                  <p style="font-size: 12px; font-weight: 600; color: #f0ede4; margin-bottom: 2px;">Q1_Campaign_Strategy.pdf</p>
+                  <p style="font-size: 10px; color: #a8a49a;">2.4 MB · Mar 10</p>
+                </div>
+                <a href="#" style="padding: 4px 8px; background: transparent; border: 1px solid #2a2724; border-radius: 4px; color: #e0a324; font-size: 10px; font-weight: 600; text-decoration: none;">Download</a>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #1c1a18; border-radius: 6px;">
+                <div style="font-size: 20px;">📄</div>
+                <div style="flex: 1;">
+                  <p style="font-size: 12px; font-weight: 600; color: #f0ede4; margin-bottom: 2px;">Brand_Guidelines_2024.pdf</p>
+                  <p style="font-size: 10px; color: #a8a49a;">5.1 MB · Mar 8</p>
+                </div>
+                <a href="#" style="padding: 4px 8px; background: transparent; border: 1px solid #2a2724; border-radius: 4px; color: #e0a324; font-size: 10px; font-weight: 600; text-decoration: none;">Download</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <nav>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchScreen('dashboard')">Dashboard</button>
+        <button class="nav-tab" onclick="switchScreen('creatives')">Creatives</button>
+        <button class="nav-tab" onclick="switchScreen('scheduling')">Calls</button>
+        <button class="nav-tab" onclick="switchScreen('resources')">Resources</button>
+      </div>
+      <button class="btn">Sign Out</button>
+    </nav>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Modal Title</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-preview" id="modal-preview"></div>
+        <div class="modal-section">
+          <div class="modal-section-label">Notes</div>
+          <p id="modal-notes">Blue background with white text. Headline: "Grow Your Law Practice Today" with CTA button.</p>
+        </div>
+        <div class="modal-buttons">
+          <button class="btn-approve" onclick="approveCreative()">Approve</button>
+          <button class="btn-reject" onclick="rejectCreative()">Request Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchScreen(screenName) {
+      // Hide all screens
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
+      // Show selected screen
+      const screenId = `screen-${screenName}`;
+      const screen = document.getElementById(screenId);
+      if (screen) {
+        screen.classList.add('active');
+        document.querySelector(`[onclick="switchScreen('${screenName}')"]`).classList.add('active');
+      }
+    }
+
+    function openModal(data) {
+      document.getElementById('modal-title').textContent = data.title;
+      document.getElementById('modal-preview').textContent = `${data.platform} - ${data.format}`;
+      document.getElementById('modal-notes').textContent = `Creative: ${data.title} (${data.format})`;
+      document.getElementById('modal-overlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('active');
+    }
+
+    function approveCreative() {
+      alert('Creative approved!');
+      closeModal();
+    }
+
+    function rejectCreative() {
+      alert('Changes requested for this creative');
+      closeModal();
+    }
+
+    function bookSlot(time) {
+      document.getElementById('booking-confirmation').style.display = 'block';
+      document.getElementById('confirmation-text').textContent = `${time} with Sarah Chen`;
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>
