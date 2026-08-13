@@ -29,7 +29,7 @@ substitutions:
   # location's own dashboard URL, the callback path is public by definition,
   # and the sender is a support inbox. GHL_CLIENT_SECRET is the only one of
   # this group that actually needed Secret Manager, and it already has it.
-  _GHL_CLIENT_ID: 6a765592e3f2f8638204f294-msji5k0u
+  _GHL_CLIENT_ID: 6a7cc767e26aa70008be5b6f-msqhcvd9
   # TAG's own GHL sub-account — what the closer workspace (Epic 2) runs
   # against. Not a stand-in for per-client multi-tenant routing; that is
   # Story 1.2/1.6, still blocked on GHL account consolidation.
@@ -101,7 +101,7 @@ steps:
       # Admin picks this up as Application Default Credentials, which is why no
       # service-account JSON is stored anywhere.
       - --service-account=${_RUNTIME_SA}
-      - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest
+      - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest,SLACK_BOT_TOKEN=slack-bot-token:latest
       - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER}
       # GHL_PIT is deliberately absent. It is a single-location development
       # fallback, and leaving it set in production would let a token-resolution
