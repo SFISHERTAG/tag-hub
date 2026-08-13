@@ -3,8 +3,8 @@ import { devLocationId } from "@/lib/ghl/tokens";
 import { getLocationConfig } from "@/lib/dashboard/location-config";
 import { MOCK_METRICS } from "@/lib/dashboard/mock-metrics";
 import { DarkScope } from "./dark-scope";
+import { DashboardLayout } from "./dashboard-layout";
 import { SampleDataBanner } from "./widgets/sample-data-banner";
-import { KpiTiles } from "./widgets/kpi-tiles";
 import { SpendCharts } from "./widgets/spend-charts";
 import { FunnelTable } from "./widgets/funnel-table";
 import { TopDeals } from "./widgets/top-deals";
@@ -49,26 +49,24 @@ export default async function DashboardPage() {
   return (
     <DarkScope>
       <div className="mx-auto max-w-6xl space-y-6">
-        <h1 className="text-xl font-semibold tracking-tight text-ink">Dashboard</h1>
-
         <SampleDataBanner />
 
-        <KpiTiles kpis={MOCK_METRICS.kpis} />
+        <DashboardLayout accountName={session.user?.email || "Your Account"}>
+          <SpendCharts
+            spendByChannel={MOCK_METRICS.spendByChannel}
+            spendByAd={MOCK_METRICS.spendByAd}
+          />
 
-        <SpendCharts
-          spendByChannel={MOCK_METRICS.spendByChannel}
-          spendByAd={MOCK_METRICS.spendByAd}
-        />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FunnelTable funnel={MOCK_METRICS.funnel} />
+            <TopDeals deals={MOCK_METRICS.topDeals} />
+          </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <FunnelTable funnel={MOCK_METRICS.funnel} />
-          <TopDeals deals={MOCK_METRICS.topDeals} />
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <DocumentsWidget folderId={driveFolderId} />
-          <SlackWidget channelId={slackChannelId} />
-        </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <DocumentsWidget folderId={driveFolderId} />
+            <SlackWidget channelId={slackChannelId} />
+          </div>
+        </DashboardLayout>
       </div>
     </DarkScope>
   );
