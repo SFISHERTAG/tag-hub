@@ -4,6 +4,7 @@ import { getLocationConfig } from "@/lib/dashboard/location-config";
 import { MOCK_METRICS } from "@/lib/dashboard/mock-metrics";
 import { DarkScope } from "./dark-scope";
 import { DashboardLayout } from "./dashboard-layout";
+import { DashboardPageClient } from "./page-client";
 import { SampleDataBanner } from "./widgets/sample-data-banner";
 import { SpendCharts } from "./widgets/spend-charts";
 import { FunnelTable } from "./widgets/funnel-table";
@@ -46,27 +47,34 @@ export default async function DashboardPage() {
 
   const { slackChannelId, driveFolderId } = await getLocationConfig(locationId);
 
+  // Render server-side dashboard content
+  const dashboardContent = (
+    <>
+      <SpendCharts
+        spendByChannel={MOCK_METRICS.spendByChannel}
+        spendByAd={MOCK_METRICS.spendByAd}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <FunnelTable funnel={MOCK_METRICS.funnel} />
+        <TopDeals deals={MOCK_METRICS.topDeals} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DocumentsWidget folderId={driveFolderId} />
+        <SlackWidget channelId={slackChannelId} />
+      </div>
+    </>
+  );
+
   return (
     <DarkScope>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="mx-auto max-w-6xl">
         <SampleDataBanner />
-
-        <DashboardLayout accountName={session.user?.email || "Your Account"}>
-          <SpendCharts
-            spendByChannel={MOCK_METRICS.spendByChannel}
-            spendByAd={MOCK_METRICS.spendByAd}
-          />
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <FunnelTable funnel={MOCK_METRICS.funnel} />
-            <TopDeals deals={MOCK_METRICS.topDeals} />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <DocumentsWidget folderId={driveFolderId} />
-            <SlackWidget channelId={slackChannelId} />
-          </div>
-        </DashboardLayout>
+        <DashboardPageClient
+          accountName={session.email || "Your Account"}
+          dashboardContent={dashboardContent}
+        />
       </div>
     </DarkScope>
   );
