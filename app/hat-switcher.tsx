@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { wearHat } from "./hat-actions";
+import { ChevronIcon } from "./icons";
 
 type Option = { value: string; label: string; description: string };
 
@@ -41,19 +42,12 @@ export function HatSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 rounded-md border border-chrome-line px-3 py-2 text-left text-xs text-chrome-ink hover:border-line-strong disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-1.5 rounded-md border border-chrome-line px-3 py-2 text-xs font-medium text-chrome-ink transition-colors hover:border-line-strong hover:bg-chrome-hover disabled:opacity-60"
       >
-        <span>
-          <span className="block text-[10px] tracking-wide text-ink-3 uppercase">
-            Viewing as
-          </span>
-          <span className="block font-medium text-accent">
-            {active?.label ?? current}
-          </span>
-        </span>
-        <span aria-hidden className="text-ink-3">
-          {open ? "▲" : "▼"}
-        </span>
+        <span className="truncate">{active?.label ?? current}</span>
+        <ChevronIcon
+          className={`h-3 w-3 shrink-0 text-chrome-ink-2 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       {error && <p className="mt-1 text-[11px] text-danger">{error}</p>}
@@ -61,8 +55,14 @@ export function HatSwitcher({
       {open && (
         <ul
           role="listbox"
-          className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-chrome-line bg-chrome lift-lg"
+          className="absolute z-20 mt-1 w-full min-w-48 overflow-hidden rounded-md border border-chrome-line bg-chrome lift-lg"
         >
+          <li
+            aria-hidden
+            className="border-b border-chrome-line px-3 py-1.5 text-[10px] font-medium tracking-wide text-chrome-ink-2 uppercase"
+          >
+            Switch workspace view
+          </li>
           {options.map((option) => {
             const selected = option.value === current;
             return (

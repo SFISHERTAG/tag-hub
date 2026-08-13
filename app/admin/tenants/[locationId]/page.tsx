@@ -50,9 +50,9 @@ export default async function TenantAdminPage({
         {isNew && (
           <p className="mt-2 max-w-xl text-xs text-warn">
             No document yet for this location — saving below creates one.
-            Name shows as a placeholder until the GHL backfill (Story 1.6) is
-            wired; it isn&rsquo;t editable here on purpose, so this page never
-            becomes a second place a client name is typed.
+            Name shows as a placeholder until it syncs from GHL; it
+            isn&rsquo;t editable here on purpose, so this page never becomes
+            a second place a client name is typed.
           </p>
         )}
       </div>

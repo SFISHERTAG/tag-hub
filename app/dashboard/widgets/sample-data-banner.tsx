@@ -14,8 +14,8 @@ export function SampleDataBanner() {
       <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />
       <p className="text-xs font-medium">
         Sample data — spend, funnel, and ROAS figures below are placeholders
-        shaped like the real thing. Live numbers ship with Meta setup
-        (Story&nbsp;4.1).
+        shaped like the real thing. Live numbers ship with the Meta
+        integration.
       </p>
     </div>
   );

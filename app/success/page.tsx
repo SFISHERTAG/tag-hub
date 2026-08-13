@@ -151,7 +151,7 @@ export default async function ClientSuccessPage() {
           }
           tone={!hasBook ? "neutral" : pixelMissing > 0 ? "danger" : "ok"}
         />
-        <Stat label="Escalations" value="—" delta="Story 3.6" />
+        <Stat label="Escalations" value="—" delta="coming soon" />
       </div>
 
       {/* Distribution rings */}
@@ -160,7 +160,7 @@ export default async function ClientSuccessPage() {
           {total > 0 ? (
             <Donut segments={serviceSegments(rows)} centerLabel={String(total)} />
           ) : (
-            <Pending story="no tenants registered" note="Story 1.6 — tenant registry" />
+            <Pending story="no tenants registered" note="Populates once the tenant registry is connected." />
           )}
         </Panel>
 
@@ -168,7 +168,7 @@ export default async function ClientSuccessPage() {
           {total > 0 ? (
             <Donut segments={tenantsToSegments(rows)} centerLabel={String(total)} />
           ) : (
-            <Pending story="no tenants registered" note="Story 1.6 — tenant registry" />
+            <Pending story="no tenants registered" note="Populates once the tenant registry is connected." />
           )}
         </Panel>
       </div>
@@ -180,27 +180,27 @@ export default async function ClientSuccessPage() {
           meta={total ? `${total} clients` : undefined}
         >
           <Pending
-            story="Story 3.2 — client health signals"
-            note="getClientHealth() is implemented; it needs per-CSM location claims from Story 1.4 to run across the book."
+            story="client health signals"
+            note="Available once CSM-to-client assignment is in place."
           />
         </Fold>
 
         <Fold title="Stage velocity" meta="median days in stage">
           <Pending
-            story="Story 5.1 — onboarding checklist from Fulfillment stages"
-            note="Stage timers come from the Fulfillment opportunity's lastStageChangeAt, already read by getFulfillmentStage()."
+            story="stage velocity"
+            note="Coming with the onboarding pipeline view."
           />
         </Fold>
 
         <Fold title="Speed to lead" meta="lead → first contact">
           <Pending
-            story="Story 2.3 — outcome timing capture"
-            note="classifyTiming() already records the timestamps this needs."
+            story="speed-to-lead tracking"
+            note="Timing capture is already recording — this view is next."
           />
         </Fold>
 
         <Fold title="Escalations" meta="needs attention">
-          <Pending story="Story 3.6 — escalation view" />
+          <Pending story="escalation tracking" />
         </Fold>
 
         {/* CCE's column-mapping audit, pointed at what actually breaks here. */}
@@ -263,7 +263,7 @@ export default async function ClientSuccessPage() {
                   A missing pixel is silent: that client&apos;s dashboard reports
                   zero conversions while every other account looks fine and the
                   global sync badge stays green. This table is the standing
-                  version of the Story 6.1 audit.
+                  audit that catches it.
                 </span>
               </p>
             </div>
@@ -274,8 +274,8 @@ export default async function ClientSuccessPage() {
           <p className="flex items-start gap-2 text-xs text-ink-2">
             <OnboardingIcon className="mt-px h-3.5 w-3.5 shrink-0 text-accent" />
             <span>
-              Renders as the kanban once Story 5.1 lands — same client records,
-              filtered on Fulfillment stage rather than a second status field.
+              Will render as a kanban here, filtered by Fulfillment stage —
+              the same client records this page already tracks.
             </span>
           </p>
         </Fold>

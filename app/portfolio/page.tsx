@@ -33,10 +33,10 @@ export default async function PortfolioPage() {
       </div>
 
       <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
-        <h2 className="text-base font-semibold">Setup needed</h2>
+        <h2 className="text-base font-semibold">Client roster syncing</h2>
         <p className="mt-2 text-sm">
-          <code>TODO: Story 1.4/1.6</code> — Assigned locations not yet implemented. This page needs
-          to fetch the CSM&rsquo;s assigned clients from the role/organization configuration.
+          Your assigned clients will appear here automatically once
+          CSM-to-client assignment is connected.
         </p>
       </div>
     </div>
