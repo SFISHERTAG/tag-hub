@@ -1,0 +1,12 @@
+.git
+.gitignore
+.DS_Store
+__pycache__
+*.pyc
+.pytest_cache
+.env
+node_modules
+_archive
+.claude
+hub
+*.dc.html
