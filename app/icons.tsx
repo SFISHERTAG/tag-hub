@@ -184,3 +184,11 @@ export const SignOutIcon = (p: IconProps) => (
     <path d="M10.5 8L6.5 12l4 4M6.5 12H15" />
   </Svg>
 );
+
+/** Book — courses and training */
+export const BookIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6.5a2.5 2.5 0 0 1-2.5-2.5v-12A2.5 2.5 0 0 1 6.5 2z" />
+  </Svg>
+);

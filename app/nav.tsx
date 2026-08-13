@@ -17,6 +17,7 @@ import {
   EscalationIcon,
   MoreIcon,
   CloseIcon,
+  BookIcon,
 } from "./icons";
 
 /**
@@ -74,6 +75,20 @@ const ITEMS: {
     label: "Onboarding",
     icon: OnboardingIcon,
     hats: ["tag_exec", "tag_csm"],
+  },
+  {
+    href: "/courses",
+    label: "Training",
+    icon: BookIcon,
+    hats: [
+      "tag_exec",
+      "tag_csm",
+      "tag_sales",
+      "tag_sales_manager",
+      "client_owner",
+      "client_closer",
+      "client_manager",
+    ],
   },
   {
     href: "/dashboard",
