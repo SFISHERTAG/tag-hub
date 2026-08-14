@@ -4,8 +4,23 @@ import { useState } from 'react';
 import { Panel, Badge } from '../../ui';
 import { CreativeCard, type Creative } from './creative-card';
 import { CreativeApprovalModal } from '../modals/creative-approval-modal';
+import type { CreativeForDisplay } from '@/lib/dashboard/data-fetchers';
 
-// Mock creatives data
+// Map server data to client display format
+function mapCreativeForDisplay(creative: CreativeForDisplay): Creative {
+  return {
+    id: creative.id,
+    title: creative.title,
+    platform: creative.platform as any,
+    format: creative.format as any,
+    status: creative.status,
+    thumbnail: undefined, // Thumbnails would need separate handling
+    description: creative.description,
+    submittedAt: creative.submittedAt,
+  };
+}
+
+// Fallback mock data for when no real data is available
 const MOCK_CREATIVES: Creative[] = [
   {
     id: '1',
@@ -63,8 +78,12 @@ const MOCK_CREATIVES: Creative[] = [
   },
 ];
 
-export function CreativesScreen() {
-  const [creatives, setCreatives] = useState<Creative[]>(MOCK_CREATIVES);
+export function CreativesScreen({ initialData = [] }: { initialData?: CreativeForDisplay[] } = {}) {
+  const mappedInitial = initialData.length > 0
+    ? initialData.map(mapCreativeForDisplay)
+    : MOCK_CREATIVES;
+
+  const [creatives, setCreatives] = useState<Creative[]>(mappedInitial);
   const [selectedCreative, setSelectedCreative] = useState<Creative | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<Creative['status'] | 'all'>('all');

@@ -2,6 +2,16 @@ import { requireSession } from "@/lib/auth/session";
 import { devLocationId } from "@/lib/ghl/tokens";
 import { getLocationConfig } from "@/lib/dashboard/location-config";
 import { MOCK_METRICS } from "@/lib/dashboard/mock-metrics";
+import { getLocationForDashboard } from "@/lib/dashboard/location-selection";
+import {
+  fetchCreatives,
+  fetchCalls,
+  fetchResources,
+  fetchUpcomingCalls,
+  type CreativeForDisplay,
+  type CallForDisplay,
+  type ResourceForDisplay,
+} from "@/lib/dashboard/data-fetchers";
 import { DarkScope } from "./dark-scope";
 import { DashboardLayout } from "./dashboard-layout";
 import { DashboardPageClient } from "./page-client";
@@ -17,35 +27,56 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const session = await requireSession();
 
-  // Gated on the effective hat, not the raw role — see the identical comment
-  // in app/portfolio/page.tsx for why.
-  if (!session || !["client_owner", "client_manager"].includes(session.hat)) {
+  // Gated on the effective hat, not the raw role
+  if (!session || !["client_owner", "client_manager", "tag_exec", "tag_csm"].includes(session.hat)) {
     return (
       <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Access denied</h2>
-        <p className="mt-2 text-sm">Only client owners and managers can view the dashboard.</p>
+        <p className="mt-2 text-sm">Only client owners, managers, and team members can view the dashboard.</p>
       </div>
     );
   }
 
-  // Per-client location routing (Story 1.2/1.6) isn't built yet, so a real
-  // client_owner claim wins when present and single-location dev falls back
-  // to GHL_LOCATION_ID — same fallback every other page in the app already
-  // uses.
-  const locationId = session.locations[0] ?? devLocationId();
-  if (!locationId) {
+  // Determine location based on user role
+  let locationId = "";
+  try {
+    locationId = getLocationForDashboard(session);
+  } catch (error) {
     return (
       <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Setup needed</h2>
         <p className="mt-2 text-sm">
-          No location configured. Set <code>GHL_LOCATION_ID</code> in{" "}
-          <code>hub/.env.local</code>, or assign this account a location.
+          No location configured. {error instanceof Error ? error.message : "Contact support."}
         </p>
       </div>
     );
   }
 
   const { slackChannelId, driveFolderId } = await getLocationConfig(locationId);
+
+  // Fetch live data
+  let creatives: CreativeForDisplay[] = [];
+  let calls: CallForDisplay[] = [];
+  let resources: ResourceForDisplay[] = [];
+  let upcomingCalls: CallForDisplay[] = [];
+
+  try {
+    // Fetch all data in parallel
+    const [creativesData, callsData, resourcesData, upcomingCallsData] = await Promise.all([
+      fetchCreatives(locationId),
+      fetchCalls(locationId, 0), // Today
+      fetchResources(locationId),
+      fetchUpcomingCalls(locationId, 7), // Next 7 days
+    ]);
+
+    creatives = creativesData;
+    calls = callsData;
+    resources = resourcesData;
+    upcomingCalls = upcomingCallsData;
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    // Fall back gracefully - show empty screens instead of crashing
+  }
 
   // Render server-side dashboard content
   const dashboardContent = (
@@ -74,6 +105,10 @@ export default async function DashboardPage() {
         <DashboardPageClient
           accountName={session.email || "Your Account"}
           dashboardContent={dashboardContent}
+          initialCreatives={creatives}
+          initialCalls={calls}
+          initialResources={resources}
+          initialUpcomingCalls={upcomingCalls}
         />
       </div>
     </DarkScope>

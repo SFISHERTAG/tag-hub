@@ -3,8 +3,22 @@
 import { useState } from 'react';
 import { Panel, Fold } from '../../ui';
 import { FileItem, type FileResource } from './file-item';
+import type { ResourceForDisplay } from '@/lib/dashboard/data-fetchers';
 
-// Mock resources data
+// Map server data to client display format
+function mapResourceToFileResource(resource: ResourceForDisplay): FileResource {
+  return {
+    id: resource.id,
+    name: resource.name,
+    type: resource.type,
+    size: resource.size,
+    modifiedAt: resource.modifiedAt,
+    sharedWith: resource.sharedWith,
+    category: resource.category,
+  };
+}
+
+// Fallback mock data
 const MOCK_RESOURCES: FileResource[] = [
   {
     id: '1',
@@ -75,8 +89,12 @@ const MOCK_RESOURCES: FileResource[] = [
   },
 ];
 
-export function ResourcesScreen() {
-  const [resources, setResources] = useState<FileResource[]>(MOCK_RESOURCES);
+export function ResourcesScreen({ initialData = [] }: { initialData?: ResourceForDisplay[] } = {}) {
+  const mappedInitial = initialData.length > 0
+    ? initialData.map(mapResourceToFileResource)
+    : MOCK_RESOURCES;
+
+  const [resources, setResources] = useState<FileResource[]>(mappedInitial);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | 'all'>('all');
 

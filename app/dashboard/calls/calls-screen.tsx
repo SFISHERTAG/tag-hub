@@ -3,8 +3,22 @@
 import { useState } from 'react';
 import { Panel } from '../../ui';
 import { TimeSlotComponent, type TimeSlot } from './time-slot';
+import type { CallForDisplay } from '@/lib/dashboard/data-fetchers';
 
-// Mock time slots data
+// Map server data to client display format
+function mapCallToTimeSlot(call: CallForDisplay): TimeSlot {
+  return {
+    id: call.id,
+    startTime: call.startTimeFormatted,
+    endTime: call.endTimeFormatted,
+    booked: call.booked,
+    attendee: call.attendee,
+    topic: call.topic,
+    callType: call.callType as any,
+  };
+}
+
+// Fallback mock data
 const MOCK_TIME_SLOTS: TimeSlot[] = [
   {
     id: '1',
@@ -53,8 +67,18 @@ const MOCK_TIME_SLOTS: TimeSlot[] = [
   },
 ];
 
-export function CallsScreen() {
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(MOCK_TIME_SLOTS);
+export function CallsScreen({
+  initialData = [],
+  upcomingData = []
+}: {
+  initialData?: CallForDisplay[];
+  upcomingData?: CallForDisplay[];
+} = {}) {
+  const mappedInitial = initialData.length > 0
+    ? initialData.map(mapCallToTimeSlot)
+    : MOCK_TIME_SLOTS;
+
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(mappedInitial);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const bookedCount = timeSlots.filter((s) => s.booked).length;

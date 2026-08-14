@@ -6,15 +6,24 @@ import { DashboardLayout } from './dashboard-layout';
 import { CreativesScreen } from './creatives/creatives-screen';
 import { CallsScreen } from './calls/calls-screen';
 import { ResourcesScreen } from './resources/resources-screen';
+import type { CreativeForDisplay, CallForDisplay, ResourceForDisplay } from '@/lib/dashboard/data-fetchers';
 
 interface DashboardPageClientProps {
   accountName: string;
   dashboardContent: ReactNode;
+  initialCreatives: CreativeForDisplay[];
+  initialCalls: CallForDisplay[];
+  initialResources: ResourceForDisplay[];
+  initialUpcomingCalls: CallForDisplay[];
 }
 
 export function DashboardPageClient({
   accountName,
   dashboardContent,
+  initialCreatives,
+  initialCalls,
+  initialResources,
+  initialUpcomingCalls,
 }: DashboardPageClientProps) {
   const [currentScreen, setCurrentScreen] = useState<
     'dashboard' | 'creatives' | 'calls' | 'resources'
@@ -38,11 +47,17 @@ export function DashboardPageClient({
           </DashboardLayout>
         )}
 
-        {currentScreen === 'creatives' && <CreativesScreen />}
+        {currentScreen === 'creatives' && (
+          <CreativesScreen initialData={initialCreatives} />
+        )}
 
-        {currentScreen === 'calls' && <CallsScreen />}
+        {currentScreen === 'calls' && (
+          <CallsScreen initialData={initialCalls} upcomingData={initialUpcomingCalls} />
+        )}
 
-        {currentScreen === 'resources' && <ResourcesScreen />}
+        {currentScreen === 'resources' && (
+          <ResourcesScreen initialData={initialResources} />
+        )}
       </div>
     </div>
   );
