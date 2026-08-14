@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { SignInForm } from "./signin-form";
+import { TestSignInPanel } from "./test-signin-panel";
 import { Logo } from "../logo";
 
 export const dynamic = "force-dynamic";
+
+const TEST_AUTH_ENABLED = process.env.TEST_AUTH_ENABLED === "true";
 
 /** Only allow internal paths, so `?next=` cannot become an open redirect. */
 function safeNext(raw: string | undefined): string {
@@ -30,6 +33,8 @@ export default async function SignInPage({
         </div>
 
         <SignInForm next={safeNext(next)} />
+
+        {TEST_AUTH_ENABLED && <TestSignInPanel next={safeNext(next)} />}
       </div>
     </div>
   );
