@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { type ClientData } from "@/lib/dashboard/csm-clients";
-import { type CampaignWithCreativeCount } from "../actions/get-campaigns-with-creatives";
-import { getCampaignsWithCreativesForClient } from "../actions/get-campaigns-with-creatives";
+import { type CampaignWithCreativeCount } from "../../actions/get-campaigns-with-creatives";
+import { getCampaignsWithCreativesForClient } from "../../actions/get-campaigns-with-creatives";
 
 interface CampaignsTabProps {
   client: ClientData;

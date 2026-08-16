@@ -1,4 +1,3 @@
-import "server-only";
 import { firestore } from "@/lib/firestore";
 import { calculateHealthScore, getStatusFromScore, type ClientHealth, type HealthMetrics } from "./health-scoring";
 import { getMockMetrics } from "./mock-metrics";
