@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { db } from "../lib/firebase/admin";
+import { firestore } from "../lib/firestore";
 
 /**
  * One-time script to set up CSM Dashboard test data.
@@ -15,7 +15,7 @@ async function setupTestData() {
   try {
     // 1. Create test client
     console.log(`📝 Creating test client: Casey Williams Co (${TEST_CLIENT_ID})`);
-    await db.collection("clients").doc(TEST_CLIENT_ID).set({
+    await firestore().collection("clients").doc(TEST_CLIENT_ID).set({
       name: "Casey Williams Co",
       ghl_location_id: TEST_CLIENT_ID,
       drive_folder_id: "1xtentcq18ioOH9m0dIqQV9vxX6aqLM51",
@@ -35,7 +35,7 @@ async function setupTestData() {
 
     // 2. Create sample alerts
     console.log(`📢 Creating sample alerts...`);
-    const alertsCollection = db.collection("clients").doc(TEST_CLIENT_ID).collection("alerts");
+    const alertsCollection = firestore().collection("clients").doc(TEST_CLIENT_ID).collection("alerts");
 
     await alertsCollection.add({
       type: "info",
@@ -63,7 +63,7 @@ async function setupTestData() {
 
     // 3. Create sample creatives
     console.log(`🎨 Creating sample creatives...`);
-    const creativesCollection = db.collection("clients").doc(TEST_CLIENT_ID).collection("creatives");
+    const creativesCollection = firestore().collection("clients").doc(TEST_CLIENT_ID).collection("creatives");
 
     await creativesCollection.add({
       filename: "facebook_carousel_approved.mp4",
@@ -99,7 +99,7 @@ async function setupTestData() {
 
     // 4. Create CSM settings
     console.log(`⚙️  Creating CSM settings...`);
-    await db.collection("csm_settings").doc(TEST_CSM_EMAIL).set({
+    await firestore().collection("csm_settings").doc(TEST_CSM_EMAIL).set({
       name: "Test CSM",
       assigned_clients: [TEST_CLIENT_ID],
       health_weights: {

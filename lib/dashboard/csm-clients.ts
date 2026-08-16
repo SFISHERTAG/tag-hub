@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/lib/firebase/admin";
+import { firestore } from "@/lib/firestore";
 import { calculateHealthScore, getStatusFromScore, type ClientHealth, type HealthMetrics } from "./health-scoring";
 import { getMockMetrics } from "./mock-metrics";
 
@@ -28,7 +28,7 @@ export interface ClientAlert {
  */
 export async function getAssignedClients(csmEmail: string): Promise<ClientData[]> {
   try {
-    const snapshot = await db
+    const snapshot = await firestore()
       .collection("clients")
       .where("csm_assigned", "==", csmEmail)
       .where("active", "==", true)
