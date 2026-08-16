@@ -18,7 +18,7 @@
   
 - CSM Dashboard page route (`app/csm-dashboard/page.tsx`)
   - Access control (tag_csm, tag_exec, tag_sales_manager only)
-  - Ready for CSMPortfolio component
+  - Server component with auth check
 
 - Scope document (`docs/csm-dashboard-scope.md`)
   - Full feature list
@@ -28,35 +28,72 @@
 
 - Test auth system (`app/api/auth/test-signin/route.ts`)
   - Role selector at login (enable: TEST_AUTH_ENABLED=true in .env.local)
-  - No OTP bypass for dev testing
+  - Firebase custom token exchange workflow
 
 - Live data integration
   - Google Drive API (`lib/google/drive.ts`)
   - GHL data fetchers (`lib/dashboard/data-fetchers.ts`)
   - Role-based location selection (`lib/dashboard/location-selection.ts`)
 
+- **CSM Portfolio Components** (all Phase 1) ✅
+  - `csm-portfolio.tsx` — Main component with state, search, filters, view switcher
+  - `client-card.tsx` — Individual client card with health score stars display
+  - `views/grid-view.tsx` — 3-4 column grid layout
+  - `views/list-view.tsx` — Sortable table layout with all key metrics
+  - `views/kanban-view.tsx` — 5 status-based columns (alert→excellent)
+  - `modals/client-detail-modal.tsx` — Framework with 3 tabs
+  - `modals/tabs/overview-tab.tsx` — Health metrics, KPIs, recent alerts
+  - `modals/tabs/creatives-tab.tsx` — Creative asset gallery from Drive
+  - `modals/tabs/campaigns-tab.tsx` — Placeholder for Phase 2
+
+- **Data Layer** ✅
+  - `lib/dashboard/csm-clients.ts` — Firestore queries, filtering, sorting
+  - `scripts/setup-csm-test-data.ts` — Test data population script
+
 ### In Progress 🔄
-- CSM Portfolio component (`app/csm-dashboard/csm-portfolio.tsx`) — NOT YET CREATED
-  - Grid/list/kanban view selector
-  - Client card grid
-  - Search & filtering
-  - Health score display per client
+- Firestore schema initialization (need to run setup script)
+- Health weights config UI (CSM adjustment modal)
 
 ### TODO 📋
 
-**Phase 1 (This Week):**
+**Phase 1 (Remaining):**
 1. ✅ Health scoring system
 2. ✅ Dashboard page route
-3. ⏳ **CSMPortfolio component** (grid view)
-4. ⏳ **ClientCard component** (health display)
-5. ⏳ **View selector** (grid/list/kanban toggles)
-6. ⏳ **Search & filter UI**
-7. ⏳ **Client modal framework** (3-tab structure)
-8. ⏳ **Overview tab** (health metrics, KPIs, alerts)
-9. ⏳ **Creatives tab** (upload, approval workflow)
-10. ⏳ **Firestore schema** (clients, alerts, creatives, weights)
-11. ⏳ **CSM weights config UI** (adjust health formula)
-12. ⏳ **Mock data & test setup** (Casey Williams Co)
+3. ✅ CSMPortfolio component
+4. ✅ ClientCard component
+5. ✅ View selector (grid/list/kanban)
+6. ✅ Search & filter UI
+7. ✅ Client modal framework
+8. ✅ Overview tab
+9. ✅ Creatives tab
+10. ⏳ **Firestore schema** (run setup-csm-test-data.ts)
+11. ⏳ **CSM weights config UI** (adjust health formula in modal)
+12. ⏳ **Fix test auth** (Firebase credential re-sync issue)
+
+---
+
+## Known Issues & Next Steps
+
+### Firebase Credentials Issue
+The test-signin endpoint (`/api/auth/test-signin`) encounters a Firebase credential error:
+- Error: "reauth related error (invalid_rapt)"
+- Root cause: Service account credentials may need refresh or server time sync
+- Workaround: Can manually populate Firestore test data and bypass auth testing
+
+### To Complete Phase 1:
+1. **Set up Firestore test data:**
+   - Run: `npx ts-node scripts/setup-csm-test-data.ts`
+   - Creates Casey Williams Co test client with alerts and creatives
+   
+2. **Fix Firebase credentials** (for auth testing):
+   - Check server time sync: `date`
+   - Regenerate Firebase service account key if needed
+   - Update GOOGLE_APPLICATION_CREDENTIALS path
+   
+3. **Health weights modal:**
+   - Create `app/csm-dashboard/modals/health-settings-modal.tsx`
+   - Add sliders for ROAS/spend/leads/SLA weights
+   - Save weights to firestore.csm_settings/{csmEmail}
 
 ---
 
