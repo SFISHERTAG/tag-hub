@@ -27,29 +27,34 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create a session cookie with custom claims for the role
-    const session = await adminAuth().createSessionCookie(
+    // Create a custom token with role claims
+    const customToken = await adminAuth().createCustomToken(email, {
+      email,
+      role: role as Role,
+      test_user: true,
+    });
+
+    // Exchange custom token for ID token via Firebase REST API
+    const firebaseResponse = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
       {
-        uid: email,
-        email,
-        email_verified: true,
-        auth_time: Math.floor(Date.now() / 1000),
-        iss: "https://securetoken.google.com/tag-success-hub",
-        aud: "tag-success-hub",
-        sub: email,
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 3600,
-        firebase: {
-          identities: {},
-          sign_in_provider: "test",
-        },
-        role: role as Role,
-        test_user: true,
-      } as any,
-      {
-        expiresIn: 60 * 60 * 24 * 5, // 5 days
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: customToken, returnSecureToken: true }),
       },
     );
+
+    if (!firebaseResponse.ok) {
+      throw new Error("Failed to exchange custom token");
+    }
+
+    const firebaseData = await firebaseResponse.json();
+    const idToken = firebaseData.idToken;
+
+    // Create session cookie from ID token
+    const session = await adminAuth().createSessionCookie(idToken, {
+      expiresIn: 60 * 60 * 24 * 5, // 5 days
+    });
 
     const jar = await cookies();
     jar.set(SESSION_COOKIE, session, {
