@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax Advisory Growth — Build Advisory Revenue</title>
+<link rel="icon" type="image/png" href="assets/lion.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold:#e8b13e;
+    --gold-2:#cc901b;
+    --gold-3:#a3730f;
+    --silver:#a8a49a;
+    --bg:#050505;
+    --surface:#141311;
+    --surface-2:#1c1a18;
+    --border:#2a2724;
+    --ink:#f5f3ee;
+    --ink-2:#a8a49a;
+    --ink-3:#78746c;
+    --success:#3f9d73;
+    --font: 'Manrope', Arial, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --wrap: 1180px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(232,177,62,0.14), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(232,177,62,0.08), transparent 55%);
+    pointer-events:none; z-index:0;
+  }
+  a{color:inherit; text-decoration:none;}
+  ul{list-style:none;}
+  img{max-width:100%; display:block;}
+  .wrap{max-width:var(--wrap); margin:0 auto; padding:0 32px;}
+  section{position:relative; z-index:1;}
+
+  .progress-bar{position:fixed; top:0; left:0; height:2px; width:0%; background:var(--gold); z-index:100; box-shadow:0 0 10px rgba(232,177,62,0.6);}
+  .reveal{opacity:0; transform:translateY(36px);}
+  .reveal-line{overflow:hidden;}
+  .reveal-line > span{display:inline-block; transform:translateY(110%); will-change:transform;}
+
+  /* ---------- NAV ---------- */
+  header.nav{position:sticky; top:0; z-index:50; background:rgba(5,5,5,0.55); backdrop-filter:blur(14px) saturate(1.2); border-bottom:1px solid transparent; transition:background 0.3s ease, border-color 0.3s ease;}
+  header.nav.scrolled{background:rgba(5,5,5,0.88); border-bottom-color:var(--border);}
+  .nav-inner{max-width:var(--wrap); margin:0 auto; padding:14px 32px; display:flex; align-items:center; justify-content:space-between;}
+  .logo{font-weight:700; font-size:14px; letter-spacing:0.02em; display:flex; align-items:center; gap:10px; text-transform:uppercase;}
+  .logo img{height:36px; width:36px; object-fit:contain; flex-shrink:0;}
+  @media (max-width:520px){.logo span{display:none;}}
+  .nav-links{display:flex; gap:28px; font-size:12.5px; color:var(--ink-2); font-weight:700; text-transform:uppercase; letter-spacing:0.04em;}
+  .nav-links a:hover{color:var(--gold);}
+  @media (max-width:860px){.nav-links{display:none;}}
+
+  /* ---------- BUTTONS (real gold-gradient style) ---------- */
+  .btn{
+    display:inline-flex; align-items:center; gap:10px;
+    padding:14px 26px; border-radius:12px;
+    font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1px;
+    transition:transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+    border:1px solid var(--border);
+    font-family:var(--font);
+  }
+  .btn.primary{background:linear-gradient(135deg, var(--gold), var(--gold-2)); color:#090704; border:none;}
+  .btn.primary:hover{transform:translateY(-2px); opacity:0.92;}
+  .btn.primary .arrow{transition:transform 0.2s ease;}
+  .btn.primary:hover .arrow{transform:translateX(3px);}
+  .btn.ghost{background:transparent; color:var(--ink);}
+  .btn.ghost:hover{background:var(--surface); border-color:var(--gold-3);}
+  .nav-cta{
+    display:inline-flex; align-items:center; gap:8px; padding:11px 20px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-2)); color:#090704;
+    font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:1px;
+    border-radius:12px; transition:transform 0.2s ease, opacity 0.2s ease;
+  }
+  .nav-cta:hover{transform:translateY(-1px); opacity:0.92;}
+
+  /* ---------- HERO ---------- */
+  .hero-pin-space{height:140vh;}
+  .hero{height:100vh; padding:0 0 90px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; position:sticky; top:0; overflow:hidden;}
+  .hero-glow{position:absolute; inset:0; z-index:-1; background:radial-gradient(circle 520px at 50% 40%, rgba(232,177,62,0.16), transparent 70%); will-change:transform;}
+  .hero-watermark{position:absolute; top:50%; right:-8%; transform:translateY(-50%); width:min(560px, 60vw); opacity:0.07; z-index:-1; pointer-events:none; will-change:transform;}
+  .eyebrow{display:inline-flex; align-items:center; gap:8px; padding:8px 18px; border:1px solid var(--border); border-radius:100px; font-size:11.5px; font-weight:700; color:var(--ink-2); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:32px; background:var(--surface);}
+  .eyebrow .dot{width:6px; height:6px; border-radius:50%; background:var(--gold);}
+  h1.display{font-family:var(--font-serif); font-size:clamp(34px, 5.6vw, 64px); font-weight:600; line-height:1.14; letter-spacing:-0.02em; max-width:900px; margin:0 auto 40px;}
+  h1.display .accent{color:var(--gold); font-style:italic; font-weight:600;}
+  .hero-actions{display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;}
+  .scroll-cue{position:absolute; bottom:36px; left:50%; transform:translateX(-50%); font-size:11px; color:var(--ink-3); letter-spacing:0.12em; text-transform:uppercase; display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .scroll-cue .line{width:1px; height:28px; background:var(--border); position:relative; overflow:hidden;}
+  .scroll-cue .line::after{content:""; position:absolute; top:-100%; left:0; width:100%; height:100%; background:var(--gold); animation:cue 1.8s ease-in-out infinite;}
+  @keyframes cue{0%{top:-100%;} 50%{top:0;} 100%{top:100%;}}
+
+  /* ---------- STATS ---------- */
+  .stats{padding:60px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);}
+  .stats-quote{max-width:680px; margin:0 auto 52px; text-align:center; font-size:15px; color:var(--ink-2); font-style:italic; line-height:1.7; font-family:var(--font-serif);}
+  .stats-quote span{color:var(--gold); font-style:normal; font-weight:700; font-family:var(--font);}
+  .stats-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:24px; text-align:center;}
+  .stat-num{font-family:var(--font-serif); font-size:clamp(28px, 3.4vw, 42px); font-weight:700; color:var(--ink); letter-spacing:-0.01em; margin-bottom:6px;}
+  .stat-label{font-size:12px; color:var(--ink-2); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;}
+  @media (max-width:700px){.stats-grid{grid-template-columns:1fr 1fr; row-gap:36px;}}
+
+  /* ---------- PROBLEM: sticky two-column scrollytelling ---------- */
+  .problem{padding:110px 0; border-bottom:1px solid var(--border);}
+  .section-tag{font-size:12px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:18px;}
+  h2.section-head{font-family:var(--font-serif); font-size:clamp(26px, 3.4vw, 40px); font-weight:600; letter-spacing:-0.01em; line-height:1.2;}
+  .problem-head{max-width:680px; margin-bottom:56px;}
+  .problem-head p.lede{color:var(--ink-2); font-size:16px; margin-top:16px; line-height:1.7; font-style:italic; font-family:var(--font-serif);}
+  .problem-cols{display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:start;}
+  .problem-list{display:flex; flex-direction:column;}
+  .problem-item{padding:32px 0; border-bottom:1px solid var(--border);}
+  .problem-item:first-child{padding-top:0;}
+  .problem-item .n{font-size:12px; font-weight:700; color:var(--gold); margin-bottom:12px; display:block; font-family:var(--font);}
+  .problem-item h3{font-family:var(--font-serif); font-size:22px; font-weight:600; margin-bottom:12px;}
+  .problem-item p{font-size:14.5px; color:var(--ink-2); line-height:1.7;}
+  .problem-sticky{position:sticky; top:110px;}
+  .problem-panel{background:linear-gradient(160deg, var(--surface), var(--bg)); border:1px solid var(--border); border-radius:20px; padding:44px; min-height:340px; display:flex; flex-direction:column; justify-content:flex-end;}
+  .problem-panel .tag{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--gold); margin-bottom:16px;}
+  .problem-panel h4{font-family:var(--font-serif); font-size:clamp(22px, 2.6vw, 30px); font-weight:600; line-height:1.35; color:var(--ink-2);}
+  @media (max-width:860px){.problem-cols{grid-template-columns:1fr; gap:32px;} .problem-sticky{position:static;}}
+
+  /* ---------- SYSTEM: plain icon grid ---------- */
+  .system{padding:110px 0; border-bottom:1px solid var(--border);}
+  .system-head{max-width:680px; margin:0 auto 56px; text-align:center;}
+  .system-head p{color:var(--ink-2); font-size:16px; margin-top:16px; line-height:1.7;}
+  .system-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:24px;}
+  .system-card{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:38px 30px;}
+  .system-icon{width:52px; height:52px; border-radius:14px; background:rgba(232,177,62,0.12); display:flex; align-items:center; justify-content:center; margin-bottom:24px; color:var(--gold);}
+  .system-card .n{font-size:11.5px; font-weight:700; color:var(--ink-3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; display:block;}
+  .system-card h3{font-size:19px; font-weight:700; margin-bottom:12px; letter-spacing:-0.01em;}
+  .system-card p{font-size:14px; color:var(--ink-2); line-height:1.7;}
+  @media (max-width:860px){.system-grid{grid-template-columns:1fr;}}
+
+  /* ---------- QUALIFY ---------- */
+  .qualify{padding:110px 0; border-bottom:1px solid var(--border);}
+  .qualify-grid{display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center;}
+  .qualify-list{display:flex; flex-direction:column; gap:2px;}
+  .qualify-list li{display:flex; gap:14px; padding:16px 4px; border-bottom:1px solid var(--border); font-size:15px; color:var(--ink-2); align-items:flex-start;}
+  .qualify-list li .check{flex-shrink:0; width:20px; height:20px; border-radius:50%; background:rgba(232,177,62,0.14); color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; margin-top:2px;}
+  @media (max-width:860px){.qualify-grid{grid-template-columns:1fr; gap:28px;}}
+
+  /* ---------- TESTIMONIAL MARQUEE ---------- */
+  .wall{padding:110px 0; border-bottom:1px solid var(--border); overflow:hidden;}
+  .wall-head{text-align:center; max-width:600px; margin:0 auto 52px;}
+  .wall-head h2{font-family:var(--font-serif); font-size:clamp(26px, 3.4vw, 40px); font-weight:600;}
+  .wall-head h2 .g{color:var(--gold); font-style:italic;}
+  .wall-head p{color:var(--ink-2); font-size:16px; margin-top:16px;}
+  .wall-row{display:flex; gap:20px; width:max-content; margin-bottom:20px;}
+  .wall-row.rev{animation:wallScrollRev 46s linear infinite;}
+  .wall-row.fwd{animation:wallScroll 46s linear infinite;}
+  .wall-mask{-webkit-mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);}
+  @keyframes wallScroll{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+  @keyframes wallScrollRev{from{transform:translateX(-50%);} to{transform:translateX(0);}}
+  .quote-card{width:320px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:26px;}
+  .quote-card p{font-size:14px; color:var(--ink); line-height:1.65; margin-bottom:18px; font-family:var(--font-serif); font-style:italic;}
+  .quote-by{display:flex; flex-direction:column; gap:2px;}
+  .quote-by b{font-size:13px; font-weight:700; font-family:var(--font);}
+  .quote-by span{font-size:12px; color:var(--ink-3);}
+
+  /* ---------- FIT ---------- */
+  .fit{padding:110px 0; border-bottom:1px solid var(--border);}
+  .fit-head{max-width:600px; margin-bottom:56px;}
+  .fit-head p{color:var(--ink-2); font-size:16px; margin-top:16px; line-height:1.7;}
+  .fit-grid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:16px; overflow:hidden;}
+  .fit-col{background:var(--bg); padding:40px 36px;}
+  .fit-col.no{background:var(--surface);}
+  .fit-col .tag{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;}
+  .fit-col.yes .tag{color:var(--success);}
+  .fit-col.no .tag{color:var(--ink-3);}
+  .fit-col h3{font-family:var(--font-serif); font-size:20px; font-weight:600; margin-bottom:20px;}
+  .fit-col ul{display:flex; flex-direction:column; gap:12px;}
+  .fit-col li{font-size:14px; color:var(--ink-2); line-height:1.6; padding-left:18px; position:relative;}
+  .fit-col.yes li::before{content:"+"; position:absolute; left:0; color:var(--success); font-weight:700;}
+  .fit-col.no li::before{content:"–"; position:absolute; left:0; color:var(--ink-3); font-weight:700;}
+  @media (max-width:860px){.fit-grid{grid-template-columns:1fr;}}
+
+  /* ---------- TEAM ---------- */
+  .team{padding:110px 0; border-bottom:1px solid var(--border);}
+  .team-grid{display:grid; grid-template-columns:0.9fr 1.1fr; gap:56px; align-items:center;}
+  .team-copy p{color:var(--ink-2); font-size:16px; line-height:1.75; margin-bottom:20px;}
+  .team-num{display:flex; align-items:baseline; gap:12px; margin-bottom:20px;}
+  .team-num .big{font-family:var(--font-serif); font-size:56px; font-weight:700; color:var(--gold); letter-spacing:-0.01em;}
+  .team-num .lbl{font-size:14px; color:var(--ink-2);}
+  .tag-cloud{display:flex; flex-wrap:wrap; gap:10px;}
+  .tag-pill{padding:9px 16px; border:1px solid var(--border); border-radius:100px; font-size:13px; color:var(--ink-2); background:var(--surface);}
+  @media (max-width:860px){.team-grid{grid-template-columns:1fr;}}
+
+  /* ---------- FAQ ---------- */
+  .faq{padding:110px 0; border-bottom:1px solid var(--border);}
+  .faq-top{max-width:520px; margin-bottom:56px;}
+  .faq-top p{color:var(--ink-2); font-size:16px; margin-top:16px;}
+  .faq-item{border-bottom:1px solid var(--border);}
+  .faq-q{width:100%; text-align:left; background:none; border:none; color:var(--ink); padding:24px 4px; font-size:16px; font-weight:600; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:20px; font-family:var(--font);}
+  .faq-q .plus{flex-shrink:0; width:26px; height:26px; border-radius:50%; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--gold); transition:transform 0.25s ease;}
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);}
+  .faq-a{max-height:0; overflow:hidden; transition:max-height 0.3s ease;}
+  .faq-a p{padding:0 4px 24px; color:var(--ink-2); font-size:14.5px; line-height:1.7; max-width:700px;}
+
+  /* ---------- CTA ---------- */
+  .cta{padding:120px 0; text-align:center;}
+  .cta h2{font-family:var(--font-serif); font-size:clamp(30px, 4.6vw, 50px); font-weight:600; letter-spacing:-0.01em; line-height:1.15; max-width:680px; margin:0 auto 20px;}
+  .cta p.sub{color:var(--ink-2); font-size:16px; max-width:480px; margin:0 auto 40px;}
+
+  /* ---------- FOOTER ---------- */
+  footer{border-top:1px solid var(--border); padding:56px 0 32px;}
+  .footer-top{display:flex; justify-content:space-between; gap:40px; flex-wrap:wrap; margin-bottom:40px;}
+  .footer-brand{max-width:340px;}
+  .footer-brand .logo{margin-bottom:14px;}
+  .footer-brand p{font-size:13.5px; color:var(--ink-2); line-height:1.7;}
+  .footer-cols{display:flex; gap:64px; flex-wrap:wrap;}
+  .footer-col h5{font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-3); margin-bottom:14px;}
+  .footer-col a{display:block; font-size:13.5px; color:var(--ink-2); margin-bottom:10px;}
+  .footer-col a:hover{color:var(--gold);}
+  .footer-legal{border-top:1px solid var(--border); padding-top:28px;}
+  .footer-legal p{font-size:11px; color:var(--ink-3); line-height:1.7; margin-bottom:12px;}
+  .footer-bottom{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-top:20px; font-size:12px; color:var(--ink-3);}
+  .footer-bottom a{color:var(--gold); font-weight:600;}
+
+  @media (max-width:860px){
+    .stats-grid{grid-template-columns:1fr 1fr;}
+    .hero-pin-space{height:auto;}
+    .hero{height:auto; min-height:100vh; position:relative;}
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<header class="nav" id="siteNav">
+  <div class="nav-inner">
+    <div class="logo"><img src="assets/lion.png" alt="Tax Advisory Growth"><span>Tax Advisory Growth</span></div>
+    <nav class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#results">Results</a>
+      <a href="#who-it-is-for">Who it's for</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a href="https://taxadvisorygrowth.com/dta" class="nav-cta">Book a strategy call <span class="arrow">→</span></a>
+  </div>
+</header>
+
+<main>
+
+  <div class="hero-pin-space">
+    <section class="hero wrap" id="hero">
+      <div class="hero-glow" id="heroGlow"></div>
+      <img src="assets/lion.png" alt="" class="hero-watermark" id="heroWatermark">
+      <div class="eyebrow reveal"><span class="dot"></span>For CPAs, EAs &amp; Tax Firms</div>
+      <h1 class="display">
+        <div class="reveal-line"><span>Stop giving away tax strategies</span></div>
+        <div class="reveal-line"><span>that your competitors are currently</span></div>
+        <div class="reveal-line"><span><span class="accent">charging multiple 5 figures for.</span></span></div>
+      </h1>
+      <div class="hero-actions reveal">
+        <a href="https://taxadvisorygrowth.com/dta" class="btn primary">Book a strategy call <span class="arrow">→</span></a>
+      </div>
+      <div class="scroll-cue"><span>Scroll</span><div class="line"></div></div>
+    </section>
+  </div>
+
+  <section class="stats wrap" id="results">
+    <p class="stats-quote reveal">"See how we define the offer, run the campaign, screen business owners, and help move qualified appointments into paid advisory work." <span>— The Advisory Growth Blueprint</span></p>
+    <div class="stats-grid">
+      <div class="reveal"><div class="stat-num" data-count="2" data-suffix="+ years">0</div><div class="stat-label">Working with tax firms</div></div>
+      <div class="reveal"><div class="stat-num" data-count="429" data-suffix="+">0</div><div class="stat-label">Tax professionals served</div></div>
+      <div class="reveal"><div class="stat-num" data-count="43" data-prefix="$" data-suffix="M+">0</div><div class="stat-label">Client-reported advisory revenue</div></div>
+      <div class="reveal"><div class="stat-num" data-count="6" data-suffix="">0</div><div class="stat-label">People on the specialist team</div></div>
+    </div>
+  </section>
+
+  <section class="problem wrap">
+    <div class="problem-head">
+      <div class="section-tag reveal">The advisory growth gap</div>
+      <h2 class="section-head reveal">Tax expertise alone won't fill your advisory calendar.</h2>
+      <p class="lede reveal">"If every prospect needs a long explanation, they can't see what they're buying or why it costs five figures."</p>
+    </div>
+    <div class="problem-cols">
+      <div class="problem-list">
+        <div class="problem-item reveal">
+          <span class="n">01</span>
+          <h3>Every proposal starts from scratch</h3>
+          <p>Scope, price, and deliverables change from one prospect to the next. The sales call turns into a tax lecture because there's no simple offer to walk through.</p>
+        </div>
+        <div class="problem-item reveal">
+          <span class="n">02</span>
+          <h3>New work arrives when it arrives</h3>
+          <p>Most opportunities show up during tax season or through whoever happens to send a referral. That makes next month's advisory pipeline hard to predict.</p>
+        </div>
+        <div class="problem-item reveal">
+          <span class="n">03</span>
+          <h3>Good prospects go cold after the call</h3>
+          <p>A prospect books, takes the call, then waits on a one-off proposal. Without a set consultation process and follow-up schedule, good opportunities quietly disappear.</p>
+        </div>
+      </div>
+      <div class="problem-sticky reveal">
+        <div class="problem-panel">
+          <div class="tag">What changes</div>
+          <h4>You get paid for the planning and decisions clients already ask you to make.</h4>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="system wrap" id="how-it-works">
+    <div class="system-head">
+      <div class="section-tag reveal">The advisory growth system</div>
+      <h2 class="section-head reveal">Here's what we build for your firm.</h2>
+      <p class="reveal">We work with CPAs, EAs, and tax firms that want more advisory clients. We define the offer, build the campaign and booking flow, and help your team handle the sales conversation and follow-up.</p>
+    </div>
+    <div class="system-grid">
+      <div class="system-card reveal">
+        <div class="system-icon">01</div>
+        <span class="n">Define the offer</span>
+        <h3>Make the offer easy to buy</h3>
+        <p>Choose the client, problem, scope, price, and message. Turn your tax planning into an offer a business owner can understand without sitting through a tax lecture.</p>
+      </div>
+      <div class="system-card reveal">
+        <div class="system-icon">02</div>
+        <span class="n">Build and run the campaign</span>
+        <h3>Screen owners before they book</h3>
+        <p>We build and manage the ads, ask interested owners the questions your firm cares about, and route qualified prospects to your calendar.</p>
+      </div>
+      <div class="system-card reveal">
+        <div class="system-icon">03</div>
+        <span class="n">Tighten sales and follow-up</span>
+        <h3>Keep good opportunities moving</h3>
+        <p>Use a clear consultation process, track every opportunity, and follow up after the call. Depending on the engagement, we can also support sales or staff a sales representative.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="qualify wrap">
+    <div class="qualify-grid">
+      <div>
+        <div class="section-tag reveal">Qualified appointments</div>
+        <h2 class="section-head reveal">Talk to owners who are ready to discuss tax planning.</h2>
+        <p style="color:var(--ink-2); font-size:16px; margin-top:16px; line-height:1.7;" class="reveal">Your qualification questions are set before the campaign launches. The people who reach your calendar should meet four basic standards.</p>
+        <div class="reveal" style="margin-top:32px;"><a href="https://taxadvisorygrowth.com/dta" class="btn primary">Book a strategy call <span class="arrow">→</span></a></div>
+      </div>
+      <ul class="qualify-list reveal">
+        <li><span class="check">✓</span>They own an established business and want proactive tax planning</li>
+        <li><span class="check">✓</span>They have a current tax problem or decision worth addressing</li>
+        <li><span class="check">✓</span>They can approve and pay for an advisory engagement</li>
+        <li><span class="check">✓</span>They answer the qualification questions before they can book</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="wall">
+    <div class="wall-head wrap">
+      <div class="section-tag reveal">Client results</div>
+      <h2 class="reveal">Hear it straight <span class="g">from the firms.</span></h2>
+      <p class="reveal">The offer gets clearer. The sales calls get more focused. The firm stops waiting around for the next referral.</p>
+    </div>
+    <div class="wall-mask">
+      <div class="wall-row fwd" id="wallRow1"></div>
+    </div>
+    <div class="wall-mask">
+      <div class="wall-row rev" id="wallRow2"></div>
+    </div>
+  </section>
+
+  <section class="fit wrap" id="who-it-is-for">
+    <div class="fit-head">
+      <div class="section-tag reveal">Advisory only</div>
+      <h2 class="section-head reveal">Built for firms ready to take on advisory clients.</h2>
+      <p class="reveal">Your firm needs the technical skill to deliver proactive planning, room to take on new engagements, and a team that follows up when someone books. We turn away firms that only want cheap preparation leads.</p>
+    </div>
+    <div class="fit-grid">
+      <div class="fit-col yes reveal">
+        <div class="tag">Built for</div>
+        <h3>Firms that can deliver the work</h3>
+        <ul>
+          <li>CPAs and EAs who already know how to deliver proactive tax planning</li>
+          <li>Owners adding advisory to an established tax practice</li>
+          <li>Firms with room to onboard new advisory engagements</li>
+          <li>Teams that can respond quickly when a prospect books</li>
+          <li>Leaders willing to use the agreed consultation and tracking process</li>
+        </ul>
+      </div>
+      <div class="fit-col no reveal">
+        <div class="tag">Not built for</div>
+        <h3>Firms looking for cheap leads</h3>
+        <ul>
+          <li>Firms selling preparation or compliance only</li>
+          <li>Tax-resolution lead generation</li>
+          <li>Bookkeepers looking for consumer tax leads</li>
+          <li>Firms that buy leads but don't call or follow up</li>
+          <li>Teams without the time or staff to deliver advisory work</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="team wrap" id="about">
+    <div class="team-grid">
+      <div>
+        <div class="team-num reveal"><span class="big">6</span><span class="lbl">people supporting tax firms</span></div>
+        <div class="section-tag reveal">The people behind your calendar</div>
+        <h2 class="section-head reveal">The team doing the work behind your calendar.</h2>
+      </div>
+      <div class="team-copy">
+        <p class="reveal">Our team writes the offer, builds and manages the campaigns, checks who is booking, and helps tighten the sales process. You stay focused on the client work.</p>
+        <div class="tag-cloud reveal">
+          <span class="tag-pill">Offer and pricing</span>
+          <span class="tag-pill">Ad copy and creative</span>
+          <span class="tag-pill">Campaign management</span>
+          <span class="tag-pill">Booking filters</span>
+          <span class="tag-pill">Call review</span>
+          <span class="tag-pill">Follow-up</span>
+          <span class="tag-pill">Account support</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq wrap" id="faq">
+    <div class="faq-top">
+      <div class="section-tag reveal">A few things to know before you apply</div>
+      <h2 class="section-head reveal">Frequently asked questions</h2>
+      <p class="reveal">On the call, we'll review what you sell now, who you want to reach, how your team handles consultations, and how many new clients you can serve.</p>
+    </div>
+    <div id="faq-list">
+      <div class="faq-item open">
+        <button class="faq-q">What makes an appointment qualified?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Before someone reaches your calendar, we screen for the basics. They should own an established business, have a current need for proactive planning, be able to make the decision, and be in a position to pay for the engagement. We set the final questions with your firm.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Do we need an existing advisory offer?<span class="plus">+</span></button>
+        <div class="faq-a"><p>No. Bring the tax-planning work you already do and a few examples of the clients you help best. We'll turn that into a defined offer. You still need the technical skill and team capacity to deliver it.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What does Tax Advisory Growth build and manage?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Depending on the engagement, we can define the offer and message, build and manage the ad campaigns, add screening before booking, map the consultation, and set up follow-up. We may also provide sales support. Your proposal spells out exactly what we own and what your team owns.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Is advertising spend included?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Usually, no. Ad spend is separate from our service fee unless your agreement says otherwise. We recommend a budget after we look at your target market, offer price, geography, and growth goal.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Do we need to handle sales?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Usually, yes. Your firm stays involved in the sales process. We can help with the consultation, follow-up, and call review, and some engagements may include a staffed sales representative.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How quickly can implementation begin?<span class="plus">+</span></button>
+        <div class="faq-a"><p>We confirm the launch date after reviewing your offer and calendar capacity. Nothing goes live until the offer, creative, tracking, booking questions, and calendar are approved.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Who is not a fit?<span class="plus">+</span></button>
+        <div class="faq-a"><p>We're built for firms that can deliver proactive advisory work and follow up with booked prospects. Preparation-only, compliance-only, tax-resolution, and passive lead-buying businesses should look elsewhere.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta wrap">
+    <h2 class="reveal">Ready to build the advisory side of your firm?</h2>
+    <p class="sub reveal">Bring us your current offer, target client, and available capacity. We'll tell you what we'd change and whether it makes sense to work together.</p>
+    <a href="https://taxadvisorygrowth.com/dta" class="btn primary reveal" style="padding:16px 34px;">Book a strategy call <span class="arrow">→</span></a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo"><img src="assets/lion.png" alt="Tax Advisory Growth"><span>Tax Advisory Growth</span></div>
+        <p>We help CPAs, EAs, and tax firms define an advisory offer, run client-acquisition campaigns, and book qualified business owners.</p>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h5>Explore</h5>
+          <a href="#how-it-works">How it works</a>
+          <a href="#results">Client results</a>
+          <a href="#who-it-is-for">Who it is for</a>
+          <a href="#about">About the team</a>
+        </div>
+        <div class="footer-col">
+          <h5>Resources</h5>
+          <a href="#faq">Frequently asked questions</a>
+          <a href="https://taxadvisorygrowth.com/dta">Advisory Growth Blueprint</a>
+          <a href="https://taxadvisorygrowth.com/dta">Book a strategy call</a>
+        </div>
+        <div class="footer-col">
+          <h5>Legal</h5>
+          <a href="#footer-legal-text">Results disclaimer</a>
+          <a href="mailto:support@taxadvisorygrowth.net">Contact support</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-legal" id="footer-legal-text">
+      <p>Tax Advisory Growth provides marketing services, including done-for-you advertising strategy, campaign setup, and management. We do not offer business opportunities, "get rich quick" programs, or guarantees of revenue, profits, or specific results.</p>
+      <p>Any testimonials, case studies, or examples shared reflect the real experiences of individual clients; however, they are not intended to represent or guarantee that current or future clients will achieve the same or similar results. Marketing and advertising outcomes vary widely and depend on many factors, including industry, offer quality, budget, market conditions, execution, and client participation.</p>
+      <p>We make no guarantees regarding leads, sales, revenue, or return on ad spend. All content, strategies, frameworks, and materials provided by Tax Advisory Growth are proprietary intellectual property.</p>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Tax Advisory Growth — All Rights Reserved</span>
+      <a href="mailto:support@taxadvisorygrowth.net">support@taxadvisorygrowth.net</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+  // Accordion
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var q = item.querySelector('.faq-q');
+    var a = item.querySelector('.faq-a');
+    if(item.classList.contains('open')){ a.style.maxHeight = a.scrollHeight + 'px'; }
+    q.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(function(other){
+        other.classList.remove('open');
+        other.querySelector('.faq-a').style.maxHeight = null;
+      });
+      if(!isOpen){ item.classList.add('open'); a.style.maxHeight = a.scrollHeight + 'px'; }
+    });
+  });
+
+  // Testimonial wall content (real, published client quotes)
+  var testimonials = [
+    {q:"We knew the tax work. What we didn't have was a reliable way to turn that into advisory clients.", n:"Marcus Reed, CPA", r:"Growth-focused CPA firm owner"},
+    {q:"We used to lead with forms and deadlines. Now the conversation starts with the decisions that actually affect the client's future.", n:"Elena Parker, EA", r:"Compliance-to-advisory transition"},
+    {q:"We were doing highly technical work, but you couldn't tell from our marketing. Honestly, we sounded like every other CPA firm.", n:"David Chen, CPA", r:"High-net-worth tax specialist"},
+    {q:"Prospects treat us like part of the advisory team now. We're not just the firm they call once a year.", n:"Rachel Morgan, CPA, CFP®", r:"Fractional tax-planning partner"},
+    {q:"Now we spend our time talking to owners who want the strategy and are ready to do something with it.", n:"Andre Wallace, CPA", r:"Business-owner tax reduction expert"},
+    {q:"Referrals still come in, but we're not sitting around hoping one shows up.", n:"Nicole Bennett, CPA", r:"Real-estate investor tax specialist"},
+    {q:"Physicians are busy. We built a consultation that gets to the point and still shows them the value of the strategy.", n:"Dr. Priya Shah, CPA", r:"Medical-practice tax advisor"},
+    {q:"The conversations are just better now. We're talking to established sellers who already understand that waiting has a cost.", n:"Tyler Brooks, CPA", r:"E-commerce tax specialist"},
+    {q:"Our positioning finally connects the tax work to the problems contractors deal with every day. That made the message click.", n:"Lisa Hammond, CPA", r:"Construction-industry tax specialist"}
+  ];
+  function cardHtml(t){
+    return '<div class="quote-card"><p>"' + t.q + '"</p><div class="quote-by"><b>' + t.n + '</b><span>' + t.r + '</span></div></div>';
+  }
+  var row1 = testimonials.slice(0,5);
+  var row2 = testimonials.slice(4).concat(testimonials.slice(0,4));
+  document.getElementById('wallRow1').innerHTML = row1.concat(row1).map(cardHtml).join('');
+  document.getElementById('wallRow2').innerHTML = row2.concat(row2).map(cardHtml).join('');
+
+  // Nav background on scroll
+  var nav = document.getElementById('siteNav');
+  window.addEventListener('scroll', function(){ nav.classList.toggle('scrolled', window.scrollY > 40); });
+
+  // GSAP scrollytelling
+  if(window.gsap && window.ScrollTrigger){
+    gsap.registerPlugin(ScrollTrigger);
+
+    gsap.to('#progressBar', {
+      width: '100%', ease: 'none',
+      scrollTrigger:{ trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 0.2 }
+    });
+
+    gsap.to('#hero', {
+      opacity: 0, scale: 0.94, y: -40, ease: 'none',
+      scrollTrigger:{ trigger: '.hero-pin-space', start: 'top top', end: 'bottom top', scrub: true }
+    });
+    gsap.to('#heroGlow', {
+      y: 120, ease: 'none',
+      scrollTrigger:{ trigger: '.hero-pin-space', start: 'top top', end: 'bottom top', scrub: true }
+    });
+    gsap.to('#heroWatermark', {
+      y: 60, rotate: 3, ease: 'none',
+      scrollTrigger:{ trigger: '.hero-pin-space', start: 'top top', end: 'bottom top', scrub: true }
+    });
+
+    gsap.timeline({delay:0.15})
+      .to('.hero .reveal-line > span', {y:'0%', duration:0.9, stagger:0.12, ease:'power3.out'})
+      .to('.hero .eyebrow.reveal, .hero .hero-actions.reveal', {opacity:1, y:0, duration:0.7, stagger:0.08, ease:'power2.out'}, '-=0.5');
+
+    document.querySelectorAll('main section:not(.hero) .reveal').forEach(function(el){
+      gsap.to(el, {
+        opacity:1, y:0, duration:0.8, ease:'power2.out',
+        scrollTrigger:{ trigger: el, start:'top 85%', toggleActions:'play none none reverse' }
+      });
+    });
+
+    // Count-up stats
+    document.querySelectorAll('.stat-num').forEach(function(el){
+      var target = parseFloat(el.getAttribute('data-count'));
+      var prefix = el.getAttribute('data-prefix') || '';
+      var suffix = el.getAttribute('data-suffix') || '';
+      var obj = {val:0};
+      ScrollTrigger.create({
+        trigger: el, start:'top 90%', once:true,
+        onEnter: function(){
+          gsap.to(obj, {
+            val: target, duration:1.4, ease:'power2.out',
+            onUpdate: function(){ el.textContent = prefix + Math.round(obj.val).toLocaleString() + suffix; }
+          });
+        }
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
