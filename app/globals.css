@@ -1,0 +1,362 @@
+@import "tailwindcss";
+
+/**
+ * TAG Hub — brand palette, layered, light and dark.
+ *
+ * Every colour below is lifted from the TAG palette already in use across
+ * 00.html–13.html, sampled rather than guessed:
+ *
+ *   #cc901b  gold          brand and interactive
+ *   #a3730f  gold, deep    pressed and gradient stop
+ *   #050505  near-black    chrome
+ *   #5c6370  slate         the "GROWTH" silver
+ *   #1a6b45  green         healthy      tint #eef7f2
+ *   #b02a1f  red           critical     tint #fdf1ef
+ *   #ddd8cb → #fffdf0      warm neutral ramp
+ *
+ * Note the brand gold is #cc901b, not #ebc507 — the latter appears exactly
+ * once across the whole HTML set and is a bright lemon that reads as a warning
+ * colour beside the warm ramp. Everything here is built on the real one.
+ *
+ * ONE colour is derived rather than sampled: `warn`. The palette has a green
+ * and a red but no amber, because amber *is* the gold — and gold is spoken for
+ * as the interactive colour, so an amber "at-risk" badge would be
+ * indistinguishable from a selected control. `warn` is therefore interpolated
+ * between the brand gold and the brand red (#be5d1d), which keeps it inside
+ * the family while leaving it unmistakably neither.
+ *
+ * Two constants across both themes:
+ *
+ *   1. The chrome stays near-black. Rail and header are #050505 with gold in
+ *      light mode and dark alike. Flipping the chrome white in light mode would
+ *      leave the product with no fixed identity. Only the canvas flips.
+ *
+ *   2. Gold means "interactive or brand" and nothing else — active nav, focus,
+ *      primary action, selected state. It is absent from the status ramp for
+ *      the reason given above.
+ *
+ * Depth comes from hairlines and small steps, not brightness. The dark
+ * neutrals are warm-shifted a few points off pure grey so they sit with the
+ * creams instead of reading blue beside them.
+ */
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+
+  /* Chrome — near-black in both themes */
+  --color-chrome: var(--chrome);
+  --color-chrome-ink: var(--chrome-ink);
+  --color-chrome-ink-2: var(--chrome-ink-2);
+  --color-chrome-line: var(--chrome-line);
+  --color-chrome-hover: var(--chrome-hover);
+
+  --color-accent: #cc901b;
+  --color-accent-deep: #a3730f;
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-ink: #050505;
+  --color-accent-tint: var(--accent-tint);
+  --color-accent-edge: var(--accent-edge);
+
+  --color-silver: var(--silver);
+
+  --color-ok: var(--ok);
+  --color-ok-tint: var(--ok-tint);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-info: var(--info);
+  --color-info-tint: var(--info-tint);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+/* ---------- Light (default) ----------
+ *
+ * Stark white on white. Every surface is #ffffff and the separation is done
+ * entirely by black hairlines — which means the two themes use *opposite*
+ * strategies on purpose:
+ *
+ *   dark  → surfaces step in brightness, borders are almost invisible
+ *   light → surfaces are identical, borders carry all the structure
+ *
+ * That is why `--raised` and `--sunken` are also pure white here rather than
+ * tinted. Tinting them would produce the grey-boxes-on-a-page look this is
+ * meant to avoid, and the `lift` shadow is dialled to a whisper for the same
+ * reason: a drop shadow under a white card on a white page is a smudge, not a
+ * layer. The line does the work.
+ */
+:root {
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --raised: #ffffff;
+  --sunken: #ffffff;
+
+  /* Hairlines are black at low alpha rather than grey, so they stay neutral
+     against the warm status tints instead of drifting brown beside them. */
+  --line: rgb(5 5 5 / 0.2);
+  --line-strong: rgb(5 5 5 / 0.55);
+
+  --ink: #050505;
+  --ink-2: #5c6370;
+  --ink-3: #8b8f99;
+
+  --chrome: #050505;
+  --chrome-ink: #f0ede4;
+  --chrome-ink-2: #9a958a;
+  --chrome-line: #232220;
+  --chrome-hover: #141311;
+
+  --accent-bright: #a3730f;
+  --accent-tint: rgb(204 144 27 / 0.14);
+  --accent-edge: rgb(204 144 27 / 0.45);
+
+  --silver: #5c6370;
+
+  --ok: #1a6b45;
+  --ok-tint: #eef7f2;
+  --warn: #be5d1d;
+  --warn-tint: rgb(190 93 29 / 0.1);
+  --danger: #b02a1f;
+  --danger-tint: #fdf1ef;
+  --info: #5c6370;
+  --info-tint: rgb(92 99 112 / 0.1);
+
+  /* Near-nothing. On white-on-white a drop shadow is a smudge; the hairline
+     is the layer. Kept non-zero only so a dragged card can read as lifted. */
+  --elevate: 0 1px 1px 0 rgb(5 5 5 / 0.03);
+  --elevate-lg: 0 10px 28px -10px rgb(5 5 5 / 0.14);
+  --top-light: inset 0 0 0 0 transparent;
+
+  /* Glass panels get the stark hairline — near-opaque white over the wash,
+     bounded by a black rule strong enough to hold its own edge. */
+  --glass: rgb(255 255 255 / 0.66);
+  --glass-line: rgb(5 5 5 / 0.72);
+
+  /* The gold bloom is pulled right back on white — at dark-mode strength it
+     reads as a stain rather than light. */
+  --wash-strength: 0.07;
+
+  color-scheme: light;
+}
+
+/* ---------- Dark ---------- */
+:root[data-theme="dark"] {
+  --canvas: #0b0a09;
+  --surface: #141311;
+  --raised: #1c1a18;
+  --sunken: #050505;
+
+  --line: #2a2724;
+  --line-strong: #3a3631;
+
+  --ink: #f0ede4;
+  --ink-2: #a8a49a;
+  --ink-3: #78746c;
+
+  --chrome: #050505;
+  --chrome-ink: #f0ede4;
+  --chrome-ink-2: #9a958a;
+  --chrome-line: #1e1c1a;
+  --chrome-hover: #141311;
+
+  --accent-bright: #e0a324;
+  --accent-tint: rgb(204 144 27 / 0.12);
+  --accent-edge: rgb(204 144 27 / 0.35);
+
+  --silver: #8b93a3;
+
+  /* Status hues held, lightened for contrast on near-black. */
+  --ok: #3f9d73;
+  --ok-tint: rgb(63 157 115 / 0.13);
+  --warn: #dd8244;
+  --warn-tint: rgb(221 130 68 / 0.13);
+  --danger: #d9584c;
+  --danger-tint: rgb(217 88 76 / 0.13);
+  --info: #8b93a3;
+  --info-tint: rgb(139 147 163 / 0.13);
+
+  --elevate: 0 1px 2px 0 rgb(0 0 0 / 0.6);
+  --elevate-lg: 0 8px 24px -6px rgb(0 0 0 / 0.7);
+  --top-light: inset 0 1px 0 0 rgb(255 255 255 / 0.045);
+
+  --glass: rgb(240 237 228 / 0.045);
+  --glass-line: rgb(240 237 228 / 0.1);
+  --wash-strength: 0.18;
+
+  color-scheme: dark;
+}
+
+/* System preference wins only when the user has not chosen explicitly. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #0b0a09;
+    --surface: #141311;
+    --raised: #1c1a18;
+    --sunken: #050505;
+
+    --line: #2a2724;
+    --line-strong: #3a3631;
+
+    --ink: #f0ede4;
+    --ink-2: #a8a49a;
+    --ink-3: #78746c;
+
+    --chrome-line: #1e1c1a;
+
+    --accent-bright: #e0a324;
+    --accent-tint: rgb(204 144 27 / 0.12);
+    --accent-edge: rgb(204 144 27 / 0.35);
+
+    --silver: #8b93a3;
+
+    --ok: #3f9d73;
+    --ok-tint: rgb(63 157 115 / 0.13);
+    --warn: #dd8244;
+    --warn-tint: rgb(221 130 68 / 0.13);
+    --danger: #d9584c;
+    --danger-tint: rgb(217 88 76 / 0.13);
+    --info: #8b93a3;
+    --info-tint: rgb(139 147 163 / 0.13);
+
+    --elevate: 0 1px 2px 0 rgb(0 0 0 / 0.6);
+    --elevate-lg: 0 8px 24px -6px rgb(0 0 0 / 0.7);
+    --top-light: inset 0 1px 0 0 rgb(255 255 255 / 0.045);
+
+    --glass: rgb(240 237 228 / 0.045);
+    --glass-line: rgb(240 237 228 / 0.1);
+    --wash-strength: 0.18;
+
+    color-scheme: dark;
+  }
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/**
+ * The top highlight is what sells the layering in dark mode — a 1px inset
+ * along the top edge reads as light catching a raised face. In light mode the
+ * same utility carries a white inset and a softer drop, so one class works in
+ * both themes without a conditional at the call site.
+ */
+@utility lift {
+  box-shadow: var(--top-light), var(--elevate);
+}
+
+@utility lift-lg {
+  box-shadow: var(--top-light), var(--elevate-lg);
+}
+
+/**
+ * Glass — CCE's translucent panel, retuned for gold.
+ *
+ * The effect only works over something worth blurring. On a flat canvas it is
+ * an expensive way to draw a tinted box, so reserve it for panels sitting on
+ * the ambient wash. `backdrop-filter` forces a compositor layer per element —
+ * a kanban of forty glass cards drops frames on scroll, which is why cards
+ * stay opaque and only section panels get it.
+ */
+@utility glass {
+  background: var(--glass);
+  backdrop-filter: blur(12px) saturate(1.15);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  border: 1px solid var(--glass-line);
+}
+
+/** Ambient gold bloom behind a panel. Decorative — always aria-hidden. */
+@utility wash {
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 320px;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 100% at 50% 0%,
+    rgb(204 144 27 / var(--wash-strength)) 0%,
+    transparent 70%
+  );
+}
+
+/** Gold edge + bloom. For the one element that owns the screen's attention. */
+@utility glow {
+  box-shadow:
+    0 0 0 1px var(--accent-edge),
+    0 0 28px -8px rgb(204 144 27 / 0.38),
+    var(--elevate);
+}
+
+/** Same idea at badge scale — a live metric, a connected status dot. */
+@utility glow-sm {
+  box-shadow: 0 0 12px -2px rgb(204 144 27 / 0.5);
+}
+
+@utility glow-ok {
+  box-shadow: 0 0 10px -1px color-mix(in srgb, var(--ok) 55%, transparent);
+}
+
+@utility glow-danger {
+  box-shadow: 0 0 10px -1px color-mix(in srgb, var(--danger) 55%, transparent);
+}
+
+/** The logo lockup's gold, for the wordmark only. */
+@utility text-gradient-gold {
+  background: linear-gradient(180deg, #e0a324 0%, #cc901b 55%, #a3730f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgb(204 144 27 / 0.3);
+  color: var(--ink);
+}
+
+/* Keep the kanban's horizontal scroll from punching a bright hole in the page. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

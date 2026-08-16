@@ -1,0 +1,116 @@
+# Cloud Build → Artifact Registry → Cloud Run.
+#
+# Substitutions are set on the trigger, not here, so the same file works for a
+# manual `gcloud builds submit` and for the push-to-main trigger.
+
+substitutions:
+  _REGION: us-central1
+  _REPO: hub
+  # Deploys over the service already live at this name rather than standing up
+  # a second one under a fresh URL. Two reasons this matters, not just one:
+  # the existing revision there predates auth entirely and is reachable with
+  # no login (safe today only because GHL_LOCATION_ID happens to be unset on
+  # it — this deploy is what actually closes that), and the redirect URI
+  # registered on the GHL marketplace app is pinned to this exact URL, so a
+  # different service name would mean a different URL and a broken OAuth
+  # callback until the marketplace app's redirect URI was updated to match.
+  _SERVICE: tag-hub-git
+  # Must match an SA that actually exists — this one already holds
+  # datastore.user, firebaseauth.admin, secretmanager.secretAccessor.
+  # (Verified by listing service accounts, not assumed — the first name
+  # written here, hub-runtime@, does not exist and would have failed the
+  # deploy step on first real run.)
+  _RUNTIME_SA: hub-app@tag-success-hub.iam.gserviceaccount.com
+  _FIREBASE_API_KEY: ""
+  _FIREBASE_AUTH_DOMAIN: ""
+  _FIREBASE_PROJECT_ID: tag-success-hub
+  # None of these four are secrets — a Marketplace app's Client ID is visible
+  # in the OAuth redirect URL itself, a GHL location id is visible in that
+  # location's own dashboard URL, the callback path is public by definition,
+  # and the sender is a support inbox. GHL_CLIENT_SECRET is the only one of
+  # this group that actually needed Secret Manager, and it already has it.
+  _GHL_CLIENT_ID: 6a7cc767e26aa70008be5b6f-msqhcvd9
+  # TAG's own GHL sub-account — what the closer workspace (Epic 2) runs
+  # against. Not a stand-in for per-client multi-tenant routing; that is
+  # Story 1.2/1.6, still blocked on GHL account consolidation.
+  _GHL_LOCATION_ID: rb6hPt8Ue77L4abghRMc
+  # Must exactly match what's registered as the redirect URI on the
+  # Marketplace app, and must be pinned to the _SERVICE name above — changing
+  # one without the other breaks the OAuth callback.
+  _GHL_REDIRECT_URI: https://tag-hub-git-vdsoboedgq-uc.a.run.app/api/oauth/callback
+  _GMAIL_SENDER: support@taxadvisorygrowth.net
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest
+
+steps:
+  # Pull the previous image so unchanged layers are reused. Without this every
+  # build reinstalls node_modules from scratch.
+  - id: pull-cache
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        docker pull ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest || exit 0
+
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --cache-from=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest
+      - --build-arg=NEXT_PUBLIC_FIREBASE_API_KEY=${_FIREBASE_API_KEY}
+      - --build-arg=NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${_FIREBASE_AUTH_DOMAIN}
+      - --build-arg=NEXT_PUBLIC_FIREBASE_PROJECT_ID=${_FIREBASE_PROJECT_ID}
+      - -t=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+      - -t=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest
+      - .
+
+  # The top-level `images:` list at the bottom of this file pushes only after
+  # every step finishes — deploy cannot wait for that, so it needs its own
+  # explicit push in between. Without this the deploy step asks Cloud Run for
+  # an image that exists in this job's local Docker daemon but not yet in
+  # Artifact Registry, and fails with "Image ... not found".
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      # Public ingress, but every route is gated by proxy.ts plus requireSession()
+      # in the page itself. "Unauthenticated" here means Cloud Run does not add
+      # its own IAM check — it does not mean the app is open.
+      - --allow-unauthenticated
+      # Dedicated identity, not the default compute account (AC #4). Firebase
+      # Admin picks this up as Application Default Credentials, which is why no
+      # service-account JSON is stored anywhere.
+      - --service-account=${_RUNTIME_SA}
+      - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest,SLACK_BOT_TOKEN=slack-bot-token:latest
+      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER}
+      # GHL_PIT is deliberately absent. It is a single-location development
+      # fallback, and leaving it set in production would let a token-resolution
+      # bug silently serve one tenant's credential for every other tenant.
+      # Story 1.7 dev notes call this out; --set-env-vars replaces the whole set
+      # each deploy, so it cannot drift back in.
+      - --min-instances=0
+      - --max-instances=10
+      - --cpu=1
+      - --memory=512Mi
+      - --timeout=60s
+      - --port=8080

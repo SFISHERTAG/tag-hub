@@ -1,0 +1,50 @@
+# Paste this at api.slack.com/apps -> Create New App -> From a manifest.
+# After creating: install it to the workspace, then copy the "Bot User OAuth
+# Token" (starts with xoxb-) from Features > OAuth & Permissions. That's the
+# SLACK_BOT_TOKEN value.
+#
+# Scopes cover three things:
+#   - existing read-only message feed (dashboard's Slack widget)
+#   - canvas read/write (the new ask)
+#   - channel + private-channel provisioning (for Task #3's client-onboarding
+#     automation, which will create a channel per client) — included now so
+#     the same bot/token serves both without a second app later
+#
+# channels:* AND groups:* are both requested because it isn't confirmed yet
+# whether client channels end up public or private — public channels use
+# channels:*, private ones use groups:*, and Slack does not merge the two.
+# Drop whichever half turns out unused once that's settled.
+
+display_information:
+  name: TAG Hub
+  description: Connects TAG Hub to client Slack channels for the dashboard's message feed, canvases, and client onboarding.
+  background_color: "#050505"
+
+features:
+  bot_user:
+    display_name: TAG Hub
+    always_online: true
+
+oauth_config:
+  scopes:
+    bot:
+      - channels:history
+      - channels:read
+      - channels:manage
+      - groups:history
+      - groups:read
+      - groups:write
+      - users:read
+      - chat:write
+      - canvases:read
+      - canvases:write
+      # A canvas's shareable link comes from files.info's permalink field —
+      # canvases are file objects under the hood — and files.info needs this
+      # scope specifically, separate from canvases:read. Confirmed live: without
+      # it files.info returns missing_scope even with canvases:read granted.
+      - files:read
+
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
