@@ -50,9 +50,13 @@ const WEARABLE: Record<Role, readonly Role[]> = {
   tag_csm: ["tag_csm"],
   tag_sales_manager: ["tag_sales_manager"],
   tag_sales: ["tag_sales"],
+  tag_setter_manager: ["tag_setter_manager"],
+  tag_setter: ["tag_setter"],
   client_owner: ["client_owner"],
   client_manager: ["client_manager"],
   client_closer: ["client_closer"],
+  client_setter_manager: ["client_setter_manager"],
+  client_setter: ["client_setter"],
 };
 
 export function wearableHats(role: Role): readonly Role[] {

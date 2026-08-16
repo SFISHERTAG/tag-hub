@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { type ClientData } from "@/lib/dashboard/csm-clients";
-import { type MetaCampaign } from "@/lib/meta/campaigns";
-import { getCampaignsForClient } from "../actions/get-campaigns";
+import { type CampaignWithCreativeCount } from "../actions/get-campaigns-with-creatives";
+import { getCampaignsWithCreativesForClient } from "../actions/get-campaigns-with-creatives";
 
 interface CampaignsTabProps {
   client: ClientData;
 }
 
 export function CampaignsTab({ client }: CampaignsTabProps) {
-  const [campaigns, setCampaigns] = useState<MetaCampaign[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignWithCreativeCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +19,7 @@ export function CampaignsTab({ client }: CampaignsTabProps) {
       setLoading(true);
       setError(null);
       try {
-        const data = await getCampaignsForClient(client.id);
+        const data = await getCampaignsWithCreativesForClient(client.id);
         setCampaigns(data);
       } catch (err) {
         setError("Failed to load campaigns");
@@ -68,7 +68,7 @@ export function CampaignsTab({ client }: CampaignsTabProps) {
   );
 }
 
-function CampaignCard({ campaign }: { campaign: MetaCampaign }) {
+function CampaignCard({ campaign }: { campaign: CampaignWithCreativeCount }) {
   const statusColors = {
     ACTIVE: "bg-ok-tint text-ok border-ok/30",
     PAUSED: "bg-warn-tint text-warn border-warn/30",
@@ -82,7 +82,14 @@ function CampaignCard({ campaign }: { campaign: MetaCampaign }) {
     <div className="rounded-lg border border-line bg-surface p-4">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h4 className="font-medium text-ink">{campaign.name}</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-medium text-ink">{campaign.name}</h4>
+            {campaign.creative_count > 0 && (
+              <span className="rounded-full bg-accent/20 text-accent px-2 py-1 text-xs font-medium">
+                {campaign.creative_count} creative{campaign.creative_count !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-ink-3 mt-1">{campaign.id}</p>
         </div>
         <span className={`rounded px-2 py-1 text-xs font-medium border ${statusColor}`}>

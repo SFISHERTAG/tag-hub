@@ -70,7 +70,7 @@ export async function getAssignedClients(csmEmail: string): Promise<ClientData[]
  */
 export async function getClientAlerts(clientId: string): Promise<ClientAlert[]> {
   try {
-    const snapshot = await db
+    const snapshot = await firestore()
       .collection("clients")
       .doc(clientId)
       .collection("alerts")
@@ -97,7 +97,7 @@ export async function getClientAlerts(clientId: string): Promise<ClientAlert[]> 
  */
 export async function getClientDetail(clientId: string): Promise<ClientData | null> {
   try {
-    const doc = await db.collection("clients").doc(clientId).get();
+    const doc = await firestore().collection("clients").doc(clientId).get();
 
     if (!doc.exists) return null;
 

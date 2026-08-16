@@ -171,3 +171,28 @@ export async function getCampaignDetail(campaignId: string): Promise<MetaCampaig
     return null;
   }
 }
+
+/**
+ * Get count of ads (creatives) in a campaign.
+ * Used to show "X creatives" badge on campaigns.
+ */
+export async function getCampaignCreativeCount(campaignId: string): Promise<number> {
+  if (!isMetaConfigured()) return 0;
+
+  try {
+    const api = getMetaApi();
+
+    const response = await api.get(
+      `/${campaignId}/ads`,
+      {
+        fields: ["id"],
+        limit: 1000,
+      },
+    );
+
+    return response ? response.length : 0;
+  } catch (error) {
+    console.error(`Failed to fetch creative count for campaign ${campaignId}:`, error);
+    return 0;
+  }
+}

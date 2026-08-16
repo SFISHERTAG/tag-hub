@@ -71,6 +71,12 @@ const ITEMS: {
     hats: ["tag_exec", "tag_csm", "tag_sales_manager"],
   },
   {
+    href: "/setter",
+    label: "Setter",
+    icon: TodayIcon,
+    hats: ["tag_exec", "tag_setter", "tag_setter_manager", "client_setter", "client_setter_manager"],
+  },
+  {
     href: "/onboarding",
     label: "Onboarding",
     icon: OnboardingIcon,

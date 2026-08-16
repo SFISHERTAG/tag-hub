@@ -6,13 +6,14 @@ import { getStatusDisplay } from "@/lib/dashboard/health-scoring";
 import { OverviewTab } from "./tabs/overview-tab";
 import { CreativesTab } from "./tabs/creatives-tab";
 import { CampaignsTab } from "./tabs/campaigns-tab";
+import { Phase3StatusTab } from "./tabs/phase3-status-tab";
 
 interface ClientDetailModalProps {
   client: ClientData;
   onClose: () => void;
 }
 
-type Tab = "overview" | "creatives" | "campaigns";
+type Tab = "overview" | "creatives" | "campaigns" | "phase3";
 
 export function ClientDetailModal({ client, onClose }: ClientDetailModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -22,6 +23,7 @@ export function ClientDetailModal({ client, onClose }: ClientDetailModalProps) {
     { id: "overview", label: "Overview" },
     { id: "creatives", label: "Creatives" },
     { id: "campaigns", label: "Campaigns" },
+    { id: "phase3", label: "Meta Setup (Phase 3)" },
   ];
 
   return (
@@ -74,6 +76,7 @@ export function ClientDetailModal({ client, onClose }: ClientDetailModalProps) {
           {activeTab === "overview" && <OverviewTab client={client} />}
           {activeTab === "creatives" && <CreativesTab client={client} />}
           {activeTab === "campaigns" && <CampaignsTab client={client} />}
+          {activeTab === "phase3" && <Phase3StatusTab client={client} />}
         </div>
       </div>
     </div>

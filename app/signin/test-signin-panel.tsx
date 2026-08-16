@@ -12,8 +12,12 @@ import type { Role } from "@/lib/auth/roles";
 const TEST_ROLES: { label: string; value: Role }[] = [
   { label: "CSM / Team", value: "tag_csm" },
   { label: "Exec", value: "tag_exec" },
+  { label: "Setter", value: "tag_setter" },
+  { label: "Setter Manager", value: "tag_setter_manager" },
   { label: "Client Owner", value: "client_owner" },
   { label: "Client Manager", value: "client_manager" },
+  { label: "Client Setter", value: "client_setter" },
+  { label: "Client Setter Manager", value: "client_setter_manager" },
 ];
 
 export function TestSignInPanel({ next }: { next: string }) {
