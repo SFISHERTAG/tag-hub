@@ -1,12 +1,17 @@
-import { firestore } from "../lib/firestore";
+import { Firestore } from "@google-cloud/firestore";
 
 /**
- * One-time script to set up CSM Dashboard test data.
- * Run: npx ts-node scripts/setup-csm-test-data.ts
+ * Standalone setup script for CSM Dashboard test data
+ * Run: node scripts/setup-test-data.mjs
  */
 
 const TEST_CLIENT_ID = "cMIc51hn6ziLwWtC8t0n";
 const TEST_CSM_EMAIL = "test@taxadvisorygrowth.net";
+
+const db = new Firestore({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub",
+  ignoreUndefinedProperties: true,
+});
 
 async function setupTestData() {
   console.log("🚀 Setting up CSM Dashboard test data...\n");
@@ -14,7 +19,7 @@ async function setupTestData() {
   try {
     // 1. Create test client
     console.log(`📝 Creating test client: Casey Williams Co (${TEST_CLIENT_ID})`);
-    await firestore().collection("clients").doc(TEST_CLIENT_ID).set({
+    await db.collection("clients").doc(TEST_CLIENT_ID).set({
       name: "Casey Williams Co",
       ghl_location_id: TEST_CLIENT_ID,
       drive_folder_id: "1xtentcq18ioOH9m0dIqQV9vxX6aqLM51",
@@ -34,7 +39,7 @@ async function setupTestData() {
 
     // 2. Create sample alerts
     console.log(`📢 Creating sample alerts...`);
-    const alertsCollection = firestore().collection("clients").doc(TEST_CLIENT_ID).collection("alerts");
+    const alertsCollection = db.collection("clients").doc(TEST_CLIENT_ID).collection("alerts");
 
     await alertsCollection.add({
       type: "info",
@@ -47,22 +52,22 @@ async function setupTestData() {
       type: "warning",
       title: "Spend Approaching Budget",
       message: "Monthly spend is at 98% of target budget ($24,500 of $25,000). Monitor closely.",
-      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
     await alertsCollection.add({
       type: "critical",
       title: "ROAS Below Target",
       message: "ROAS dropped to 3.2x (below 3.5x target). Review ad creative and targeting.",
-      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-      resolved_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // resolved 1 day ago
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      resolved_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
     console.log("✅ Alerts created\n");
 
     // 3. Create sample creatives
     console.log(`🎨 Creating sample creatives...`);
-    const creativesCollection = firestore().collection("clients").doc(TEST_CLIENT_ID).collection("creatives");
+    const creativesCollection = db.collection("clients").doc(TEST_CLIENT_ID).collection("creatives");
 
     await creativesCollection.add({
       filename: "facebook_carousel_approved.mp4",
@@ -98,7 +103,7 @@ async function setupTestData() {
 
     // 4. Create CSM settings
     console.log(`⚙️  Creating CSM settings...`);
-    await firestore().collection("csm_settings").doc(TEST_CSM_EMAIL).set({
+    await db.collection("csm_settings").doc(TEST_CSM_EMAIL).set({
       name: "Test CSM",
       assigned_clients: [TEST_CLIENT_ID],
       health_weights: {
@@ -116,6 +121,8 @@ async function setupTestData() {
     console.log(`1. Sign in as ${TEST_CSM_EMAIL} with role "tag_csm"`);
     console.log("2. Navigate to /csm-dashboard");
     console.log("3. See Casey Williams Co in your portfolio\n");
+
+    process.exit(0);
   } catch (error) {
     console.error("❌ Error setting up test data:", error);
     process.exit(1);
