@@ -21,6 +21,20 @@ export async function addToOtpWhitelist(email: string): Promise<void> {
 /**
  * Create/update a tenant location record in Firestore.
  * Stores the resources we just created.
+ *
+ * Meta ids are optional here on purpose: most new clients don't have an ad
+ * account yet at Phase 2 (funnel isn't even built — that's PR1). When a
+ * client comes in already running their own Meta ads and intake captures
+ * the id, this is what actually gets it onto the tenant record the Hub
+ * reads from (`lib/ghl/tenants.ts`) — previously intake data with a meta
+ * account id in it still got written to the onboarding Google Doc but never
+ * reached this document, so the dashboard had no way to find it. For
+ * clients who connect Meta later, the same fields stay editable in the
+ * admin tenant form (Business Settings → Partners connects the account;
+ * Business Settings → System Users → tag-hub-server → Add Assets → Ad
+ * Accounts grants the token access to it — see
+ * docs/meta-live-launch-plan.md — then the id lands here or in the admin
+ * form either way).
  */
 export async function saveTenantResources(
   locationId: string,
@@ -30,8 +44,16 @@ export async function saveTenantResources(
     driveFolderId: string;
     googleDocId?: string;
     ownerEmail?: string;
+    metaAdAccountId?: string;
+    metaBusinessId?: string;
+    metaPixelId?: string;
   }
 ): Promise<void> {
+  const metaFields: Record<string, string> = {};
+  if (data.metaAdAccountId) metaFields.metaAdAccountId = data.metaAdAccountId;
+  if (data.metaBusinessId) metaFields.metaBusinessId = data.metaBusinessId;
+  if (data.metaPixelId) metaFields.metaPixelId = data.metaPixelId;
+
   await db.collection("locations").doc(locationId).set(
     {
       locationId,
@@ -40,6 +62,7 @@ export async function saveTenantResources(
       driveFolderId: data.driveFolderId,
       googleDocId: data.googleDocId,
       ownerEmail: data.ownerEmail,
+      ...metaFields,
       services: {
         vslFunnel: true,
         adManagement: true,

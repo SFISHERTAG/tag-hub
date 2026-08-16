@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { handlePhase1 } from "./webhooks/phase1-provisioning";
 import { handlePhase2 } from "./webhooks/phase2-intake-submit";
+import { handlePhase3 } from "./webhooks/phase3-meta-setup";
 
 /**
  * Export handlers directly for Cloud Functions deployment.
@@ -33,6 +34,20 @@ export async function phase2IntakeSubmit(req: Request, res: Response) {
   return handlePhase2(req, res);
 }
 
+/**
+ * Phase 3: Meta ad account setup
+ * Expected body:
+ * {
+ *   "locationId": "...",
+ *   "email": "...",
+ *   "intakeData": { "metaAdAccountId": "...", ... },
+ *   "slackChannelId": "..."
+ * }
+ */
+export async function phase3MetaSetup(req: Request, res: Response) {
+  return handlePhase3(req, res);
+}
+
 // For local testing with Express
 import express, { Express } from "express";
 
@@ -50,6 +65,7 @@ app.get("/", (req: Request, res: Response) => {
     endpoints: [
       "POST /webhook/phase1 - GHL checkbox + Closed Won → provision resources",
       "POST /webhook/phase2 - Intake form submit → create doc",
+      "POST /webhook/phase3 - Phase 2 complete → setup Meta ad account",
     ],
   });
 });
@@ -59,6 +75,9 @@ app.post("/webhook/phase1", phase1Provisioning);
 
 // Phase 2 route
 app.post("/webhook/phase2", phase2IntakeSubmit);
+
+// Phase 3 route
+app.post("/webhook/phase3", phase3MetaSetup);
 
 // Error handling
 app.use((err: Error, req: Request, res: Response) => {

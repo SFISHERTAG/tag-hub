@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { createGoogleDoc, shareGoogleDoc, addDocTab } from "../google";
 import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore";
 import { generateAllContent } from "../gemini";
+import { logAutomationEvent } from "../postgres";
 
 /**
  * Phase 2: Intake form submission.
@@ -102,13 +103,33 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
     await shareGoogleDoc(googleDocId, email, "reader");
 
     // Step 7: Update tenant record with doc ID
+    //
+    // Most new clients don't have a Meta ad account yet at this point —
+    // funnel isn't even built (PR1). But some come in already running their
+    // own Meta ads (e.g. Money Problems Solved), and if the intake form
+    // captured that, this is what actually gets it onto the tenant record
+    // rather than leaving it stranded inside the free-form intake blob.
+    // Keys are read defensively since intakeData has no fixed schema (it's
+    // JSON-dumped straight into Gemini prompts) — accepts either the
+    // canonical camelCase field name or a plausible form-field alias.
     console.log("[Phase 2] Updating tenant record...");
+    const readIntakeString = (...keys: string[]): string | undefined => {
+      for (const key of keys) {
+        const value = intakeData[key];
+        if (typeof value === "string" && value.trim()) return value.trim();
+      }
+      return undefined;
+    };
+
     await saveTenantResources(locationId, {
       name: clientName,
       slackChannelId: tenantData.slackChannelId,
       driveFolderId,
       googleDocId,
       ownerEmail: email,
+      metaAdAccountId: readIntakeString("metaAdAccountId", "meta_ad_account_id", "metaAdAccount"),
+      metaBusinessId: readIntakeString("metaBusinessId", "meta_business_id", "metaBusinessManagerId"),
+      metaPixelId: readIntakeString("metaPixelId", "meta_pixel_id"),
     });
 
     // Step 8: Log completion
@@ -124,11 +145,68 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
 
     console.log(`[Phase 2] Complete for ${clientName}`);
 
+    // Step 9: Trigger Phase 3 (Meta account setup)
+    console.log("[Phase 2] Triggering Phase 3...");
+    try {
+      const slackChannelId = tenantData.slackChannelId;
+      const phase3Url = process.env.PHASE3_WEBHOOK_URL ||
+        `${process.env.CLOUD_FUNCTIONS_URL}/webhook/phase3`;
+
+      if (!phase3Url) {
+        throw new Error("PHASE3_WEBHOOK_URL or CLOUD_FUNCTIONS_URL not configured");
+      }
+
+      const phase3Response = await fetch(phase3Url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          locationId,
+          email,
+          intakeData,
+          slackChannelId,
+        }),
+      });
+
+      const phase3Result = await phase3Response.json();
+
+      if (!phase3Response.ok) {
+        console.error("[Phase 2] Phase 3 trigger failed:", phase3Result);
+        // Log but don't fail - Phase 3 can be triggered manually later
+        await logAutomationEvent({
+          locationId,
+          phase: "phase2",
+          event: "phase3_trigger_failed",
+          status: "error",
+          error: phase3Result.error,
+        });
+      } else {
+        console.log(`[Phase 2] Phase 3 triggered successfully:`, phase3Result);
+        await logAutomationEvent({
+          locationId,
+          phase: "phase2",
+          event: "phase3_triggered",
+          status: "completed",
+          details: phase3Result,
+        });
+      }
+    } catch (phase3Error) {
+      const error = phase3Error instanceof Error ? phase3Error.message : "Unknown error";
+      console.error("[Phase 2] Failed to trigger Phase 3:", error);
+      await logAutomationEvent({
+        locationId,
+        phase: "phase2",
+        event: "phase3_trigger_error",
+        status: "error",
+        error,
+      });
+      // Continue anyway - Phase 3 can be triggered manually
+    }
+
     res.json({
       success: true,
       googleDocId,
-      status: "awaiting_human_audit",
-      nextStep: "Human review: add UVP copy and customize document",
+      status: "phase3_triggered",
+      nextStep: "Phase 3 started: Meta account setup",
     });
   } catch (error) {
     console.error("[Phase 2] Error:", error);
