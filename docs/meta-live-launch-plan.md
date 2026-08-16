@@ -2,9 +2,11 @@
 
 **Owner:** Sam Fisher
 **Prepared by:** Chief of Staff (Claude)
-**Status:** Phase 1 complete — Business Manager set up. Phase 2 (App + System User) next.
+**Status:** Phase 2 complete — App + System User live, token verified against the Marketing API. Phase 3 (App Review for Full Access) not started.
 **Business Portfolio ID:** `2499756636894332`
 **Gates:** Epic 4 (4.1–4.6), Epic 5 (5.4–5.5), Epic 6 (6.1–6.5) — TAG Success Hub
+
+**Token expiry — resolved 2026-08-16.** The first token Meta generated was a 60-day expiring token. Regenerated via the System User's Generate New Token screen with the "Never" expiration option — the Business was not, in fact, forced into expiring-only. New token confirmed non-expiring (`expires_at: 0` on `debug_token`) and the old 60-day token was revoked. No refresh job needed. Detail in Risks (marked resolved) and Phase 2 below.
 
 ---
 
@@ -49,13 +51,14 @@ From `docs/meta-bm-setup-for-austyn.md`, still accurate:
 
 **Explicit permission checkpoint:** I will not attempt to create the Business Manager, register the app, or submit App Review myself. These are external-system, identity-bound actions per standing instructions. I'll build against the credentials once Sam/Austyn generate them.
 
-## Phase 2 — App and System User (Sam/Austyn creates; I configure once access exists)
+## Phase 2 — App and System User — DONE (2026-08-16)
 
-1. developers.facebook.com → My Apps → Create App → type "Business."
-2. Add product: Marketing API.
-3. BM Settings → Users → System Users → Add → name it (e.g., `tag-hub-server`) → role: Admin.
-4. Generate a System User access token scoped to `ads_management`, `ads_read`, `business_management`. Long-lived, non-expiring while the System User exists — this is what the Hub's server-side code authenticates with (not a personal user token).
-5. Assign the System User to each client ad account as a **partner** (client-owned account, TAG partner access — the model already documented in Story 4.1 as recommended). Each new client repeats this step; worth scripting or documenting as a repeatable onboarding task once the first one is done manually.
+1. developers.facebook.com → My Apps → Create App. Meta has since moved to a use-case flow rather than an app "type" picker — used "Create & manage ads with Marketing API," connected to the existing TAG business portfolio at creation. App: `tag-hub-server`, App ID `1388576803228178`.
+2. Marketing API use case attached automatically by the use case selection above (no separate "add product" step in the current flow).
+3. BM Settings → Users → System Users → Add → `tag-hub-server`. **Role: Employee, not Admin.** Admin System User creation was blocked by Meta's anti-fraud rule ("Admin System User must be at least 7 days old before creating other Admin System Users") — this fires on Business Managers created within 7 days, regardless of whether it's the first System User. Employee role sidesteps it and is actually the better-scoped choice: the Hub's server code only needs API access to assigned assets, not Business Manager admin rights.
+4. App asset assignment through the UI (System User → Add Assets → Apps) initially showed "No permissions available" — the app wasn't yet claimable as an asset for the System User through that picker. Resolved by installing the app directly via the Business Management API (`POST /{system-user-id}/applications` with `business_app` + a personal admin token from Graph API Explorer), which is the mechanism Meta's own docs describe as the actual install step underlying the UI.
+5. Generated the System User token: scopes `ads_management`, `ads_read`, `business_management`, confirmed via `debug_token`. First attempt came back 60-day expiring; regenerated with the "Never" expiration option and got a non-expiring token instead. Old expiring token revoked immediately after cutover.
+6. Ad accounts: done for 3 clients already partnered with TAG's Business Manager (visible under Business Settings → Partners before this work started — Money Problems Solved, Medori Tax & Advisory Group, Onestop.CPA). Business-level partnership existed but the System User itself wasn't individually assigned to their ad accounts — that's a separate step from the partnership (Business Settings → System Users → `tag-hub-server` → Add Assets → Ad Accounts). Once done, System User reaches 9 accounts total: 5 owned by TAG (TAG I–V) plus 4 client accounts across the 3 partnered businesses. Confirmed via `assigned_ad_accounts` and `client_ad_accounts`, both agree. New clients still need the same two-step process repeated: Partners page to establish the business-to-business relationship, then System User asset assignment — worth scripting or documenting as a repeatable onboarding task, per the original note below.
 
 ## Phase 3 — App Review for Full Access (Sam/Austyn submits; joint prep)
 
@@ -63,13 +66,13 @@ From `docs/meta-bm-setup-for-austyn.md`, still accurate:
 2. Submit for Full Access once volume and error-rate thresholds are visibly met in the App Dashboard.
 3. Submit Business Verification in parallel (Phase 1, step 4) — don't wait for Full Access eligibility to start this.
 
-## Phase 4 — Engineering (unblocked once System User + token exist — I build this)
+## Phase 4 — Engineering (unblocked — System User + token exist as of 2026-08-16 — I build this)
 
 Maps directly to existing scoped stories, no new spec needed:
 
 | Story | What it needs from Phase 1–3 |
 | --- | --- |
-| 4.1 System User + ad account access | System User token (Phase 2.4), partner access per client (Phase 2.5) |
+| 4.1 System User + ad account access | Done — token live, 4 client ad accounts + 5 TAG-owned accounts assigned. New clients repeat Phase 2.6. |
 | 4.2–4.6 Spend, funnel, ROAS, freshness, calendar | 4.1 complete |
 | 5.2–5.3 Campaign template, launch preview | No Meta dependency — buildable now |
 | 5.4 Create paused campaign via Marketing API | System User with `ads_management` |
@@ -81,6 +84,8 @@ Maps directly to existing scoped stories, no new spec needed:
 ---
 
 ## Risks and Mitigations
+
+**Token expiry — resolved 2026-08-16.** First token generated was 60-day expiring. Regenerating via the System User's token screen with the "Never" option produced a non-expiring token (confirmed `expires_at: 0`) — the business was not actually forced into expiring-only, that was just what the first generation defaulted to. Old token revoked immediately after cutover. No refresh job needed.
 
 **Rate/access tier risk.** If Limited Access rate limits prove too low once multiple clients are polling spend concurrently, Full Access resolves it — budget the few-business-days review lag into the rollout timeline, don't discover it at launch.
 

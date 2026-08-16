@@ -1,32 +1,122 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { type ClientData } from "@/lib/dashboard/csm-clients";
+import { type MetaCampaign } from "@/lib/meta/campaigns";
+import { getCampaignsForClient } from "../actions/get-campaigns";
 
 interface CampaignsTabProps {
   client: ClientData;
 }
 
 export function CampaignsTab({ client }: CampaignsTabProps) {
+  const [campaigns, setCampaigns] = useState<MetaCampaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchCampaigns() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getCampaignsForClient(client.id);
+        setCampaigns(data);
+      } catch (err) {
+        setError("Failed to load campaigns");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCampaigns();
+  }, [client.id]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-sm text-ink-3">Loading campaigns...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-danger/30 bg-danger-tint p-4">
+        <p className="text-sm text-danger">{error}</p>
+      </div>
+    );
+  }
+
+  if (campaigns.length === 0) {
+    return (
+      <div className="rounded-lg border border-line bg-sunken p-6 text-center">
+        <p className="text-sm text-ink-3">No active campaigns found</p>
+        <p className="text-xs text-ink-3 mt-2">Campaigns will appear here once they're launched in Meta Ads Manager</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg border-2 border-dashed border-accent/30 bg-accent/5 p-8 text-center">
-        <p className="text-lg font-medium text-ink mb-2">Campaigns Coming Soon</p>
-        <p className="text-sm text-ink-2 mb-4">
-          Meta Ads integration (read-only view of active campaigns) will be available in Phase 2.
-        </p>
-        <div className="inline-block rounded-lg bg-accent/10 px-4 py-2">
-          <p className="text-xs text-accent font-medium">🚀 Phase 2: Meta Integration</p>
+    <div className="space-y-4">
+      <div className="grid gap-4">
+        {campaigns.map((campaign) => (
+          <CampaignCard key={campaign.id} campaign={campaign} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CampaignCard({ campaign }: { campaign: MetaCampaign }) {
+  const statusColors = {
+    ACTIVE: "bg-ok-tint text-ok border-ok/30",
+    PAUSED: "bg-warn-tint text-warn border-warn/30",
+    ARCHIVED: "bg-ink-tint text-ink-2 border-line",
+    DELETED: "bg-danger-tint text-danger border-danger/30",
+  };
+
+  const statusColor = statusColors[campaign.status];
+
+  return (
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <h4 className="font-medium text-ink">{campaign.name}</h4>
+          <p className="text-xs text-ink-3 mt-1">{campaign.id}</p>
+        </div>
+        <span className={`rounded px-2 py-1 text-xs font-medium border ${statusColor}`}>
+          {campaign.status}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-4 gap-3 mb-3">
+        <div className="rounded bg-sunken p-2">
+          <p className="text-xs text-ink-3">Spend (24h)</p>
+          <p className="text-sm font-semibold text-ink">${campaign.spend_24h.toFixed(2)}</p>
+        </div>
+        <div className="rounded bg-sunken p-2">
+          <p className="text-xs text-ink-3">Impressions</p>
+          <p className="text-sm font-semibold text-ink">{campaign.impressions_24h.toLocaleString()}</p>
+        </div>
+        <div className="rounded bg-sunken p-2">
+          <p className="text-xs text-ink-3">Clicks</p>
+          <p className="text-sm font-semibold text-ink">{campaign.clicks_24h.toLocaleString()}</p>
+        </div>
+        <div className="rounded bg-sunken p-2">
+          <p className="text-xs text-ink-3">Leads</p>
+          <p className="text-sm font-semibold text-ink">{campaign.leads_24h.toLocaleString()}</p>
         </div>
       </div>
 
-      <div className="rounded-lg border border-line bg-sunken p-4">
-        <h3 className="text-sm font-medium text-ink mb-2">What to expect:</h3>
-        <ul className="space-y-2 text-sm text-ink-2">
-          <li>• View all active Meta Ad campaigns</li>
-          <li>• Monitor spend and performance metrics</li>
-          <li>• See creatives used in each campaign</li>
-          <li>• Track ROI by campaign</li>
-        </ul>
+      {campaign.roas_24h && (
+        <div className="text-xs text-ink-2">
+          ROAS (24h): <span className="font-semibold text-ink">{campaign.roas_24h.toFixed(2)}x</span>
+        </div>
+      )}
+
+      <div className="text-xs text-ink-3 mt-3">
+        Created: {new Date(campaign.created_time).toLocaleDateString()}
       </div>
     </div>
   );

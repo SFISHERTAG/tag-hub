@@ -23,6 +23,7 @@ async function setupTestData() {
       name: "Casey Williams Co",
       ghl_location_id: TEST_CLIENT_ID,
       drive_folder_id: "1xtentcq18ioOH9m0dIqQV9vxX6aqLM51",
+      meta_ad_account_id: "act_123456789",
       csm_assigned: TEST_CSM_EMAIL,
       active: true,
       health_targets: {
