@@ -110,18 +110,25 @@ f24de68 - Update CSM Dashboard context documentation
 
 ---
 
-## Next Steps
+## Phase 2 - In Progress
+
+**Started:** Aug 15, 2026 (same day as Phase 1 completion!)
+
+### Phase 2 Tasks (Meta Integration)
+- [x] Meta Marketing API client integration
+- [x] Campaign data fetcher (live campaigns list)
+- [x] 24h metrics: spend, impressions, clicks, leads, ROAS
+- [x] CampaignsTab with live campaign display
+- [x] Server action to fetch campaigns for client
+- [ ] Update Firestore client doc with real meta_ad_account_id
+- [ ] Test with actual Meta ad account
+- [ ] Link creatives to campaigns (optional)
+- [ ] Campaign detail view drill-down
 
 ### Phase 1.5 (Optional Enhancement)
 - [ ] Build health weights adjustment modal
 - [ ] Allow CSM to customize ROAS/spend/leads/SLA weights
 - [ ] Save weights to Firestore per CSM
-
-### Phase 2 (Meta Integration)
-- [ ] Connect Meta Ads API (read-only)
-- [ ] Display campaigns in CampaignsTab
-- [ ] Show spend and performance by campaign
-- [ ] Link creatives to campaigns
 
 ### Infrastructure
 - [ ] Refresh Firebase service account credentials
