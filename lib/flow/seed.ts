@@ -1,6 +1,6 @@
 import { pool } from "@/lib/postgres";
 
-export async function seedClarityFramework(
+export async function seedFlowFramework(
   orgId: string,
   createdBy: string
 ): Promise<string> {
@@ -11,7 +11,7 @@ export async function seedClarityFramework(
 
     // Create framework
     const frameworkResult = await client.query(
-      `INSERT INTO clarity_frameworks
+      `INSERT INTO flow_frameworks
       (org_id, name, description, version, is_active, created_by, updated_by)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id`,
@@ -211,7 +211,7 @@ export async function seedClarityFramework(
     // Insert tabs, sections, cards, and scripts
     for (const tab of tabs) {
       const tabResult = await client.query(
-        `INSERT INTO clarity_tabs
+        `INSERT INTO flow_tabs
         (framework_id, label, icon, color, display_order, is_active)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id`,
@@ -222,7 +222,7 @@ export async function seedClarityFramework(
 
       for (const section of tab.sections) {
         const sectionResult = await client.query(
-          `INSERT INTO clarity_sections
+          `INSERT INTO flow_sections
           (tab_id, label, description, display_order, is_active)
           VALUES ($1, $2, $3, $4, $5)
           RETURNING id`,
@@ -233,7 +233,7 @@ export async function seedClarityFramework(
 
         for (const card of section.cards) {
           const cardResult = await client.query(
-            `INSERT INTO clarity_cards
+            `INSERT INTO flow_cards
             (section_id, key, label, sub_label, display_order, is_active)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING id`,
@@ -244,7 +244,7 @@ export async function seedClarityFramework(
 
           // Insert script for this card
           await client.query(
-            `INSERT INTO clarity_scripts
+            `INSERT INTO flow_scripts
             (card_id, content, why, notes, created_by, updated_by)
             VALUES ($1, $2, $3, $4, $5, $6)`,
             [

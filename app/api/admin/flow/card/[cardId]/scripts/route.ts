@@ -5,7 +5,7 @@ import {
   deleteScript,
   getScript,
   logChange,
-} from "@/lib/clarity/db";
+} from "@/lib/flow/db";
 import { requireSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ interface ScriptPayload {
 }
 
 /**
- * POST /api/admin/clarity/card/[cardId]/scripts
+ * POST /api/admin/flow/card/[cardId]/scripts
  * Create a new script for a card (hotpath)
  */
 export async function POST(
@@ -56,7 +56,7 @@ export async function POST(
     // Log the change
     await logChange(
       body.org_id,
-      "clarity_scripts",
+      "flow_scripts",
       script.id,
       "create",
       {
@@ -78,7 +78,7 @@ export async function POST(
 }
 
 /**
- * PATCH /api/admin/clarity/card/[cardId]/scripts/[scriptId]
+ * PATCH /api/admin/flow/card/[cardId]/scripts/[scriptId]
  * Update a script (hotpath)
  */
 export async function PATCH(
@@ -140,7 +140,7 @@ export async function PATCH(
     if (Object.keys(changes).length > 0) {
       await logChange(
         body.org_id || "unknown",
-        "clarity_scripts",
+        "flow_scripts",
         scriptId,
         "update",
         changes,
@@ -159,7 +159,7 @@ export async function PATCH(
 }
 
 /**
- * DELETE /api/admin/clarity/card/[cardId]/scripts/[scriptId]
+ * DELETE /api/admin/flow/card/[cardId]/scripts/[scriptId]
  * Delete a script
  */
 export async function DELETE(
@@ -196,7 +196,7 @@ export async function DELETE(
     // Log the deletion
     await logChange(
       orgId,
-      "clarity_scripts",
+      "flow_scripts",
       scriptId,
       "delete",
       {

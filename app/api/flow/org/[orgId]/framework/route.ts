@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFullFramework } from "@/lib/clarity/db";
+import { getFullFramework } from "@/lib/flow/db";
 import { requireSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/clarity/org/[orgId]/framework
+ * GET /api/flow/org/[orgId]/framework
  * Returns the full active framework for a location (closers/setters read-only)
  */
 export async function GET(

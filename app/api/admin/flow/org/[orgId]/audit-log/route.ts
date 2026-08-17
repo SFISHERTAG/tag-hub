@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuditLog } from "@/lib/clarity/db";
+import { getAuditLog } from "@/lib/flow/db";
 import { requireSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/admin/clarity/org/[orgId]/audit-log
+ * GET /api/admin/flow/org/[orgId]/audit-log
  * Get audit log for a framework (admin only)
  */
 export async function GET(

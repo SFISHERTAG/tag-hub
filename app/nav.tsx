@@ -18,6 +18,7 @@ import {
   MoreIcon,
   CloseIcon,
   BookIcon,
+  ScriptIcon,
 } from "./icons";
 
 /**
@@ -75,6 +76,12 @@ const ITEMS: {
     label: "Setter",
     icon: TodayIcon,
     hats: ["tag_exec", "tag_setter", "tag_setter_manager", "client_setter", "client_setter_manager"],
+  },
+  {
+    href: "/closer/flow",
+    label: "FLOW",
+    icon: ScriptIcon,
+    hats: ["tag_exec", "client_closer", "client_setter", "tag_setter", "tag_sales"],
   },
   {
     href: "/onboarding",

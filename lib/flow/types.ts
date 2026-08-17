@@ -1,4 +1,4 @@
-export interface ClarityFramework {
+export interface FlowFramework {
   id: string;
   org_id: string;
   name: string;
@@ -11,7 +11,7 @@ export interface ClarityFramework {
   updated_at: Date;
 }
 
-export interface ClarityTab {
+export interface FlowTab {
   id: string;
   framework_id: string;
   label: string;
@@ -23,7 +23,7 @@ export interface ClarityTab {
   updated_at: Date;
 }
 
-export interface ClaritySection {
+export interface FlowSection {
   id: string;
   tab_id: string;
   label: string;
@@ -34,7 +34,7 @@ export interface ClaritySection {
   updated_at: Date;
 }
 
-export interface ClarityCard {
+export interface FlowCard {
   id: string;
   section_id: string;
   key: string;
@@ -46,7 +46,7 @@ export interface ClarityCard {
   updated_at: Date;
 }
 
-export interface ClarityScript {
+export interface FlowScript {
   id: string;
   card_id: string;
   content: string;
@@ -60,7 +60,7 @@ export interface ClarityScript {
   updated_at: Date;
 }
 
-export interface ClarityAuditLog {
+export interface FlowAuditLog {
   id: string;
   org_id: string;
   table_name: string;
@@ -90,7 +90,7 @@ export interface FullFramework {
         key: string;
         label: string;
         sub_label: string | null;
-        script: ClarityScript | null;
+        script: FlowScript | null;
       }>;
     }>;
   }>;

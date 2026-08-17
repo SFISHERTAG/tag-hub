@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revertChange, getAuditEntry } from "@/lib/clarity/db";
+import { revertChange, getAuditEntry } from "@/lib/flow/db";
 import { requireSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/admin/clarity/org/[orgId]/audit-log/[changeId]/revert
+ * POST /api/admin/flow/org/[orgId]/audit-log/[changeId]/revert
  * Revert a change by reverting all fields to their previous values
  */
 export async function POST(

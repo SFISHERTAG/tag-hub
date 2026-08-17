@@ -1,8 +1,8 @@
--- Clarity Framework Schema
+-- Flow Framework Schema
 -- Flexible, configurable sales coaching scaffold
 
 -- Framework metadata and versioning
-CREATE TABLE IF NOT EXISTS clarity_frameworks (
+CREATE TABLE IF NOT EXISTS flow_frameworks (
   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id VARCHAR NOT NULL,
   name VARCHAR(255) NOT NULL,
@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS clarity_frameworks (
 );
 
 -- Framework tabs (e.g., Triage, Diagnostic, Sales, Follow-Up)
-CREATE TABLE IF NOT EXISTS clarity_tabs (
+CREATE TABLE IF NOT EXISTS flow_tabs (
   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-  framework_id VARCHAR NOT NULL REFERENCES clarity_frameworks(id) ON DELETE CASCADE,
+  framework_id VARCHAR NOT NULL REFERENCES flow_frameworks(id) ON DELETE CASCADE,
   label VARCHAR(100) NOT NULL,
   icon VARCHAR(50),
   color VARCHAR(20),
@@ -31,9 +31,9 @@ CREATE TABLE IF NOT EXISTS clarity_tabs (
 );
 
 -- Sections within each tab (e.g., Opening, Discovery, Goals)
-CREATE TABLE IF NOT EXISTS clarity_sections (
+CREATE TABLE IF NOT EXISTS flow_sections (
   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-  tab_id VARCHAR NOT NULL REFERENCES clarity_tabs(id) ON DELETE CASCADE,
+  tab_id VARCHAR NOT NULL REFERENCES flow_tabs(id) ON DELETE CASCADE,
   label VARCHAR(100) NOT NULL,
   description TEXT,
   display_order INT DEFAULT 0,
@@ -44,9 +44,9 @@ CREATE TABLE IF NOT EXISTS clarity_sections (
 );
 
 -- Script cards within sections
-CREATE TABLE IF NOT EXISTS clarity_cards (
+CREATE TABLE IF NOT EXISTS flow_cards (
   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-  section_id VARCHAR NOT NULL REFERENCES clarity_sections(id) ON DELETE CASCADE,
+  section_id VARCHAR NOT NULL REFERENCES flow_sections(id) ON DELETE CASCADE,
   key VARCHAR(100) NOT NULL,
   label VARCHAR(255) NOT NULL,
   sub_label VARCHAR(255),
@@ -58,9 +58,9 @@ CREATE TABLE IF NOT EXISTS clarity_cards (
 );
 
 -- Script content (versioned)
-CREATE TABLE IF NOT EXISTS clarity_scripts (
+CREATE TABLE IF NOT EXISTS flow_scripts (
   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-  card_id VARCHAR NOT NULL REFERENCES clarity_cards(id) ON DELETE CASCADE,
+  card_id VARCHAR NOT NULL REFERENCES flow_cards(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
   why TEXT,
   notes TEXT,
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS clarity_scripts (
 );
 
 -- Audit log for all changes (revert-capable)
-CREATE TABLE IF NOT EXISTS clarity_audit_log (
+CREATE TABLE IF NOT EXISTS flow_audit_log (
   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id VARCHAR NOT NULL,
   table_name VARCHAR(50) NOT NULL,
@@ -87,11 +87,11 @@ CREATE TABLE IF NOT EXISTS clarity_audit_log (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_clarity_frameworks_org_active ON clarity_frameworks(org_id, is_active);
-CREATE INDEX IF NOT EXISTS idx_clarity_tabs_framework ON clarity_tabs(framework_id, display_order);
-CREATE INDEX IF NOT EXISTS idx_clarity_sections_tab ON clarity_sections(tab_id, display_order);
-CREATE INDEX IF NOT EXISTS idx_clarity_cards_section ON clarity_cards(section_id, display_order);
-CREATE INDEX IF NOT EXISTS idx_clarity_scripts_card ON clarity_scripts(card_id);
-CREATE INDEX IF NOT EXISTS idx_clarity_scripts_tag ON clarity_scripts USING GIN(tags);
-CREATE INDEX IF NOT EXISTS idx_clarity_audit_org_time ON clarity_audit_log(org_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_clarity_audit_record ON clarity_audit_log(table_name, record_id);
+CREATE INDEX IF NOT EXISTS idx_flow_frameworks_org_active ON flow_frameworks(org_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_flow_tabs_framework ON flow_tabs(framework_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_flow_sections_tab ON flow_sections(tab_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_flow_cards_section ON flow_cards(section_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_flow_scripts_card ON flow_scripts(card_id);
+CREATE INDEX IF NOT EXISTS idx_flow_scripts_tag ON flow_scripts USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_flow_audit_org_time ON flow_audit_log(org_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_flow_audit_record ON flow_audit_log(table_name, record_id);

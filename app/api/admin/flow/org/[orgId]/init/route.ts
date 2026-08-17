@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFramework } from "@/lib/clarity/db";
-import { seedClarityFramework } from "@/lib/clarity/seed";
+import { getFramework } from "@/lib/flow/db";
+import { seedFlowFramework } from "@/lib/flow/seed";
 import { requireSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/admin/clarity/org/[orgId]/init
- * Initialize clarity framework for an org (creates seed data if not exists)
+ * POST /api/admin/flow/org/[orgId]/init
+ * Initialize flow framework for an org (creates seed data if not exists)
  * Admin only
  */
 export async function POST(
@@ -35,7 +35,7 @@ export async function POST(
     }
 
     // Seed the framework
-    const frameworkId = await seedClarityFramework(
+    const frameworkId = await seedFlowFramework(
       orgId,
       session.email || "system"
     );

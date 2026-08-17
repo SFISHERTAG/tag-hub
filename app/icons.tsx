@@ -192,3 +192,12 @@ export const BookIcon = (p: IconProps) => (
     <path d="M6.5 2H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6.5a2.5 2.5 0 0 1-2.5-2.5v-12A2.5 2.5 0 0 1 6.5 2z" />
   </Svg>
 );
+
+/** Script — call scripts and coaching cards */
+export const ScriptIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M6 2h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
+    <path d="M15 2v4h4" />
+    <path d="M8 12h8M8 15.5h8M8 8.5h4" />
+  </Svg>
+);

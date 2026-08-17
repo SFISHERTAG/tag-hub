@@ -1,11 +1,11 @@
 import { pool } from "@/lib/postgres";
 import type {
-  ClarityFramework,
-  ClarityTab,
-  ClaritySection,
-  ClarityCard,
-  ClarityScript,
-  ClarityAuditLog,
+  FlowFramework,
+  FlowTab,
+  FlowSection,
+  FlowCard,
+  FlowScript,
+  FlowAuditLog,
   FullFramework,
 } from "./types";
 
@@ -14,11 +14,11 @@ import type {
 export async function getFramework(
   orgId: string,
   version?: string
-): Promise<ClarityFramework | null> {
+): Promise<FlowFramework | null> {
   const result = await pool.query(
     version
-      ? "SELECT * FROM clarity_frameworks WHERE org_id = $1 AND version = $2 LIMIT 1"
-      : "SELECT * FROM clarity_frameworks WHERE org_id = $1 AND is_active = true LIMIT 1",
+      ? "SELECT * FROM flow_frameworks WHERE org_id = $1 AND version = $2 LIMIT 1"
+      : "SELECT * FROM flow_frameworks WHERE org_id = $1 AND is_active = true LIMIT 1",
     version ? [orgId, version] : [orgId]
   );
   return result.rows[0] || null;
@@ -26,19 +26,19 @@ export async function getFramework(
 
 export async function getAllFrameworkVersions(
   orgId: string
-): Promise<ClarityFramework[]> {
+): Promise<FlowFramework[]> {
   const result = await pool.query(
-    "SELECT * FROM clarity_frameworks WHERE org_id = $1 ORDER BY created_at DESC",
+    "SELECT * FROM flow_frameworks WHERE org_id = $1 ORDER BY created_at DESC",
     [orgId]
   );
   return result.rows;
 }
 
 export async function createFramework(
-  data: Omit<ClarityFramework, "id" | "created_at" | "updated_at">
-): Promise<ClarityFramework> {
+  data: Omit<FlowFramework, "id" | "created_at" | "updated_at">
+): Promise<FlowFramework> {
   const result = await pool.query(
-    `INSERT INTO clarity_frameworks
+    `INSERT INTO flow_frameworks
     (org_id, name, description, version, is_active, created_by, updated_by)
     VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING *`,
@@ -57,8 +57,8 @@ export async function createFramework(
 
 export async function updateFramework(
   id: string,
-  data: Partial<ClarityFramework>
-): Promise<ClarityFramework> {
+  data: Partial<FlowFramework>
+): Promise<FlowFramework> {
   const updates: string[] = [];
   const values: any[] = [id];
   let paramCount = 2;
@@ -82,7 +82,7 @@ export async function updateFramework(
   updates.push(`updated_at = NOW()`);
 
   const result = await pool.query(
-    `UPDATE clarity_frameworks SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
+    `UPDATE flow_frameworks SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
   return result.rows[0];
@@ -95,28 +95,28 @@ export async function getFullFramework(orgId: string): Promise<FullFramework | n
   if (!framework) return null;
 
   const tabs = await pool.query(
-    "SELECT * FROM clarity_tabs WHERE framework_id = $1 AND is_active = true ORDER BY display_order",
+    "SELECT * FROM flow_tabs WHERE framework_id = $1 AND is_active = true ORDER BY display_order",
     [framework.id]
   );
 
   const fullTabs = await Promise.all(
     tabs.rows.map(async (tab) => {
       const sections = await pool.query(
-        "SELECT * FROM clarity_sections WHERE tab_id = $1 AND is_active = true ORDER BY display_order",
+        "SELECT * FROM flow_sections WHERE tab_id = $1 AND is_active = true ORDER BY display_order",
         [tab.id]
       );
 
       const fullSections = await Promise.all(
         sections.rows.map(async (section) => {
           const cards = await pool.query(
-            "SELECT * FROM clarity_cards WHERE section_id = $1 AND is_active = true ORDER BY display_order",
+            "SELECT * FROM flow_cards WHERE section_id = $1 AND is_active = true ORDER BY display_order",
             [section.id]
           );
 
           const fullCards = await Promise.all(
             cards.rows.map(async (card) => {
               const scripts = await pool.query(
-                "SELECT * FROM clarity_scripts WHERE card_id = $1 ORDER BY created_at DESC LIMIT 1",
+                "SELECT * FROM flow_scripts WHERE card_id = $1 ORDER BY created_at DESC LIMIT 1",
                 [card.id]
               );
               return {
@@ -159,10 +159,10 @@ export async function getFullFramework(orgId: string): Promise<FullFramework | n
 
 export async function createTab(
   frameworkId: string,
-  data: Omit<ClarityTab, "id" | "created_at" | "updated_at">
-): Promise<ClarityTab> {
+  data: Omit<FlowTab, "id" | "created_at" | "updated_at">
+): Promise<FlowTab> {
   const result = await pool.query(
-    `INSERT INTO clarity_tabs
+    `INSERT INTO flow_tabs
     (framework_id, label, icon, color, display_order, is_active)
     VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING *`,
@@ -180,8 +180,8 @@ export async function createTab(
 
 export async function updateTab(
   id: string,
-  data: Partial<ClarityTab>
-): Promise<ClarityTab> {
+  data: Partial<FlowTab>
+): Promise<FlowTab> {
   const updates: string[] = [];
   const values: any[] = [id];
   let paramCount = 2;
@@ -209,7 +209,7 @@ export async function updateTab(
   updates.push(`updated_at = NOW()`);
 
   const result = await pool.query(
-    `UPDATE clarity_tabs SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
+    `UPDATE flow_tabs SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
   return result.rows[0];
@@ -217,7 +217,7 @@ export async function updateTab(
 
 export async function deleteTab(id: string): Promise<boolean> {
   const result = await pool.query(
-    "DELETE FROM clarity_tabs WHERE id = $1",
+    "DELETE FROM flow_tabs WHERE id = $1",
     [id]
   );
   return result.rowCount > 0;
@@ -227,10 +227,10 @@ export async function deleteTab(id: string): Promise<boolean> {
 
 export async function createSection(
   tabId: string,
-  data: Omit<ClaritySection, "id" | "created_at" | "updated_at">
-): Promise<ClaritySection> {
+  data: Omit<FlowSection, "id" | "created_at" | "updated_at">
+): Promise<FlowSection> {
   const result = await pool.query(
-    `INSERT INTO clarity_sections
+    `INSERT INTO flow_sections
     (tab_id, label, description, display_order, is_active)
     VALUES ($1, $2, $3, $4, $5)
     RETURNING *`,
@@ -241,8 +241,8 @@ export async function createSection(
 
 export async function updateSection(
   id: string,
-  data: Partial<ClaritySection>
-): Promise<ClaritySection> {
+  data: Partial<FlowSection>
+): Promise<FlowSection> {
   const updates: string[] = [];
   const values: any[] = [id];
   let paramCount = 2;
@@ -266,7 +266,7 @@ export async function updateSection(
   updates.push(`updated_at = NOW()`);
 
   const result = await pool.query(
-    `UPDATE clarity_sections SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
+    `UPDATE flow_sections SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
   return result.rows[0];
@@ -274,7 +274,7 @@ export async function updateSection(
 
 export async function deleteSection(id: string): Promise<boolean> {
   const result = await pool.query(
-    "DELETE FROM clarity_sections WHERE id = $1",
+    "DELETE FROM flow_sections WHERE id = $1",
     [id]
   );
   return result.rowCount > 0;
@@ -284,10 +284,10 @@ export async function deleteSection(id: string): Promise<boolean> {
 
 export async function createCard(
   sectionId: string,
-  data: Omit<ClarityCard, "id" | "created_at" | "updated_at">
-): Promise<ClarityCard> {
+  data: Omit<FlowCard, "id" | "created_at" | "updated_at">
+): Promise<FlowCard> {
   const result = await pool.query(
-    `INSERT INTO clarity_cards
+    `INSERT INTO flow_cards
     (section_id, key, label, sub_label, display_order, is_active)
     VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING *`,
@@ -305,8 +305,8 @@ export async function createCard(
 
 export async function updateCard(
   id: string,
-  data: Partial<ClarityCard>
-): Promise<ClarityCard> {
+  data: Partial<FlowCard>
+): Promise<FlowCard> {
   const updates: string[] = [];
   const values: any[] = [id];
   let paramCount = 2;
@@ -334,7 +334,7 @@ export async function updateCard(
   updates.push(`updated_at = NOW()`);
 
   const result = await pool.query(
-    `UPDATE clarity_cards SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
+    `UPDATE flow_cards SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
   return result.rows[0];
@@ -342,7 +342,7 @@ export async function updateCard(
 
 export async function deleteCard(id: string): Promise<boolean> {
   const result = await pool.query(
-    "DELETE FROM clarity_cards WHERE id = $1",
+    "DELETE FROM flow_cards WHERE id = $1",
     [id]
   );
   return result.rowCount > 0;
@@ -352,10 +352,10 @@ export async function deleteCard(id: string): Promise<boolean> {
 
 export async function createScript(
   cardId: string,
-  data: Omit<ClarityScript, "id" | "created_at" | "updated_at">
-): Promise<ClarityScript> {
+  data: Omit<FlowScript, "id" | "created_at" | "updated_at">
+): Promise<FlowScript> {
   const result = await pool.query(
-    `INSERT INTO clarity_scripts
+    `INSERT INTO flow_scripts
     (card_id, content, why, notes, version_tag, tags, created_by, updated_by)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *`,
@@ -375,8 +375,8 @@ export async function createScript(
 
 export async function updateScript(
   id: string,
-  data: Partial<ClarityScript>
-): Promise<ClarityScript> {
+  data: Partial<FlowScript>
+): Promise<FlowScript> {
   const updates: string[] = [];
   const values: any[] = [id];
   let paramCount = 2;
@@ -408,7 +408,7 @@ export async function updateScript(
   updates.push(`updated_at = NOW()`);
 
   const result = await pool.query(
-    `UPDATE clarity_scripts SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
+    `UPDATE flow_scripts SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
   return result.rows[0];
@@ -416,15 +416,15 @@ export async function updateScript(
 
 export async function deleteScript(id: string): Promise<boolean> {
   const result = await pool.query(
-    "DELETE FROM clarity_scripts WHERE id = $1",
+    "DELETE FROM flow_scripts WHERE id = $1",
     [id]
   );
   return result.rowCount > 0;
 }
 
-export async function getScript(id: string): Promise<ClarityScript | null> {
+export async function getScript(id: string): Promise<FlowScript | null> {
   const result = await pool.query(
-    "SELECT * FROM clarity_scripts WHERE id = $1 LIMIT 1",
+    "SELECT * FROM flow_scripts WHERE id = $1 LIMIT 1",
     [id]
   );
   return result.rows[0] || null;
@@ -443,7 +443,7 @@ export async function logChange(
   parentChangeId?: string
 ): Promise<string> {
   const result = await pool.query(
-    `INSERT INTO clarity_audit_log
+    `INSERT INTO flow_audit_log
     (org_id, table_name, record_id, action, changes, changed_by, admin_note, parent_change_id)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING id`,
@@ -465,9 +465,9 @@ export async function getAuditLog(
   orgId: string,
   limit = 100,
   offset = 0
-): Promise<ClarityAuditLog[]> {
+): Promise<FlowAuditLog[]> {
   const result = await pool.query(
-    `SELECT * FROM clarity_audit_log
+    `SELECT * FROM flow_audit_log
     WHERE org_id = $1
     ORDER BY created_at DESC
     LIMIT $2 OFFSET $3`,
@@ -479,9 +479,9 @@ export async function getAuditLog(
   }));
 }
 
-export async function getAuditEntry(id: string): Promise<ClarityAuditLog | null> {
+export async function getAuditEntry(id: string): Promise<FlowAuditLog | null> {
   const result = await pool.query(
-    "SELECT * FROM clarity_audit_log WHERE id = $1 LIMIT 1",
+    "SELECT * FROM flow_audit_log WHERE id = $1 LIMIT 1",
     [id]
   );
   const row = result.rows[0];
@@ -502,7 +502,7 @@ export async function revertChange(
     await client.query("BEGIN");
 
     const audit = await client.query(
-      "SELECT * FROM clarity_audit_log WHERE id = $1",
+      "SELECT * FROM flow_audit_log WHERE id = $1",
       [auditId]
     );
 
@@ -533,7 +533,7 @@ export async function revertChange(
 
     // Log the revert
     await client.query(
-      `INSERT INTO clarity_audit_log
+      `INSERT INTO flow_audit_log
       (org_id, table_name, record_id, action, changes, changed_by, admin_note, parent_change_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
