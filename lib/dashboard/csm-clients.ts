@@ -1,67 +1,167 @@
+import "server-only";
 import { firestore } from "@/lib/firestore";
 import { calculateHealthScore, getStatusFromScore, type ClientHealth, type HealthMetrics } from "./health-scoring";
 import { getMockMetrics } from "./mock-metrics";
+import { getTeamEmails } from "./csm-directory";
+import { evaluateRules } from "@/lib/rules/engine";
+import { escalationRules } from "@/lib/rules/configs/escalation.config";
+import { daysSinceLastAction } from "@/lib/audit/store";
+import type { ClientData, ClientAlert, EscalationBucket } from "./csm-clients-types";
+import type { CollectionReference, DocumentSnapshot, Query, QueryDocumentSnapshot } from "@google-cloud/firestore";
 
-export interface ClientData {
-  id: string;
-  name: string;
-  ghl_location_id: string;
-  csm_assigned: string;
-  health: ClientHealth;
-  last_activity?: string;
-  alert_count: number;
-  metrics?: HealthMetrics;
+export type { ClientData, ClientAlert };
+
+/** Firestore's `in` operator caps at 30 values — fine for a CS team, not for the whole department. */
+const FIRESTORE_IN_LIMIT = 30;
+
+/**
+ * Bucket a client via lib/rules/configs/escalation.config.ts.
+ *
+ * `showRatePct` and `deliveryStalled` are deliberately left out of the
+ * snapshot — both would need a live per-client GHL fetch (calendar events
+ * for the former, a resolved fulfillment-pipeline id for the latter) added
+ * to what's today a pure-Firestore read path, and for the department-wide
+ * rollup that's dozens of live GHL calls per page load. That's a real
+ * integration with its own rate-limit/caching shape, not a two-line add —
+ * left for a follow-up. Per lib/rules/engine.ts, a missing field just fails
+ * that condition rather than throwing or misclassifying, so this evaluates
+ * safely today; it just can't produce "ascension-ready" or the show-rate/
+ * delivery branches of "at-risk" until that follow-up lands.
+ */
+async function computeEscalation(
+  locationId: string,
+  upsellAttempted: boolean,
+): Promise<ClientData["escalation"]> {
+  const daysSinceLastCheckIn = await daysSinceLastAction(locationId, "impersonation.enter");
+
+  const evaluation = evaluateRules(escalationRules, {
+    daysSinceLastCheckIn: daysSinceLastCheckIn ?? undefined,
+    upsellAttempted,
+  });
+
+  return {
+    bucket: evaluation.bucket as EscalationBucket,
+    reason: evaluation.matchedRuleLabel,
+  };
 }
 
-export interface ClientAlert {
-  id: string;
-  type: "critical" | "warning" | "info";
-  title: string;
-  message: string;
-  created_at: string;
-  resolved_at?: string;
+async function buildClientData(
+  doc: QueryDocumentSnapshot | DocumentSnapshot,
+): Promise<ClientData | null> {
+  const data = doc.data();
+  if (!data) return null;
+  const clientId = doc.id;
+
+  const metrics = getMockMetrics(clientId);
+  const health = calculateHealthScore(metrics);
+  health.clientId = clientId;
+
+  const alerts = await getClientAlerts(clientId);
+  health.alert_count = alerts.filter((a) => !a.resolved_at).length;
+
+  const escalation = await computeEscalation(data.ghl_location_id, Boolean(data.upsell_attempted));
+
+  return {
+    id: clientId,
+    name: data.name || "Unknown Client",
+    ghl_location_id: data.ghl_location_id,
+    csm_assigned: data.csm_assigned,
+    health,
+    alert_count: health.alert_count,
+    metrics,
+    escalation,
+  };
 }
 
 /**
- * Fetch all clients assigned to a CSM.
+ * Run a `clients` query and attach computed health + alert data to each doc.
+ * Shared by every scope below (own book, team rollup, department rollup,
+ * coverage lookup) so the per-client computation lives in exactly one place.
+ */
+async function fetchClients(
+  query: Query | CollectionReference,
+): Promise<ClientData[]> {
+  const snapshot = await query.get();
+  const clients = (await Promise.all(snapshot.docs.map((doc) => buildClientData(doc)))).filter(
+    (c): c is ClientData => c !== null,
+  );
+
+  return clients.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Fetch all clients assigned to a CSM — their own book, the default scope.
  */
 export async function getAssignedClients(csmEmail: string): Promise<ClientData[]> {
   try {
-    const snapshot = await firestore()
-      .collection("clients")
-      .where("csm_assigned", "==", csmEmail)
-      .where("active", "==", true)
-      .get();
-
-    const clients: ClientData[] = [];
-
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      const clientId = doc.id;
-
-      const metrics = getMockMetrics(clientId);
-      const health = calculateHealthScore(metrics);
-      health.clientId = clientId;
-
-      const alerts = await getClientAlerts(clientId);
-      health.alert_count = alerts.filter((a) => !a.resolved_at).length;
-
-      clients.push({
-        id: clientId,
-        name: data.name || "Unknown Client",
-        ghl_location_id: data.ghl_location_id,
-        csm_assigned: data.csm_assigned,
-        health,
-        alert_count: health.alert_count,
-        metrics,
-      });
-    }
-
-    return clients.sort((a, b) => a.name.localeCompare(b.name));
+    return await fetchClients(
+      firestore()
+        .collection("clients")
+        .where("csm_assigned", "==", csmEmail)
+        .where("active", "==", true),
+    );
   } catch (error) {
     console.error("Error fetching assigned clients:", error);
     return [];
   }
+}
+
+/**
+ * Fetch clients across every CSM reporting to this CSD — the department
+ * rollup a CS Director sees. Batches the `csm_assigned in [...]` filter in
+ * groups of 30 (Firestore's `in` limit) since a department can exceed it.
+ */
+export async function getTeamClients(csdEmail: string): Promise<ClientData[]> {
+  try {
+    const csmEmails = await getTeamEmails(csdEmail);
+    if (csmEmails.length === 0) return [];
+
+    const batches: string[][] = [];
+    for (let i = 0; i < csmEmails.length; i += FIRESTORE_IN_LIMIT) {
+      batches.push(csmEmails.slice(i, i + FIRESTORE_IN_LIMIT));
+    }
+
+    const results = await Promise.all(
+      batches.map((batch) =>
+        fetchClients(
+          firestore()
+            .collection("clients")
+            .where("csm_assigned", "in", batch)
+            .where("active", "==", true),
+        ),
+      ),
+    );
+
+    return results.flat().sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error) {
+    console.error(`Error fetching team clients for CSD ${csdEmail}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Fetch every active client — the boardroom view. Exec-only; callers must
+ * gate on role before calling this, same as `requireLocationAccess` does for
+ * GHL data.
+ */
+export async function getDepartmentClients(): Promise<ClientData[]> {
+  try {
+    return await fetchClients(firestore().collection("clients").where("active", "==", true));
+  } catch (error) {
+    console.error("Error fetching department clients:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch another CSM's book by their email — the "jump in and help" coverage
+ * path. Deliberately not owner-gated: any internal role (tag_csm/tag_csd/
+ * tag_exec) can pull up a peer's book. Callers surface this as an explicit
+ * "view another CSM's book" picker rather than silently merging it into
+ * "my book," so coverage stays visible as coverage.
+ */
+export async function getClientsForCsm(targetEmail: string): Promise<ClientData[]> {
+  return getAssignedClients(targetEmail);
 }
 
 /**
@@ -97,26 +197,8 @@ export async function getClientAlerts(clientId: string): Promise<ClientAlert[]> 
 export async function getClientDetail(clientId: string): Promise<ClientData | null> {
   try {
     const doc = await firestore().collection("clients").doc(clientId).get();
-
     if (!doc.exists) return null;
-
-    const data = doc.data()!;
-    const metrics = getMockMetrics(clientId);
-    const health = calculateHealthScore(metrics);
-    health.clientId = clientId;
-
-    const alerts = await getClientAlerts(clientId);
-    health.alert_count = alerts.filter((a) => !a.resolved_at).length;
-
-    return {
-      id: clientId,
-      name: data.name,
-      ghl_location_id: data.ghl_location_id,
-      csm_assigned: data.csm_assigned,
-      health,
-      alert_count: health.alert_count,
-      metrics,
-    };
+    return await buildClientData(doc);
   } catch (error) {
     console.error(`Error fetching client ${clientId}:`, error);
     return null;
@@ -124,49 +206,11 @@ export async function getClientDetail(clientId: string): Promise<ClientData | nu
 }
 
 /**
- * Filter and sort clients.
+ * Mark (or clear) that a CSM has attempted an upsell conversation with this
+ * client — the one escalation input with no automatic source yet (see
+ * computeEscalation above). Manual today; the natural place to derive this
+ * automatically once an activity log exists.
  */
-export function filterClients(
-  clients: ClientData[],
-  options: {
-    search?: string;
-    statusFilter?: "all" | "excellent" | "healthy" | "at-risk" | "critical" | "alert";
-    sortBy?: "name" | "health" | "roas" | "spend";
-    sortOrder?: "asc" | "desc";
-  },
-): ClientData[] {
-  let filtered = [...clients];
-
-  // Search filter
-  if (options.search && options.search.trim()) {
-    const query = options.search.toLowerCase();
-    filtered = filtered.filter((c) => c.name.toLowerCase().includes(query));
-  }
-
-  // Status filter
-  if (options.statusFilter && options.statusFilter !== "all") {
-    filtered = filtered.filter((c) => c.health.status === options.statusFilter);
-  }
-
-  // Sort
-  const sortBy = options.sortBy || "name";
-  const sortOrder = options.sortOrder || "asc";
-  const multiplier = sortOrder === "asc" ? 1 : -1;
-
-  filtered.sort((a, b) => {
-    switch (sortBy) {
-      case "name":
-        return a.name.localeCompare(b.name) * multiplier;
-      case "health":
-        return (a.health.score - b.health.score) * multiplier;
-      case "roas":
-        return ((a.metrics?.roas || 0) - (b.metrics?.roas || 0)) * multiplier;
-      case "spend":
-        return ((a.metrics?.spend || 0) - (b.metrics?.spend || 0)) * multiplier;
-      default:
-        return 0;
-    }
-  });
-
-  return filtered;
+export async function setUpsellAttempted(clientId: string, attempted: boolean): Promise<void> {
+  await firestore().collection("clients").doc(clientId).set({ upsell_attempted: attempted }, { merge: true });
 }

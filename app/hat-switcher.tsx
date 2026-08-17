@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { wearHat } from "./hat-actions";
+import { switchRole } from "./role-switcher-actions";
 import { ChevronIcon } from "./icons";
 
 type Option = { value: string; label: string; description: string };
 
-export function HatSwitcher({
+export function RoleSwitcher({
   current,
   options,
 }: {
@@ -24,11 +24,11 @@ export function HatSwitcher({
 
   const active = options.find((o) => o.value === current);
 
-  function choose(hat: string) {
+  function choose(role: string) {
     setOpen(false);
     setError(null);
     startTransition(async () => {
-      const result = await wearHat(hat);
+      const result = await switchRole(role);
       if (result.ok) router.refresh();
       else setError(result.error);
     });
@@ -61,7 +61,7 @@ export function HatSwitcher({
             aria-hidden
             className="border-b border-chrome-line px-3 py-1.5 text-[10px] font-medium tracking-wide text-chrome-ink-2 uppercase"
           >
-            Switch workspace view
+            Switch role
           </li>
           {options.map((option) => {
             const selected = option.value === current;

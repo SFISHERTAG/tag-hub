@@ -90,16 +90,15 @@ export const getAdminAuth = adminAuth;
 
 /**
  * Set role and locations custom claims on a user.
+ * Stores multiple role grants.
  * Admin action — only call from server-side operations.
  */
 export async function setUserClaims(
   uid: string,
-  role: Role,
-  locations: string[],
+  roleGrants: Array<{ role: Role; locations: string[] }>,
 ): Promise<void> {
   await getAdminAuth().setCustomUserClaims(uid, {
-    role,
-    locations,
+    roles: roleGrants,
   });
 }
 
@@ -107,7 +106,7 @@ export async function setUserClaims(
  * Set a user's role to tag_exec (all locations).
  */
 export async function promoteToExec(uid: string): Promise<void> {
-  await setUserClaims(uid, "tag_exec", []);
+  await setUserClaims(uid, [{ role: "tag_exec", locations: [] }]);
 }
 
 /**

@@ -8,18 +8,33 @@ import { ROLES, HAT_LABELS } from "@/lib/auth/role-labels";
 const inputClass =
   "rounded-md border border-line-strong bg-surface px-2 py-1 text-xs text-ink placeholder:text-ink-3 outline-none focus:border-accent disabled:opacity-60";
 
-function UserRow({ user }: { user: DirectoryUser }) {
+function UserRow({
+  user,
+  managerEmail: initialManagerEmail,
+}: {
+  user: DirectoryUser;
+  managerEmail: string | null;
+}) {
   const [editing, setEditing] = useState(false);
   const [role, setRole] = useState(user.role ?? "client_closer");
   const [locations, setLocations] = useState(user.locations.join(", "));
+  const [managerEmail, setManagerEmail] = useState(initialManagerEmail ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const reportsToCsd = role === "tag_csm" || role === "tag_csd";
 
   function handleSave(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await assignIndividualRoleAction(user.uid, role, locations);
+      const result = await assignIndividualRoleAction(
+        user.uid,
+        user.email,
+        role,
+        locations,
+        reportsToCsd ? managerEmail.trim() || null : null,
+      );
       if (!result.ok) setError(result.error);
       else setEditing(false);
     });
@@ -50,6 +65,15 @@ function UserRow({ user }: { user: DirectoryUser }) {
               disabled={pending}
               className={`${inputClass} min-w-48 flex-1`}
             />
+            {reportsToCsd && (
+              <input
+                value={managerEmail}
+                onChange={(e) => setManagerEmail(e.target.value)}
+                placeholder="Reports to (CSD email, blank = none)"
+                disabled={pending}
+                className={`${inputClass} min-w-56 flex-1`}
+              />
+            )}
             <button
               type="submit"
               disabled={pending}
@@ -92,7 +116,13 @@ function UserRow({ user }: { user: DirectoryUser }) {
   );
 }
 
-export function UserTable({ users }: { users: DirectoryUser[] }) {
+export function UserTable({
+  users,
+  managerEmailByEmail,
+}: {
+  users: DirectoryUser[];
+  managerEmailByEmail: Map<string, string | null>;
+}) {
   return (
     <table className="w-full text-sm">
       <thead>
@@ -105,7 +135,11 @@ export function UserTable({ users }: { users: DirectoryUser[] }) {
       </thead>
       <tbody>
         {users.map((u) => (
-          <UserRow key={u.uid} user={u} />
+          <UserRow
+            key={u.uid}
+            user={u}
+            managerEmail={(u.email && managerEmailByEmail.get(u.email)) ?? null}
+          />
         ))}
       </tbody>
     </table>

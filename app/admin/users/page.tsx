@@ -1,6 +1,8 @@
-import { requireSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth/session";
 import { listGroups } from "@/lib/auth/groups";
 import { listAllUsers } from "@/lib/auth/user-directory";
+import { listCsmRecords } from "@/lib/dashboard/csm-directory";
 import { GroupCard } from "./group-card";
 import { NewGroupForm } from "./new-group-form";
 import { UserTable } from "./user-table";
@@ -8,21 +10,27 @@ import { UserTable } from "./user-table";
 export const dynamic = "force-dynamic";
 
 export default async function UsersAdminPage() {
-  const session = await requireSession();
+  const session = await getSession();
+  if (!session) redirect("/signin");
 
-  // Gated on the effective hat — see app/admin/tenants/page.tsx for why.
-  if (session.hat !== "tag_exec") {
+  // Only admins can manage users
+  if (session.currentRole !== "admin") {
     return (
       <div className="max-w-2xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
         <h2 className="text-base font-semibold">Access denied</h2>
-        <p className="mt-2 text-sm">Only executives can manage users.</p>
+        <p className="mt-2 text-sm">Only admins can manage users.</p>
       </div>
     );
   }
 
-  const [groups, users] = await Promise.all([listGroups(), listAllUsers()]);
+  const [groups, users, csmRecords] = await Promise.all([
+    listGroups(),
+    listAllUsers(),
+    listCsmRecords(),
+  ]);
   const ungrouped = users.filter((u) => !u.groupId);
   const usersByUid = new Map(users.map((u) => [u.uid, u]));
+  const managerEmailByEmail = new Map(csmRecords.map((r) => [r.email, r.managerEmail]));
 
   return (
     <div className="space-y-8">
@@ -54,7 +62,7 @@ export default async function UsersAdminPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-ink-2">All users</h2>
         <div className="overflow-x-auto rounded-lg border border-line">
-          <UserTable users={users} />
+          <UserTable users={users} managerEmailByEmail={managerEmailByEmail} />
         </div>
       </section>
     </div>

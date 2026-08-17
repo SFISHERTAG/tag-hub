@@ -1,6 +1,6 @@
 "use client";
 
-import { type ClientData } from "@/lib/dashboard/csm-clients";
+import { type ClientData } from "@/lib/dashboard/csm-clients-types";
 import { ClientCard } from "../client-card";
 import { Panel } from "../../ui";
 import { type ClientHealth } from "@/lib/dashboard/health-scoring";

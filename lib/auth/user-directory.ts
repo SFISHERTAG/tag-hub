@@ -27,13 +27,24 @@ export async function listAllUsers(): Promise<DirectoryUser[]> {
     const page = await adminAuth().listUsers(1000, pageToken);
     for (const record of page.users) {
       const claims = record.customClaims ?? {};
-      const role = isRole(claims.role) ? claims.role : null;
+      // Claims are written as `roles: [{role, locations}]` (setUserClaims in
+      // ./admin) — there is no top-level `role`/`locations` field to read.
+      // Individual assignment currently writes exactly one grant, so the
+      // first entry is the user's role; a future multi-grant write path
+      // would need this to expose the full array instead.
+      const grants = Array.isArray(claims.roles) ? claims.roles : [];
+      const primary = grants.find(
+        (g): g is { role: Role; locations: unknown } =>
+          typeof g === "object" && g !== null && isRole((g as Record<string, unknown>).role),
+      );
+      const role = primary ? (primary.role as Role) : null;
+      const locations = Array.isArray(primary?.locations) ? (primary.locations as string[]) : [];
       const group = groupByUid.get(record.uid);
       users.push({
         uid: record.uid,
         email: record.email ?? null,
         role,
-        locations: Array.isArray(claims.locations) ? claims.locations : [],
+        locations,
         groupId: group?.id ?? null,
         groupName: group?.name ?? null,
       });

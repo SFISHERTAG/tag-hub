@@ -34,45 +34,15 @@ export function isRole(value: unknown): value is Role {
 }
 
 /**
- * Hats a role may wear.
- *
- * Only `tag_exec` wears more than one. That is the founder role, and today TAG
- * is three founders and a sales team — the three need every view, and nobody
- * else does.
- *
- * Clients and sales reps get exactly one hat, so the switcher never renders for
- * them. A rep who could put on an executive hat would be a permissions change
- * dressed as a convenience, and a client seeing a view chooser at all would
- * reveal that other views exist.
- */
-const WEARABLE: Record<Role, readonly Role[]> = {
-  tag_exec: ROLES,
-  tag_csm: ["tag_csm"],
-  tag_sales_manager: ["tag_sales_manager"],
-  tag_sales: ["tag_sales"],
-  tag_setter_manager: ["tag_setter_manager"],
-  tag_setter: ["tag_setter"],
-  client_owner: ["client_owner"],
-  client_manager: ["client_manager"],
-  client_closer: ["client_closer"],
-  client_setter_manager: ["client_setter_manager"],
-  client_setter: ["client_setter"],
-};
-
-export function wearableHats(role: Role): readonly Role[] {
-  return WEARABLE[role] ?? [role];
-}
-
-export function canWear(role: Role, hat: Role): boolean {
-  return wearableHats(role).includes(hat);
-}
-
-/**
- * The hat in effect: the requested one when permitted, otherwise the role's own.
+ * Validate that a requested role is in the available list.
+ * Returns the requested role if valid, otherwise returns the first available.
  * Falls back rather than throwing — a stale cookie after a role change should
- * degrade to the correct view, not to an error page.
+ * degrade to the correct role, not to an error page.
  */
-export function effectiveHat(role: Role, requested: string | undefined): Role {
-  if (isRole(requested) && canWear(role, requested)) return requested;
-  return role;
+export function effectiveRole(
+  availableRoles: readonly Role[],
+  requested: string | undefined,
+): Role {
+  if (isRole(requested) && availableRoles.includes(requested)) return requested;
+  return availableRoles[0] ?? "client_closer";
 }

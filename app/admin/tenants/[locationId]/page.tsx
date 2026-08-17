@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { requireSession } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 import { getTenant, tenantDocExists, isValidLocationId } from "@/lib/ghl/tenants";
 import { TenantForm } from "./tenant-form";
 
@@ -11,7 +11,9 @@ export default async function TenantAdminPage({
 }: {
   params: Promise<{ locationId: string }>;
 }) {
-  const session = await requireSession();
+  const session = await getSession();
+  if (!session) redirect("/signin");
+
   const { locationId } = await params;
 
   // A location id is about to become a Firestore document id. Reject
@@ -20,13 +22,12 @@ export default async function TenantAdminPage({
   // as a path separator rather than a literal character.
   if (!isValidLocationId(locationId)) notFound();
 
-  // Gated on the effective hat — see the identical comment in
-  // app/admin/tenants/page.tsx for why this is safe.
-  if (session.hat !== "tag_exec") {
+  // Only admins can manage tenants
+  if (session.currentRole !== "admin") {
     return (
       <div className="max-w-2xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
         <h2 className="text-base font-semibold">Access denied</h2>
-        <p className="mt-2 text-sm">Only executives can manage tenants.</p>
+        <p className="mt-2 text-sm">Only admins can manage tenants.</p>
       </div>
     );
   }

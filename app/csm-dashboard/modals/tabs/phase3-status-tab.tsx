@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { type ClientData } from "@/lib/dashboard/csm-clients";
+import { type ClientData } from "@/lib/dashboard/csm-clients-types";
 import { type Phase3Progress } from "@/lib/dashboard/phase3-status";
 import { getPhase3StatusForClient } from "../../actions/get-phase3-status";
 

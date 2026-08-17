@@ -1,24 +1,21 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireSession } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 import { listAllLocationIds, getTenant } from "@/lib/ghl/tenants";
 import { NewTenantForm } from "./new-tenant-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function TenantsAdminPage() {
-  const session = await requireSession();
+  const session = await getSession();
+  if (!session) redirect("/signin");
 
-  // Only tag_exec can manage tenants. Gated on the effective hat rather than
-  // the raw role — see the identical comment in app/portfolio/page.tsx for
-  // why — which is safe here specifically because only a real tag_exec role
-  // can ever set their hat to "tag_exec" in the first place (roles.ts's
-  // canWear/effectiveHat enforce that); this does not loosen who can reach
-  // tenant management, only requires switching back to that hat first.
-  if (session.hat !== "tag_exec") {
+  // Only admins can manage tenants
+  if (session.currentRole !== "admin") {
     return (
       <div className="max-w-2xl rounded-lg border border-danger/30 bg-danger-tint p-6 text-danger">
         <h2 className="text-base font-semibold">Access denied</h2>
-        <p className="mt-2 text-sm">Only executives can manage tenants.</p>
+        <p className="mt-2 text-sm">Only admins can manage tenants.</p>
       </div>
     );
   }

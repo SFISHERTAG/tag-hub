@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { requireSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth/session";
 import { listAllLocationIds, getTenant, type Tenant } from "@/lib/ghl/tenants";
 import { Panel, Fold, Stat, Badge, Donut, Pending, type Segment } from "../ui";
 import { EscalationIcon, OnboardingIcon } from "../icons";
@@ -46,11 +47,11 @@ function serviceSegments(rows: Row[]): Segment[] {
 }
 
 export default async function ClientSuccessPage() {
-  const session = await requireSession();
+  const session = await getSession();
+  if (!session) redirect("/signin");
 
-  // Gated on the effective hat, not the raw role — see the identical comment
-  // in app/portfolio/page.tsx for why.
-  if (!["tag_exec", "tag_csm"].includes(session.hat)) {
+  // Gated on the current role
+  if (!["tag_exec", "tag_csm"].includes(session.currentRole)) {
     return (
       <Panel title="Access denied">
         <p className="text-sm text-ink-2">

@@ -11,6 +11,8 @@
  * screenshot tomorrow, which matters for reviewing the design itself.
  */
 
+import type { HealthMetrics } from "./health-scoring";
+
 export type ChannelSpend = { channel: string; amount: number };
 
 export type AdPerformance = {
@@ -39,6 +41,24 @@ export type MockMetrics = {
   funnel: FunnelStage[];
   topDeals: { name: string; value: number; stage: string }[];
 };
+
+/**
+ * Sample input for calculateHealthScore (health-scoring.ts) — a different
+ * shape for a different consumer than MockMetrics above. MockMetrics is raw
+ * KPIs for the client-owner dashboard; this is the four target-achievement
+ * percentages the CSM/CSD/exec health score is computed from.
+ *
+ * Real wiring needs per-client spend and lead targets that don't exist in
+ * the schema yet (clients has ghl_location_id and meta_ad_account_id, no
+ * budget/lead-target columns) — inventing a number here would let an
+ * unconfirmed threshold quietly drive real escalations. Same call this
+ * codebase already made in sample-data-banner.tsx: real-shaped numbers, not
+ * blanks, until the real integration lands as one unit. Pair any UI that
+ * reads this with <SampleDataBanner /> (app/dashboard/widgets/sample-data-banner.tsx).
+ */
+export function getMockMetrics(_clientId: string): HealthMetrics {
+  return { roas: 95, spend: 102, leads: 88, sla: 97 };
+}
 
 export const MOCK_METRICS: MockMetrics = {
   kpis: {

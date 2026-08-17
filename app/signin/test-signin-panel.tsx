@@ -11,6 +11,7 @@ import type { Role } from "@/lib/auth/roles";
 
 const TEST_ROLES: { label: string; value: Role }[] = [
   { label: "CSM / Team", value: "tag_csm" },
+  { label: "CS Director", value: "tag_csd" },
   { label: "Exec", value: "tag_exec" },
   { label: "Setter", value: "tag_setter" },
   { label: "Setter Manager", value: "tag_setter_manager" },

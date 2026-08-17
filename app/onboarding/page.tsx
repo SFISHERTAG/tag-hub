@@ -1,14 +1,14 @@
-import { requireSession } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 import { Panel } from "../ui";
 
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
-  const session = await requireSession();
+  const session = await getSession();
+  if (!session) redirect("/signin");
 
-  // Gated on the effective hat, not the raw role — see the identical comment
-  // in app/portfolio/page.tsx for why.
-  if (!session || !["tag_exec", "tag_csm"].includes(session.hat)) {
+  if (!["tag_exec", "tag_csm"].includes(session.currentRole)) {
     return (
       <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Access denied</h2>

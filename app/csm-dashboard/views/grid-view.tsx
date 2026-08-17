@@ -1,6 +1,6 @@
 "use client";
 
-import { type ClientData } from "@/lib/dashboard/csm-clients";
+import { type ClientData } from "@/lib/dashboard/csm-clients-types";
 import { ClientCard } from "../client-card";
 
 interface GridViewProps {
