@@ -1,2 +1,0 @@
-- [Scope creep log](feedback_scope_creep_log.md) — stay chronological, queue new mid-task ideas, debate each on its merits
-- [Cubby creatives model](project_cubby_creatives.md) — Client DIY or actor creatives flow through cubby folder; Phase 3 links them to campaigns
