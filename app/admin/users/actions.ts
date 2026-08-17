@@ -12,15 +12,16 @@ import {
   assignIndividualRole,
   InvalidLocationError,
 } from "@/lib/auth/groups";
+import { upsertCsmRecord, type CsmRole } from "@/lib/dashboard/csm-directory";
 
 type Result = { ok: true } | { ok: false; error: string };
 
 /** Every action re-checks this — a server action is directly callable and doesn't go through the page's own guard. */
-async function requireExec(): Promise<Result | null> {
+async function requireAdmin(): Promise<Result | null> {
   const session = await getSession();
   if (!session) return { ok: false, error: "Not signed in." };
-  if (session.hat !== "tag_exec") {
-    return { ok: false, error: "Only executives can manage users." };
+  if (session.currentRole !== "admin") {
+    return { ok: false, error: "Only admins can manage users." };
   }
   return null;
 }
@@ -41,7 +42,7 @@ export async function createGroupAction(
   role: string,
   locationsRaw: string,
 ): Promise<Result> {
-  const denied = await requireExec();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const trimmedName = name.trim();
@@ -62,7 +63,7 @@ export async function updateGroupAction(
   role: string,
   locationsRaw: string,
 ): Promise<Result> {
-  const denied = await requireExec();
+  const denied = await requireAdmin();
   if (denied) return denied;
   if (!isRole(role)) return { ok: false, error: "Invalid role." };
 
@@ -76,7 +77,7 @@ export async function updateGroupAction(
 }
 
 export async function deleteGroupAction(groupId: string): Promise<Result> {
-  const denied = await requireExec();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   await deleteGroup(groupId);
@@ -85,7 +86,7 @@ export async function deleteGroupAction(groupId: string): Promise<Result> {
 }
 
 export async function addMemberAction(groupId: string, uid: string): Promise<Result> {
-  const denied = await requireExec();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   try {
@@ -98,7 +99,7 @@ export async function addMemberAction(groupId: string, uid: string): Promise<Res
 }
 
 export async function removeMemberAction(groupId: string, uid: string): Promise<Result> {
-  const denied = await requireExec();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   await removeMemberFromGroup(groupId, uid);
@@ -108,15 +109,28 @@ export async function removeMemberAction(groupId: string, uid: string): Promise<
 
 export async function assignIndividualRoleAction(
   uid: string,
+  email: string | null,
   role: string,
   locationsRaw: string,
+  managerEmail: string | null,
 ): Promise<Result> {
-  const denied = await requireExec();
+  const denied = await requireAdmin();
   if (denied) return denied;
   if (!isRole(role)) return { ok: false, error: "Invalid role." };
 
   try {
     await assignIndividualRole(uid, role as Role, parseLocations(locationsRaw));
+
+    // CS org reporting line — only tag_csm/tag_csd participate in the
+    // rollup, and the csm collection is keyed by email, not uid.
+    if (role === "tag_csm" || role === "tag_csd") {
+      if (!email) {
+        return { ok: false, error: "This user has no email on file — cannot set CS reporting line." };
+      }
+      const csmRole: CsmRole = role === "tag_csd" ? "csd" : "csm";
+      await upsertCsmRecord({ email, role: csmRole, managerEmail: managerEmail || null });
+    }
+
     refresh();
     return { ok: true };
   } catch (error) {

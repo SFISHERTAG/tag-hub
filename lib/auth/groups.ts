@@ -133,7 +133,9 @@ export async function updateGroupRole(
     .doc(id)
     .update({ role, locations, updatedAt: Date.now() });
 
-  await Promise.all(group.memberUids.map((uid) => setUserClaims(uid, role, locations)));
+  await Promise.all(
+    group.memberUids.map((uid) => setUserClaims(uid, [{ role, locations }])),
+  );
 }
 
 /**
@@ -160,7 +162,7 @@ export async function addMemberToGroup(groupId: string, uid: string): Promise<vo
       memberUids: [...new Set([...group.memberUids, uid])],
       updatedAt: Date.now(),
     });
-  await setUserClaims(uid, group.role, group.locations);
+  await setUserClaims(uid, [{ role: group.role, locations: group.locations }]);
 }
 
 /** Removes membership only. See the comment on `deleteGroup` for why claims are left alone. */
@@ -184,5 +186,5 @@ export async function assignIndividualRole(
 ): Promise<void> {
   validateLocations(locations);
   await detachFromCurrentGroup(uid);
-  await setUserClaims(uid, role, locations);
+  await setUserClaims(uid, [{ role, locations }]);
 }

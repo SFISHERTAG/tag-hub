@@ -131,7 +131,7 @@ function routeMatches(href: string, pathname: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function Nav({ hat }: { hat: Role }) {
+export function Nav({ role }: { role: Role }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -145,7 +145,7 @@ export function Nav({ hat }: { hat: Role }) {
     setMoreOpen(false);
   }
 
-  const items = ITEMS.filter((i) => i.hats.includes(hat));
+  const items = ITEMS.filter((i) => i.hats.includes(role));
 
   const primary = items.slice(0, PRIMARY_COUNT);
   const overflow = items.slice(PRIMARY_COUNT);

@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Panel } from "../ui";
-import { getAssignedClients, filterClients, type ClientData } from "@/lib/dashboard/csm-clients";
+import { filterClients, type ClientData } from "@/lib/dashboard/csm-clients-types";
+import { getAssignedClientsForCSM } from "./actions/get-assigned-clients";
 import { GridView } from "./views/grid-view";
 import { ListView } from "./views/list-view";
 import { KanbanView } from "./views/kanban-view";
+import { EscalationView } from "./views/escalation-view";
 import { ClientDetailModal } from "./modals/client-detail-modal";
 
-type ViewMode = "grid" | "list" | "kanban";
+type ViewMode = "grid" | "list" | "kanban" | "escalations";
 type StatusFilter = "all" | "excellent" | "healthy" | "at-risk" | "critical" | "alert";
 type SortBy = "name" | "health" | "roas" | "spend";
 
@@ -25,7 +27,7 @@ export function CSMPortfolio({ csmEmail, userRole }: { csmEmail: string; userRol
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const data = await getAssignedClients(csmEmail);
+      const data = await getAssignedClientsForCSM(csmEmail);
       setClients(data);
       setLoading(false);
     }
@@ -53,6 +55,7 @@ export function CSMPortfolio({ csmEmail, userRole }: { csmEmail: string; userRol
     grid: GridView,
     list: ListView,
     kanban: KanbanView,
+    escalations: EscalationView,
   }[viewMode];
 
   return (
@@ -78,7 +81,7 @@ export function CSMPortfolio({ csmEmail, userRole }: { csmEmail: string; userRol
 
             {/* View Selector */}
             <div className="flex gap-2">
-              {(["grid", "list", "kanban"] as ViewMode[]).map((mode) => (
+              {(["grid", "list", "kanban", "escalations"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}

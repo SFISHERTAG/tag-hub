@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "./admin";
-import { effectiveHat, isRole, type Role } from "./roles";
+import { isRole, type Role } from "./roles";
 import { listAllLocationIds } from "../ghl/tenants";
 
 /**
@@ -13,22 +13,24 @@ import { listAllLocationIds } from "../ghl/tenants";
  * Every server component and action that touches data calls through here, so a
  * forged or expired cookie is rejected at the point it would matter.
  *
- * `role` comes from the verified custom claim and is the permission ceiling.
- * `hat` is the view currently chosen and comes from a plain cookie — it is not
- * a permission and is never trusted as one. `effectiveHat` refuses any hat the
- * role may not wear, so tampering with that cookie changes nothing.
- *
- * Permitted locations land on the session in Story 1.4. Until then a verified
- * session carries identity and role only.
+ * A user can have multiple roles, each with their own locations. The `currentRole`
+ * is the role they're actively using (stored in a cookie). The `availableRoles`
+ * lists all roles they can switch to. `effectiveRole` refuses any role the user
+ * does not have, so tampering with the role cookie changes nothing.
  */
 
-export const HAT_COOKIE = "hub_hat";
+export const ROLE_COOKIE = "hub_role";
+
+export type RoleGrant = {
+  role: Role;
+  locations: string[];
+};
 
 export type Session = {
   uid: string;
   email: string | null;
-  role: Role;
-  hat: Role;
+  currentRole: Role;
+  availableRoles: Role[];
   locations: string[];
 };
 
@@ -43,21 +45,55 @@ export async function getSession(): Promise<Session | null> {
     // request rather than lingering until the cookie expires.
     const decoded = await adminAuth().verifySessionCookie(cookie, true);
 
-    // A user with no role claim gets the least privileged one rather than a
-    // default that happens to be convenient.
-    const role: Role = isRole(decoded.role) ? decoded.role : "client_closer";
-    const hat = effectiveHat(role, jar.get(HAT_COOKIE)?.value);
+    // Support both old single-role and new multi-role custom claims for migration.
+    let roleGrants: RoleGrant[] = [];
 
-    // Locations come from custom claims. tag_exec gets all known locations.
-    // Other roles get an explicit list from claims.
-    let locations: string[] = [];
-    if (role === "tag_exec") {
-      locations = await listAllLocationIds();
-    } else if (Array.isArray(decoded.locations)) {
-      locations = decoded.locations.filter((l) => typeof l === "string");
+    // New format: roles array with role+locations pairs
+    if (Array.isArray(decoded.roles)) {
+      roleGrants = (decoded.roles as unknown[])
+        .filter((r): r is Record<string, unknown> => typeof r === "object" && r !== null)
+        .filter((r) => isRole(r.role) && Array.isArray(r.locations))
+        .map((r) => ({
+          role: r.role as Role,
+          locations: (r.locations as string[]).filter((l) => typeof l === "string"),
+        }));
+    }
+    // Old format: single role with locations. Migrate to new format.
+    else if (isRole(decoded.role)) {
+      const locations = Array.isArray(decoded.locations)
+        ? (decoded.locations as string[]).filter((l) => typeof l === "string")
+        : [];
+      roleGrants = [{ role: decoded.role as Role, locations }];
     }
 
-    return { uid: decoded.uid, email: decoded.email ?? null, role, hat, locations };
+    // Fallback: no valid roles means unauthenticated.
+    if (roleGrants.length === 0) return null;
+
+    // Determine current role from cookie, or use first available.
+    const requestedRole = jar.get(ROLE_COOKIE)?.value;
+    const availableRoles = roleGrants.map((r) => r.role);
+    const currentRole: Role = isRole(requestedRole) && availableRoles.includes(requestedRole)
+      ? (requestedRole as Role)
+      : availableRoles[0];
+
+    // Locations for the current role.
+    const currentGrant = roleGrants.find((r) => r.role === currentRole);
+    let locations = currentGrant?.locations ?? [];
+
+    // tag_exec, tag_csd, and admin get all known locations dynamically —
+    // a CS Director's whole-department view needs every client's location
+    // reachable, not just the ones on their own individual grant.
+    if (currentRole === "tag_exec" || currentRole === "tag_csd" || currentRole === "admin") {
+      locations = await listAllLocationIds();
+    }
+
+    return {
+      uid: decoded.uid,
+      email: decoded.email ?? null,
+      currentRole,
+      availableRoles,
+      locations,
+    };
   } catch {
     // Expired, revoked, malformed, or forged — all mean "not signed in".
     return null;
@@ -79,8 +115,13 @@ export async function requireLocationAccess(locationId: string): Promise<void> {
   const session = await getSession();
   if (!session) redirect("/signin");
 
-  // tag_exec can access any location
-  if (session.role === "tag_exec") return;
+  // tag_exec, tag_csd, and admin can access any location
+  if (
+    session.currentRole === "tag_exec" ||
+    session.currentRole === "tag_csd" ||
+    session.currentRole === "admin"
+  )
+    return;
 
   // Other roles must have the location in their permitted list
   if (!session.locations.includes(locationId)) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { type ClientData } from "@/lib/dashboard/csm-clients";
+import { type ClientData } from "@/lib/dashboard/csm-clients-types";
 import { getStatusDisplay } from "@/lib/dashboard/health-scoring";
 
 interface ClientCardProps {
@@ -42,16 +42,16 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="rounded bg-sunken p-2">
-          <p className="text-xs text-ink-3">ROAS</p>
-          <p className="text-sm font-semibold text-ink">{metrics.roas.toFixed(1)}x</p>
+          <p className="text-xs text-ink-3">ROAS target</p>
+          <p className="text-sm font-semibold text-ink">{metrics.roas.toFixed(0)}%</p>
         </div>
         <div className="rounded bg-sunken p-2">
-          <p className="text-xs text-ink-3">Spend</p>
-          <p className="text-sm font-semibold text-ink">${(metrics.spend / 1000).toFixed(1)}k</p>
+          <p className="text-xs text-ink-3">Budget</p>
+          <p className="text-sm font-semibold text-ink">{metrics.spend.toFixed(0)}%</p>
         </div>
         <div className="rounded bg-sunken p-2">
-          <p className="text-xs text-ink-3">Leads</p>
-          <p className="text-sm font-semibold text-ink">{Math.round(metrics.leads)}</p>
+          <p className="text-xs text-ink-3">Leads target</p>
+          <p className="text-sm font-semibold text-ink">{Math.round(metrics.leads)}%</p>
         </div>
         <div className="rounded bg-sunken p-2">
           <p className="text-xs text-ink-3">SLA</p>

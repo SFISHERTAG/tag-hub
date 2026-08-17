@@ -3,11 +3,10 @@ import Link from "next/link";
 import "./globals.css";
 import { getSession } from "@/lib/auth/session";
 import {
-  wearableHats,
   HAT_LABELS,
   HAT_DESCRIPTIONS,
 } from "@/lib/auth/roles";
-import { HatSwitcher } from "./hat-switcher";
+import { RoleSwitcher } from "./hat-switcher";
 import { Nav } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
 import { Logo } from "./logo";
@@ -82,14 +81,14 @@ export default async function RootLayout({
               <span className="flex-1 sm:hidden" />
 
               <div className="flex shrink-0 items-center gap-2">
-                {wearableHats(session.role).length > 1 && (
+                {session.availableRoles.length > 1 && (
                   <div className="w-44">
-                    <HatSwitcher
-                      current={session.hat}
-                      options={wearableHats(session.role).map((hat) => ({
-                        value: hat,
-                        label: HAT_LABELS[hat],
-                        description: HAT_DESCRIPTIONS[hat],
+                    <RoleSwitcher
+                      current={session.currentRole}
+                      options={session.availableRoles.map((role) => ({
+                        value: role,
+                        label: HAT_LABELS[role],
+                        description: HAT_DESCRIPTIONS[role],
                       }))}
                     />
                   </div>
@@ -114,7 +113,7 @@ export default async function RootLayout({
               </div>
             </header>
 
-            <Nav hat={session.hat} />
+            <Nav role={session.currentRole} />
 
             <main className="min-h-screen overflow-x-auto bg-canvas px-4 pt-[calc(3.5rem+1.5rem)] pb-[calc(3.5rem+1.5rem+env(safe-area-inset-bottom))] sm:px-6">
               {children}

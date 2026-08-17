@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { type ClientData } from "@/lib/dashboard/csm-clients";
+import { type ClientData } from "@/lib/dashboard/csm-clients-types";
 import { getStatusDisplay } from "@/lib/dashboard/health-scoring";
 import { OverviewTab } from "./tabs/overview-tab";
 import { CreativesTab } from "./tabs/creatives-tab";

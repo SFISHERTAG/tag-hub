@@ -28,9 +28,9 @@ export async function saveTenantAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const session = await getSession();
   if (!session) return { ok: false, error: "Not signed in." };
-  // Effective hat, not raw role — see app/admin/tenants/page.tsx for why.
-  if (session.hat !== "tag_exec") {
-    return { ok: false, error: "Only executives can manage tenants." };
+  // Only admins can manage tenants
+  if (session.currentRole !== "admin") {
+    return { ok: false, error: "Only admins can manage tenants." };
   }
   // A server action is directly callable and doesn't have to go through the
   // page's own guard, so the id gets checked again here rather than trusted.

@@ -1,5 +1,6 @@
 import "server-only";
 import type { Session } from "@/lib/auth/session";
+import type { Role } from "@/lib/auth/roles";
 
 /**
  * Determine which location ID to use based on user role and session.
@@ -9,10 +10,10 @@ import type { Session } from "@/lib/auth/session";
  */
 
 export function getLocationForDashboard(session: Session): string {
-  const { hat, locations } = session;
+  const { currentRole, locations } = session;
 
   // CSM/Exec roles: use TAG_GROWTH agency sub-account
-  if (["tag_exec", "tag_csm", "tag_sales", "tag_sales_manager"].includes(hat)) {
+  if (["tag_exec", "tag_csm", "tag_sales", "tag_sales_manager"].includes(currentRole)) {
     const tagGrowthId = process.env.GHL_LOCATION_ID_TAG_GROWTH;
     if (!tagGrowthId) {
       throw new Error(
@@ -23,7 +24,7 @@ export function getLocationForDashboard(session: Session): string {
   }
 
   // Client roles: use their assigned location
-  if (["client_owner", "client_manager", "client_closer"].includes(hat)) {
+  if (["client_owner", "client_manager", "client_closer"].includes(currentRole)) {
     if (!locations[0]) {
       throw new Error("Client has no assigned location");
     }
@@ -37,22 +38,22 @@ export function getLocationForDashboard(session: Session): string {
 /**
  * Type-safe way to check if user is a CSM/internal user.
  */
-export function isInternalUser(hat: Session["hat"]): boolean {
+export function isInternalUser(role: Role): boolean {
   return [
     "tag_exec",
     "tag_csm",
     "tag_sales",
     "tag_sales_manager",
-  ].includes(hat);
+  ].includes(role);
 }
 
 /**
  * Type-safe way to check if user is a client.
  */
-export function isClientUser(hat: Session["hat"]): boolean {
+export function isClientUser(role: Role): boolean {
   return [
     "client_owner",
     "client_manager",
     "client_closer",
-  ].includes(hat);
+  ].includes(role);
 }

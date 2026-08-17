@@ -21,7 +21,7 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
-  if (session.hat !== "tag_exec") {
+  if (session.currentRole !== "tag_exec") {
     return NextResponse.json(
       { error: "Only executives can view Meta integration status." },
       { status: 403 },

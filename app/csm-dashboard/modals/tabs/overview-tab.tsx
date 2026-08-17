@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { type ClientData, getClientAlerts, type ClientAlert } from "@/lib/dashboard/csm-clients";
+import { type ClientData, type ClientAlert } from "@/lib/dashboard/csm-clients-types";
+import { getClientAlertsForClient } from "@/app/csm-dashboard/actions/get-client-alerts";
 import { Stat } from "@/app/ui";
 
 interface OverviewTabProps {
@@ -15,7 +16,7 @@ export function OverviewTab({ client }: OverviewTabProps) {
   useEffect(() => {
     async function fetchAlerts() {
       setLoadingAlerts(true);
-      const data = await getClientAlerts(client.id);
+      const data = await getClientAlertsForClient(client.id);
       setAlerts(data.slice(0, 5));
       setLoadingAlerts(false);
     }
