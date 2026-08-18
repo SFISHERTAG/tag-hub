@@ -4,6 +4,7 @@ import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from 
 import { generateAllContent } from "../gemini";
 import { logAutomationEvent } from "../postgres";
 import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
+import { checkWebhookSecret } from "../lib/webhooks/secret";
 
 /**
  * Phase 2: Intake form submission.
@@ -20,6 +21,8 @@ import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from 
  * The human audit step (adding UVP copy, customization) happens outside this function.
  */
 export async function handlePhase2(req: Request, res: Response): Promise<void> {
+  checkWebhookSecret("Phase 2", req, "PHASE2_WEBHOOK_SECRET");
+
   let eventId: string | undefined;
   try {
     const { locationId, email, intakeData } = req.body;

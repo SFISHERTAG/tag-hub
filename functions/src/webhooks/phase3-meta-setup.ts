@@ -4,6 +4,7 @@ import { sendMetaAccessRequest, sendMetaSetupGuide } from "../email";
 import { postMessage } from "../slack";
 import { logAutomationEvent, logMetaSetup } from "../postgres";
 import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
+import { checkWebhookSecret } from "../lib/webhooks/secret";
 
 /**
  * Phase 3: Meta Ad Account Setup (triggered after intake form submission).
@@ -19,6 +20,11 @@ import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from 
  * Next: Awaiting human verification of Meta access grant
  */
 export async function handlePhase3(req: Request, res: Response): Promise<void> {
+  // Phase 3 has no caller sending a bearer token yet (neither Phase 2's own
+  // auto-trigger nor app/api/onboarding/phase3-meta-setup do) — this just
+  // makes that visible in logs rather than validating anything real today.
+  checkWebhookSecret("Phase 3", req, "PHASE3_WEBHOOK_SECRET");
+
   // Hoisted so the catch block below can reference them — they were
   // previously `const`-declared inside the try, which made the catch
   // block's `logAutomationEvent({ locationId, ... })` throw a
