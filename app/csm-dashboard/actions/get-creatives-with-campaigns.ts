@@ -1,6 +1,7 @@
 "use server";
 
 import { firestore } from "@/lib/firestore";
+import { requireSession, requireLocationAccess } from "@/lib/auth/session";
 import { fetchCreatives, type CreativeForDisplay } from "@/lib/dashboard/data-fetchers";
 
 /**
@@ -27,6 +28,9 @@ export async function getCreativesWithCampaigns(
   clientId: string,
   locationId: string,
 ): Promise<CreativeWithCampaigns[]> {
+  await requireSession();
+  await requireLocationAccess(locationId);
+
   try {
     // Fetch creatives from Google Drive
     const creatives = await fetchCreatives(locationId);

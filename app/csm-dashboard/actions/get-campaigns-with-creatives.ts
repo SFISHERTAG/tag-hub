@@ -1,7 +1,9 @@
 "use server";
 
 import { firestore } from "@/lib/firestore";
+import { requireSession, requireLocationAccess } from "@/lib/auth/session";
 import { getAdAccountCampaigns, type MetaCampaign, getCampaignCreativeCount } from "@/lib/meta/campaigns";
+import { getClientLocationId } from "@/lib/dashboard/csm-clients";
 
 /**
  * Campaign with creative count for dashboard display.
@@ -14,6 +16,14 @@ export interface CampaignWithCreativeCount extends MetaCampaign {
  * Server action to fetch campaigns for a client with creative counts.
  */
 export async function getCampaignsWithCreativesForClient(clientId: string): Promise<CampaignWithCreativeCount[]> {
+  await requireSession();
+
+  const locationId = await getClientLocationId(clientId);
+  if (!locationId) {
+    throw new Error(`Client ${clientId} not found`);
+  }
+  await requireLocationAccess(locationId);
+
   try {
     // Get client's Meta ad account ID from Firestore
     const clientDoc = await firestore().collection("clients").doc(clientId).get();
