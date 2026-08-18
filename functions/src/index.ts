@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { handlePhase1 } from "./webhooks/phase1-provisioning";
 import { handlePhase2 } from "./webhooks/phase2-intake-submit";
 import { handlePhase3 } from "./webhooks/phase3-meta-setup";
@@ -79,11 +79,17 @@ app.post("/webhook/phase2", phase2IntakeSubmit);
 // Phase 3 route
 app.post("/webhook/phase3", phase3MetaSetup);
 
-// Error handling
-app.use((err: Error, req: Request, res: Response) => {
+// Error handling. Express recognizes error-handling middleware purely by
+// function.length === 4 — a 3-arg (err, req, res) handler is treated as
+// ordinary middleware instead, so Express never routes thrown errors to it
+// and falls back to its own default error page instead of this clean 500.
+// `next` must stay in the signature even though this handler never calls it.
+export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction) {
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
-});
+}
+
+app.use(errorHandler);
 
 // Start server (for local dev)
 if (process.env.NODE_ENV !== "production") {
