@@ -1,23 +1,24 @@
-// SOURCE OF TRUTH: duplicated in functions/src/lib/webhooks/idempotency.ts.
+// SOURCE OF TRUTH: lib/webhooks/idempotency.ts (app side).
 // functions/src has its own tsconfig `rootDir` and cannot import outside
-// functions/src, so that copy is hand-synced rather than shared. Change both
+// functions/src, so this copy is hand-synced rather than shared. Change both
 // together (see Phase 2 brief, "TypeScript rootDir boundary").
-import "server-only";
+import { Firestore } from "@google-cloud/firestore";
 import { createHash } from "node:crypto";
-import { firestore } from "@/lib/firestore";
+
+const db = new Firestore({ projectId: process.env.GOOGLE_CLOUD_PROJECT });
 
 const PROCESSED_COLLECTION = "webhookEventsProcessed";
 
 /**
  * At-least-once delivery is the default assumption for any webhook sender —
  * GHL and Meta both retry on a slow or dropped response. Handling the same
- * event twice (e.g. double-marking a conversion) is a data bug, not just a
- * wasted API call, so every receiver checks this before handling and records
- * it after.
+ * event twice (e.g. re-cloning a GHL location, double-creating a Slack
+ * channel) is a data bug, not just a wasted API call, so every receiver
+ * checks this before handling and records it after.
  */
 
 export async function hasBeenProcessed(source: string, eventId: string): Promise<boolean> {
-  const doc = await firestore().collection(PROCESSED_COLLECTION).doc(`${source}:${eventId}`).get();
+  const doc = await db.collection(PROCESSED_COLLECTION).doc(`${source}:${eventId}`).get();
   return doc.exists;
 }
 
@@ -28,7 +29,7 @@ export async function hasBeenProcessed(source: string, eventId: string): Promise
  * else is handling this," not as an error to surface.
  */
 export async function markProcessed(source: string, eventId: string): Promise<void> {
-  await firestore()
+  await db
     .collection(PROCESSED_COLLECTION)
     .doc(`${source}:${eventId}`)
     .create({ source, eventId, processedAt: Date.now() });
@@ -40,7 +41,7 @@ export async function markProcessed(source: string, eventId: string): Promise<vo
  * being permanently treated as a duplicate of a delivery that never finished.
  */
 export async function clearProcessed(source: string, eventId: string): Promise<void> {
-  await firestore().collection(PROCESSED_COLLECTION).doc(`${source}:${eventId}`).delete();
+  await db.collection(PROCESSED_COLLECTION).doc(`${source}:${eventId}`).delete();
 }
 
 /**

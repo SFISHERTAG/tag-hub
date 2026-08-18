@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 
 /**
  * POST /api/onboarding/intake-submit
@@ -37,6 +38,14 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.PHASE2_WEBHOOK_SECRET}`,
+        // A retried fetch (this route's own caller retrying, or a Next.js
+        // retry on a transient network error) should be recognized as the
+        // same delivery even if body key order or whitespace differs from
+        // Phase 2's own content hash of the raw JSON.
+        "x-idempotency-key": crypto
+          .createHash("sha256")
+          .update(JSON.stringify({ locationId, email, intakeData }))
+          .digest("hex"),
       },
       body: JSON.stringify({ locationId, email, intakeData }),
     });

@@ -3,6 +3,7 @@ import { createGoogleDoc, shareGoogleDoc, addDocTab } from "../google";
 import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore";
 import { generateAllContent } from "../gemini";
 import { logAutomationEvent } from "../postgres";
+import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
 
 /**
  * Phase 2: Intake form submission.
@@ -19,6 +20,7 @@ import { logAutomationEvent } from "../postgres";
  * The human audit step (adding UVP copy, customization) happens outside this function.
  */
 export async function handlePhase2(req: Request, res: Response): Promise<void> {
+  let eventId: string | undefined;
   try {
     const { locationId, email, intakeData } = req.body;
 
@@ -26,6 +28,26 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         error: "Missing required fields: locationId, email, intakeData",
       });
+      return;
+    }
+
+    // This intake payload has no id of its own and the caller chain (client
+    // form / GHL webhook / admin trigger, all proxied through the app) can
+    // retry on a slow response — without a guard, the retry re-generates
+    // Gemini content, re-creates the Google Doc, and re-shares it with the
+    // client. Content hash catches an exact-body retry without blocking a
+    // genuinely different later resubmission for the same location.
+    eventId = req.header("x-idempotency-key") || contentEventId({ locationId, email, intakeData });
+    if (await hasBeenProcessed("phase2", eventId)) {
+      console.log(`[Phase 2] Duplicate delivery for ${eventId}, skipping`);
+      res.json({ success: true, duplicate: true });
+      return;
+    }
+    try {
+      await markProcessed("phase2", eventId);
+    } catch {
+      console.log(`[Phase 2] Concurrent delivery for ${eventId}, skipping`);
+      res.json({ success: true, duplicate: true });
       return;
     }
 
@@ -158,7 +180,13 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
 
       const phase3Response = await fetch(phase3Url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Phase 3 has the same at-least-once retry exposure; give it a
+          // stable key up front rather than relying solely on its own
+          // content hash of a body this call controls.
+          "x-idempotency-key": contentEventId({ locationId, email, intakeData, slackChannelId }),
+        },
         body: JSON.stringify({
           locationId,
           email,
@@ -210,6 +238,11 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
     });
   } catch (error) {
     console.error("[Phase 2] Error:", error);
+    if (eventId) {
+      await clearProcessed("phase2", eventId).catch((clearError) => {
+        console.error("[Phase 2] Failed to release idempotency claim:", clearError);
+      });
+    }
     res.status(500).json({
       error: error instanceof Error ? error.message : "Unknown error",
     });

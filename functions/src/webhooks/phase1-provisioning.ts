@@ -4,6 +4,7 @@ import { createSlackChannel, inviteSlackGuest } from "../slack";
 import { createDriveFolder } from "../google";
 import { addToOtpWhitelist, saveTenantResources, logProvisioningEvent } from "../firestore";
 import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email";
+import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
 
 /**
  * Phase 1: Webhook triggered when checkbox "Initiate Onboarding" is checked
@@ -18,6 +19,7 @@ import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email";
  * 6. Email intake form link to client
  */
 export async function handlePhase1(req: Request, res: Response): Promise<void> {
+  let eventId: string | undefined;
   try {
     const webhook = req.body;
 
@@ -39,6 +41,24 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
 
     if (!clientEmail) {
       res.status(400).json({ error: "Client email required" });
+      return;
+    }
+
+    // GHL retries this webhook on a slow response — without a guard, the
+    // retry re-clones the GHL location, re-creates the Slack channel/Drive
+    // folder, and re-sends the intake email. `opportunityId` is stable
+    // across a retry of the same delivery, so it doubles as the event id.
+    eventId = req.header("x-idempotency-key") || String(opportunityId || "") || contentEventId(webhook);
+    if (await hasBeenProcessed("phase1", eventId)) {
+      console.log(`[Phase 1] Duplicate delivery for ${eventId}, skipping`);
+      res.json({ success: true, duplicate: true });
+      return;
+    }
+    try {
+      await markProcessed("phase1", eventId);
+    } catch {
+      console.log(`[Phase 1] Concurrent delivery for ${eventId}, skipping`);
+      res.json({ success: true, duplicate: true });
       return;
     }
 
@@ -146,6 +166,13 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
     });
   } catch (error) {
     console.error("[Phase 1] Error:", error);
+    // Provisioning didn't actually complete — release the claim so a retry
+    // after the underlying issue is fixed isn't treated as a duplicate forever.
+    if (eventId) {
+      await clearProcessed("phase1", eventId).catch((clearError) => {
+        console.error("[Phase 1] Failed to release idempotency claim:", clearError);
+      });
+    }
     res.status(500).json({
       error: error instanceof Error ? error.message : "Unknown error",
     });

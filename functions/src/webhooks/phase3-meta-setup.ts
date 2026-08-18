@@ -3,6 +3,7 @@ import { saveTenantResources, logProvisioningEvent } from "../firestore";
 import { sendMetaAccessRequest, sendMetaSetupGuide } from "../email";
 import { postMessage } from "../slack";
 import { logAutomationEvent, logMetaSetup } from "../postgres";
+import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
 
 /**
  * Phase 3: Meta Ad Account Setup (triggered after intake form submission).
@@ -18,13 +19,38 @@ import { logAutomationEvent, logMetaSetup } from "../postgres";
  * Next: Awaiting human verification of Meta access grant
  */
 export async function handlePhase3(req: Request, res: Response): Promise<void> {
+  // Hoisted so the catch block below can reference them — they were
+  // previously `const`-declared inside the try, which made the catch
+  // block's `logAutomationEvent({ locationId, ... })` throw a
+  // ReferenceError on every single failure instead of logging one.
+  let locationId: string | undefined;
+  let eventId: string | undefined;
   try {
-    const { locationId, email, intakeData, slackChannelId } = req.body;
+    const { email, intakeData, slackChannelId } = req.body;
+    locationId = req.body.locationId;
 
     if (!locationId || !email || !intakeData) {
       res.status(400).json({
         error: "Missing required fields: locationId, email, intakeData",
       });
+      return;
+    }
+
+    // Phase 3 is reachable both from Phase 2's own auto-trigger and from
+    // app/api/onboarding/phase3-meta-setup's manual trigger, either of which
+    // can retry on a slow response — without a guard, the retry re-sends
+    // the client-facing access-request or setup-guide email.
+    eventId = req.header("x-idempotency-key") || contentEventId({ locationId, email, intakeData, slackChannelId });
+    if (await hasBeenProcessed("phase3", eventId)) {
+      console.log(`[Phase 3] Duplicate delivery for ${eventId}, skipping`);
+      res.json({ success: true, duplicate: true });
+      return;
+    }
+    try {
+      await markProcessed("phase3", eventId);
+    } catch {
+      console.log(`[Phase 3] Concurrent delivery for ${eventId}, skipping`);
+      res.json({ success: true, duplicate: true });
       return;
     }
 
@@ -213,9 +239,15 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("[Phase 3] Error:", error);
 
+    if (eventId) {
+      await clearProcessed("phase3", eventId).catch((clearError) => {
+        console.error("[Phase 3] Failed to release idempotency claim:", clearError);
+      });
+    }
+
     // Log error to Postgres
     await logAutomationEvent({
-      locationId,
+      locationId: locationId ?? "unknown",
       phase: "phase3",
       event: "phase3_error",
       status: "error",

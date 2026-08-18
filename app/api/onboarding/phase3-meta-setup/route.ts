@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 
 /**
  * POST /api/onboarding/phase3-meta-setup
@@ -41,6 +42,12 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        // Same delivery-identity guarantee as intake-submit's forward to
+        // Phase 2 — this route can itself be retried on a transient error.
+        "x-idempotency-key": crypto
+          .createHash("sha256")
+          .update(JSON.stringify({ locationId, email, intakeData, slackChannelId }))
+          .digest("hex"),
       },
       body: JSON.stringify({
         locationId,
