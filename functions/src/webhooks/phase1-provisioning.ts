@@ -4,6 +4,7 @@ import { createSlackChannel, inviteSlackGuest } from "../slack";
 import { createDriveFolder } from "../google";
 import { addToOtpWhitelist, saveTenantResources, logProvisioningEvent } from "../firestore";
 import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email";
+import { verifyGhlWebhookRequest } from "./signature";
 
 /**
  * Phase 1: Webhook triggered when checkbox "Initiate Onboarding" is checked
@@ -19,6 +20,11 @@ import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email";
  */
 export async function handlePhase1(req: Request, res: Response): Promise<void> {
   try {
+    if (!verifyGhlWebhookRequest(req)) {
+      res.status(401).json({ error: "Invalid or missing webhook signature" });
+      return;
+    }
+
     const webhook = req.body;
 
     // Extract data from GHL webhook

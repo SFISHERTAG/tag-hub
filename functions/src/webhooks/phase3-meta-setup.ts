@@ -3,6 +3,7 @@ import { saveTenantResources, logProvisioningEvent } from "../firestore";
 import { sendMetaAccessRequest, sendMetaSetupGuide } from "../email";
 import { postMessage } from "../slack";
 import { logAutomationEvent, logMetaSetup } from "../postgres";
+import { verifyGhlWebhookRequest } from "./signature";
 
 /**
  * Phase 3: Meta Ad Account Setup (triggered after intake form submission).
@@ -19,6 +20,11 @@ import { logAutomationEvent, logMetaSetup } from "../postgres";
  */
 export async function handlePhase3(req: Request, res: Response): Promise<void> {
   try {
+    if (!verifyGhlWebhookRequest(req)) {
+      res.status(401).json({ error: "Invalid or missing webhook signature" });
+      return;
+    }
+
     const { locationId, email, intakeData, slackChannelId } = req.body;
 
     if (!locationId || !email || !intakeData) {

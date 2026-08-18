@@ -55,7 +55,20 @@ const app: Express = express();
 const port = process.env.PORT || 8080;
 
 // Middleware
-app.use(express.json());
+//
+// The verify hook captures the exact bytes of the request body onto
+// req.rawBody before express.json parses and discards them. HMAC signature
+// verification (see webhooks/signature.ts) must run over those exact bytes,
+// not a re-serialized req.body - this only matters for local/dev traffic
+// through this Express app; deployed Cloud Functions get req.rawBody
+// populated the same way automatically by the Cloud Functions Framework.
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 // Health check
 app.get("/", (req: Request, res: Response) => {
