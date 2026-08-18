@@ -30,6 +30,28 @@ export function CustomizeClient({
 
   const activeWidgetIds = new Set(currentPage.widgets.map((w) => w.widgetId));
 
+  async function persist(page: DashboardPage, widgets: WidgetPlacement[]) {
+    const updatedPage: DashboardPage = { ...page, widgets };
+    const updatedConfig: DashboardConfig = {
+      ...config,
+      pages: config.pages.map((p) => (p.id === currentPageId ? updatedPage : p)),
+    };
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const result = await saveDashboardConfigAction(updatedConfig);
+      if (!result.ok) {
+        setError(result.error);
+      }
+    } catch {
+      setError("Failed to save changes");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function toggleWidget(page: DashboardPage, widgetId: string) {
     const isActive = page.widgets.some((w) => w.widgetId === widgetId);
     let widgets: WidgetPlacement[];
@@ -50,30 +72,63 @@ export function CustomizeClient({
       ];
     }
 
-    const updatedPage: DashboardPage = { ...page, widgets };
+    await persist(page, widgets);
+  }
 
-    const updatedConfig: DashboardConfig = {
-      ...config,
-      pages: config.pages.map((p) => (p.id === currentPageId ? updatedPage : p)),
-    };
+  async function moveWidget(page: DashboardPage, index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= page.widgets.length) return;
 
-    setSaving(true);
-    setError(null);
+    const widgets = [...page.widgets];
+    [widgets[index], widgets[target]] = [widgets[target], widgets[index]];
 
-    try {
-      const result = await saveDashboardConfigAction(updatedConfig);
-      if (!result.ok) {
-        setError(result.error);
-      }
-    } catch (err) {
-      setError("Failed to save changes");
-    } finally {
-      setSaving(false);
-    }
+    await persist(page, widgets);
   }
 
   return (
     <div className="space-y-6">
+      {/* Active widgets, reorderable */}
+      {currentPage.widgets.length > 0 && (
+        <div>
+          <h2 className="mb-4 text-lg font-semibold text-ink">Active Widgets</h2>
+          <ol className="space-y-2">
+            {currentPage.widgets.map((placement, index) => {
+              const widget = availableWidgets.find((w) => w.id === placement.widgetId);
+              return (
+                <li
+                  key={placement.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-chrome-line bg-chrome p-3"
+                >
+                  <span className="text-sm font-medium text-ink">
+                    {widget?.title ?? placement.widgetId}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => moveWidget(currentPage, index, -1)}
+                      disabled={saving || index === 0}
+                      aria-label={`Move ${widget?.title ?? placement.widgetId} up`}
+                      className="rounded-md border border-chrome-line px-2 py-1 text-xs text-chrome-ink-2 hover:bg-chrome-hover disabled:opacity-40"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveWidget(currentPage, index, 1)}
+                      disabled={saving || index === currentPage.widgets.length - 1}
+                      aria-label={`Move ${widget?.title ?? placement.widgetId} down`}
+                      className="rounded-md border border-chrome-line px-2 py-1 text-xs text-chrome-ink-2 hover:bg-chrome-hover disabled:opacity-40"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      )}
+
       {/* Available Widgets */}
       <div>
         <h2 className="mb-4 text-lg font-semibold text-ink">Available Widgets</h2>
@@ -83,8 +138,10 @@ export function CustomizeClient({
             return (
               <button
                 key={widget.id}
+                type="button"
                 onClick={() => toggleWidget(currentPage, widget.id)}
                 disabled={saving}
+                aria-pressed={isActive}
                 className={`rounded-lg border-2 p-4 text-left transition-all ${
                   isActive
                     ? "border-accent bg-accent/10"
@@ -92,13 +149,14 @@ export function CustomizeClient({
                 } disabled:opacity-60`}
               >
                 <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={isActive}
-                    onChange={() => {}}
-                    className="mt-1 cursor-pointer"
-                    disabled={saving}
-                  />
+                  <span
+                    aria-hidden
+                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                      isActive ? "border-accent bg-accent text-accent-ink" : "border-chrome-line"
+                    }`}
+                  >
+                    {isActive && "✓"}
+                  </span>
                   <div className="flex-1">
                     <h3 className="font-medium text-ink">{widget.title}</h3>
                     {widget.description && (
@@ -114,7 +172,7 @@ export function CustomizeClient({
 
       {/* Error message */}
       {error && (
-        <div className="rounded-lg border border-danger bg-danger-tint p-4 text-danger">
+        <div role="alert" className="rounded-lg border border-danger bg-danger-tint p-4 text-danger">
           <p className="text-sm font-medium">{error}</p>
         </div>
       )}

@@ -47,10 +47,10 @@ export type WidgetDefinition = {
 export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
   pipeline_board: {
     id: "pipeline_board",
-    title: "Pipeline Board",
+    title: "Top Deals",
     availableFor: ["client_closer", "client_manager", "tag_exec", "tag_csm"],
     defaultSize: { cols: 2, rows: 2 },
-    description: "Kanban board of deals in your pipeline",
+    description: "Highest-value deals in your pipeline, ranked",
   },
   day_view: {
     id: "day_view",
@@ -108,7 +108,17 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     defaultSize: { cols: 2, rows: 2 },
     description: "Department-wide totals and which books need attention",
   },
+  kpi_summary: {
+    id: "kpi_summary",
+    title: "KPI Summary",
+    availableFor: ["client_owner", "client_manager", "tag_exec", "tag_csm"],
+    defaultSize: { cols: 4, rows: 1 },
+    description: "Spend, ROAS, cost per lead, and booking rate at a glance",
+  },
 };
+
+/** Widget ids backed by lib/dashboard/mock-metrics.ts rather than a live data source yet. */
+export const MOCK_METRICS_WIDGET_IDS = ["leads_funnel", "spend_roas", "pipeline_board", "kpi_summary"];
 
 export function getAvailableWidgets(role: Role): WidgetDefinition[] {
   return Object.values(WIDGET_REGISTRY).filter((w) => w.availableFor.includes(role));

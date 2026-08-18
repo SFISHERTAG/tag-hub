@@ -17,6 +17,14 @@ export function SpendCharts({
   spendByChannel: MockMetrics["spendByChannel"];
   spendByAd: MockMetrics["spendByAd"];
 }) {
+  if (spendByChannel.length === 0 && spendByAd.length === 0) {
+    return (
+      <Panel title="Spend">
+        <p className="text-sm text-ink-3">No spend data yet.</p>
+      </Panel>
+    );
+  }
+
   const total = spendByChannel.reduce((s, c) => s + c.amount, 0);
 
   const segments: Segment[] = spendByChannel.map((c) => ({

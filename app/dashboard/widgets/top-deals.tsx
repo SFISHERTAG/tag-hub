@@ -5,6 +5,14 @@ const currency = (n: number) =>
   n.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export function TopDeals({ deals }: { deals: MockMetrics["topDeals"] }) {
+  if (deals.length === 0) {
+    return (
+      <Panel title="Top deals">
+        <p className="text-sm text-ink-3">No deals yet.</p>
+      </Panel>
+    );
+  }
+
   return (
     <Panel title="Top deals">
       <ol className="space-y-3">

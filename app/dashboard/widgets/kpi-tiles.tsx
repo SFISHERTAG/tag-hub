@@ -5,7 +5,7 @@ const currency = (n: number) =>
   n.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export function KpiTiles({ kpis }: { kpis: MockMetrics["kpis"] }) {
-  const budgetPct = Math.round((kpis.spendActual / kpis.spendBudget) * 100);
+  const budgetPct = kpis.spendBudget > 0 ? Math.round((kpis.spendActual / kpis.spendBudget) * 100) : 0;
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

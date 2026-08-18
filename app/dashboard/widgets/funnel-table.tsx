@@ -15,6 +15,14 @@ function heat(pct: number): string {
 }
 
 export function FunnelTable({ funnel }: { funnel: MockMetrics["funnel"] }) {
+  if (funnel.length === 0) {
+    return (
+      <Panel title="Funnel" meta="Leads → booked → showed → closed">
+        <p className="text-sm text-ink-3">No funnel data yet.</p>
+      </Panel>
+    );
+  }
+
   const leads = funnel[0]?.count ?? 0;
 
   return (
