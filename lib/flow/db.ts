@@ -6,6 +6,7 @@ import type {
   FlowCard,
   FlowScript,
   FlowAuditLog,
+  FlowScriptSuggestion,
   FullFramework,
 } from "./types";
 
@@ -474,6 +475,123 @@ export async function getScript(id: string): Promise<FlowScript | null> {
     [id]
   );
   return result.rows[0] || null;
+}
+
+// ─── SCRIPT SUGGESTIONS ─────────────────────────────────────────────────────
+// Closers can't edit scripts directly (that's tag_exec/tag_admin only) but can
+// propose an edit for a sales manager to review. Approving one creates a new
+// script version (scripts are already append-only per card) rather than
+// mutating in place, so the audit trail and revert path both keep working
+// unmodified.
+
+export async function createSuggestion(
+  cardId: string,
+  data: {
+    org_id: string;
+    suggested_content: string;
+    suggested_why?: string | null;
+    suggested_notes?: string | null;
+    suggestion_note?: string | null;
+    suggested_by: string;
+  },
+): Promise<FlowScriptSuggestion> {
+  const result = await pool.query(
+    `INSERT INTO flow_script_suggestions
+    (org_id, card_id, suggested_content, suggested_why, suggested_notes, suggestion_note, suggested_by)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *`,
+    [
+      data.org_id,
+      cardId,
+      data.suggested_content,
+      data.suggested_why ?? null,
+      data.suggested_notes ?? null,
+      data.suggestion_note ?? null,
+      data.suggested_by,
+    ],
+  );
+  return result.rows[0];
+}
+
+export async function getSuggestionsForOrg(
+  orgId: string,
+  status?: "pending" | "approved" | "rejected",
+): Promise<FlowScriptSuggestion[]> {
+  const result = await pool.query(
+    status
+      ? "SELECT * FROM flow_script_suggestions WHERE org_id = $1 AND status = $2 ORDER BY created_at DESC"
+      : "SELECT * FROM flow_script_suggestions WHERE org_id = $1 ORDER BY created_at DESC",
+    status ? [orgId, status] : [orgId],
+  );
+  return result.rows;
+}
+
+export async function getSuggestion(id: string): Promise<FlowScriptSuggestion | null> {
+  const result = await pool.query(
+    "SELECT * FROM flow_script_suggestions WHERE id = $1 LIMIT 1",
+    [id],
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * Approve or reject a pending suggestion. Approving writes a new
+ * flow_scripts row for the card (clearFrameworkCache() runs inside
+ * createScript, so the next framework load already sees it) and logs the
+ * change the same way a direct admin edit would, with an admin_note
+ * attributing it back to the suggestion and its author.
+ */
+export async function resolveSuggestion(
+  id: string,
+  action: "approve" | "reject",
+  reviewedBy: string,
+  reviewNote?: string | null,
+): Promise<FlowScriptSuggestion> {
+  const suggestion = await getSuggestion(id);
+  if (!suggestion) {
+    throw new Error("Suggestion not found");
+  }
+  if (suggestion.status !== "pending") {
+    throw new Error(`Suggestion already ${suggestion.status}`);
+  }
+
+  let resultingScriptId: string | null = null;
+
+  if (action === "approve") {
+    const script = await createScript(suggestion.card_id, {
+      content: suggestion.suggested_content,
+      why: suggestion.suggested_why,
+      notes: suggestion.suggested_notes,
+      version_tag: null,
+      tags: [],
+      created_by: suggestion.suggested_by,
+      updated_by: reviewedBy,
+    });
+    resultingScriptId = script.id;
+
+    await logChange(
+      suggestion.org_id,
+      "flow_scripts",
+      script.id,
+      "create",
+      {
+        content: { old: null, new: suggestion.suggested_content },
+        why: { old: null, new: suggestion.suggested_why },
+        notes: { old: null, new: suggestion.suggested_notes },
+      },
+      reviewedBy,
+      `Approved suggestion ${id} from ${suggestion.suggested_by}${reviewNote ? `: ${reviewNote}` : ""}`,
+    );
+  }
+
+  const result = await pool.query(
+    `UPDATE flow_script_suggestions
+     SET status = $2, reviewed_by = $3, reviewed_at = NOW(), review_note = $4, resulting_script_id = $5
+     WHERE id = $1
+     RETURNING *`,
+    [id, action === "approve" ? "approved" : "rejected", reviewedBy, reviewNote ?? null, resultingScriptId],
+  );
+  return result.rows[0];
 }
 
 // ─── AUDIT LOG ──────────────────────────────────────────────────────────────

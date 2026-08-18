@@ -86,6 +86,28 @@ CREATE TABLE IF NOT EXISTS flow_audit_log (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Closer-submitted suggestions to edit a card's script, pending sales-manager
+-- review. Approving one creates a new flow_scripts version for the card
+-- (scripts are already append-only/versioned — see "latest per card" in
+-- getFullFramework) and logs it to flow_audit_log like any other edit;
+-- rejecting just marks this row, no framework change.
+CREATE TABLE IF NOT EXISTS flow_script_suggestions (
+  id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id VARCHAR NOT NULL,
+  card_id VARCHAR NOT NULL REFERENCES flow_cards(id) ON DELETE CASCADE,
+  suggested_content TEXT NOT NULL,
+  suggested_why TEXT,
+  suggested_notes TEXT,
+  suggestion_note TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  suggested_by VARCHAR NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  reviewed_by VARCHAR,
+  reviewed_at TIMESTAMP,
+  review_note TEXT,
+  resulting_script_id VARCHAR REFERENCES flow_scripts(id) ON DELETE SET NULL
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_flow_frameworks_org_active ON flow_frameworks(org_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_flow_tabs_framework ON flow_tabs(framework_id, display_order);
@@ -95,3 +117,5 @@ CREATE INDEX IF NOT EXISTS idx_flow_scripts_card ON flow_scripts(card_id);
 CREATE INDEX IF NOT EXISTS idx_flow_scripts_tag ON flow_scripts USING GIN(tags);
 CREATE INDEX IF NOT EXISTS idx_flow_audit_org_time ON flow_audit_log(org_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_flow_audit_record ON flow_audit_log(table_name, record_id);
+CREATE INDEX IF NOT EXISTS idx_flow_suggestions_org_status ON flow_script_suggestions(org_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_flow_suggestions_card ON flow_script_suggestions(card_id);

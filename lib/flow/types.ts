@@ -73,6 +73,23 @@ export interface FlowAuditLog {
   created_at: Date;
 }
 
+export interface FlowScriptSuggestion {
+  id: string;
+  org_id: string;
+  card_id: string;
+  suggested_content: string;
+  suggested_why: string | null;
+  suggested_notes: string | null;
+  suggestion_note: string | null;
+  status: "pending" | "approved" | "rejected";
+  suggested_by: string;
+  created_at: Date;
+  reviewed_by: string | null;
+  reviewed_at: Date | null;
+  review_note: string | null;
+  resulting_script_id: string | null;
+}
+
 export interface FullFramework {
   id: string;
   version: string;
