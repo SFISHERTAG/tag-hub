@@ -1,4 +1,5 @@
 import { firestore } from "../lib/firestore";
+import { assertSafeToSeed } from "./lib/seed-guard.mjs";
 
 /**
  * One-time script to set up CSM Dashboard test data.
@@ -12,6 +13,10 @@ async function setupTestData() {
   console.log("🚀 Setting up CSM Dashboard test data...\n");
 
   try {
+    // Refuses to run unless NODE_ENV is "development" and GOOGLE_CLOUD_PROJECT
+    // is set to something other than production. See scripts/lib/seed-guard.mjs.
+    assertSafeToSeed();
+
     // 1. Create test client
     console.log(`📝 Creating test client: Casey Williams Co (${TEST_CLIENT_ID})`);
     await firestore().collection("clients").doc(TEST_CLIENT_ID).set({

@@ -1,4 +1,5 @@
 import { Firestore } from "@google-cloud/firestore";
+import { assertSafeToSeed } from "./lib/seed-guard.mjs";
 
 /**
  * Standalone setup script for CSM Dashboard test data
@@ -8,8 +9,13 @@ import { Firestore } from "@google-cloud/firestore";
 const TEST_CLIENT_ID = "cMIc51hn6ziLwWtC8t0n";
 const TEST_CSM_EMAIL = "test@taxadvisorygrowth.net";
 
+// assertSafeToSeed() throws before anything below runs if NODE_ENV isn't
+// "development" or GOOGLE_CLOUD_PROJECT is missing/looks like production, so
+// process.env.GOOGLE_CLOUD_PROJECT is guaranteed to be a real, non-prod value here.
+assertSafeToSeed();
+
 const db = new Firestore({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub",
+  projectId: process.env.GOOGLE_CLOUD_PROJECT,
   ignoreUndefinedProperties: true,
 });
 
