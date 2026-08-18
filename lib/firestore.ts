@@ -10,8 +10,14 @@ let db: Firestore | null = null;
 
 export function firestore(): Firestore {
   if (!db) {
+    const projectId = process.env.GOOGLE_CLOUD_PROJECT;
+    if (!projectId) {
+      throw new Error(
+        "GOOGLE_CLOUD_PROJECT is not set. Refusing to guess a project.",
+      );
+    }
     db = new Firestore({
-      projectId: process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub",
+      projectId,
       ignoreUndefinedProperties: true,
     });
   }
