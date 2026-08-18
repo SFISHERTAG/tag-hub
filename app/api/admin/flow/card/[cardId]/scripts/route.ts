@@ -7,6 +7,9 @@ import {
   logChange,
 } from "@/lib/flow/db";
 import { getSession } from "@/lib/auth/session";
+import { hasAnyRole } from "@/lib/auth/roles";
+
+const FLOW_ADMIN_ROLES = ["tag_exec", "admin"] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +32,7 @@ export async function POST(
 ) {
   try {
     const session = await getSession();
-    if (!session || !["tag_exec", "tag_admin"].includes(session.currentRole || "")) {
+    if (!session || !hasAnyRole(session.currentRole, FLOW_ADMIN_ROLES)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -87,7 +90,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getSession();
-    if (!session || !["tag_exec", "tag_admin"].includes(session.currentRole || "")) {
+    if (!session || !hasAnyRole(session.currentRole, FLOW_ADMIN_ROLES)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -168,7 +171,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession();
-    if (!session || !["tag_exec", "tag_admin"].includes(session.currentRole || "")) {
+    if (!session || !hasAnyRole(session.currentRole, FLOW_ADMIN_ROLES)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

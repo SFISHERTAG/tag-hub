@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuditLog } from "@/lib/flow/db";
 import { getSession } from "@/lib/auth/session";
+import { hasAnyRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function GET(
 ) {
   try {
     const session = await getSession();
-    if (!session || !["tag_exec", "tag_admin"].includes(session.currentRole || "")) {
+    if (!session || !hasAnyRole(session.currentRole, ["tag_exec", "admin"])) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

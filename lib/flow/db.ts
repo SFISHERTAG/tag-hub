@@ -697,7 +697,18 @@ export async function revertChange(
       values
     );
 
-    // Log the revert
+    // Log the revert. The field actually moved new -> old (that's what a
+    // revert is), so this entry's own changes must record that direction —
+    // re-logging the original `changes` object verbatim would claim the
+    // revert moved old -> new, backwards from what it actually did.
+    const revertedChanges: Record<string, { old: unknown; new: unknown }> = {};
+    for (const [field, fieldChange] of Object.entries(changes)) {
+      revertedChanges[field] = {
+        old: fieldChange.new,
+        new: fieldChange.old,
+      };
+    }
+
     await client.query(
       `INSERT INTO flow_audit_log
       (org_id, table_name, record_id, action, changes, changed_by, admin_note, parent_change_id)
@@ -707,7 +718,7 @@ export async function revertChange(
         table,
         entry.record_id,
         "update",
-        JSON.stringify(changes),
+        JSON.stringify(revertedChanges),
         changedBy,
         `Reverted change ${auditId}`,
         auditId,
