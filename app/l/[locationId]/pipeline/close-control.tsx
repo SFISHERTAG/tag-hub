@@ -11,11 +11,13 @@ export function CloseControl({
   opportunityId,
   currentStatus,
   currentValue,
+  contactId,
 }: {
   locationId: string;
   opportunityId: string;
   currentStatus: OpportunityStatus;
   currentValue: number;
+  contactId?: string;
 }) {
   const [action, setAction] = useState<CloseAction>("none");
   const [value, setValue] = useState(currentValue > 0 ? String(currentValue) : "");
@@ -50,6 +52,7 @@ export function CloseControl({
         opportunityId,
         action,
         numValue,
+        contactId,
       );
       if (!result.ok) {
         setError(result.error);

@@ -124,12 +124,4 @@ export function dayRange(offsetDays = 0): { startMs: number; endMs: number } {
   return { startMs: start.getTime(), endMs: end.getTime() };
 }
 
-export function formatTime(iso: string): string {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime())
-    ? "—"
-    : date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-      });
-}
+export { formatTime } from "./format";

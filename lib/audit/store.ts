@@ -4,37 +4,32 @@ import { firestore } from "@/lib/firestore";
 /**
  * Audit logging.
  *
- * Story 3.5 asks specifically for impersonation entry/exit: who entered which
- * client's account, when, and what they touched. That is not optional — it is
- * what answers a client asking who looked at their data.
+ * Firestore collection: `locations/{locationId}/auditLog`. Two shapes live
+ * in this collection:
  *
- * This module generalizes the shape beyond enter/exit so any server module
- * can record an accountable action (an admin changing a rules config, a
- * write made while impersonating, a manual DLQ resolution) through the same
- * append-only log, without inventing a new persistence pattern each time.
- * `logAction()` is the entry point most callers want; `saveAuditEvent` /
- * `getAuditEvents` are the lower-level read/write if you need them directly.
- *
- * Firestore collection: `locations/{locationId}/auditLog`, one document per
- * event. Immutable by convention — this module only ever adds documents,
- * never updates or deletes one. An impersonation *session* (entry time and,
- * later, exit time on the same record) is intentionally NOT modeled here as
- * a single mutable document — two immutable events ("impersonation.enter",
- * "impersonation.exit") carrying a shared `sessionId` in metadata give the
- * same query answer ("when did this session start and end") without an
- * update-in-place, which keeps every writer's job identical: append one
- * event, never fetch-modify-write.
+ * - Impersonation sessions (Story 3.5): one document per CSM enter/exit,
+ *   created on entry and updated in place on exit (AC1-3 ask for this
+ *   literally — "update same entry", not a second document). Append/update
+ *   only: nothing in this file ever deletes a document, so Firestore's own
+ *   semantics keep the log immutable.
+ * - General audit events (`logAction`): append-only records of any other
+ *   accountable action (a write made while impersonating, an admin config
+ *   change, a manual DLQ resolution). A write made while impersonating
+ *   carries `auditEntryId`, pointing back at the impersonation session
+ *   document that produced it (AC4).
  */
 
 export type AuditEvent = {
   /** Who performed the action — the real, authenticated user, never an impersonated identity. */
   actorId: string;
   actorRole: string;
-  /** e.g. "impersonation.enter", "impersonation.exit", "rules_config.update", "dlq.resolve". Namespaced with a dot, not a fixed union — new callers don't need to touch this file. */
+  /** e.g. "opportunity.stage_change", "appointment.outcome", "rules_config.update". Namespaced with a dot, not a fixed union — new callers don't need to touch this file. */
   action: string;
   /** What the action was performed on, if anything. */
   targetType?: string;
   targetId?: string;
+  /** Set when this action happened while the actor was impersonating a client tenant — the impersonation session doc id (Story 3.5 AC4). */
+  auditEntryId?: string;
   /** Free-form context: old/new values on a config change, a DLQ entry id, etc. */
   metadata?: Record<string, unknown>;
   /** Epoch milliseconds. */
@@ -56,10 +51,11 @@ export async function saveAuditEvent(locationId: string, event: AuditEvent): Pro
  * @example
  * await logAction(locationId, {
  *   actorId: session.uid,
- *   actorRole: session.role,
- *   action: "impersonation.enter",
- *   targetType: "tenant",
- *   targetId: locationId,
+ *   actorRole: session.currentRole,
+ *   action: "opportunity.stage_change",
+ *   targetType: "opportunity",
+ *   targetId: opportunityId,
+ *   auditEntryId: impersonation?.auditEntryId,
  * });
  */
 export async function logAction(locationId: string, event: Omit<AuditEvent, "timestamp">): Promise<string> {
@@ -87,4 +83,54 @@ export async function daysSinceLastAction(locationId: string, action: string): P
   const [latest] = await getAuditEvents(locationId, { action });
   if (!latest) return null;
   return Math.floor((Date.now() - latest.timestamp) / (1000 * 60 * 60 * 24));
+}
+
+export type ImpersonationEntry = {
+  actorId: string;
+  actorRole: string;
+  action: "impersonation";
+  targetType: "tenant";
+  targetId: string;
+  entryTimestamp: number;
+  exitTimestamp: number | null;
+  /** Mirrors entryTimestamp so this doc sorts alongside plain AuditEvents in getAuditEvents/daysSinceLastAction. */
+  timestamp: number;
+};
+
+/**
+ * Story 3.5 AC1-2 — creates the one document for an impersonation session.
+ * Called from Story 3.3's enter action, before the impersonation cookie is
+ * set, so a crash between the two never grants access without a trail.
+ */
+export async function createImpersonationEntry(
+  locationId: string,
+  actorId: string,
+  actorRole: string,
+): Promise<string> {
+  const entryTimestamp = Date.now();
+  const doc = await firestore()
+    .collection(`locations/${locationId}/auditLog`)
+    .add({
+      actorId,
+      actorRole,
+      action: "impersonation",
+      targetType: "tenant",
+      targetId: locationId,
+      entryTimestamp,
+      exitTimestamp: null,
+      timestamp: entryTimestamp,
+    } satisfies ImpersonationEntry);
+  return doc.id;
+}
+
+/**
+ * Story 3.5 AC3 — updates the same document from `createImpersonationEntry`
+ * with an exit time. Never creates a second document. Called from Story
+ * 3.4's exit action.
+ */
+export async function closeImpersonationEntry(locationId: string, entryId: string): Promise<void> {
+  await firestore()
+    .collection(`locations/${locationId}/auditLog`)
+    .doc(entryId)
+    .update({ exitTimestamp: Date.now() });
 }

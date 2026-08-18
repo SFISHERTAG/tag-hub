@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
-import { getSession } from "@/lib/auth/session";
+import { getSession, getImpersonation } from "@/lib/auth/session";
 import {
   HAT_LABELS,
   HAT_DESCRIPTIONS,
@@ -11,6 +11,7 @@ import { Nav } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
 import { Logo } from "./logo";
 import { SignOutIcon, BugIcon } from "./icons";
+import { ImpersonationBanner } from "./impersonation-banner";
 
 export const metadata: Metadata = {
   title: "TAG Hub",
@@ -47,6 +48,7 @@ export default async function RootLayout({
   // Chrome belongs to the signed-in app. Sign-in renders bare, so it never
   // shows navigation to routes the visitor cannot reach yet.
   const session = await getSession();
+  const impersonation = session ? await getImpersonation() : null;
 
   return (
     // suppressHydrationWarning: browser extensions write attributes onto <html>
@@ -63,8 +65,15 @@ export default async function RootLayout({
       <body className="min-h-screen bg-canvas text-ink antialiased">
         {session ? (
           <div className="min-h-screen">
-            {/* Top bar and bottom nav — black in both themes. See globals.css for why. */}
-            <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-chrome-line bg-chrome px-4 text-white">
+            {impersonation && <ImpersonationBanner locationId={impersonation.locationId} />}
+
+            {/* Top bar and bottom nav — black in both themes. See globals.css for why.
+                Shifted down when the impersonation banner is showing, so the two never overlap. */}
+            <header
+              className={`fixed inset-x-0 z-30 flex h-14 items-center gap-3 border-b border-chrome-line bg-chrome px-4 text-white ${
+                impersonation ? "top-10" : "top-0"
+              }`}
+            >
               <Link href="/" className="shrink-0">
                 <Logo width={112} />
               </Link>
@@ -115,7 +124,11 @@ export default async function RootLayout({
 
             <Nav role={session.currentRole} />
 
-            <main className="min-h-screen overflow-x-auto bg-canvas px-4 pt-[calc(3.5rem+1.5rem)] pb-[calc(3.5rem+1.5rem+env(safe-area-inset-bottom))] sm:px-6">
+            <main
+              className={`min-h-screen overflow-x-auto bg-canvas px-4 pb-[calc(3.5rem+1.5rem+env(safe-area-inset-bottom))] sm:px-6 ${
+                impersonation ? "pt-[calc(3.5rem+1.5rem+2.5rem)]" : "pt-[calc(3.5rem+1.5rem)]"
+              }`}
+            >
               {children}
             </main>
           </div>

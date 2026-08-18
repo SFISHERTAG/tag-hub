@@ -85,6 +85,25 @@ export function CustomizeClient({
     await persist(page, widgets);
   }
 
+  const MIN_COLS = 1;
+  const MAX_COLS = 4;
+  const MIN_ROWS = 1;
+  const MAX_ROWS = 3;
+
+  async function resizeWidget(page: DashboardPage, index: number, axis: "cols" | "rows", delta: 1 | -1) {
+    const placement = page.widgets[index];
+    const min = axis === "cols" ? MIN_COLS : MIN_ROWS;
+    const max = axis === "cols" ? MAX_COLS : MAX_ROWS;
+    const next = placement.size[axis] + delta;
+    if (next < min || next > max) return;
+
+    const widgets = page.widgets.map((w, i) =>
+      i === index ? { ...w, size: { ...w.size, [axis]: next } } : w,
+    );
+
+    await persist(page, widgets);
+  }
+
   return (
     <div className="space-y-6">
       {/* Active widgets, reorderable */}
@@ -99,10 +118,52 @@ export function CustomizeClient({
                   key={placement.id}
                   className="flex items-center justify-between gap-3 rounded-lg border border-chrome-line bg-chrome p-3"
                 >
-                  <span className="text-sm font-medium text-ink">
-                    {widget?.title ?? placement.widgetId}
-                  </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-ink">
+                      {widget?.title ?? placement.widgetId}
+                    </p>
+                    <p className="text-xs text-chrome-ink-2">
+                      {placement.size.cols}×{placement.size.rows}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => resizeWidget(currentPage, index, "cols", -1)}
+                      disabled={saving || placement.size.cols <= MIN_COLS}
+                      aria-label={`Narrower: ${widget?.title ?? placement.widgetId}`}
+                      className="rounded-md border border-chrome-line px-2 py-1 text-xs text-chrome-ink-2 hover:bg-chrome-hover disabled:opacity-40"
+                    >
+                      ↔−
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => resizeWidget(currentPage, index, "cols", 1)}
+                      disabled={saving || placement.size.cols >= MAX_COLS}
+                      aria-label={`Wider: ${widget?.title ?? placement.widgetId}`}
+                      className="rounded-md border border-chrome-line px-2 py-1 text-xs text-chrome-ink-2 hover:bg-chrome-hover disabled:opacity-40"
+                    >
+                      ↔+
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => resizeWidget(currentPage, index, "rows", -1)}
+                      disabled={saving || placement.size.rows <= MIN_ROWS}
+                      aria-label={`Shorter: ${widget?.title ?? placement.widgetId}`}
+                      className="rounded-md border border-chrome-line px-2 py-1 text-xs text-chrome-ink-2 hover:bg-chrome-hover disabled:opacity-40"
+                    >
+                      ↕−
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => resizeWidget(currentPage, index, "rows", 1)}
+                      disabled={saving || placement.size.rows >= MAX_ROWS}
+                      aria-label={`Taller: ${widget?.title ?? placement.widgetId}`}
+                      className="rounded-md border border-chrome-line px-2 py-1 text-xs text-chrome-ink-2 hover:bg-chrome-hover disabled:opacity-40"
+                    >
+                      ↕+
+                    </button>
+                    <span className="mx-1 h-4 w-px bg-chrome-line" aria-hidden />
                     <button
                       type="button"
                       onClick={() => moveWidget(currentPage, index, -1)}

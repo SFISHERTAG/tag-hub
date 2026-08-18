@@ -99,6 +99,14 @@ export type AppointmentOutcome = {
   markedAt: number;
   appointmentStartsAt: number;
   appointmentEndsAt: number;
+  /**
+   * Denormalized so the follow-up queue (story 2.8) can render without a
+   * per-row contact fetch — contactId to detect a newer booking, name/title
+   * because "who is this" can't come from anywhere else without one.
+   */
+  contactId?: string;
+  contactName?: string;
+  appointmentTitle?: string;
 };
 
 export function classifyTiming(
@@ -145,14 +153,24 @@ export async function loadAppointmentOutcomes(
 export type FollowUpCandidate = {
   appointmentId: string;
   contactId: string;
+  contactName: string;
+  appointmentTitle: string;
   markedAt: number;
   status: "noshow" | "invalid";
   timing: OutcomeTiming;
+  /** How many no-show/DQ outcomes this contact has on record, latest included. */
+  attempts: number;
 };
 
 /**
- * Get follow-up candidates.
- * TODO: make this dynamically configurable from cockpit for aging and definition.
+ * Candidates for the follow-up queue (story 2.8): appointments marked
+ * no-show or DQ, most recent outcome per contact only — an earlier no-show
+ * followed by a later DQ on the same contact should show once, not twice.
+ *
+ * Aging out and "cleared by a newer booking" are both applied by the caller
+ * (today/page.tsx), which already has the appointment list needed to check
+ * for a newer booking — this function stays a single Firestore query with no
+ * per-candidate fetch, per AC5.
  */
 export async function getFollowUpCandidates(
   locationId: string,
@@ -163,20 +181,80 @@ export async function getFollowUpCandidates(
     .limit(1000) // reasonable recent window
     .get();
 
-  const candidates: FollowUpCandidate[] = [];
+  const latestByContact = new Map<string, FollowUpCandidate>();
+  const attemptsByContact = new Map<string, number>();
+
+  // Docs arrive newest-first, so the first hit per contact is the latest outcome.
   for (const doc of outcomes.docs) {
     const outcome = doc.data() as AppointmentOutcome;
-    if (outcome.status === "noshow" || outcome.status === "invalid") {
-      candidates.push({
-        appointmentId: doc.id,
-        contactId: "", // will be filled by caller with appointment data
-        markedAt: outcome.markedAt,
-        status: outcome.status as "noshow" | "invalid",
-        timing: outcome.timing,
-      });
-    }
+    if (outcome.status !== "noshow" && outcome.status !== "invalid") continue;
+    const contactId = outcome.contactId;
+    if (!contactId) continue; // pre-2.8 records carry no contactId; nothing to key on
+
+    attemptsByContact.set(contactId, (attemptsByContact.get(contactId) ?? 0) + 1);
+    if (latestByContact.has(contactId)) continue; // already have this contact's newest outcome
+
+    latestByContact.set(contactId, {
+      appointmentId: doc.id,
+      contactId,
+      contactName: outcome.contactName ?? "Unnamed",
+      appointmentTitle: outcome.appointmentTitle ?? "Untitled",
+      markedAt: outcome.markedAt,
+      status: outcome.status as "noshow" | "invalid",
+      timing: outcome.timing,
+      attempts: 0, // filled in below, once all docs for this contact are counted
+    });
   }
-  return candidates;
+
+  for (const candidate of latestByContact.values()) {
+    candidate.attempts = attemptsByContact.get(candidate.contactId) ?? 1;
+  }
+
+  return [...latestByContact.values()].sort((a, b) => b.markedAt - a.markedAt);
+}
+
+/* ------------------------------------------------------------------ */
+/* Follow-up queue configuration                                       */
+/* ------------------------------------------------------------------ */
+
+export type FollowUpThresholdMode = "attempts" | "days";
+
+export type FollowUpConfig = {
+  mode: FollowUpThresholdMode;
+  /** Attempt count or day count, depending on `mode`. */
+  value: number;
+};
+
+export const DEFAULT_FOLLOW_UP_CONFIG: FollowUpConfig = {
+  mode: "days",
+  value: 7,
+};
+
+function followUpConfigDoc(locationId: string) {
+  return firestore().doc(`locations/${locationId}/settings/followUp`);
+}
+
+export async function getFollowUpConfig(
+  locationId: string,
+): Promise<FollowUpConfig> {
+  const snapshot = await followUpConfigDoc(locationId).get();
+  if (!snapshot.exists) return DEFAULT_FOLLOW_UP_CONFIG;
+  const data = snapshot.data() as Partial<FollowUpConfig>;
+  if (
+    (data.mode === "attempts" || data.mode === "days") &&
+    typeof data.value === "number" &&
+    data.value > 0
+  ) {
+    return { mode: data.mode, value: data.value };
+  }
+  return DEFAULT_FOLLOW_UP_CONFIG;
+}
+
+export async function saveFollowUpConfig(
+  locationId: string,
+  config: FollowUpConfig,
+): Promise<void> {
+  await followUpConfigDoc(locationId).set(config);
 }
 
 /*

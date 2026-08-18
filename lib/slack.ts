@@ -213,6 +213,34 @@ export async function getChannelCanvases(
 }
 
 /**
+ * Ops escalation channel for background jobs (Story 6.5's retry-exhausted
+ * alert). Posts to SLACK_OPS_CHANNEL_ID — a separate, internal channel from
+ * the per-client channels the rest of this module reads, since this is
+ * TAG-facing, not something a client_owner guest should ever see.
+ */
+export async function postAlert(text: string): Promise<void> {
+  const channelId = process.env.SLACK_OPS_CHANNEL_ID?.trim();
+  if (!channelId) {
+    console.error("[slack] SLACK_OPS_CHANNEL_ID not set, alert not sent:", text);
+    return;
+  }
+
+  const response = await fetch(`${SLACK_API}/chat.postMessage`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token()}`,
+      "Content-Type": "application/json; charset=utf-8",
+    },
+    body: JSON.stringify({ channel: channelId, text }),
+  });
+
+  const data = (await response.json()) as { ok: boolean; error?: string };
+  if (!data.ok) {
+    throw new Error(`Slack chat.postMessage failed: ${data.error ?? "unknown error"}`);
+  }
+}
+
+/**
  * Creates a channel canvas seeded with markdown content — for Task #3's
  * client-onboarding automation, not the dashboard widget (which only reads).
  * Confirmed live: the new canvas's title starts as "Untitled" regardless of

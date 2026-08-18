@@ -5,9 +5,14 @@ import { CSMPortfolio } from "./csm-portfolio";
 
 export const dynamic = "force-dynamic";
 
-export default async function CSMDashboardPage() {
+export default async function CSMDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/signin");
+  const { view } = await searchParams;
 
   // Only CSMs and managers can access
   if (!["tag_csm", "tag_exec", "tag_sales_manager"].includes(session.currentRole)) {
@@ -22,7 +27,11 @@ export default async function CSMDashboardPage() {
   return (
     <DarkScope>
       <div className="mx-auto max-w-7xl">
-        <CSMPortfolio csmEmail={session.email || ""} userRole={session.currentRole} />
+        <CSMPortfolio
+          csmEmail={session.email || ""}
+          userRole={session.currentRole}
+          initialView={view === "escalations" ? "escalations" : undefined}
+        />
       </div>
     </DarkScope>
   );

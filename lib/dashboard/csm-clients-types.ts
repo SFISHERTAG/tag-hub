@@ -16,6 +16,8 @@ export interface ClientData {
   escalation: {
     bucket: EscalationBucket;
     reason: string | null;
+    /** Days since the CSM last entered this tenant (story 3.5's audit log), or null if never. */
+    daysSinceLastCheckIn: number | null;
   };
 }
 

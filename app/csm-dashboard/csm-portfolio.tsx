@@ -14,10 +14,18 @@ type ViewMode = "grid" | "list" | "kanban" | "escalations";
 type StatusFilter = "all" | "excellent" | "healthy" | "at-risk" | "critical" | "alert";
 type SortBy = "name" | "health" | "roas" | "spend";
 
-export function CSMPortfolio({ csmEmail, userRole }: { csmEmail: string; userRole: string }) {
+export function CSMPortfolio({
+  csmEmail,
+  userRole,
+  initialView,
+}: {
+  csmEmail: string;
+  userRole: string;
+  initialView?: ViewMode;
+}) {
   const [clients, setClients] = useState<ClientData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView ?? "grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortBy, setSortBy] = useState<SortBy>("name");

@@ -1,6 +1,17 @@
-import { getSession } from "@/lib/auth/session";
+import { getSession, getImpersonation } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
+import { isClientUser } from "@/lib/dashboard/location-selection";
+import { getFulfillmentOpportunity } from "@/lib/ghl/portfolio";
+import { daysSince } from "@/lib/ghl/opportunities";
+import { getTenant } from "@/lib/ghl/tenants";
+import {
+  STAGE_TASKS,
+  FULFILLMENT_STAGE_ORDER,
+  isFulfillmentStage,
+} from "@/lib/onboarding/stage-tasks";
+import { loadCompletedTasks } from "@/lib/onboarding/store";
 import { Panel } from "../ui";
+import { OnboardingChecklist } from "./checklist";
 
 export const dynamic = "force-dynamic";
 
@@ -19,23 +30,102 @@ export default async function OnboardingPage() {
     );
   }
 
-  return (
-    <div className="space-y-6">
+  const header = (
+    <div className="flex items-baseline justify-between gap-3">
       <h1 className="text-xl font-semibold tracking-tight">Onboarding</h1>
+      <a
+        href="/onboarding/launch"
+        className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-ink hover:opacity-90"
+      >
+        Launch campaign
+      </a>
+    </div>
+  );
 
-      <Panel title="Onboarding pipeline" meta="PR1 → AP2">
-        <p className="text-sm text-ink-2">
-          Will render as a kanban here, filtered by Fulfillment stage — the
-          same client records tracked on{" "}
-          <a
-            href="/success"
-            className="underline-offset-2 hover:underline"
-          >
-            Client success
-          </a>
-          .
-        </p>
+  // Same "entered via 3.3" resolution 5.4's launch flow uses
+  // (app/onboarding/launch/actions.ts) — the checklist follows whichever
+  // client the CSM is currently inside.
+  const impersonation = await getImpersonation();
+  const locationId =
+    impersonation && impersonation.actorId === session.uid
+      ? impersonation.locationId
+      : null;
+
+  if (!locationId) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <Panel title="No client selected">
+          <p className="text-sm text-ink-2">
+            Enter a client from{" "}
+            <a href="/portfolio" className="underline-offset-2 hover:underline">
+              Portfolio
+            </a>{" "}
+            to see their onboarding checklist.
+          </p>
+        </Panel>
+      </div>
+    );
+  }
+
+  const [tenant, fulfillment] = await Promise.all([
+    getTenant(locationId),
+    getFulfillmentOpportunity(locationId),
+  ]);
+
+  if (!fulfillment) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <Panel title={tenant.name}>
+          <p className="text-sm text-ink-2">
+            No Fulfillment opportunity found for this client yet.
+          </p>
+        </Panel>
+      </div>
+    );
+  }
+
+  const { opportunity, stageName } = fulfillment;
+  const stage = stageName && isFulfillmentStage(stageName) ? stageName : null;
+  const tasks = stage ? STAGE_TASKS[stage] : [];
+  const completed = await loadCompletedTasks(locationId, opportunity.id);
+  const days = daysSince(opportunity.lastStageChangeAt ?? opportunity.updatedAt);
+  const readOnly = isClientUser(session.currentRole);
+
+  return (
+    <div className="space-y-4">
+      {header}
+
+      <Panel
+        title={`${tenant.name} — ${stage ?? "Stage unrecognized"}`}
+        meta={
+          <span className="text-xs text-ink-3">
+            {days !== null ? `${days}d in stage` : "No stage change on record"}
+          </span>
+        }
+      >
+        {!stage && (
+          <p className="mb-3 text-sm text-ink-2">
+            Current stage &ldquo;{stageName ?? "unknown"}&rdquo; doesn&rsquo;t
+            match a known Fulfillment stage (PR1&ndash;AP5) &mdash; no fixed
+            tasks to show.
+          </p>
+        )}
+        {tasks.length > 0 && (
+          <OnboardingChecklist
+            locationId={locationId}
+            opportunityId={opportunity.id}
+            tasks={tasks}
+            initialCompleted={[...completed]}
+            readOnly={readOnly}
+          />
+        )}
       </Panel>
+
+      <p className="text-xs text-ink-3">
+        Pipeline: {FULFILLMENT_STAGE_ORDER.join(" → ")}
+      </p>
     </div>
   );
 }

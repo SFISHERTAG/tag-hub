@@ -115,10 +115,17 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     defaultSize: { cols: 4, rows: 1 },
     description: "Spend, ROAS, cost per lead, and booking rate at a glance",
   },
+  owner_calendar: {
+    id: "owner_calendar",
+    title: "My Calendar",
+    availableFor: ["client_owner", "tag_exec"],
+    defaultSize: { cols: 4, rows: 2 },
+    description: "Your own scheduled calls — month view and upcoming list",
+  },
 };
 
 /** Widget ids backed by lib/dashboard/mock-metrics.ts rather than a live data source yet. */
-export const MOCK_METRICS_WIDGET_IDS = ["leads_funnel", "spend_roas", "pipeline_board", "kpi_summary"];
+export const MOCK_METRICS_WIDGET_IDS = ["leads_funnel", "spend_roas", "kpi_summary"];
 
 export function getAvailableWidgets(role: Role): WidgetDefinition[] {
   return Object.values(WIDGET_REGISTRY).filter((w) => w.availableFor.includes(role));

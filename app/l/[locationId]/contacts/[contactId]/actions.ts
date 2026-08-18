@@ -20,7 +20,7 @@ export async function createNote(
 
   try {
     await addNote(locationId, contactId, trimmed);
-    revalidatePath(`/contacts/${contactId}`);
+    revalidatePath(`/l/${locationId}/contacts/${contactId}`);
     return { ok: true };
   } catch (error) {
     return {

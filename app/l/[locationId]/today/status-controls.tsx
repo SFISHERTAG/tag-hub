@@ -32,12 +32,16 @@ export function StatusControls({
   current,
   startTime,
   endTime,
+  contactId,
+  title,
 }: {
   locationId: string;
   appointmentId: string;
   current: AppointmentStatus;
   startTime: string;
   endTime: string;
+  contactId?: string;
+  title?: string;
 }) {
   const [status, setStatus] = useState(current);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +56,8 @@ export function StatusControls({
       const result = await markAppointment(locationId, appointmentId, next, {
         startTime,
         endTime,
+        contactId,
+        title,
       });
       if (!result.ok) {
         setStatus(previous); // roll back rather than lie about the outcome

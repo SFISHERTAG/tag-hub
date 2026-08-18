@@ -4,6 +4,12 @@ import { PageTabs } from './page-tabs';
 import { WidgetGrid } from './widget-grid';
 import type { DashboardConfig } from '@/lib/dashboard/widget';
 import type { CsmBookSummary, DepartmentSummary } from '@/lib/dashboard/team-rollup';
+import type { ClientData } from '@/lib/dashboard/csm-clients-types';
+import type { PipelineBoardResult } from '@/lib/dashboard/pipeline-board';
+import type { DayViewResult } from '@/lib/dashboard/day-view';
+import type { FunnelCountsResult } from '@/lib/dashboard/funnel';
+import type { OwnerCalendarResult } from '@/lib/dashboard/owner-calendar';
+import type { RoasTableResult } from '@/lib/dashboard/roas';
 
 interface DashboardPageClientProps {
   config: DashboardConfig;
@@ -11,6 +17,12 @@ interface DashboardPageClientProps {
   userEmail: string;
   teamHealthRollup?: CsmBookSummary[];
   departmentOverview?: DepartmentSummary;
+  portfolioClients?: ClientData[];
+  pipelineBoard?: PipelineBoardResult;
+  dayView?: DayViewResult;
+  funnel?: FunnelCountsResult;
+  ownerCalendar?: OwnerCalendarResult;
+  roas?: RoasTableResult;
 }
 
 export function DashboardPageClient({
@@ -19,6 +31,12 @@ export function DashboardPageClient({
   userEmail,
   teamHealthRollup,
   departmentOverview,
+  portfolioClients,
+  pipelineBoard,
+  dayView,
+  funnel,
+  ownerCalendar,
+  roas,
 }: DashboardPageClientProps) {
   const currentPage = config.pages.find((p) => p.id === currentPageId);
 
@@ -53,6 +71,12 @@ export function DashboardPageClient({
             widgets={currentPage.widgets}
             teamHealthRollup={teamHealthRollup}
             departmentOverview={departmentOverview}
+            portfolioClients={portfolioClients}
+            pipelineBoard={pipelineBoard}
+            dayView={dayView}
+            funnel={funnel}
+            ownerCalendar={ownerCalendar}
+            roas={roas}
           />
         ) : (
           <div className="rounded-lg border border-chrome-line bg-chrome p-8 text-center">

@@ -25,17 +25,27 @@ describe("escalationRules (story 3.6 buckets)", () => {
     expect(evaluation.bucket).toBe("no-action-needed");
   });
 
-  it("never fires ascension-ready without showRatePct (documented, not yet wired)", () => {
+  it("never fires ascension-ready without a healthy signal (documented, not yet wired for showRatePct)", () => {
     const evaluation = evaluateRules(escalationRules, { daysSinceLastCheckIn: 5, upsellAttempted: false });
     expect(evaluation.bucket).not.toBe("ascension-ready");
+  });
+
+  it("fires ascension-ready when healthy and no upsell attempted", () => {
+    const evaluation = evaluateRules(escalationRules, { healthy: true, upsellAttempted: false });
+    expect(evaluation.bucket).toBe("ascension-ready");
+  });
+
+  it("fires at-risk on critical health regardless of check-in recency", () => {
+    const evaluation = evaluateRules(escalationRules, { criticalHealth: true, daysSinceLastCheckIn: 0 });
+    expect(evaluation.bucket).toBe("at-risk");
   });
 });
 
 describe("summarizeByCsm / summarizeDepartment", () => {
   const clients: ClientData[] = [
-    client({ id: "a", csm_assigned: "csm1@tag.com", escalation: { bucket: "at-risk", reason: "x" } }),
-    client({ id: "b", csm_assigned: "csm1@tag.com", escalation: { bucket: "no-action-needed", reason: null } }),
-    client({ id: "c", csm_assigned: "csm2@tag.com", escalation: { bucket: "ascension-ready", reason: "y" } }),
+    client({ id: "a", csm_assigned: "csm1@tag.com", escalation: { bucket: "at-risk", reason: "x", daysSinceLastCheckIn: 45 } }),
+    client({ id: "b", csm_assigned: "csm1@tag.com", escalation: { bucket: "no-action-needed", reason: null, daysSinceLastCheckIn: 5 } }),
+    client({ id: "c", csm_assigned: "csm2@tag.com", escalation: { bucket: "ascension-ready", reason: "y", daysSinceLastCheckIn: null } }),
   ];
 
   it("groups clients by their assigned CSM", () => {

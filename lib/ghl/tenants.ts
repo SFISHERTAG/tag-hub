@@ -11,6 +11,14 @@ export type Tenant = {
   metaBusinessId?: string;
   metaPixelId?: string;
   ownerModel: "client" | "tag";
+  /**
+   * GHL user id of the client owner, when they're also assigned to run calls
+   * themselves. Appointments read `assignedUserId`, not a contact id — GHL
+   * has no native "organizer" concept beyond the assigned staff member — so
+   * this is what Story 4.6's owner calendar filters on. Unset until an admin
+   * configures it for a tenant.
+   */
+  ownerGhlUserId?: string;
 };
 
 const TENANTS_COLLECTION = "locations";
@@ -62,6 +70,7 @@ export async function getTenant(locationId: string): Promise<Tenant> {
     metaAdAccountId: data.metaAdAccountId,
     metaBusinessId: data.metaBusinessId,
     metaPixelId: data.metaPixelId,
+    ownerGhlUserId: data.ownerGhlUserId,
   };
 }
 

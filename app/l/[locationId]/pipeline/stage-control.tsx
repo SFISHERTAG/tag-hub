@@ -24,11 +24,17 @@ export function StageControl({
     if (nextStageId === stageId) return;
 
     const previous = stageId;
+    const previousStageName = allStages.find((s) => s.id === previous)?.name;
     setStageId(nextStageId); // optimistic
     setError(null);
 
     startTransition(async () => {
-      const result = await moveOpportunityStagAction(locationId, opportunityId, nextStageId);
+      const result = await moveOpportunityStagAction(
+        locationId,
+        opportunityId,
+        nextStageId,
+        previousStageName,
+      );
       if (!result.ok) {
         setStageId(previous); // roll back
         setError(result.error);

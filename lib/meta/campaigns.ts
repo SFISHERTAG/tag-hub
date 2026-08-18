@@ -1,5 +1,5 @@
 import "server-only";
-import { getMetaApi, isMetaConfigured } from "./client";
+import { getMetaApi, isMetaConfigured, MetaApiError } from "./client";
 
 /**
  * Meta campaigns data for CSM dashboard.
@@ -177,6 +177,23 @@ export async function getCampaignDetail(campaignId: string): Promise<MetaCampaig
     console.error(`Failed to fetch campaign ${campaignId}:`, error);
     return null;
   }
+}
+
+/**
+ * Unpause a campaign (Story 5.5). No isMetaConfigured() short-circuit here,
+ * unlike the read helpers above — a caller activating a real campaign needs
+ * a thrown MetaApiError/MetaNotConfiguredError, not a silently-ignored no-op.
+ */
+export async function unpauseCampaign(campaignId: string): Promise<{ status: "ACTIVE" }> {
+  const api = getMetaApi();
+
+  try {
+    await api.call<any>("POST", `/${campaignId}`, { status: "ACTIVE" });
+  } catch (error) {
+    throw new MetaApiError(`/${campaignId}`, error);
+  }
+
+  return { status: "ACTIVE" };
 }
 
 /**

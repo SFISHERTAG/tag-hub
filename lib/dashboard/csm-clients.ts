@@ -31,17 +31,23 @@ const FIRESTORE_IN_LIMIT = 30;
 async function computeEscalation(
   locationId: string,
   upsellAttempted: boolean,
+  healthStatus: ClientHealth["status"],
 ): Promise<ClientData["escalation"]> {
-  const daysSinceLastCheckIn = await daysSinceLastAction(locationId, "impersonation.enter");
+  // No audit entries means the CSM has never entered this tenant yet, i.e. fresh
+  // onboarding — treated as "not stale" rather than infinitely stale (see Dev notes).
+  const daysSinceLastCheckIn = await daysSinceLastAction(locationId, "impersonation");
 
   const evaluation = evaluateRules(escalationRules, {
     daysSinceLastCheckIn: daysSinceLastCheckIn ?? undefined,
     upsellAttempted,
+    criticalHealth: healthStatus === "critical",
+    healthy: healthStatus === "excellent" || healthStatus === "healthy",
   });
 
   return {
     bucket: evaluation.bucket as EscalationBucket,
     reason: evaluation.matchedRuleLabel,
+    daysSinceLastCheckIn,
   };
 }
 
@@ -59,7 +65,11 @@ async function buildClientData(
   const alerts = await getClientAlerts(clientId);
   health.alert_count = alerts.filter((a) => !a.resolved_at).length;
 
-  const escalation = await computeEscalation(data.ghl_location_id, Boolean(data.upsell_attempted));
+  const escalation = await computeEscalation(
+    data.ghl_location_id,
+    Boolean(data.upsell_attempted),
+    health.status,
+  );
 
   return {
     id: clientId,

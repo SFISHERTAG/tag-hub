@@ -30,25 +30,26 @@ describe("rules engine genericity proof", () => {
     expect(result.matchedRuleId).toBeNull();
   });
 
-  it("evaluates escalation: at-risk via any one of three independent conditions", () => {
+  it("evaluates escalation: at-risk via any one of four independent conditions", () => {
+    expect(evaluateRules(escalationRules, { criticalHealth: true }).bucket).toBe("at-risk");
     expect(evaluateRules(escalationRules, { showRatePct: 10 }).bucket).toBe("at-risk");
     expect(evaluateRules(escalationRules, { showRatePct: 50, deliveryStalled: true }).bucket).toBe("at-risk");
     expect(evaluateRules(escalationRules, { showRatePct: 50, daysSinceLastCheckIn: 31 }).bucket).toBe("at-risk");
   });
 
   it("evaluates escalation: ascension-ready requires healthy AND no upsell attempted (AND, not OR)", () => {
-    const ready = evaluateRules(escalationRules, { showRatePct: 40, upsellAttempted: false });
+    const ready = evaluateRules(escalationRules, { healthy: true, upsellAttempted: false });
     expect(ready.bucket).toBe("ascension-ready");
 
     // Healthy but upsell already attempted should NOT read as ascension-ready.
-    const alreadyUpsold = evaluateRules(escalationRules, { showRatePct: 40, upsellAttempted: true });
+    const alreadyUpsold = evaluateRules(escalationRules, { healthy: true, upsellAttempted: true });
     expect(alreadyUpsold.bucket).toBe("no-action-needed");
   });
 
-  it("treats unwired fields (deliveryStalled, daysSinceLastCheckIn, upsellAttempted) as absent without throwing", () => {
-    const result = evaluateRules(escalationRules, { showRatePct: 40 });
+  it("treats unwired fields (showRatePct, deliveryStalled) as absent without throwing", () => {
+    const result = evaluateRules(escalationRules, { healthy: false, upsellAttempted: true });
     expect(result.bucket).toBe("no-action-needed");
-    expect(result.missingFields).toContain("upsellAttempted");
+    expect(result.missingFields).toContain("showRatePct");
   });
 
   it("throws a clear error on a config mistake (relational operator on a non-numeric value) instead of misclassifying", () => {

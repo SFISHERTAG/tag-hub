@@ -20,11 +20,45 @@ import { listAllLocationIds } from "../ghl/tenants";
  */
 
 export const ROLE_COOKIE = "hub_role";
+export const IMPERSONATION_COOKIE = "hub_impersonation";
 
 export type RoleGrant = {
   role: Role;
   locations: string[];
 };
+
+export type ImpersonationState = {
+  locationId: string;
+  /** Audit doc id from the "impersonation.enter" event — carried through as the exit event's correlation id. */
+  auditEntryId: string;
+  /** The real, authenticated user who entered — never the impersonated tenant. */
+  actorId: string;
+};
+
+/**
+ * Reads the impersonation cookie, if any. Does not validate that `actorId`
+ * matches the current session — callers that need that (requireLocationAccess)
+ * check it themselves, since this can be called before a session is resolved.
+ */
+export async function getImpersonation(): Promise<ImpersonationState | null> {
+  const jar = await cookies();
+  const raw = jar.get(IMPERSONATION_COOKIE)?.value;
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<ImpersonationState>;
+    if (
+      typeof parsed.locationId === "string" &&
+      typeof parsed.auditEntryId === "string" &&
+      typeof parsed.actorId === "string"
+    ) {
+      return parsed as ImpersonationState;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export type Session = {
   uid: string;
@@ -123,10 +157,21 @@ export async function requireLocationAccess(locationId: string): Promise<void> {
   )
     return;
 
-  // Other roles must have the location in their permitted list
-  if (!session.locations.includes(locationId)) {
-    throw new Error(
-      `403 Forbidden: location ${locationId} not in permitted locations: ${session.locations.join(", ")}`,
-    );
+  if (session.locations.includes(locationId)) return;
+
+  // A CSM's static grant doesn't include their whole book — client
+  // assignment is dynamic (Firestore, not custom claims). Entering a client
+  // tenant (Story 3.3) is what grants access, scoped to exactly the location
+  // that was entered, by the same user who entered it, and only for as long
+  // as the impersonation cookie lives.
+  if (session.currentRole === "tag_csm") {
+    const impersonation = await getImpersonation();
+    if (impersonation && impersonation.locationId === locationId && impersonation.actorId === session.uid) {
+      return;
+    }
   }
+
+  throw new Error(
+    `403 Forbidden: location ${locationId} not in permitted locations: ${session.locations.join(", ")}`,
+  );
 }

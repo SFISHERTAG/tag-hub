@@ -39,3 +39,19 @@ export async function getPipelines(locationId: string): Promise<Pipeline[]> {
     ),
   }));
 }
+
+/**
+ * Finds a stage id by exact name across all of a location's pipelines.
+ * Stage ids are GHL-generated and not known ahead of time (see the
+ * `PipelineStage` note above on Fulfillment stages), so callers that need to
+ * target a stage by its human name — e.g. Story 5.5's "AP 2 - Ads Launched"
+ * — resolve it here rather than hardcoding an id.
+ */
+export async function findStageId(locationId: string, stageName: string): Promise<string | null> {
+  const pipelines = await getPipelines(locationId);
+  for (const pipeline of pipelines) {
+    const stage = pipeline.stages.find((s) => s.name === stageName);
+    if (stage) return stage.id;
+  }
+  return null;
+}

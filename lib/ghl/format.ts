@@ -61,3 +61,13 @@ export function formatMoney(value: number): string {
     maximumFractionDigits: 0,
   }).format(value || 0);
 }
+
+export function formatTime(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime())
+    ? "—"
+    : date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+      });
+}

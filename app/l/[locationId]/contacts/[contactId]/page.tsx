@@ -10,8 +10,7 @@ import {
   hasMetaIdentifiers,
   type Attribution,
 } from "@/lib/ghl/contacts";
-import { requireSession } from "@/lib/auth/session";
-import { devLocationId, GhlConfigError } from "@/lib/ghl/tokens";
+import { GhlConfigError } from "@/lib/ghl/tokens";
 import { NoteForm } from "./note-form";
 
 export const dynamic = "force-dynamic";
@@ -65,24 +64,9 @@ function AttributionPanel({
 export default async function ContactPage({
   params,
 }: {
-  params: Promise<{ contactId: string }>;
+  params: Promise<{ locationId: string; contactId: string }>;
 }) {
-  await requireSession();
-
-  const { contactId } = await params;
-
-  const locationId = devLocationId();
-  if (!locationId) {
-    return (
-      <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
-        <h2 className="text-base font-semibold">Setup needed</h2>
-        <p className="mt-2 text-sm">
-          No location configured. Set <code>GHL_LOCATION_ID</code> in{" "}
-          <code>hub/.env.local</code>.
-        </p>
-      </div>
-    );
-  }
+  const { locationId, contactId } = await params;
 
   let contact;
   let notes;
@@ -119,7 +103,7 @@ export default async function ContactPage({
     <div className="max-w-4xl space-y-6">
       <div>
         <Link
-          href="/contacts"
+          href={`/l/${locationId}/contacts`}
           className="text-xs text-ink-3 underline-offset-2 hover:underline"
         >
           ← Contacts

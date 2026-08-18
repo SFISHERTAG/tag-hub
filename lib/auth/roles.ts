@@ -33,6 +33,11 @@ export function isRole(value: unknown): value is Role {
   return typeof value === "string" && (ROLES as readonly string[]).includes(value);
 }
 
+/** Central membership check so call sites never compare a role string inline. */
+export function hasAnyRole(role: Role | undefined, allowed: readonly Role[]): boolean {
+  return !!role && allowed.includes(role);
+}
+
 /**
  * Validate that a requested role is in the available list.
  * Returns the requested role if valid, otherwise returns the first available.
