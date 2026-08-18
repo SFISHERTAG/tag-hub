@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFullFramework } from "@/lib/flow/db";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireLocationAccess } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +20,24 @@ export async function GET(
 
     const { orgId } = await params;
 
-    // Verify user has access to this org (simplified — could check permissions)
     if (!orgId) {
       return NextResponse.json(
         { error: "Invalid org ID" },
         { status: 400 }
       );
+    }
+
+    // orgId here is a GHL location id: callers (see app/closer/flow/page.tsx)
+    // pass getLocationForDashboard(session), the same id requireLocationAccess
+    // checks everywhere else. The session was already confirmed above, so
+    // requireLocationAccess's internal getSession() call cannot hit its
+    // redirect-to-signin branch here. A denied session throws a plain Error,
+    // which we catch and turn into a 403 instead of the redirect() that
+    // helper uses for page routes (wrong for a JSON API).
+    try {
+      await requireLocationAccess(orgId);
+    } catch {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const framework = await getFullFramework(orgId);
