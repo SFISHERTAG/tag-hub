@@ -95,35 +95,57 @@ export async function verifyCode(
   code: string,
 ): Promise<VerifyOutcome> {
   const ref = doc(email);
-  const snapshot = await ref.get();
 
-  if (!snapshot.exists) return { ok: false, reason: "invalid" };
+  // The read, the attempt-count check, and the write that follows must be one
+  // atomic operation. Three separate get()/update() calls let concurrent
+  // guesses all read the same stale `attempts` value before any of them
+  // writes back, which is exactly how an attacker races past MAX_ATTEMPTS.
+  // Firestore's transaction isolation (tx.get/tx.update/tx.delete against a
+  // single snapshot) closes that gap; nothing outside runTransaction should
+  // touch this doc.
+  return firestore().runTransaction(async (tx) => {
+    const snapshot = await tx.get(ref);
 
-  const data = snapshot.data()!;
-  const attempts = (data.attempts as number) ?? 0;
-  const expiresAt = (data.expiresAt as Timestamp).toMillis();
+    if (!snapshot.exists) return { ok: false, reason: "invalid" };
 
-  if (attempts >= MAX_ATTEMPTS) {
-    await ref.delete();
-    return { ok: false, reason: "too-many-attempts" };
-  }
+    const data = snapshot.data()!;
+    const attempts = (data.attempts as number) ?? 0;
+    const expiresAt = (data.expiresAt as Timestamp).toMillis();
 
-  if (Date.now() > expiresAt) {
-    await ref.delete();
-    return { ok: false, reason: "expired" };
-  }
+    // `locked` is a distinct, auditable state from "expired" or "never
+    // issued": it records that five guesses were burned, rather than
+    // silently deleting the doc and leaving no trace of the lockout. The
+    // `attempts >= MAX_ATTEMPTS` fallback covers a doc whose attempts
+    // reached the cap without the locked field being set (defense in depth;
+    // every path below that reaches the cap sets both together).
+    if (data.locked === true || attempts >= MAX_ATTEMPTS) {
+      if (data.locked !== true) tx.update(ref, { locked: true });
+      return { ok: false, reason: "too-many-attempts" };
+    }
 
-  const expected = Buffer.from(data.codeHash as string);
-  const actual = Buffer.from(hashCode(email, code.trim()));
-  const matches =
-    expected.length === actual.length && timingSafeEqual(expected, actual);
+    if (Date.now() > expiresAt) {
+      tx.delete(ref);
+      return { ok: false, reason: "expired" };
+    }
 
-  if (!matches) {
-    await ref.update({ attempts: attempts + 1 });
-    return { ok: false, reason: "invalid" };
-  }
+    const expected = Buffer.from(data.codeHash as string);
+    const actual = Buffer.from(hashCode(email, code.trim()));
+    const matches =
+      expected.length === actual.length && timingSafeEqual(expected, actual);
 
-  // Single use. Deleting on success prevents replay of an intercepted code.
-  await ref.delete();
-  return { ok: true };
+    if (!matches) {
+      const nextAttempts = attempts + 1;
+      tx.update(
+        ref,
+        nextAttempts >= MAX_ATTEMPTS
+          ? { attempts: nextAttempts, locked: true }
+          : { attempts: nextAttempts },
+      );
+      return { ok: false, reason: "invalid" };
+    }
+
+    // Single use. Deleting on success prevents replay of an intercepted code.
+    tx.delete(ref);
+    return { ok: true };
+  });
 }
