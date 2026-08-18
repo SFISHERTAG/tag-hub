@@ -11,7 +11,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
   const session = await requireSession();
   const { courseId } = await params;
 
-  const course = getCourse(courseId);
+  const course = await getCourse(courseId);
   if (!course) {
     notFound();
   }

@@ -113,13 +113,19 @@ const ITEMS: {
     href: "/admin/tenants",
     label: "Admin",
     icon: AdminIcon,
-    hats: ["tag_exec"],
+    hats: ["admin"],
   },
   {
     href: "/admin/users",
     label: "Users",
     icon: UserAdminIcon,
-    hats: ["tag_exec"],
+    hats: ["admin"],
+  },
+  {
+    href: "/admin/courses",
+    label: "Courses",
+    icon: BookIcon,
+    hats: ["admin"],
   },
 ];
 

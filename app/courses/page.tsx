@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function CoursesPage() {
   await requireSession();
 
-  const courses = getAllCourses();
+  const courses = await getAllCourses();
 
   return (
     <div className="relative space-y-6 max-w-3xl">
