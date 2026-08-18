@@ -9,6 +9,7 @@ import { ListView } from "./views/list-view";
 import { KanbanView } from "./views/kanban-view";
 import { EscalationView } from "./views/escalation-view";
 import { ClientDetailModal } from "./modals/client-detail-modal";
+import { SampleDataBanner } from "@/app/dashboard/widgets/sample-data-banner";
 
 type ViewMode = "grid" | "list" | "kanban" | "escalations";
 type StatusFilter = "all" | "excellent" | "healthy" | "at-risk" | "critical" | "alert";
@@ -142,6 +143,13 @@ export function CSMPortfolio({ csmEmail, userRole }: { csmEmail: string; userRol
           </div>
         </Panel>
       </div>
+
+      {/* Every view below (grid/list/kanban/escalations) renders health scores and
+          escalation buckets derived from getMockMetrics (lib/dashboard/mock-metrics.ts) —
+          sample data pending the budget/lead-target schema work. One banner here covers
+          all four views, same as WidgetGrid covers its composed widgets in
+          app/dashboard/widget-grid.tsx. */}
+      <SampleDataBanner />
 
       {/* Content */}
       {loading ? (
