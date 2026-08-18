@@ -1,5 +1,6 @@
 import "server-only";
 import { pool } from "@/lib/postgres";
+import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Phase 3 status for a client from automation logs.
@@ -29,8 +30,8 @@ export interface Phase3Progress {
  * Get Phase 3 status for a client from Postgres automation logs.
  * Returns the latest Phase 3 event and its status.
  */
-export async function getPhase3Status(locationId: string): Promise<Phase3Progress | null> {
-  try {
+export async function getPhase3Status(locationId: string): Promise<ApiResult<Phase3Progress | null>> {
+  return withErrorHandling(`getPhase3Status(${locationId})`, async () => {
     const result = await pool.query(
       `
       SELECT
@@ -76,17 +77,14 @@ export async function getPhase3Status(locationId: string): Promise<Phase3Progres
       lastEventTime: row.created_at,
       errorMessage: details.error,
     };
-  } catch (error) {
-    console.error("Error fetching Phase 3 status:", error);
-    return null;
-  }
+  });
 }
 
 /**
  * Get all Phase 3 events for a client (full audit trail).
  */
-export async function getPhase3History(locationId: string): Promise<Phase3Status[]> {
-  try {
+export async function getPhase3History(locationId: string): Promise<ApiResult<Phase3Status[]>> {
+  return withErrorHandling(`getPhase3History(${locationId})`, async () => {
     const result = await pool.query(
       `
       SELECT
@@ -112,8 +110,5 @@ export async function getPhase3History(locationId: string): Promise<Phase3Status
       errorMessage: row.details?.error,
       createdAt: row.created_at,
     }));
-  } catch (error) {
-    console.error("Error fetching Phase 3 history:", error);
-    return [];
-  }
+  });
 }

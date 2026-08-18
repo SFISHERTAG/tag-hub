@@ -1,6 +1,7 @@
 "use server";
 
 import { getAssignedClients, type ClientData } from "@/lib/dashboard/csm-clients";
+import type { ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Server action to fetch clients assigned to a CSM.
@@ -10,6 +11,6 @@ import { getAssignedClients, type ClientData } from "@/lib/dashboard/csm-clients
  * csm-portfolio.tsx is a client component, so it calls through here instead
  * of importing csm-clients.ts directly.
  */
-export async function getAssignedClientsForCSM(csmEmail: string): Promise<ClientData[]> {
+export async function getAssignedClientsForCSM(csmEmail: string): Promise<ApiResult<ClientData[]>> {
   return getAssignedClients(csmEmail);
 }

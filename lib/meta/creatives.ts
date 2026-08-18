@@ -1,5 +1,6 @@
 import "server-only";
 import { getMetaApi, isMetaConfigured } from "./client";
+import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Meta creatives (ads) data for CSM dashboard.
@@ -25,16 +26,16 @@ export interface CreativeCampaignLink {
 }
 
 /**
- * Fetch all ads (creatives) for a campaign.
- * Returns empty array if Meta is not configured.
+ * Fetch all ads (creatives) for a campaign. `data: []` (no `error`) if Meta
+ * isn't configured (expected); a failed call is `error !== null`.
  */
-export async function getCreativesForCampaign(campaignId: string): Promise<MetaCreative[]> {
+export async function getCreativesForCampaign(campaignId: string): Promise<ApiResult<MetaCreative[]>> {
   if (!isMetaConfigured()) {
     console.warn("Meta not configured - returning empty creatives");
-    return [];
+    return { data: [], error: null };
   }
 
-  try {
+  return withErrorHandling(`getCreativesForCampaign(${campaignId})`, async () => {
     const api = getMetaApi();
 
     const response = (
@@ -72,19 +73,16 @@ export async function getCreativesForCampaign(campaignId: string): Promise<MetaC
     }
 
     return creatives.sort((a, b) => new Date(b.created_time).getTime() - new Date(a.created_time).getTime());
-  } catch (error) {
-    console.error(`Failed to fetch creatives for campaign ${campaignId}:`, error);
-    return [];
-  }
+  });
 }
 
 /**
  * Fetch creative details by ID from Meta.
  */
-export async function getCreativeDetail(creativeId: string): Promise<MetaCreative | null> {
-  if (!isMetaConfigured()) return null;
+export async function getCreativeDetail(creativeId: string): Promise<ApiResult<MetaCreative | null>> {
+  if (!isMetaConfigured()) return { data: null, error: null };
 
-  try {
+  return withErrorHandling(`getCreativeDetail(${creativeId})`, async () => {
     const api = getMetaApi();
 
     const response = await api.call<any>(
@@ -114,10 +112,7 @@ export async function getCreativeDetail(creativeId: string): Promise<MetaCreativ
       adset_id: response.adset_id,
       campaign_id: response.campaign_id,
     };
-  } catch (error) {
-    console.error(`Failed to fetch creative ${creativeId}:`, error);
-    return null;
-  }
+  });
 }
 
 /**

@@ -18,15 +18,13 @@ export function Phase3StatusTab({ client }: Phase3StatusTabProps) {
     async function fetchPhase3Status() {
       setLoading(true);
       setError(null);
-      try {
-        const data = await getPhase3StatusForClient(client.id);
-        setPhase3(data);
-      } catch (err) {
-        setError("Failed to load Phase 3 status");
-        console.error(err);
-      } finally {
-        setLoading(false);
+      const result = await getPhase3StatusForClient(client.id);
+      if (result.error) {
+        setError(result.error.message);
+      } else {
+        setPhase3(result.data);
       }
+      setLoading(false);
     }
 
     fetchPhase3Status();

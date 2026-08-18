@@ -24,10 +24,24 @@ export default async function SetterPage() {
   // Use first permitted location for this setter
   const ghlLocationId = session.locations[0] || "";
 
-  const [metrics, leads] = await Promise.all([
+  // A failed fetch renders as an empty dashboard rather than a distinct error
+  // state (see lib/api/errorInterceptor.ts) — the failure is still logged
+  // server-side with full context now, instead of being indistinguishable
+  // from "no leads today."
+  const [metricsResult, leadsResult] = await Promise.all([
     getSetterMetrics(ghlLocationId, session.email || ""),
     getSetterLeads(ghlLocationId, session.email || ""),
   ]);
+  const metrics = metricsResult.data ?? {
+    totalLeadsToday: 0,
+    contactedToday: 0,
+    contactRate: 0,
+    averageSpeedMinutes: 0,
+    pendingCallbacks: 0,
+    qualifiedLeads: 0,
+    medianSpeedMinutes: 0,
+  };
+  const leads = leadsResult.data ?? [];
 
   return (
     <DarkScope>

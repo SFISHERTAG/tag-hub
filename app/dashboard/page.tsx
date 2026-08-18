@@ -40,19 +40,24 @@ export default async function DashboardPage() {
   let ownerCalendar: OwnerCalendarResult | undefined;
   let roas: RoasTableResult | undefined;
 
+  // A failed fetch here still renders "no clients" rather than a distinct
+  // error state — the fix in this pass is that the failure is no longer
+  // indistinguishable from a real empty result in the server log (see
+  // lib/api/errorInterceptor.ts); a dedicated error UI per widget is a
+  // follow-up, not part of this change.
   if (hasAnyRole(session.currentRole, ["tag_csd"]) && session.email) {
-    teamHealthRollup = summarizeByCsm(await getTeamClients(session.email));
+    teamHealthRollup = summarizeByCsm((await getTeamClients(session.email)).data ?? []);
   } else if (hasAnyRole(session.currentRole, ["tag_exec"])) {
-    departmentOverview = summarizeDepartment(await getDepartmentClients());
+    departmentOverview = summarizeDepartment((await getDepartmentClients()).data ?? []);
   }
 
   if (widgetIds.has("portfolio") || widgetIds.has("client_health")) {
     if (hasAnyRole(session.currentRole, ["tag_csm"]) && session.email) {
-      portfolioClients = await getAssignedClients(session.email);
+      portfolioClients = (await getAssignedClients(session.email)).data ?? [];
     } else if (hasAnyRole(session.currentRole, ["tag_csd"]) && session.email) {
-      portfolioClients = await getTeamClients(session.email);
+      portfolioClients = (await getTeamClients(session.email)).data ?? [];
     } else if (hasAnyRole(session.currentRole, ["tag_exec"])) {
-      portfolioClients = await getDepartmentClients();
+      portfolioClients = (await getDepartmentClients()).data ?? [];
     }
   }
 

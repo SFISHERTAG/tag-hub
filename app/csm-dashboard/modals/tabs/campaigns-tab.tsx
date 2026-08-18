@@ -18,15 +18,13 @@ export function CampaignsTab({ client }: CampaignsTabProps) {
     async function fetchCampaigns() {
       setLoading(true);
       setError(null);
-      try {
-        const data = await getCampaignsWithCreativesForClient(client.id);
-        setCampaigns(data);
-      } catch (err) {
-        setError("Failed to load campaigns");
-        console.error(err);
-      } finally {
-        setLoading(false);
+      const result = await getCampaignsWithCreativesForClient(client.id);
+      if (result.error) {
+        setError(result.error.message);
+      } else {
+        setCampaigns(result.data);
       }
+      setLoading(false);
     }
 
     fetchCampaigns();

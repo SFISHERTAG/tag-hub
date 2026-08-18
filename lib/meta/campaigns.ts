@@ -1,5 +1,6 @@
 import "server-only";
 import { getMetaApi, isMetaConfigured, MetaApiError } from "./client";
+import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Meta campaigns data for CSM dashboard.
@@ -31,15 +32,18 @@ export interface MetaCampaignMetrics {
 
 /**
  * Fetch all active campaigns for an ad account.
- * Returns empty array if Meta is not configured.
+ * `data: []` (no `error`) if Meta is not configured — that's an expected
+ * state, not a failure. A failed API call is `error !== null` instead of a
+ * silently empty/zeroed list, so a revoked token renders as "error loading
+ * campaigns," not "$0 spend."
  */
-export async function getAdAccountCampaigns(adAccountId: string): Promise<MetaCampaign[]> {
+export async function getAdAccountCampaigns(adAccountId: string): Promise<ApiResult<MetaCampaign[]>> {
   if (!isMetaConfigured()) {
     console.warn("Meta not configured - returning empty campaigns");
-    return [];
+    return { data: [], error: null };
   }
 
-  try {
+  return withErrorHandling(`getAdAccountCampaigns(${adAccountId})`, async () => {
     const api = getMetaApi();
 
     // Format: "act_123456" for ad account ID
@@ -68,6 +72,10 @@ export async function getAdAccountCampaigns(adAccountId: string): Promise<MetaCa
     const campaigns: MetaCampaign[] = [];
 
     for (const campaign of response) {
+      // Deliberately not caught per-campaign: a metrics fetch failing partway
+      // through would otherwise render some campaigns with real spend next to
+      // others silently zeroed, which reads as "this campaign spent $0" —
+      // indistinguishable from the truth. One failure fails the whole list.
       const metrics = await getCampaignMetrics(campaign.id, "last_24h");
 
       campaigns.push({
@@ -86,59 +94,54 @@ export async function getAdAccountCampaigns(adAccountId: string): Promise<MetaCa
     }
 
     return campaigns.sort((a, b) => new Date(b.created_time).getTime() - new Date(a.created_time).getTime());
-  } catch (error) {
-    console.error(`Failed to fetch campaigns for ${adAccountId}:`, error);
-    return [];
-  }
+  });
 }
 
 /**
- * Get metrics for a single campaign (last 24 hours or date range).
+ * Get metrics for a single campaign (last 24 hours or date range). Throws on
+ * failure rather than returning zeroed metrics — see the caller-level note
+ * on why a partial failure shouldn't render as real, if unlucky, data.
  */
 async function getCampaignMetrics(campaignId: string, datePreset: string): Promise<MetaCampaignMetrics> {
-  try {
-    const api = getMetaApi();
+  const api = getMetaApi();
 
-    const response = (
-      await api.call<{ data: any[] }>(
-        "GET",
-        `/${campaignId}/insights`,
-        {
-          fields: ["spend", "impressions", "clicks", "conversions", "lead_generation_by_ad_id"],
-          date_preset: datePreset,
-        },
-      )
-    ).data;
+  const response = (
+    await api.call<{ data: any[] }>(
+      "GET",
+      `/${campaignId}/insights`,
+      {
+        fields: ["spend", "impressions", "clicks", "conversions", "lead_generation_by_ad_id"],
+        date_preset: datePreset,
+      },
+    )
+  ).data;
 
-    if (!response || response.length === 0) {
-      return { spend: 0, impressions: 0, clicks: 0, conversions: 0, leads: 0, roas: 0 };
-    }
-
-    const data = response[0];
-
-    return {
-      spend: parseFloat(data.spend) || 0,
-      impressions: parseInt(data.impressions) || 0,
-      clicks: parseInt(data.clicks) || 0,
-      conversions: parseInt(data.conversions) || 0,
-      leads: data.lead_generation_by_ad_id
-        ? Object.values(data.lead_generation_by_ad_id as Record<string, number>).reduce((a, b) => a + b, 0)
-        : 0,
-      roas: data.conversions > 0 ? parseFloat(data.spend) / parseInt(data.conversions) : 0,
-    };
-  } catch (error) {
-    console.error(`Failed to fetch metrics for campaign ${campaignId}:`, error);
+  if (!response || response.length === 0) {
     return { spend: 0, impressions: 0, clicks: 0, conversions: 0, leads: 0, roas: 0 };
   }
+
+  const data = response[0];
+
+  return {
+    spend: parseFloat(data.spend) || 0,
+    impressions: parseInt(data.impressions) || 0,
+    clicks: parseInt(data.clicks) || 0,
+    conversions: parseInt(data.conversions) || 0,
+    leads: data.lead_generation_by_ad_id
+      ? Object.values(data.lead_generation_by_ad_id as Record<string, number>).reduce((a, b) => a + b, 0)
+      : 0,
+    roas: data.conversions > 0 ? parseFloat(data.spend) / parseInt(data.conversions) : 0,
+  };
 }
 
 /**
- * Get a single campaign's full details.
+ * Get a single campaign's full details. `data: null, error: null` if Meta
+ * isn't configured (expected); `data: null, error !== null` on a failed call.
  */
-export async function getCampaignDetail(campaignId: string): Promise<MetaCampaign | null> {
-  if (!isMetaConfigured()) return null;
+export async function getCampaignDetail(campaignId: string): Promise<ApiResult<MetaCampaign | null>> {
+  if (!isMetaConfigured()) return { data: null, error: null };
 
-  try {
+  return withErrorHandling(`getCampaignDetail(${campaignId})`, async () => {
     const api = getMetaApi();
 
     const response = await api.call<any>(
@@ -173,10 +176,7 @@ export async function getCampaignDetail(campaignId: string): Promise<MetaCampaig
       start_date: response.start_date,
       end_date: response.end_date,
     };
-  } catch (error) {
-    console.error(`Failed to fetch campaign ${campaignId}:`, error);
-    return null;
-  }
+  });
 }
 
 /**

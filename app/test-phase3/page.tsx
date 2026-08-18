@@ -4,7 +4,8 @@ export const dynamic = "force-dynamic";
 
 export default async function TestPhase3Page() {
   const testLocationId = "test_client_phase3";
-  const phase3Status = await getPhase3Status(testLocationId);
+  const phase3StatusResult = await getPhase3Status(testLocationId);
+  const phase3Status = phase3StatusResult.data;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface to-surface-2 p-8">
@@ -107,6 +108,10 @@ export default async function TestPhase3Page() {
                 Data retrieved from automation_logs table for location_id: {testLocationId}
               </p>
             </div>
+          </div>
+        ) : phase3StatusResult.error ? (
+          <div className="rounded-lg border border-danger/30 bg-danger-tint p-6 text-center">
+            <p className="text-sm text-danger">Query failed: {phase3StatusResult.error.message}</p>
           </div>
         ) : (
           <div className="rounded-lg border border-warn/30 bg-warn-tint/10 p-6 text-center">

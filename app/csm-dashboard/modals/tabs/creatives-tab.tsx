@@ -18,12 +18,18 @@ const STATUS_COLORS: Record<string, string> = {
 export function CreativesTab({ client }: CreativesTabProps) {
   const [creatives, setCreatives] = useState<CreativeWithCampaigns[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const data = await getCreativesWithCampaigns(client.id, client.ghl_location_id);
-      setCreatives(data);
+      setError(null);
+      const result = await getCreativesWithCampaigns(client.id, client.ghl_location_id);
+      if (result.error) {
+        setError(result.error.message);
+      } else {
+        setCreatives(result.data);
+      }
       setLoading(false);
     }
 
@@ -53,6 +59,10 @@ export function CreativesTab({ client }: CreativesTabProps) {
       {/* Status Tabs */}
       {loading ? (
         <p className="text-sm text-ink-3">Loading creatives...</p>
+      ) : error ? (
+        <div className="rounded-lg border border-danger/30 bg-danger-tint p-4">
+          <p className="text-sm text-danger">Couldn&apos;t load creatives: {error}</p>
+        </div>
       ) : creatives.length === 0 ? (
         <div className="rounded-lg border border-line bg-sunken p-6 text-center">
           <p className="text-sm text-ink-3">No creatives uploaded yet</p>

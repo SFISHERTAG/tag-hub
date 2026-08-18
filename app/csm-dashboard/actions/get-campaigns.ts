@@ -2,13 +2,14 @@
 
 import { firestore } from "@/lib/firestore";
 import { getAdAccountCampaigns, type MetaCampaign } from "@/lib/meta/campaigns";
+import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Server action to fetch campaigns for a client.
  * Gets the Meta ad account ID from Firestore, then fetches campaigns.
  */
-export async function getCampaignsForClient(clientId: string): Promise<MetaCampaign[]> {
-  try {
+export async function getCampaignsForClient(clientId: string): Promise<ApiResult<MetaCampaign[]>> {
+  return withErrorHandling(`getCampaignsForClient(${clientId})`, async () => {
     // Get client's Meta ad account ID from Firestore
     const clientDoc = await firestore().collection("clients").doc(clientId).get();
 
@@ -26,10 +27,8 @@ export async function getCampaignsForClient(clientId: string): Promise<MetaCampa
     }
 
     // Fetch campaigns from Meta
-    const campaigns = await getAdAccountCampaigns(metaAdAccountId);
-    return campaigns;
-  } catch (error) {
-    console.error(`Error fetching campaigns for client ${clientId}:`, error);
-    return [];
-  }
+    const result = await getAdAccountCampaigns(metaAdAccountId);
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
 }

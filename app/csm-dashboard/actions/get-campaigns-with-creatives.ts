@@ -2,6 +2,7 @@
 
 import { firestore } from "@/lib/firestore";
 import { getAdAccountCampaigns, type MetaCampaign, getCampaignCreativeCount } from "@/lib/meta/campaigns";
+import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Campaign with creative count for dashboard display.
@@ -13,8 +14,10 @@ export interface CampaignWithCreativeCount extends MetaCampaign {
 /**
  * Server action to fetch campaigns for a client with creative counts.
  */
-export async function getCampaignsWithCreativesForClient(clientId: string): Promise<CampaignWithCreativeCount[]> {
-  try {
+export async function getCampaignsWithCreativesForClient(
+  clientId: string,
+): Promise<ApiResult<CampaignWithCreativeCount[]>> {
+  return withErrorHandling(`getCampaignsWithCreativesForClient(${clientId})`, async () => {
     // Get client's Meta ad account ID from Firestore
     const clientDoc = await firestore().collection("clients").doc(clientId).get();
 
@@ -32,19 +35,15 @@ export async function getCampaignsWithCreativesForClient(clientId: string): Prom
     }
 
     // Fetch campaigns from Meta
-    const campaigns = await getAdAccountCampaigns(metaAdAccountId);
+    const result = await getAdAccountCampaigns(metaAdAccountId);
+    if (result.error) throw new Error(result.error.message);
 
     // Enrich each campaign with creative count
-    const enriched: CampaignWithCreativeCount[] = await Promise.all(
-      campaigns.map(async (campaign) => ({
+    return Promise.all(
+      result.data.map(async (campaign) => ({
         ...campaign,
         creative_count: await getCampaignCreativeCount(campaign.id),
       })),
     );
-
-    return enriched;
-  } catch (error) {
-    console.error(`Error fetching campaigns for client ${clientId}:`, error);
-    return [];
-  }
+  });
 }

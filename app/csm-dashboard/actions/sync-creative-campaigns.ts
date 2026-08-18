@@ -27,7 +27,11 @@ export async function syncCreativeToCampaignMappings(clientId: string): Promise<
     }
 
     // Fetch all campaigns
-    const campaigns = await getAdAccountCampaigns(metaAdAccountId);
+    const campaignsResult = await getAdAccountCampaigns(metaAdAccountId);
+    if (campaignsResult.error) {
+      throw new Error(`Failed to fetch campaigns: ${campaignsResult.error.message}`);
+    }
+    const campaigns = campaignsResult.data;
     console.log(`Syncing ${campaigns.length} campaigns for client ${clientId}`);
 
     const db = firestore();
@@ -35,7 +39,11 @@ export async function syncCreativeToCampaignMappings(clientId: string): Promise<
 
     // For each campaign, fetch its creatives
     for (const campaign of campaigns) {
-      const creatives = await getCreativesForCampaign(campaign.id);
+      const creativesResult = await getCreativesForCampaign(campaign.id);
+      if (creativesResult.error) {
+        throw new Error(`Failed to fetch creatives for campaign ${campaign.id}: ${creativesResult.error.message}`);
+      }
+      const creatives = creativesResult.data;
       console.log(`Campaign ${campaign.name} has ${creatives.length} creatives`);
 
       // Store each creative with its campaign reference

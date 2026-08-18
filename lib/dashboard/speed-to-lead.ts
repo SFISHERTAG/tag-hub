@@ -1,5 +1,6 @@
 import "server-only";
 import { searchContacts, getNotes, type Contact } from "@/lib/ghl/contacts";
+import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 export interface LeadMetric {
   id: string;
@@ -30,8 +31,8 @@ export async function getSetterLeads(
   ghlLocationId: string,
   setterEmail?: string,
   daysBack: number = 90
-): Promise<LeadMetric[]> {
-  try {
+): Promise<ApiResult<LeadMetric[]>> {
+  return withErrorHandling(`getSetterLeads(${ghlLocationId})`, async () => {
     // Fetch contacts from GHL
     const contacts = await searchContacts(ghlLocationId, { limit: 500 });
 
@@ -98,17 +99,16 @@ export async function getSetterLeads(
       const priorityOrder = { urgent: 0, normal: 1, aged: 2 };
       return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
-  } catch (error) {
-    console.error("Error fetching setter leads:", error);
-    return [];
-  }
+  });
 }
 
 export async function getSetterMetrics(
   ghlLocationId: string,
   setterEmail: string
-): Promise<SetterMetrics> {
-  const leads = await getSetterLeads(ghlLocationId, setterEmail);
+): Promise<ApiResult<SetterMetrics>> {
+  const leadsResult = await getSetterLeads(ghlLocationId, setterEmail);
+  if (leadsResult.error) return { data: null, error: leadsResult.error };
+  const leads = leadsResult.data;
 
   const contacted = leads.filter((l) => l.firstContactAt);
   const speedTimes = contacted
@@ -130,13 +130,16 @@ export async function getSetterMetrics(
   const pending = leads.filter((l) => l.status === "uncontacted");
 
   return {
-    totalLeadsToday: leads.length,
-    contactedToday: contacted.length,
-    contactRate: Math.round(contactRate),
-    averageSpeedMinutes: averageSpeed,
-    pendingCallbacks: pending.length,
-    qualifiedLeads: qualified.length,
-    medianSpeedMinutes: medianSpeed,
+    data: {
+      totalLeadsToday: leads.length,
+      contactedToday: contacted.length,
+      contactRate: Math.round(contactRate),
+      averageSpeedMinutes: averageSpeed,
+      pendingCallbacks: pending.length,
+      qualifiedLeads: qualified.length,
+      medianSpeedMinutes: medianSpeed,
+    },
+    error: null,
   };
 }
 

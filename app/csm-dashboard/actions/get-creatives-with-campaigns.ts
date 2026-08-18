@@ -2,6 +2,7 @@
 
 import { firestore } from "@/lib/firestore";
 import { fetchCreatives, type CreativeForDisplay } from "@/lib/dashboard/data-fetchers";
+import { type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Campaign reference for a creative.
@@ -26,16 +27,21 @@ export interface CreativeWithCampaigns extends CreativeForDisplay {
 export async function getCreativesWithCampaigns(
   clientId: string,
   locationId: string,
-): Promise<CreativeWithCampaigns[]> {
+): Promise<ApiResult<CreativeWithCampaigns[]>> {
+  // Fetch creatives from Google Drive — a real failure here (not "no files")
+  // fails the whole result rather than rendering an empty/misleading list.
+  const creativesResult = await fetchCreatives(locationId);
+  if (creativesResult.error) return { data: null, error: creativesResult.error };
+  const creatives = creativesResult.data;
+
+  if (creatives.length === 0) {
+    return { data: [], error: null };
+  }
+
+  // Campaign-link enrichment is supplementary — if Firestore fails here, the
+  // creatives themselves still render, just without campaign badges.
+  const metaCreativeMap = new Map<string, CampaignRef[]>();
   try {
-    // Fetch creatives from Google Drive
-    const creatives = await fetchCreatives(locationId);
-
-    if (creatives.length === 0) {
-      return [];
-    }
-
-    // Try to load Meta creative data with campaigns from Firestore
     const db = firestore();
     const metaCreativesRef = db
       .collection("clients")
@@ -43,29 +49,21 @@ export async function getCreativesWithCampaigns(
       .collection("meta_creatives");
 
     const metaSnapshot = await metaCreativesRef.get();
-    const metaCreativeMap = new Map<string, CampaignRef[]>();
-
     for (const doc of metaSnapshot.docs) {
       const data = doc.data();
       if (data.campaigns_using) {
         metaCreativeMap.set(doc.id, data.campaigns_using);
       }
     }
+  } catch (error) {
+    console.error(`Error loading campaign links for client ${clientId}:`, error);
+  }
 
-    // Enrich creatives with campaign data
-    const enriched: CreativeWithCampaigns[] = creatives.map((creative) => ({
+  return {
+    data: creatives.map((creative) => ({
       ...creative,
       campaigns_using: metaCreativeMap.get(creative.id) || [],
-    }));
-
-    return enriched;
-  } catch (error) {
-    console.error(
-      `Error fetching creatives with campaigns for client ${clientId}:`,
-      error,
-    );
-    // Fallback to just returning creatives without campaign data
-    const creatives = await fetchCreatives(locationId);
-    return creatives.map((c) => ({ ...c, campaigns_using: [] }));
-  }
+    })),
+    error: null,
+  };
 }

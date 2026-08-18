@@ -1,5 +1,6 @@
 import "server-only";
 import { firestore } from "@/lib/firestore";
+import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 import { calculateHealthScore, getStatusFromScore, type ClientHealth, type HealthMetrics } from "./health-scoring";
 import { getMockMetrics } from "./mock-metrics";
 import { getTeamEmails } from "./csm-directory";
@@ -62,7 +63,12 @@ async function buildClientData(
   const health = calculateHealthScore(metrics);
   health.clientId = clientId;
 
-  const alerts = await getClientAlerts(clientId);
+  // A failed alert fetch degrades this one client's alert_count to 0 rather
+  // than failing the whole list — alerts are a supplementary annotation, not
+  // the client's core identity/health data. The failure is still logged
+  // inside withErrorHandling, it just isn't fatal to the surrounding list.
+  const alertsResult = await getClientAlerts(clientId);
+  const alerts = alertsResult.data ?? [];
   health.alert_count = alerts.filter((a) => !a.resolved_at).length;
 
   const escalation = await computeEscalation(
@@ -102,18 +108,15 @@ async function fetchClients(
 /**
  * Fetch all clients assigned to a CSM — their own book, the default scope.
  */
-export async function getAssignedClients(csmEmail: string): Promise<ClientData[]> {
-  try {
-    return await fetchClients(
+export async function getAssignedClients(csmEmail: string): Promise<ApiResult<ClientData[]>> {
+  return withErrorHandling(`getAssignedClients(${csmEmail})`, () =>
+    fetchClients(
       firestore()
         .collection("clients")
         .where("csm_assigned", "==", csmEmail)
         .where("active", "==", true),
-    );
-  } catch (error) {
-    console.error("Error fetching assigned clients:", error);
-    return [];
-  }
+    ),
+  );
 }
 
 /**
@@ -121,8 +124,8 @@ export async function getAssignedClients(csmEmail: string): Promise<ClientData[]
  * rollup a CS Director sees. Batches the `csm_assigned in [...]` filter in
  * groups of 30 (Firestore's `in` limit) since a department can exceed it.
  */
-export async function getTeamClients(csdEmail: string): Promise<ClientData[]> {
-  try {
+export async function getTeamClients(csdEmail: string): Promise<ApiResult<ClientData[]>> {
+  return withErrorHandling(`getTeamClients(${csdEmail})`, async () => {
     const csmEmails = await getTeamEmails(csdEmail);
     if (csmEmails.length === 0) return [];
 
@@ -143,10 +146,7 @@ export async function getTeamClients(csdEmail: string): Promise<ClientData[]> {
     );
 
     return results.flat().sort((a, b) => a.name.localeCompare(b.name));
-  } catch (error) {
-    console.error(`Error fetching team clients for CSD ${csdEmail}:`, error);
-    return [];
-  }
+  });
 }
 
 /**
@@ -154,13 +154,10 @@ export async function getTeamClients(csdEmail: string): Promise<ClientData[]> {
  * gate on role before calling this, same as `requireLocationAccess` does for
  * GHL data.
  */
-export async function getDepartmentClients(): Promise<ClientData[]> {
-  try {
-    return await fetchClients(firestore().collection("clients").where("active", "==", true));
-  } catch (error) {
-    console.error("Error fetching department clients:", error);
-    return [];
-  }
+export async function getDepartmentClients(): Promise<ApiResult<ClientData[]>> {
+  return withErrorHandling("getDepartmentClients()", () =>
+    fetchClients(firestore().collection("clients").where("active", "==", true)),
+  );
 }
 
 /**
@@ -170,15 +167,15 @@ export async function getDepartmentClients(): Promise<ClientData[]> {
  * "view another CSM's book" picker rather than silently merging it into
  * "my book," so coverage stays visible as coverage.
  */
-export async function getClientsForCsm(targetEmail: string): Promise<ClientData[]> {
+export async function getClientsForCsm(targetEmail: string): Promise<ApiResult<ClientData[]>> {
   return getAssignedClients(targetEmail);
 }
 
 /**
  * Fetch alerts for a specific client.
  */
-export async function getClientAlerts(clientId: string): Promise<ClientAlert[]> {
-  try {
+export async function getClientAlerts(clientId: string): Promise<ApiResult<ClientAlert[]>> {
+  return withErrorHandling(`getClientAlerts(${clientId})`, async () => {
     const snapshot = await firestore()
       .collection("clients")
       .doc(clientId)
@@ -195,24 +192,18 @@ export async function getClientAlerts(clientId: string): Promise<ClientAlert[]> 
       created_at: doc.data().created_at,
       resolved_at: doc.data().resolved_at,
     }));
-  } catch (error) {
-    console.error(`Error fetching alerts for client ${clientId}:`, error);
-    return [];
-  }
+  });
 }
 
 /**
  * Fetch a single client with full details.
  */
-export async function getClientDetail(clientId: string): Promise<ClientData | null> {
-  try {
+export async function getClientDetail(clientId: string): Promise<ApiResult<ClientData | null>> {
+  return withErrorHandling(`getClientDetail(${clientId})`, async () => {
     const doc = await firestore().collection("clients").doc(clientId).get();
     if (!doc.exists) return null;
     return await buildClientData(doc);
-  } catch (error) {
-    console.error(`Error fetching client ${clientId}:`, error);
-    return null;
-  }
+  });
 }
 
 /**

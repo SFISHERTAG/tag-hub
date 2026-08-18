@@ -2,6 +2,7 @@ import "server-only";
 import { getAppointments, dayRange, formatTime, type Appointment } from "@/lib/ghl/appointments";
 import { listDriveFiles, categorizeFile, getFileTypeIcon, formatFileSize, type DriveFile } from "@/lib/google/drive";
 import { getLocationConfig } from "./location-config";
+import { type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Server-side data fetchers for dashboard screens.
@@ -170,25 +171,28 @@ export async function fetchCalls(
 /**
  * Fetch creatives (files) from a location's Cubby folder.
  */
-export async function fetchCreatives(locationId: string): Promise<CreativeForDisplay[]> {
+export async function fetchCreatives(locationId: string): Promise<ApiResult<CreativeForDisplay[]>> {
   const config = await getLocationConfig(locationId);
-  if (!config.driveFolderId) return [];
+  if (!config.driveFolderId) return { data: [], error: null };
 
-  const files = await listDriveFiles(config.driveFolderId);
-  return files
-    .filter((f) => !f.mimeType.includes("folder"))
-    .map(mapDriveFileToCreative);
+  const result = await listDriveFiles(config.driveFolderId);
+  if (result.error) return { data: null, error: result.error };
+  return {
+    data: result.data.filter((f) => !f.mimeType.includes("folder")).map(mapDriveFileToCreative),
+    error: null,
+  };
 }
 
 /**
  * Fetch resources (documents) from a location's folder.
  */
-export async function fetchResources(locationId: string): Promise<ResourceForDisplay[]> {
+export async function fetchResources(locationId: string): Promise<ApiResult<ResourceForDisplay[]>> {
   const config = await getLocationConfig(locationId);
-  if (!config.driveFolderId) return [];
+  if (!config.driveFolderId) return { data: [], error: null };
 
-  const files = await listDriveFiles(config.driveFolderId);
-  return files.map(mapDriveFileToResource);
+  const result = await listDriveFiles(config.driveFolderId);
+  if (result.error) return { data: null, error: result.error };
+  return { data: result.data.map(mapDriveFileToResource), error: null };
 }
 
 /**

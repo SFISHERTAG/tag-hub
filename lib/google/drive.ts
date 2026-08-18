@@ -1,6 +1,7 @@
 import "server-only";
 import { google } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
+import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Server-side Google Drive API using domain-wide delegation.
@@ -34,10 +35,10 @@ async function getAuthClient() {
  * List files in a Google Drive folder.
  * Returns files with metadata (name, type, dates, size, link).
  */
-export async function listDriveFiles(folderId: string): Promise<DriveFile[]> {
-  if (!folderId) return [];
+export async function listDriveFiles(folderId: string): Promise<ApiResult<DriveFile[]>> {
+  if (!folderId) return { data: [], error: null };
 
-  try {
+  return withErrorHandling(`listDriveFiles(${folderId})`, async () => {
     const auth = await getAuthClient();
     const drive = google.drive({ version: "v3", auth: auth as any });
 
@@ -61,17 +62,14 @@ export async function listDriveFiles(folderId: string): Promise<DriveFile[]> {
         parents: file.parents,
       })) || []
     );
-  } catch (error) {
-    console.error("Error listing Drive files:", error);
-    return [];
-  }
+  });
 }
 
 /**
  * Get metadata for a specific file.
  */
-export async function getDriveFile(fileId: string): Promise<DriveFile | null> {
-  try {
+export async function getDriveFile(fileId: string): Promise<ApiResult<DriveFile | null>> {
+  return withErrorHandling(`getDriveFile(${fileId})`, async () => {
     const auth = await getAuthClient();
     const drive = google.drive({ version: "v3", auth: auth as any });
 
@@ -93,10 +91,7 @@ export async function getDriveFile(fileId: string): Promise<DriveFile | null> {
       webViewLink: file.data.webViewLink || undefined,
       parents: (file.data as any).parents as string[] | undefined,
     };
-  } catch (error) {
-    console.error("Error getting Drive file:", error);
-    return null;
-  }
+  });
 }
 
 /**

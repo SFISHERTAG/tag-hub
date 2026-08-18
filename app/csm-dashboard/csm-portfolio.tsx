@@ -25,6 +25,7 @@ export function CSMPortfolio({
 }) {
   const [clients, setClients] = useState<ClientData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(initialView ?? "grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -35,8 +36,14 @@ export function CSMPortfolio({
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const data = await getAssignedClientsForCSM(csmEmail);
-      setClients(data);
+      const result = await getAssignedClientsForCSM(csmEmail);
+      if (result.error) {
+        setError(result.error.message);
+        setClients([]);
+      } else {
+        setError(null);
+        setClients(result.data);
+      }
       setLoading(false);
     }
 
@@ -74,6 +81,13 @@ export function CSMPortfolio({
           <h1 className="text-2xl font-semibold text-ink">CSM Dashboard</h1>
           <p className="text-sm text-ink-2">Manage {clients.length} assigned clients</p>
         </div>
+
+        {error && (
+          <div className="rounded-lg border border-danger/30 bg-danger-tint px-3 py-2 text-sm text-danger">
+            Couldn&apos;t load your client list: {error}. This is not the same as having zero clients — try
+            refreshing.
+          </div>
+        )}
 
         {/* Controls */}
         <Panel className="space-y-4">

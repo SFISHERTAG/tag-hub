@@ -12,12 +12,14 @@ interface OverviewTabProps {
 export function OverviewTab({ client }: OverviewTabProps) {
   const [alerts, setAlerts] = useState<ClientAlert[]>([]);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAlerts() {
       setLoadingAlerts(true);
-      const data = await getClientAlertsForClient(client.id);
-      setAlerts(data.slice(0, 5));
+      const result = await getClientAlertsForClient(client.id);
+      setAlertsError(result.error?.message ?? null);
+      setAlerts((result.data ?? []).slice(0, 5));
       setLoadingAlerts(false);
     }
 
@@ -96,6 +98,10 @@ export function OverviewTab({ client }: OverviewTabProps) {
         </h3>
         {loadingAlerts ? (
           <p className="text-sm text-ink-3">Loading alerts...</p>
+        ) : alertsError ? (
+          <div className="rounded-lg border border-danger/30 bg-danger-tint p-3">
+            <p className="text-sm text-danger">Couldn&apos;t load alerts: {alertsError}</p>
+          </div>
         ) : activeAlerts.length === 0 ? (
           <div className="rounded-lg border border-ok/30 bg-ok-tint p-3">
             <p className="text-sm text-ok">No active alerts</p>
