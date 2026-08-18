@@ -165,6 +165,25 @@ export async function getClientsForCsm(targetEmail: string): Promise<ClientData[
 }
 
 /**
+ * Resolve a client's GHL location id from its Firestore doc.
+ *
+ * Several csm-dashboard actions receive a Firestore `clientId` from the
+ * client bundle and need the GHL location id to call requireLocationAccess
+ * before touching anything scoped to that tenant. The two ids are stored as
+ * separate fields (today's seed data happens to set them equal, but nothing
+ * guarantees that), so this always resolves through Firestore rather than
+ * assuming clientId === locationId. Returns null if the client doesn't
+ * exist or has no location on file. Callers should deny access in that case
+ * rather than skip the check.
+ */
+export async function getClientLocationId(clientId: string): Promise<string | null> {
+  const doc = await firestore().collection("clients").doc(clientId).get();
+  if (!doc.exists) return null;
+  const locationId = doc.data()?.ghl_location_id;
+  return typeof locationId === "string" && locationId ? locationId : null;
+}
+
+/**
  * Fetch alerts for a specific client.
  */
 export async function getClientAlerts(clientId: string): Promise<ClientAlert[]> {

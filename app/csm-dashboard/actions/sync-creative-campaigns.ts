@@ -1,14 +1,24 @@
 "use server";
 
 import { firestore } from "@/lib/firestore";
+import { requireSession, requireLocationAccess } from "@/lib/auth/session";
 import { getAdAccountCampaigns } from "@/lib/meta/campaigns";
 import { getCreativesForCampaign } from "@/lib/meta/creatives";
+import { getClientLocationId } from "@/lib/dashboard/csm-clients";
 
 /**
  * Sync creative-to-campaign mappings from Meta to Firestore.
  * For each campaign, fetches its ads and stores the relationship.
  */
 export async function syncCreativeToCampaignMappings(clientId: string): Promise<void> {
+  await requireSession();
+
+  const locationId = await getClientLocationId(clientId);
+  if (!locationId) {
+    throw new Error(`Client ${clientId} not found`);
+  }
+  await requireLocationAccess(locationId);
+
   try {
     // Get client's Meta ad account ID
     const clientDoc = await firestore().collection("clients").doc(clientId).get();
