@@ -40,6 +40,11 @@ these are read from Postgres.
 | `courses` | Course catalog and structure | Migrating from Firestore | **NO — BLOCKED** | See migration status |
 | `course_progress` | Per-user completion tracking | Migrating from Firestore | No | Depends on `courses` table |
 | `automation_log` | Cloud Functions execution history | Cloud Functions | Yes | Keyed to location + function name |
+| `flow_frameworks` | FLOW sales-coaching framework versions | App writes directly | N/A | `sql/flow-schema.sql`, org-scoped |
+| `flow_tabs` / `flow_sections` / `flow_cards` | FLOW framework structure | App writes directly | N/A | Hierarchy under a framework |
+| `flow_scripts` | FLOW card script content (versioned) | App writes directly | N/A | Also see `flow_scripts` in Firestore table above — same name, different store; Postgres is the live editor content, Firestore's is not currently synced from it |
+| `flow_audit_log` | FLOW change history, revert-capable | App writes directly | N/A | Written by `lib/flow/db.ts#logChange` |
+| `flow_script_suggestions` | Closer-submitted script edit suggestions, pending sales-manager review | App writes directly | N/A | Added Phase 2 item 2.5 fast-follow; approving one calls `updateScript` (which writes `flow_audit_log`) |
 
 **Why Postgres:** structured schema for analytics queries, SQL joins across entities,
 time-series aggregation (sum spend by day), efficient pagination, no real-time
@@ -63,9 +68,22 @@ Do not leave it split. Decision pending: see `docs/stories/X.X-courses.md`.
 
 ## Cache (Redis, session, TTL)
 
-Not currently in use. Session token is stored in HTTP-only cookie only.
-Do not add a cache layer without updating this doc and documenting TTL + 
-cache-invalidation strategy.
+No Redis. Session token is stored in HTTP-only cookie only.
+
+**In-memory cache (Phase 2 item 2.5):** `lib/flow/db.ts#getFullFramework()` —
+the FLOW framework closers load on every call is a 30-100+ query serial
+waterfall (framework → tabs → per-tab sections → per-section cards → per-card
+script), so it's cached in a module-level `Map<orgId, FullFramework>` with a
+5-minute TTL. Invalidation is a full cache clear on any Flow write (create/
+update/delete on any framework/tab/section/card/script, or a revert) rather
+than a per-org entry removal — see the comment above `clearFrameworkCache()`
+for why that's the right tradeoff here. This cache is per Node process/
+instance, not shared across Cloud Run replicas; a write on one replica
+doesn't invalidate another's cache until that replica's own TTL expires
+(worst case 5 minutes of staleness on other replicas, not incorrectness).
+
+Do not add another cache layer without updating this doc and documenting TTL
++ invalidation strategy.
 
 ---
 
@@ -76,9 +94,12 @@ cache-invalidation strategy.
   Real-time syncs for CSM portfolio + client dashboard.
 - **Postgres** is for reporting, analytics, and joins that Firestore rules 
   can't express (e.g., "all appointments for a location grouped by show status").
-- **No Redis/cache yet** because the Postgres pool is still unbounded and 
-  Cloud Functions queries are per-request. If either becomes a bottleneck, 
-  document the decision to add cache here first.
+- **Postgres pool is bounded** (`lib/postgres.ts`: `max: 10`,
+  `idleTimeoutMillis: 30s`, `connectionTimeoutMillis: 5s`, warns when a query
+  queues behind a full pool) — fixed Phase 2 item 2.5 after `getFullFramework()`'s
+  query waterfall made concurrent closers a real exhaustion risk. Cloud
+  Functions queries remain per-request (functions/src has no shared pool
+  across invocations by design — each Cloud Function instance is short-lived).
 
 ---
 

@@ -9,6 +9,27 @@ import type {
   FullFramework,
 } from "./types";
 
+/**
+ * In-memory cache for getFullFramework() (Phase 2 item 2.5). The unabridged
+ * framework is a 30-100+ query serial waterfall (framework -> tabs -> per-tab
+ * sections -> per-section cards -> per-card script) — every closer opening
+ * FLOW during a live call pays that cost on every load. The framework is
+ * shared, org-wide content (not per-user), so the cache key is just orgId.
+ *
+ * Invalidation is a full clear rather than a per-org entry removal: every
+ * write function below touches one row by its own id (tab/section/card/
+ * script id), not by orgId, so resolving "which org's cache entry" would
+ * cost an extra query per write. Writes are rare (an admin/manager editing
+ * scripts) next to reads (closers loading FLOW constantly), so clearing
+ * everything on any write is cheap and correct, just not maximally precise.
+ */
+const FRAMEWORK_CACHE_TTL_MS = 5 * 60 * 1000;
+const frameworkCache = new Map<string, { value: FullFramework | null; expiresAt: number }>();
+
+function clearFrameworkCache(): void {
+  frameworkCache.clear();
+}
+
 // ─── FRAMEWORKS ──────────────────────────────────────────────────────────────
 
 export async function getFramework(
@@ -52,6 +73,7 @@ export async function createFramework(
       data.updated_by,
     ]
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -85,12 +107,24 @@ export async function updateFramework(
     `UPDATE flow_frameworks SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
 // ─── FULL FRAMEWORK QUERY (HOTPATH) ──────────────────────────────────────────
 
 export async function getFullFramework(orgId: string): Promise<FullFramework | null> {
+  const cached = frameworkCache.get(orgId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value;
+  }
+
+  const result = await getFullFrameworkUncached(orgId);
+  frameworkCache.set(orgId, { value: result, expiresAt: Date.now() + FRAMEWORK_CACHE_TTL_MS });
+  return result;
+}
+
+async function getFullFrameworkUncached(orgId: string): Promise<FullFramework | null> {
   const framework = await getFramework(orgId);
   if (!framework) return null;
 
@@ -175,6 +209,7 @@ export async function createTab(
       data.is_active,
     ]
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -212,6 +247,7 @@ export async function updateTab(
     `UPDATE flow_tabs SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -220,6 +256,7 @@ export async function deleteTab(id: string): Promise<boolean> {
     "DELETE FROM flow_tabs WHERE id = $1",
     [id]
   );
+  clearFrameworkCache();
   return (result.rowCount ?? 0) > 0;
 }
 
@@ -236,6 +273,7 @@ export async function createSection(
     RETURNING *`,
     [tabId, data.label, data.description, data.display_order, data.is_active]
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -269,6 +307,7 @@ export async function updateSection(
     `UPDATE flow_sections SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -277,6 +316,7 @@ export async function deleteSection(id: string): Promise<boolean> {
     "DELETE FROM flow_sections WHERE id = $1",
     [id]
   );
+  clearFrameworkCache();
   return (result.rowCount ?? 0) > 0;
 }
 
@@ -300,6 +340,7 @@ export async function createCard(
       data.is_active,
     ]
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -337,6 +378,7 @@ export async function updateCard(
     `UPDATE flow_cards SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -345,6 +387,7 @@ export async function deleteCard(id: string): Promise<boolean> {
     "DELETE FROM flow_cards WHERE id = $1",
     [id]
   );
+  clearFrameworkCache();
   return (result.rowCount ?? 0) > 0;
 }
 
@@ -370,6 +413,7 @@ export async function createScript(
       data.updated_by,
     ]
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -411,6 +455,7 @@ export async function updateScript(
     `UPDATE flow_scripts SET ${updates.join(", ")} WHERE id = $1 RETURNING *`,
     values
   );
+  clearFrameworkCache();
   return result.rows[0];
 }
 
@@ -419,6 +464,7 @@ export async function deleteScript(id: string): Promise<boolean> {
     "DELETE FROM flow_scripts WHERE id = $1",
     [id]
   );
+  clearFrameworkCache();
   return (result.rowCount ?? 0) > 0;
 }
 
@@ -551,6 +597,7 @@ export async function revertChange(
     );
 
     await client.query("COMMIT");
+    clearFrameworkCache();
     return true;
   } catch (error) {
     await client.query("ROLLBACK");
