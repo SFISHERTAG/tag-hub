@@ -21,6 +21,14 @@ import {
  *   4. The development Private Integration Token, for the single location
  *      named in GHL_LOCATION_ID.
  *
+ * Each tier's failure falls through to the next rather than aborting the
+ * chain — a location can lose its direct-install credential (tier 2, e.g. a
+ * revoked refresh token) while the agency install (tier 3) can still mint it
+ * a token, and losing both of those still shouldn't crash a dev environment
+ * that only needs the PIT (tier 4). Only tier 4 actually throws: a
+ * `GhlConfigError` if no PIT is configured at all, or a
+ * `LocationNotAuthorizedError` if the PIT exists but isn't for this location.
+ *
  * Firestore being unreachable is not fatal in development — resolution falls
  * through to the PIT rather than crashing, so local work continues without
  * `gcloud auth application-default login`.
@@ -86,17 +94,29 @@ export async function resolveToken(locationId: string): Promise<string> {
       return stored.accessToken;
     }
 
-    // 2. Direct install — refresh with its own refresh token.
+    // 2. Direct install — refresh with its own refresh token. A failure here
+    // (revoked/expired refresh token) falls through to tier 3 instead of
+    // aborting the whole chain: the agency install can often still mint a
+    // token for this location even when its own direct-install credential
+    // can't be refreshed. Scoped to its own try/catch so this failure
+    // doesn't reach the outer catch, which would skip tier 3 entirely.
     if (stored?.refreshToken) {
-      const refreshed = await refreshAgencyToken(stored.refreshToken);
-      await saveLocationToken(locationId, {
-        accessToken: refreshed.access_token,
-        refreshToken: refreshed.refresh_token ?? stored.refreshToken,
-        expiresAt: Date.now() + refreshed.expires_in * 1000,
-        source: "direct-install",
-        updatedAt: Date.now(),
-      });
-      return refreshed.access_token;
+      try {
+        const refreshed = await refreshAgencyToken(stored.refreshToken);
+        await saveLocationToken(locationId, {
+          accessToken: refreshed.access_token,
+          refreshToken: refreshed.refresh_token ?? stored.refreshToken,
+          expiresAt: Date.now() + refreshed.expires_in * 1000,
+          source: "direct-install",
+          updatedAt: Date.now(),
+        });
+        return refreshed.access_token;
+      } catch (tier2Error) {
+        console.warn(
+          `[GHL tokens] Tier 2 (direct-install refresh) failed for ${locationId}, falling through to tier 3 (agency-mint):`,
+          tier2Error,
+        );
+      }
     }
 
     // 3. Mint from the agency install.

@@ -702,7 +702,7 @@ export async function revertChange(
     // re-logging the original `changes` object verbatim would claim the
     // revert moved old -> new, backwards from what it actually did.
     const revertedChanges: Record<string, { old: unknown; new: unknown }> = {};
-    for (const [field, fieldChange] of Object.entries(changes)) {
+    for (const [field, fieldChange] of Object.entries(changes) as [string, { old: unknown; new: unknown }][]) {
       revertedChanges[field] = {
         old: fieldChange.new,
         new: fieldChange.old,
