@@ -111,7 +111,14 @@ steps:
       # Unix socket it exposes, not a network address.
       - --add-cloudsql-instances=${_CLOUDSQL_CONNECTION_NAME}
       - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest,SLACK_BOT_TOKEN=slack-bot-token:latest,DB_PASSWORD=tag-postgres-password:latest
-      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
+      # GHL_LOCATION_ID_TAG_GROWTH is the same sub-account as GHL_LOCATION_ID
+      # above, under a second name: lib/dashboard/location-selection.ts reads
+      # it separately to route internal roles (exec/CSM/sales) to TAG's own
+      # location for the closer workspace, distinct from a client's location.
+      # Introduced in code without being added here — every tag_exec/tag_csm/
+      # tag_sales/tag_sales_manager hit on /closer/flow 500'd until this line
+      # existed.
+      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
       # GHL_PIT is deliberately absent. It is a single-location development
       # fallback, and leaving it set in production would let a token-resolution
       # bug silently serve one tenant's credential for every other tenant.
