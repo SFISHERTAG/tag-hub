@@ -59,3 +59,12 @@ export function verifyGhlWebhookRequest(req: Request): boolean {
 
   return verifyHmacSignature(rawBody, signature, secret);
 }
+
+/**
+ * Sign an outbound payload for the `x-ghl-signature` header. Used when one
+ * of these functions calls another internally (phase2 -> phase3), since
+ * phase3 now requires the same signature GHL itself would send.
+ */
+export function signHmacPayload(payload: string, secret: string): string {
+  return createHmac("sha256", secret).update(payload).digest("hex");
+}

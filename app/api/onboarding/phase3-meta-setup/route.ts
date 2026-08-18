@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { signHmacPayload } from "@/lib/webhooks/signature";
 
 /**
  * POST /api/onboarding/phase3-meta-setup
@@ -37,17 +38,27 @@ export async function POST(request: NextRequest) {
       throw new Error("CLOUD_FUNCTIONS_URL not configured");
     }
 
+    const hmacSecret = process.env.GHL_WEBHOOK_HMAC_SECRET;
+    if (!hmacSecret) {
+      throw new Error("GHL_WEBHOOK_HMAC_SECRET not configured");
+    }
+
+    // Phase 3 now requires the same signature GHL itself would send (see
+    // functions/src/webhooks/signature.ts) — sign the exact string sent
+    // as the body, since verification is byte-for-byte over the raw body.
+    const payload = JSON.stringify({
+      locationId,
+      email,
+      intakeData,
+      slackChannelId,
+    });
     const response = await fetch(`${functionsUrl}/webhook/phase3`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-ghl-signature": signHmacPayload(payload, hmacSecret),
       },
-      body: JSON.stringify({
-        locationId,
-        email,
-        intakeData,
-        slackChannelId,
-      }),
+      body: payload,
     });
 
     const result = await response.json();

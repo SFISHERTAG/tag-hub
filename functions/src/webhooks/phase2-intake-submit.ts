@@ -3,7 +3,7 @@ import { createGoogleDoc, shareGoogleDoc, addDocTab } from "../google";
 import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore";
 import { generateAllContent } from "../gemini";
 import { logAutomationEvent } from "../postgres";
-import { verifyGhlWebhookRequest } from "./signature";
+import { verifyGhlWebhookRequest, signHmacPayload } from "./signature";
 
 /**
  * Phase 2: Intake form submission.
@@ -162,15 +162,24 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
         throw new Error("PHASE3_WEBHOOK_URL or CLOUD_FUNCTIONS_URL not configured");
       }
 
+      const hmacSecret = process.env.GHL_WEBHOOK_HMAC_SECRET;
+      if (!hmacSecret) {
+        throw new Error("GHL_WEBHOOK_HMAC_SECRET not configured");
+      }
+
+      const phase3Payload = JSON.stringify({
+        locationId,
+        email,
+        intakeData,
+        slackChannelId,
+      });
       const phase3Response = await fetch(phase3Url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          locationId,
-          email,
-          intakeData,
-          slackChannelId,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-ghl-signature": signHmacPayload(phase3Payload, hmacSecret),
+        },
+        body: phase3Payload,
       });
 
       const phase3Result = await phase3Response.json();

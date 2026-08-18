@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { signHmacPayload } from "@/lib/webhooks/signature";
 
 /**
  * POST /api/onboarding/intake-submit
@@ -32,13 +33,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const hmacSecret = process.env.GHL_WEBHOOK_HMAC_SECRET;
+    if (!hmacSecret) {
+      console.error("GHL_WEBHOOK_HMAC_SECRET not configured");
+      return NextResponse.json(
+        { error: "Provisioning service not configured" },
+        { status: 500 }
+      );
+    }
+
+    // Phase 2 now requires the same signature GHL itself would send (see
+    // functions/src/webhooks/signature.ts) — sign the exact string sent
+    // as the body, since verification is byte-for-byte over the raw body.
+    const payload = JSON.stringify({ locationId, email, intakeData });
     const response = await fetch(phase2Url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.PHASE2_WEBHOOK_SECRET}`,
+        "x-ghl-signature": signHmacPayload(payload, hmacSecret),
       },
-      body: JSON.stringify({ locationId, email, intakeData }),
+      body: payload,
     });
 
     if (!response.ok) {
