@@ -37,21 +37,24 @@ export async function getCreativesForCampaign(campaignId: string): Promise<MetaC
   try {
     const api = getMetaApi();
 
-    const response = await api.get(
-      `/${campaignId}/ads`,
-      {
-        fields: [
-          "id",
-          "name",
-          "status",
-          "effective_status",
-          "created_time",
-          "adset_id",
-          "campaign_id",
-        ],
-        limit: 100,
-      },
-    );
+    const response = (
+      await api.call<{ data: any[] }>(
+        "GET",
+        `/${campaignId}/ads`,
+        {
+          fields: [
+            "id",
+            "name",
+            "status",
+            "effective_status",
+            "created_time",
+            "adset_id",
+            "campaign_id",
+          ],
+          limit: 100,
+        },
+      )
+    ).data;
 
     const creatives: MetaCreative[] = [];
 
@@ -84,7 +87,8 @@ export async function getCreativeDetail(creativeId: string): Promise<MetaCreativ
   try {
     const api = getMetaApi();
 
-    const response = await api.get(
+    const response = await api.call<any>(
+      "GET",
       `/${creativeId}`,
       {
         fields: [

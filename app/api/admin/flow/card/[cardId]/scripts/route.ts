@@ -6,7 +6,7 @@ import {
   getScript,
   logChange,
 } from "@/lib/flow/db";
-import { requireSession } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +28,8 @@ export async function POST(
   { params }: { params: Promise<{ cardId: string }> }
 ) {
   try {
-    const session = await requireSession(request);
-    if (!session || !["tag_exec", "tag_admin"].includes(session.role || "")) {
+    const session = await getSession();
+    if (!session || !["tag_exec", "tag_admin"].includes(session.currentRole || "")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -45,9 +45,9 @@ export async function POST(
 
     const script = await createScript(cardId, {
       content: body.content,
-      why: body.why,
-      notes: body.notes,
-      version_tag: body.version_tag,
+      why: body.why ?? null,
+      notes: body.notes ?? null,
+      version_tag: body.version_tag ?? null,
       tags: body.tags || [],
       created_by: session.email || "unknown",
       updated_by: session.email || "unknown",
@@ -86,8 +86,8 @@ export async function PATCH(
   { params }: { params: Promise<{ cardId: string }> }
 ) {
   try {
-    const session = await requireSession(request);
-    if (!session || !["tag_exec", "tag_admin"].includes(session.role || "")) {
+    const session = await getSession();
+    if (!session || !["tag_exec", "tag_admin"].includes(session.currentRole || "")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -129,9 +129,9 @@ export async function PATCH(
 
     const updated = await updateScript(scriptId, {
       content: body.content,
-      why: body.why,
-      notes: body.notes,
-      version_tag: body.version_tag,
+      why: body.why ?? null,
+      notes: body.notes ?? null,
+      version_tag: body.version_tag ?? null,
       tags: body.tags,
       updated_by: session.email || "unknown",
     });
@@ -167,8 +167,8 @@ export async function DELETE(
   { params }: { params: Promise<{ cardId: string }> }
 ) {
   try {
-    const session = await requireSession(request);
-    if (!session || !["tag_exec", "tag_admin"].includes(session.role || "")) {
+    const session = await getSession();
+    if (!session || !["tag_exec", "tag_admin"].includes(session.currentRole || "")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

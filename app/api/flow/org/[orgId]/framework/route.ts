@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFullFramework } from "@/lib/flow/db";
-import { requireSession } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
-    const session = await requireSession(request);
+    const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

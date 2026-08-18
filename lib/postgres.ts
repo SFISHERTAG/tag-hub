@@ -19,7 +19,7 @@ function getPool(): pg.Pool {
       database: process.env.DB_NAME || "tag_automation",
     });
 
-    poolInstance.on("error", (err) => {
+    poolInstance.on("error", (err: Error) => {
       console.error("Postgres pool error:", err);
     });
   }

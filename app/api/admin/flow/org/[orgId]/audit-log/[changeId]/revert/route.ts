@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revertChange, getAuditEntry } from "@/lib/flow/db";
-import { requireSession } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +13,8 @@ export async function POST(
   { params }: { params: Promise<{ orgId: string; changeId: string }> }
 ) {
   try {
-    const session = await requireSession(request);
-    if (!session || !["tag_exec", "tag_admin"].includes(session.role || "")) {
+    const session = await getSession();
+    if (!session || !["tag_exec", "tag_admin"].includes(session.currentRole || "")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

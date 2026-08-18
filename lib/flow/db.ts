@@ -100,21 +100,21 @@ export async function getFullFramework(orgId: string): Promise<FullFramework | n
   );
 
   const fullTabs = await Promise.all(
-    tabs.rows.map(async (tab) => {
+    tabs.rows.map(async (tab: Record<string, any>) => {
       const sections = await pool.query(
         "SELECT * FROM flow_sections WHERE tab_id = $1 AND is_active = true ORDER BY display_order",
         [tab.id]
       );
 
       const fullSections = await Promise.all(
-        sections.rows.map(async (section) => {
+        sections.rows.map(async (section: Record<string, any>) => {
           const cards = await pool.query(
             "SELECT * FROM flow_cards WHERE section_id = $1 AND is_active = true ORDER BY display_order",
             [section.id]
           );
 
           const fullCards = await Promise.all(
-            cards.rows.map(async (card) => {
+            cards.rows.map(async (card: Record<string, any>) => {
               const scripts = await pool.query(
                 "SELECT * FROM flow_scripts WHERE card_id = $1 ORDER BY created_at DESC LIMIT 1",
                 [card.id]
@@ -220,7 +220,7 @@ export async function deleteTab(id: string): Promise<boolean> {
     "DELETE FROM flow_tabs WHERE id = $1",
     [id]
   );
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 // ─── SECTIONS ────────────────────────────────────────────────────────────────
@@ -277,7 +277,7 @@ export async function deleteSection(id: string): Promise<boolean> {
     "DELETE FROM flow_sections WHERE id = $1",
     [id]
   );
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 // ─── CARDS ──────────────────────────────────────────────────────────────────
@@ -345,14 +345,14 @@ export async function deleteCard(id: string): Promise<boolean> {
     "DELETE FROM flow_cards WHERE id = $1",
     [id]
   );
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 // ─── SCRIPTS ────────────────────────────────────────────────────────────────
 
 export async function createScript(
   cardId: string,
-  data: Omit<FlowScript, "id" | "created_at" | "updated_at">
+  data: Omit<FlowScript, "id" | "card_id" | "created_at" | "updated_at">
 ): Promise<FlowScript> {
   const result = await pool.query(
     `INSERT INTO flow_scripts
@@ -419,7 +419,7 @@ export async function deleteScript(id: string): Promise<boolean> {
     "DELETE FROM flow_scripts WHERE id = $1",
     [id]
   );
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function getScript(id: string): Promise<FlowScript | null> {
@@ -473,10 +473,12 @@ export async function getAuditLog(
     LIMIT $2 OFFSET $3`,
     [orgId, limit, offset]
   );
-  return result.rows.map((row) => ({
-    ...row,
-    changes: typeof row.changes === "string" ? JSON.parse(row.changes) : row.changes,
-  }));
+  return result.rows.map(
+    (row: Record<string, any>): FlowAuditLog => ({
+      ...row,
+      changes: typeof row.changes === "string" ? JSON.parse(row.changes) : row.changes,
+    }) as FlowAuditLog,
+  );
 }
 
 export async function getAuditEntry(id: string): Promise<FlowAuditLog | null> {

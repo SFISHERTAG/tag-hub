@@ -16,7 +16,7 @@ const ALLOWED_HATS = [
 export default async function FlowPage() {
   const session = await requireSession();
 
-  if (!ALLOWED_HATS.includes(session.hat)) {
+  if (!ALLOWED_HATS.includes(session.currentRole)) {
     return (
       <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Access denied</h2>

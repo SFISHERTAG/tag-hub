@@ -45,22 +45,25 @@ export async function getAdAccountCampaigns(adAccountId: string): Promise<MetaCa
     // Format: "act_123456" for ad account ID
     const accountPath = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
 
-    const response = await api.get(
-      `/${accountPath}/campaigns`,
-      {
-        fields: [
-          "id",
-          "name",
-          "status",
-          "created_time",
-          "start_date",
-          "end_date",
-          "daily_budget",
-          "lifetime_budget",
-        ],
-        limit: 100,
-      },
-    );
+    const response = (
+      await api.call<{ data: any[] }>(
+        "GET",
+        `/${accountPath}/campaigns`,
+        {
+          fields: [
+            "id",
+            "name",
+            "status",
+            "created_time",
+            "start_date",
+            "end_date",
+            "daily_budget",
+            "lifetime_budget",
+          ],
+          limit: 100,
+        },
+      )
+    ).data;
 
     const campaigns: MetaCampaign[] = [];
 
@@ -96,13 +99,16 @@ async function getCampaignMetrics(campaignId: string, datePreset: string): Promi
   try {
     const api = getMetaApi();
 
-    const response = await api.get(
-      `/${campaignId}/insights`,
-      {
-        fields: ["spend", "impressions", "clicks", "conversions", "lead_generation_by_ad_id"],
-        date_preset: datePreset,
-      },
-    );
+    const response = (
+      await api.call<{ data: any[] }>(
+        "GET",
+        `/${campaignId}/insights`,
+        {
+          fields: ["spend", "impressions", "clicks", "conversions", "lead_generation_by_ad_id"],
+          date_preset: datePreset,
+        },
+      )
+    ).data;
 
     if (!response || response.length === 0) {
       return { spend: 0, impressions: 0, clicks: 0, conversions: 0, leads: 0, roas: 0 };
@@ -135,7 +141,8 @@ export async function getCampaignDetail(campaignId: string): Promise<MetaCampaig
   try {
     const api = getMetaApi();
 
-    const response = await api.get(
+    const response = await api.call<any>(
+      "GET",
       `/${campaignId}`,
       {
         fields: [
@@ -182,13 +189,16 @@ export async function getCampaignCreativeCount(campaignId: string): Promise<numb
   try {
     const api = getMetaApi();
 
-    const response = await api.get(
-      `/${campaignId}/ads`,
-      {
-        fields: ["id"],
-        limit: 1000,
-      },
-    );
+    const response = (
+      await api.call<{ data: any[] }>(
+        "GET",
+        `/${campaignId}/ads`,
+        {
+          fields: ["id"],
+          limit: 1000,
+        },
+      )
+    ).data;
 
     return response ? response.length : 0;
   } catch (error) {

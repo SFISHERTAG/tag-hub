@@ -1,15 +1,6 @@
-import { db } from "@/lib/firestore";
-import {
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-} from "firebase/firestore";
+import "server-only";
+import { Timestamp } from "@google-cloud/firestore";
+import { firestore } from "@/lib/firestore";
 
 export type ProgressDoc = {
   completed: boolean;
@@ -26,22 +17,18 @@ export async function getUserCheckboxProgress(
   subsectionId: string,
   checkboxId: string,
 ): Promise<ProgressDoc | null> {
-  const docRef = doc(
-    db,
-    "userProgress",
-    uid,
-    "courses",
-    courseId,
-    "sections",
-    sectionId,
-    "subsections",
-    subsectionId,
-    "checkboxes",
-    checkboxId,
+  const docRef = firestore().doc(
+    `userProgress/${uid}/courses/${courseId}/sections/${sectionId}/subsections/${subsectionId}/checkboxes/${checkboxId}`,
   );
 
-  const snapshot = await getDoc(docRef);
-  return snapshot.exists() ? (snapshot.data() as ProgressDoc) : null;
+  const snapshot = await docRef.get();
+  if (!snapshot.exists) return null;
+
+  const data = snapshot.data()!;
+  return {
+    completed: Boolean(data.completed),
+    completedAt: data.completedAt instanceof Timestamp ? data.completedAt.toMillis() : undefined,
+  };
 }
 
 /**
@@ -55,25 +42,14 @@ export async function updateCheckboxProgress(
   checkboxId: string,
   completed: boolean,
 ): Promise<void> {
-  const docRef = doc(
-    db,
-    "userProgress",
-    uid,
-    "courses",
-    courseId,
-    "sections",
-    sectionId,
-    "subsections",
-    subsectionId,
-    "checkboxes",
-    checkboxId,
+  const docRef = firestore().doc(
+    `userProgress/${uid}/courses/${courseId}/sections/${sectionId}/subsections/${subsectionId}/checkboxes/${checkboxId}`,
   );
 
-  await setDoc(
-    docRef,
+  await docRef.set(
     {
       completed,
-      completedAt: completed ? serverTimestamp() : null,
+      completedAt: completed ? Timestamp.now() : null,
     },
     { merge: true },
   );
@@ -87,33 +63,32 @@ export async function getCourseProgress(
   courseId: string,
 ): Promise<Map<string, ProgressDoc>> {
   const coursePath = `userProgress/${uid}/courses/${courseId}`;
-  const collectionRef = collection(db, coursePath, "sections");
-
   const progress = new Map<string, ProgressDoc>();
 
-  // Firebase doesn't support recursive collection queries in the client SDK,
-  // so we need to fetch sections, then subsections, then checkboxes
-  const sectionsSnap = await getDocs(collectionRef);
+  // Firestore has no recursive collection-group query scoped to this one
+  // course/user path, so sections -> subsections -> checkboxes are walked
+  // level by level, same shape the original client-SDK version used.
+  const sectionsSnap = await firestore().collection(`${coursePath}/sections`).get();
 
   for (const sectionSnap of sectionsSnap.docs) {
-    const subsectionsRef = collection(db, coursePath, "sections", sectionSnap.id, "subsections");
-    const subsectionsSnap = await getDocs(subsectionsRef);
+    const subsectionsSnap = await firestore()
+      .collection(`${coursePath}/sections/${sectionSnap.id}/subsections`)
+      .get();
 
     for (const subsectionSnap of subsectionsSnap.docs) {
-      const checkboxesRef = collection(
-        db,
-        coursePath,
-        "sections",
-        sectionSnap.id,
-        "subsections",
-        subsectionSnap.id,
-        "checkboxes",
-      );
-      const checkboxesSnap = await getDocs(checkboxesRef);
+      const checkboxesSnap = await firestore()
+        .collection(
+          `${coursePath}/sections/${sectionSnap.id}/subsections/${subsectionSnap.id}/checkboxes`,
+        )
+        .get();
 
       for (const checkboxSnap of checkboxesSnap.docs) {
+        const data = checkboxSnap.data();
         const key = `${sectionSnap.id}/${subsectionSnap.id}/${checkboxSnap.id}`;
-        progress.set(key, checkboxSnap.data() as ProgressDoc);
+        progress.set(key, {
+          completed: Boolean(data.completed),
+          completedAt: data.completedAt instanceof Timestamp ? data.completedAt.toMillis() : undefined,
+        });
       }
     }
   }

@@ -102,7 +102,7 @@ export async function getPhase3History(locationId: string): Promise<Phase3Status
       [locationId]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map((row: Record<string, any>) => ({
       locationId: row.location_id,
       phase: row.phase,
       event: row.event,

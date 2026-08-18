@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { DashboardConfig, WidgetDefinition } from "@/lib/dashboard/widget-definitions";
+import type {
+  DashboardConfig,
+  DashboardPage,
+  WidgetDefinition,
+  WidgetPlacement,
+} from "@/lib/dashboard/widget-definitions";
 import type { Role } from "@/lib/auth/roles";
 import { saveDashboardConfigAction } from "./actions";
 
@@ -25,25 +30,27 @@ export function CustomizeClient({
 
   const activeWidgetIds = new Set(currentPage.widgets.map((w) => w.widgetId));
 
-  async function toggleWidget(widgetId: string) {
-    const updatedPage = { ...currentPage };
-    const existingIndex = updatedPage.widgets.findIndex((w) => w.widgetId === widgetId);
+  async function toggleWidget(page: DashboardPage, widgetId: string) {
+    const isActive = page.widgets.some((w) => w.widgetId === widgetId);
+    let widgets: WidgetPlacement[];
 
-    if (existingIndex >= 0) {
-      // Remove widget
-      updatedPage.widgets.splice(existingIndex, 1);
+    if (isActive) {
+      widgets = page.widgets.filter((w) => w.widgetId !== widgetId);
     } else {
-      // Add widget
       const widget = availableWidgets.find((w) => w.id === widgetId);
-      if (widget) {
-        updatedPage.widgets.push({
+      if (!widget) return;
+      widgets = [
+        ...page.widgets,
+        {
           id: `${widgetId}_${Date.now()}`,
           widgetId,
           position: { x: 0, y: 0 },
           size: widget.defaultSize,
-        });
-      }
+        },
+      ];
     }
+
+    const updatedPage: DashboardPage = { ...page, widgets };
 
     const updatedConfig: DashboardConfig = {
       ...config,
@@ -76,7 +83,7 @@ export function CustomizeClient({
             return (
               <button
                 key={widget.id}
-                onClick={() => toggleWidget(widget.id)}
+                onClick={() => toggleWidget(currentPage, widget.id)}
                 disabled={saving}
                 className={`rounded-lg border-2 p-4 text-left transition-all ${
                   isActive

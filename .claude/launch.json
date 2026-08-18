@@ -5,7 +5,7 @@
     {
       "name": "tag-hub",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "hub"],
+      "runtimeArgs": ["run", "dev"],
       "port": 3010
     }
   ]
