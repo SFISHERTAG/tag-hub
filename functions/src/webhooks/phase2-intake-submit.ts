@@ -3,6 +3,7 @@ import { createGoogleDoc, shareGoogleDoc, addDocTab } from "../google";
 import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore";
 import { generateAllContent } from "../gemini";
 import { logAutomationEvent } from "../postgres";
+import { verifyGhlWebhookRequest } from "./signature";
 
 /**
  * Phase 2: Intake form submission.
@@ -20,6 +21,11 @@ import { logAutomationEvent } from "../postgres";
  */
 export async function handlePhase2(req: Request, res: Response): Promise<void> {
   try {
+    if (!verifyGhlWebhookRequest(req)) {
+      res.status(401).json({ error: "Invalid or missing webhook signature" });
+      return;
+    }
+
     const { locationId, email, intakeData } = req.body;
 
     if (!locationId || !email || !intakeData) {
