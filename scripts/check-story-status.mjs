@@ -29,8 +29,16 @@ function parseStory(file) {
   const tasks = [...text.matchAll(/^- \[( |x)\]/gim)];
   const checked = tasks.filter((t) => t[1].toLowerCase() === "x").length;
   const total = tasks.length;
-  // Files referenced in backticks anywhere in the doc (Tasks/Dev notes), e.g. `lib/foo/bar.ts`
-  const referenced = [...text.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)].map((m) => m[1]);
+  // Files this story actually owns are the ones listed on its own Tasks
+  // checklist lines, e.g. `- [ ] lib/foo/bar.ts`. Scoping to task lines
+  // (rather than every backtick-quoted path anywhere in the doc) avoids
+  // flagging incidental mentions elsewhere - e.g. Acceptance Criteria prose
+  // that cites another story's file as background context isn't a claim
+  // that *this* story tracks that file.
+  const referenced = text
+    .split("\n")
+    .filter((line) => /^- \[( |x)\]/i.test(line))
+    .flatMap((line) => [...line.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)].map((m) => m[1]));
   return { file, status, checked, total, referenced };
 }
 
