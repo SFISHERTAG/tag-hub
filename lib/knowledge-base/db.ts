@@ -1,5 +1,6 @@
 import "server-only";
 import { firestore } from "@/lib/firestore";
+import { toFields, fromFields } from "./serialize";
 import type { ManualPage, ManualPageSummary, ManualPageVersion } from "./types";
 
 /**
@@ -10,25 +11,18 @@ import type { ManualPage, ManualPageSummary, ManualPageVersion } from "./types";
  * the live doc, mirroring the flow_audit_log revert-capable pattern
  * (lib/flow/db.ts#logChange) — edits are never destructive, and reverting
  * writes a new version rather than deleting the ones after it.
+ *
+ * Field-level (de)serialization (the `blocksJson` string encoding) lives in
+ * `./serialize.ts`, not here — that file has no `server-only` marker so
+ * `scripts/migrate-manual-to-firestore.ts` (a plain Node script, not a
+ * Next.js server context) can share it without triggering server-only's
+ * "cannot be imported from a Client Component" throw.
  */
 
 const COLLECTION = "manual_pages";
 
 function pageDoc(pageId: string) {
   return firestore().collection(COLLECTION).doc(pageId);
-}
-
-function toManualPage(id: string, data: FirebaseFirestore.DocumentData): ManualPage {
-  return {
-    id,
-    num: data.num,
-    title: data.title,
-    eyebrow: data.eyebrow,
-    lede: data.lede,
-    status: data.status,
-    level: data.level,
-    blocks: data.blocks ?? [],
-  };
 }
 
 export async function listManualPages(): Promise<ManualPageSummary[]> {
@@ -42,7 +36,7 @@ export async function listManualPages(): Promise<ManualPageSummary[]> {
 export async function getManualPage(pageId: string): Promise<ManualPage | null> {
   const doc = await pageDoc(pageId).get();
   if (!doc.exists) return null;
-  return toManualPage(doc.id, doc.data()!);
+  return fromFields(doc.id, doc.data()!);
 }
 
 /**
@@ -52,12 +46,22 @@ export async function getManualPage(pageId: string): Promise<ManualPage | null> 
  */
 export async function seedManualPage(page: ManualPage): Promise<void> {
   const { id, ...fields } = page;
-  await pageDoc(id).set(fields);
+  await pageDoc(id).set(toFields(fields));
+}
+
+function toManualPageVersion(id: string, data: FirebaseFirestore.DocumentData): ManualPageVersion {
+  return {
+    id,
+    page: fromFields(data.pageId, data.page),
+    authorUid: data.authorUid,
+    authorEmail: data.authorEmail,
+    createdAt: data.createdAt,
+  };
 }
 
 export async function listManualPageVersions(pageId: string): Promise<ManualPageVersion[]> {
   const snap = await pageDoc(pageId).collection("versions").orderBy("createdAt", "desc").get();
-  return snap.docs.map((doc) => doc.data() as ManualPageVersion);
+  return snap.docs.map((doc) => toManualPageVersion(doc.id, doc.data()));
 }
 
 /**
@@ -76,17 +80,17 @@ export async function updateManualPage(
   if (!current.exists) throw new Error(`manual_pages/${pageId} does not exist`);
 
   const versionId = doc.collection("versions").doc().id;
-  const version: ManualPageVersion = {
-    id: versionId,
-    page: toManualPage(pageId, current.data()!),
+  const versionFields = {
+    pageId,
+    page: current.data()!, // already in stored (blocksJson) form — round-trips through fromFields on read
     authorUid: actor.uid,
     authorEmail: actor.email,
     createdAt: Date.now(),
   };
 
   const batch = firestore().batch();
-  batch.set(doc.collection("versions").doc(versionId), version);
-  batch.set(doc, next);
+  batch.set(doc.collection("versions").doc(versionId), versionFields);
+  batch.set(doc, toFields(next));
   await batch.commit();
 }
 
@@ -97,7 +101,7 @@ export async function revertManualPage(
 ): Promise<void> {
   const versionDoc = await pageDoc(pageId).collection("versions").doc(versionId).get();
   if (!versionDoc.exists) throw new Error(`version ${versionId} not found for manual_pages/${pageId}`);
-  const version = versionDoc.data() as ManualPageVersion;
+  const version = toManualPageVersion(versionDoc.id, versionDoc.data()!);
   const { num, title, eyebrow, lede, status, level, blocks } = version.page;
   await updateManualPage(pageId, { num, title, eyebrow, lede, status, level, blocks }, actor);
 }

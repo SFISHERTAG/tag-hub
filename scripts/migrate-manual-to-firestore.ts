@@ -1,5 +1,6 @@
 import { firestore } from "../lib/firestore";
 import manual from "../_archive/manual-content.json";
+import { toFields } from "../lib/knowledge-base/serialize";
 import type { ManualPage } from "../lib/knowledge-base/types";
 
 /**
@@ -31,7 +32,7 @@ async function migrate() {
   const pages = manual.pages as ManualPage[];
   for (const page of pages) {
     const { id, ...fields } = page;
-    await firestore().collection("manual_pages").doc(id).set(fields);
+    await firestore().collection("manual_pages").doc(id).set(toFields(fields));
     console.log(`  ✓ ${id} — ${page.title}`);
   }
 
