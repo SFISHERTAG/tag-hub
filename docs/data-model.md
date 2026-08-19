@@ -20,10 +20,17 @@ boundary changes. Same commit as the code change.
 | `flow_scripts` | FLOW automation editor content | doc ID | No |
 | `creatives` | Campaign creative assets | doc ID | No |
 | `bug_reports` | Client-submitted bugs and feedback | doc ID | No |
+| `manual_pages` | Knowledge base (TAG CSM Operating Manual) content, viewable in-app | doc ID (`p0`–`p13`, matches `_archive/manual-content.json`) | No |
+| `manual_pages/{id}/versions` | Version history for one knowledge base page — full prior snapshot + author + timestamp, written before every admin edit | doc ID (auto) | No |
 
 **Why Firestore for these:** real-time sync, permission-based read/write rules,
 sub-millisecond lookups, immutable audit trail (`setOnServer()` guards). None of
 these are read from Postgres.
+
+**`manual_pages` versioning is not `audit_log`.** It follows the
+`flow_audit_log` revert-capable pattern instead (own sub-collection, full
+content snapshot per version) — see "Audit trail" below for why the two
+patterns differ.
 
 ---
 
