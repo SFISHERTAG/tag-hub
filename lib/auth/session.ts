@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "./admin";
-import { isRole, type Role } from "./roles";
+import { isRole, ROLES, type Role } from "./roles";
 import { listAllLocationIds } from "../ghl/tenants";
 
 /**
@@ -117,7 +117,11 @@ export async function getSession(): Promise<Session | null> {
     // tag_exec, tag_csd, and admin get all known locations dynamically —
     // a CS Director's whole-department view needs every client's location
     // reachable, not just the ones on their own individual grant.
-    if (currentRole === "tag_exec" || currentRole === "tag_csd" || currentRole === "admin") {
+    if (
+      currentRole === ROLES.TAG_EXEC ||
+      currentRole === ROLES.TAG_CSD ||
+      currentRole === ROLES.ADMIN
+    ) {
       locations = await listAllLocationIds();
     }
 
@@ -151,9 +155,9 @@ export async function requireLocationAccess(locationId: string): Promise<void> {
 
   // tag_exec, tag_csd, and admin can access any location
   if (
-    session.currentRole === "tag_exec" ||
-    session.currentRole === "tag_csd" ||
-    session.currentRole === "admin"
+    session.currentRole === ROLES.TAG_EXEC ||
+    session.currentRole === ROLES.TAG_CSD ||
+    session.currentRole === ROLES.ADMIN
   )
     return;
 
@@ -164,7 +168,7 @@ export async function requireLocationAccess(locationId: string): Promise<void> {
   // tenant (Story 3.3) is what grants access, scoped to exactly the location
   // that was entered, by the same user who entered it, and only for as long
   // as the impersonation cookie lives.
-  if (session.currentRole === "tag_csm") {
+  if (session.currentRole === ROLES.TAG_CSM) {
     const impersonation = await getImpersonation();
     if (impersonation && impersonation.locationId === locationId && impersonation.actorId === session.uid) {
       return;

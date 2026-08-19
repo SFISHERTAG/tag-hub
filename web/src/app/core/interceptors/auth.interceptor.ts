@@ -10,7 +10,12 @@ import { Observable, catchError, finalize, map, of, shareReplay, switchMap, thro
  */
 let refreshInFlight: Observable<boolean> | null = null;
 
-const REFRESH_URL = '/api/auth/session';
+/**
+ * POST, not GET, and not /api/auth/session — that route is POST-only (it mints
+ * a cookie from an ID token) so the old GET here would have 405'd even once the
+ * interceptor ordering let it run.
+ */
+const REFRESH_URL = '/api/auth/refresh';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const http = inject(HttpClient);
@@ -24,7 +29,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       if (!refreshInFlight) {
-        refreshInFlight = http.get(REFRESH_URL, { withCredentials: true }).pipe(
+        refreshInFlight = http.post(REFRESH_URL, null, { withCredentials: true }).pipe(
           map(() => true),
           catchError(() => of(false)),
           finalize(() => {

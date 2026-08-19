@@ -58,10 +58,13 @@ sibling integrations, in both the Angular frontend and the backend:
 - Backend: shared utility (HTTP, auth, logging) goes to `lib/` and is imported by all
   integrations; cross-integration calls go through the API, never direct function imports.
 - Frontend: each integration is a standalone, lazy-loaded Angular feature module with zero
-  imports from any sibling integration module. Exact target paths are defined in the Phase
-  1 file tree; enforce the boundary via ESLint import rules once that structure exists
-  (mirroring the backend's `lib/**` exception: shared Angular services/pipes/directives may
-  be imported anywhere, integration modules may import from shared, never from each other).
+  imports from any sibling integration module. Exact target paths are defined in
+  `docs/frontend-file-tree.md`, and the boundary is enforced by the `no-restricted-imports`
+  zones in `web/eslint.config.js`, which are written directly from that document — move a
+  directory in one and you move it in the other, same commit. (Mirrors the backend's
+  `lib/**` exception: `core/` and `shared/` may be imported anywhere; integration modules
+  may import from them, never from each other. `web/src/app/widget-loaders.ts` is the one
+  declared exemption, as the registry's composition root.)
 - Widgets register through a `WidgetRegistry` and are resolved at runtime by ID + required
   permission. The dashboard shell knows nothing about GHL, Meta, or any other integration.
 - All HTTP goes through typed service layers. No raw `HttpClient` calls in components.

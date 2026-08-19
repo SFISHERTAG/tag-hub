@@ -35,6 +35,19 @@ export function proxy(request: NextRequest) {
 
   if (request.cookies.has(SESSION_COOKIE)) return NextResponse.next();
 
+  // An API caller gets a status code, not a document. Redirecting an XHR to
+  // /signin hands it an HTML page under a 200, which reads to the client as
+  // success — and left the Angular authInterceptor's refresh-on-401 with no
+  // 401 to ever fire on. Body shape matches lib/api/errorInterceptor.ts's
+  // ApiError, the same type the routes themselves return via
+  // lib/auth/api-session.ts.
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json(
+      { message: "Not signed in", context: `${request.method} ${pathname}`, status: 401 },
+      { status: 401 },
+    );
+  }
+
   const signin = new URL("/signin", request.nextUrl.origin);
   // Preserve where they were headed so sign-in can return them there.
   if (pathname !== "/") signin.searchParams.set("next", `${pathname}${search}`);
@@ -44,6 +57,16 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Everything except Next internals and static assets.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    //
+    // The Angular build's own output has to be listed explicitly: its bundles
+    // are `main-<hash>.js` / `styles-<hash>.css`, plus ngsw-worker.js,
+    // ngsw.json, safety-worker.js and manifest.webmanifest, none of which match
+    // the Next internals above. Without these exclusions a signed-out visitor
+    // requesting the app's own JavaScript is redirected to /signin, so the
+    // sign-in page can never load the bundle that renders it.
+    //
+    // These are compiled, public, cache-busted assets containing no session
+    // data. Gating them on a cookie protects nothing.
+    "/((?!_next/static|_next/image|favicon.ico|ngsw-worker\\.js|ngsw\\.json|safety-worker\\.js|worker-basic\\.min\\.js|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|js|css|map|woff|woff2|ttf)$).*)",
   ],
 };

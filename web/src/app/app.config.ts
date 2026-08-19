@@ -13,7 +13,16 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    // Order matters and is not obvious: withInterceptors composes via
+    // reduceRight, so the LAST entry is outermost and sees an error first.
+    // With authInterceptor last, errorInterceptor's catchError ran first and
+    // rethrew a plain ApiError; authInterceptor then tested
+    // `error instanceof HttpErrorResponse`, got false, and never refreshed —
+    // the mandated single-in-flight 401 refresh was unreachable dead code.
+    // errorInterceptor must be outermost: authInterceptor gets the raw
+    // HttpErrorResponse and may retry, and only a failure that survives the
+    // retry becomes a typed ApiError for the caller.
+    provideHttpClient(withInterceptors([errorInterceptor, authInterceptor])),
     // Swap to a real HTTP-backed RbacService here when the session API
     // lands — every consumer depends on RBAC_SERVICE, not this class.
     { provide: RBAC_SERVICE, useClass: MockRbacService },
