@@ -43,7 +43,8 @@ export function SignInForm({ next }: { next: string }) {
       }
 
       setStep("code");
-    } catch {
+    } catch (error) {
+      console.error("OTP request failed:", error);
       setError("Network problem. Try again.");
     }
     setPending(false);
@@ -88,7 +89,8 @@ export function SignInForm({ next }: { next: string }) {
 
       router.replace(next);
       router.refresh();
-    } catch {
+    } catch (error) {
+      console.error("Sign-in completion failed:", error);
       setError("Could not complete sign-in. Try again.");
       setPending(false);
     }

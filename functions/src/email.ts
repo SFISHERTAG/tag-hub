@@ -113,7 +113,7 @@ export async function sendMetaAccessRequest(
   data: {
     clientName: string;
     metaAdAccountId: string;
-    systemUserId: string;
+    tagAccessEmail: string;
     instructions: string;
   }
 ): Promise<void> {
@@ -138,13 +138,12 @@ export async function sendMetaAccessRequest(
         <h3>How to Grant Access:</h3>
         <ol>
           <li>Go to <a href="https://business.facebook.com">business.facebook.com</a></li>
-          <li>Click Settings → Users and Permissions</li>
-          <li>Find our system user: <strong>${data.systemUserId}</strong></li>
-          <li>Grant Admin access to your ad account</li>
+          <li>Click Business Settings → Users → People → Add</li>
+          <li>Add <strong>${data.tagAccessEmail}</strong> as a Business Manager Admin (not just access to one ad account — full Business Manager Admin)</li>
           <li>Reply to this email confirming access is granted</li>
         </ol>
 
-        <p>Once you grant access, we'll automatically configure your account for campaign optimization and reporting.</p>
+        <p>Once you grant access, we handle the rest ourselves — no further action needed on your end. We'll configure your account for campaign optimization and reporting.</p>
 
         <p>Have questions? Reply to this email.</p>
         <p>— TAG Success Team</p>

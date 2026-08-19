@@ -244,6 +244,12 @@
         },
         {
           "type": "note",
+          "severity": "hard",
+          "title": "How \"Ad account access granted\" actually works (updated 2026-08-19)",
+          "content": "We do not use Meta Business Manager Partner (business-to-business) sharing — no Client is Partner-connected to TAG's Business Manager, and none will be. Access works in two steps instead:\n\n1. The Client adds support@taxadvisorygrowth.net as a Business Manager Admin — Business Settings → Users → People → Add. It must be full Business Manager Admin, not just Advertiser/Admin access scoped to one ad account. That single step is the entire Client-side ask.\n2. From that login, TAG creates a System User inside the Client's own Business Manager, installs TAG's app (tag-hub-server) if it isn't already selectable, assigns the Client's ad account and pixel to the System User, and generates the access token the Hub app uses for automated spend/ROAS/campaign management. The Client never touches Meta's System User settings.\n\nDon't ask a Client to create a System User themselves or to grant access to a TAG-owned one that already exists — both of those assume a Partner relationship, which we deliberately don't use. Before checking this row done, confirm the grant was Business Manager Admin, not ad-account-level Advertiser access — Advertiser-only access doesn't expose System Users at all, and you'll hit a dead end mid-build."
+        },
+        {
+          "type": "note",
           "title": "If the pre-call video isn't filmed",
           "content": "Don't hold the launch for it. Clone the step, strip the video block, replace it with a short thank-you headline, and publish it as a plain thank-you page. Swap the real video in when it arrives. A Client waiting on their own asset shouldn't cost them a week of spend."
         }

@@ -120,4 +120,17 @@ Immutability is enforced by Firestore security rules (see `.firebase/firestore.r
 course structure reads from Postgres, user progress reads from Firestore. 
 Status: blocked on product decision.
 
+**`locations` — planned Meta token field (not yet built):** per
+`docs/meta-live-launch-plan.md`'s Phase 2.5 (decided 2026-08-19), every client
+onboarded going forward gets their own Meta System User token (created inside
+the client's own Business Manager, no Partner/business-to-business sharing).
+`lib/meta/client.ts` currently authenticates with one global
+`META_SYSTEM_USER_TOKEN` env var; the `Tenant` type in `lib/ghl/tenants.ts`
+has no per-tenant token field. This needs a `metaSystemUserToken?: string`
+field added to `Tenant`/the `locations` doc shape, with `lib/meta/client.ts`
+changed to initialize per-tenant instead of once globally — mirroring the
+tiered-fallback pattern `lib/ghl/tokens.ts` already uses (tenant's own
+credential first, TAG's shared System User token as fallback for the 3
+already-partnered legacy clients). Not started.
+
 Until resolved: never assume "it's in Postgres" when reading courses.

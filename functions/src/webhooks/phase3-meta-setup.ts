@@ -11,7 +11,11 @@ import { checkWebhookSecret } from "../lib/webhooks/secret";
  *
  * Actions:
  * 1. Check if client provided Meta ad account ID in intake
- * 2. If they have account: Request system user access
+ * 2. If they have account: Request Business Manager Admin access for
+ *    support@taxadvisorygrowth.net (see docs/meta-live-launch-plan.md,
+ *    "Phase 2.5" — no Partner/business-to-business sharing for any client
+ *    onboarded from 2026-08-19 forward; TAG creates the System User itself,
+ *    inside the client's own Business Manager, once granted Admin access)
  * 3. If they don't: Send setup guide + create request ticket
  * 4. Update location config with Meta details (if provided)
  * 5. Notify TAG team & client via Slack
@@ -95,22 +99,22 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
     });
 
     if (hasMetaAccount) {
-      // Step 2a: Client has Meta account - request system user access
-      console.log("[Phase 3] Requesting system user access...");
+      // Step 2a: Client has Meta account - request Business Manager Admin
+      // access (see docs/meta-live-launch-plan.md, "Phase 2.5" — no Partner
+      // sharing; TAG creates the System User inside the client's own
+      // Business Manager once granted Admin, so there's no TAG-owned system
+      // user id to hand the client here).
+      console.log("[Phase 3] Requesting Business Manager Admin access...");
 
-      const systemUserId = process.env.META_SYSTEM_USER_ID;
+      const tagAccessEmail = process.env.TAG_META_ACCESS_EMAIL || "support@taxadvisorygrowth.net";
       const tagTeamEmail = process.env.TAG_TEAM_EMAIL || "team@taxadvisorygrowth.net";
-
-      if (!systemUserId) {
-        throw new Error("META_SYSTEM_USER_ID not configured");
-      }
 
       // Email client with access request instructions
       await sendMetaAccessRequest(email, {
         clientName: intakeData.clientName,
         metaAdAccountId,
-        systemUserId,
-        instructions: getMetaAccessInstructions(metaAdAccountId, systemUserId),
+        tagAccessEmail,
+        instructions: getMetaAccessInstructions(metaAdAccountId, tagAccessEmail),
       });
 
       console.log("[Phase 3] Meta access request email sent to client");
@@ -123,7 +127,7 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
         status: "completed",
         details: {
           metaAdAccountId,
-          systemUserId,
+          tagAccessEmail,
           clientEmail: email,
         },
       });
@@ -145,14 +149,14 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
               type: "section",
               text: {
                 type: "mrkdwn",
-                text: `*Meta Account Setup*\n✅ Client has Meta ad account\n\n*Account ID:* ${metaAdAccountId}\n*Status:* Awaiting access grant from client\n\n_System user access request sent to: ${email}_`,
+                text: `*Meta Account Setup*\n✅ Client has Meta ad account\n\n*Account ID:* ${metaAdAccountId}\n*Status:* Awaiting Business Manager Admin grant from client\n\n_Access request sent to: ${email}_`,
               },
             },
             {
               type: "section",
               text: {
                 type: "mrkdwn",
-                text: `*Next step:* Client grants system user (${systemUserId}) access to their Meta ad account`,
+                text: `*Next step:* Client adds ${tagAccessEmail} as a Business Manager Admin. Once granted, TAG creates the System User inside the client's Business Manager directly (docs/meta-live-launch-plan.md, Phase 2.5).`,
               },
             },
           ],
@@ -163,7 +167,7 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
       await logProvisioningEvent(locationId, {
         type: "phase3_access_requested",
         timestamp: new Date(),
-        details: { metaAdAccountId, systemUserId },
+        details: { metaAdAccountId, tagAccessEmail },
       });
 
       res.json({
@@ -267,21 +271,26 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Generate instructions for granting system user access to Meta ad account.
+ * Generate instructions for granting Business Manager Admin access.
+ *
+ * We do not use Meta's Partner (business-to-business) sharing for any
+ * client — see docs/meta-live-launch-plan.md, "Phase 2.5". TAG creates the
+ * System User itself, inside the client's own Business Manager, once
+ * granted Admin — there's no existing TAG-owned system user id to hand the
+ * client here.
  */
 function getMetaAccessInstructions(
   metaAdAccountId: string,
-  systemUserId: string,
+  tagAccessEmail: string,
 ): string {
   return `
-To grant our system user access to your Meta ad account (${metaAdAccountId}):
+To give TAG access to manage your Meta ad account (${metaAdAccountId}):
 
 1. Go to https://business.facebook.com
-2. Click Settings → Users and Permissions
-3. Click "Admin" for the system user ${systemUserId}
-4. Grant access to your ad account (${metaAdAccountId})
-5. Reply to this email confirming access is granted
+2. Click Business Settings → Users → People → Add
+3. Add ${tagAccessEmail} as a Business Manager Admin (not just access to one ad account — full Business Manager Admin)
+4. Reply to this email confirming access is granted
 
-Our system will then automatically configure your account for campaign management and reporting.
+From there, we handle the rest ourselves — no further action needed on your end. Our system will then be configured for campaign management and reporting.
 `;
 }
