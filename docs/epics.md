@@ -207,3 +207,54 @@ dashboard then reports "no messages" indistinguishably from a quiet account.
 Any Slack surface reachable by a `client_*` role has to resolve the channel from
 the session's own tenant, never from a parameter. A channel id accepted from the
 request is one client reading another client's conversation.
+
+## Epic 10 — Angular migration
+
+**Goal:** The frontend runs on Angular Material with the M3 theme contract, one
+responsive shell, and integration modules that cannot import each other, without
+a big-bang cutover.
+
+The backend is not migrating. `functions/` and `lib/` keep their contracts. What
+changes is that the browser can no longer reach `lib/` by importing it: an
+Angular SPA talks HTTP, and today 39 exported Server Actions across 21
+`use server` files have no HTTP equivalent, while 24 of 25 data-reading pages
+import `lib/` directly inside a React Server Component. So each story below ships
+its endpoints and its screens together. Endpoints go in `app/api/**`, keeping the
+Next deployment as an API-only host serving the Angular bundle same-origin —
+`hub_session` is httpOnly SameSite=lax and only survives that topology, and
+`functions/` is deliberately kept to as few dependencies as possible.
+
+Screens move one feature at a time. When an Angular feature passes its gate, the
+matching Next pages are deleted in the same commit and the route points at
+Angular, so a screen exists in exactly one place and no defect gets fixed twice.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 10.1 | Contract hardening and boundary enforcement | In Progress |
+| 10.2 | Real session wiring and the auth surface | Draft |
+| 10.3 | Responsive shell and navigation | Draft |
+| 10.4 | Shared M3 primitives, portfolio and bug reports | Draft |
+| 10.5 | GHL integration module | Draft |
+| 10.6 | Widget dashboard and the clients book | Draft |
+| 10.7 | Remaining feature modules and legacy removal | Draft |
+
+**10.1 is deliberately feature-free.** Every constraint it makes enforceable is
+free to fix while `web/src/app/` holds twelve files, and expensive after fifteen
+features land on top of it. Enabling `strict` cost zero code churn on the day it
+was done.
+
+**10.2 is the highest-risk story here.** `MockRbacService` is currently provided
+unconditionally with a hardcoded `tag_exec` session whose `availableRoles`
+includes `admin`, so both route guards fail open in a production bundle. It also
+carries the one piece of genuinely net-new work in the migration: the Google
+Identity Services rendered button, which has no Next implementation to port.
+
+**Hat switching is not a client-side concern.** Switching hats changes
+`locations` server-side (`tag_exec`, `tag_csd` and `admin` swap to
+`listAllLocationIds()`), so the switch must round-trip and replace the whole
+Session. A client-side switch that only swaps `currentRole` silently desynchronises
+tenant access from the hat.
+
+**Epic 3 is the clients book, and it is not legacy.** All six of its stories are
+Ready, and `/csm-dashboard` is 1,562 LOC of working views. Its absence from
+`nav.tsx` is a bug that 10.3 fixes, not evidence of abandonment.

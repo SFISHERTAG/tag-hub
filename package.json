@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "check:story-status": "node scripts/check-story-status.mjs"
+    "check:story-status": "node scripts/check-story-status.mjs",
+    "check:role-parity": "node scripts/check-role-parity.mjs",
+    "web:build": "npm --prefix web run build -- --configuration production",
+    "web:lint": "npm --prefix web run lint",
+    "web:test": "npm --prefix web run test -- --watch=false",
+    "web:gate": "npm run web:build && npm run web:lint && npm run web:test"
   },
   "dependencies": {
     "@google-cloud/firestore": "^8.7.1",

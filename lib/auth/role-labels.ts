@@ -7,27 +7,37 @@
  * running in the browser. This file is
  * just names and copy: nothing here is sensitive, and admin UI that renders
  * a role dropdown needs it client-side to build one. roles.ts re-exports
- * everything here, so every existing server-side import of `ROLES` /
+ * everything here, so every existing server-side import of `ROLES` / `ROLE_LIST` /
  * `HAT_LABELS` from "./roles" keeps working unchanged.
  */
 
-export const ROLES = [
-  "admin",
-  "tag_exec",
-  "tag_csd",
-  "tag_csm",
-  "tag_sales_manager",
-  "tag_sales",
-  "tag_setter_manager",
-  "tag_setter",
-  "client_owner",
-  "client_manager",
-  "client_closer",
-  "client_setter_manager",
-  "client_setter",
-] as const;
+/**
+ * Keyed rather than a bare array so CLAUDE.md's permission contract is
+ * actually writable: `ROLES.ADMIN` has a referent, and a typo in a role name
+ * is a compile error instead of a string that silently matches nothing. This
+ * is the shape the "tag_admin" vs "admin" mismatch in the August audit needed.
+ * `ROLE_LIST` is for the handful of call sites that genuinely iterate (admin
+ * role dropdowns); prefer `ROLES.*` everywhere else.
+ */
+export const ROLES = {
+  ADMIN: "admin",
+  TAG_EXEC: "tag_exec",
+  TAG_CSD: "tag_csd",
+  TAG_CSM: "tag_csm",
+  TAG_SALES_MANAGER: "tag_sales_manager",
+  TAG_SALES: "tag_sales",
+  TAG_SETTER_MANAGER: "tag_setter_manager",
+  TAG_SETTER: "tag_setter",
+  CLIENT_OWNER: "client_owner",
+  CLIENT_MANAGER: "client_manager",
+  CLIENT_CLOSER: "client_closer",
+  CLIENT_SETTER_MANAGER: "client_setter_manager",
+  CLIENT_SETTER: "client_setter",
+} as const;
 
-export type Role = (typeof ROLES)[number];
+export type Role = (typeof ROLES)[keyof typeof ROLES];
+
+export const ROLE_LIST: readonly Role[] = Object.values(ROLES);
 
 export const HAT_LABELS: Record<Role, string> = {
   admin: "Hub admin",

@@ -1,5 +1,5 @@
 import "server-only";
-import { ROLES, HAT_LABELS, HAT_DESCRIPTIONS, type Role } from "./role-labels";
+import { ROLES, ROLE_LIST, HAT_LABELS, HAT_DESCRIPTIONS, type Role } from "./role-labels";
 
 /**
  * Roles and hats.
@@ -20,17 +20,25 @@ import { ROLES, HAT_LABELS, HAT_DESCRIPTIONS, type Role } from "./role-labels";
  * a rep switching into an executive view is a permissions question, not a
  * convenience one.
  *
- * `ROLES` / `Role` / `HAT_LABELS` / `HAT_DESCRIPTIONS` live in role-labels.ts
+ * `ROLES` / `ROLE_LIST` / `Role` / `HAT_LABELS` / `HAT_DESCRIPTIONS` live in role-labels.ts
  * and are re-exported here — that file has no `server-only` marker because
  * it is pure display data, safe in client bundles, and admin UI needs it
  * there to render a role dropdown. Everything below that actually trusts a
  * hat cookie stays here, server-only.
  */
 
-export { ROLES, HAT_LABELS, HAT_DESCRIPTIONS, type Role };
+export { ROLES, ROLE_LIST, HAT_LABELS, HAT_DESCRIPTIONS, type Role };
 
 export function isRole(value: unknown): value is Role {
-  return typeof value === "string" && (ROLES as readonly string[]).includes(value);
+  return typeof value === "string" && (ROLE_LIST as readonly string[]).includes(value);
+}
+
+/**
+ * Single-role check. The named counterpart to `if (role === "admin")`, which
+ * CLAUDE.md forbids: write `hasRole(session.currentRole, ROLES.ADMIN)`.
+ */
+export function hasRole(role: Role | undefined, allowed: Role): boolean {
+  return role === allowed;
 }
 
 /** Central membership check so call sites never compare a role string inline. */

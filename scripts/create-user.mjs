@@ -17,14 +17,25 @@
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
+// Must stay in step with lib/auth/role-labels.ts. This is a plain .mjs script
+// run without the TypeScript build, so it can't import the canonical list;
+// scripts/check-role-parity.mjs fails the commit if the two disagree. Six roles
+// were missing here before that check existed, which made it impossible to
+// create an admin, a CS Director, or any setter from this CLI.
 const ROLES = [
-  "tag_sales",
-  "tag_sales_manager",
-  "tag_csm",
+  "admin",
   "tag_exec",
-  "client_closer",
-  "client_manager",
+  "tag_csd",
+  "tag_csm",
+  "tag_sales_manager",
+  "tag_sales",
+  "tag_setter_manager",
+  "tag_setter",
   "client_owner",
+  "client_manager",
+  "client_closer",
+  "client_setter_manager",
+  "client_setter",
 ];
 
 const args = process.argv.slice(2);

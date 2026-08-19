@@ -2,14 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { createGroupAction } from "./actions";
-import { ROLES, HAT_LABELS } from "@/lib/auth/role-labels";
+import { ROLE_LIST, HAT_LABELS, ROLES, type Role } from "@/lib/auth/role-labels";
 
 const inputClass =
   "w-full rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-3 outline-none focus:border-accent disabled:opacity-60";
 
 export function NewGroupForm() {
   const [name, setName] = useState("");
-  const [role, setRole] = useState<(typeof ROLES)[number]>("tag_csm");
+  const [role, setRole] = useState<Role>(ROLES.TAG_CSM);
   const [locations, setLocations] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -51,7 +51,7 @@ export function NewGroupForm() {
             onChange={(e) => setRole(e.target.value as typeof role)}
             className={inputClass}
           >
-            {ROLES.map((r) => (
+            {ROLE_LIST.map((r) => (
               <option key={r} value={r}>
                 {HAT_LABELS[r]}
               </option>

@@ -1,25 +1,31 @@
 /**
- * Port of lib/auth/role-labels.ts. Keep this list in sync with the backend —
- * it is the client-side mirror of the single source of truth in that file,
- * not an independent definition (see CLAUDE.md's permission-model contract).
+ * Port of lib/auth/role-labels.ts. This is the client-side mirror of the single
+ * source of truth in that file, not an independent definition (see CLAUDE.md's
+ * permission-model contract). scripts/check-role-parity.mjs fails the commit if
+ * the two drift.
+ *
+ * Keyed rather than a bare array so `ROLES.ADMIN` has a referent and a typo is a
+ * compile error. `ROLE_LIST` is for the few call sites that genuinely iterate.
  */
-export const ROLES = [
-  'admin',
-  'tag_exec',
-  'tag_csd',
-  'tag_csm',
-  'tag_sales_manager',
-  'tag_sales',
-  'tag_setter_manager',
-  'tag_setter',
-  'client_owner',
-  'client_manager',
-  'client_closer',
-  'client_setter_manager',
-  'client_setter',
-] as const;
+export const ROLES = {
+  ADMIN: 'admin',
+  TAG_EXEC: 'tag_exec',
+  TAG_CSD: 'tag_csd',
+  TAG_CSM: 'tag_csm',
+  TAG_SALES_MANAGER: 'tag_sales_manager',
+  TAG_SALES: 'tag_sales',
+  TAG_SETTER_MANAGER: 'tag_setter_manager',
+  TAG_SETTER: 'tag_setter',
+  CLIENT_OWNER: 'client_owner',
+  CLIENT_MANAGER: 'client_manager',
+  CLIENT_CLOSER: 'client_closer',
+  CLIENT_SETTER_MANAGER: 'client_setter_manager',
+  CLIENT_SETTER: 'client_setter',
+} as const;
 
-export type Role = (typeof ROLES)[number];
+export type Role = (typeof ROLES)[keyof typeof ROLES];
+
+export const ROLE_LIST: readonly Role[] = Object.values(ROLES);
 
 export const HAT_LABELS: Record<Role, string> = {
   admin: 'Hub admin',
@@ -54,5 +60,5 @@ export const HAT_DESCRIPTIONS: Record<Role, string> = {
 };
 
 export function isRole(value: unknown): value is Role {
-  return typeof value === 'string' && (ROLES as readonly string[]).includes(value);
+  return typeof value === 'string' && (ROLE_LIST as readonly string[]).includes(value);
 }

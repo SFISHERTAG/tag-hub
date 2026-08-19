@@ -13,6 +13,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Archived pre-Angular code. Kept for history, not maintained, and not
+    // worth a linter's opinion — it accounted for most of this config's
+    // standing error count. Mirrors the same exclusion in tsconfig.json.
+    "_archive/**",
+    // The Angular workspace has its own ESLint config and its own gate
+    // (npm run web:lint). Linting it with the Next config is meaningless.
+    "web/**",
   ]),
   {
     plugins: { import: importPlugin },

@@ -15,6 +15,10 @@ module.exports = defineConfig([
     ],
     processor: angular.processInlineTemplates,
     rules: {
+      // CLAUDE.md forbids non-null assertions, and `strict` does not cover
+      // them: that rule ships in typescript-eslint's `strict` config, while
+      // this file extends `recommended` + `stylistic` only.
+      '@typescript-eslint/no-non-null-assertion': 'error',
       '@angular-eslint/directive-selector': [
         'error',
         {

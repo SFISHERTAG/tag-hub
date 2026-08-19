@@ -9,7 +9,7 @@ import {
 } from "./actions";
 import type { Group } from "@/lib/auth/groups";
 import type { DirectoryUser } from "@/lib/auth/user-directory";
-import { ROLES, HAT_LABELS } from "@/lib/auth/role-labels";
+import { ROLE_LIST, HAT_LABELS } from "@/lib/auth/role-labels";
 
 const inputClass =
   "w-full rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-3 outline-none focus:border-accent disabled:opacity-60";
@@ -90,7 +90,7 @@ export function GroupCard({
                 onChange={(e) => setRole(e.target.value as typeof role)}
                 className={inputClass}
               >
-                {ROLES.map((r) => (
+                {ROLE_LIST.map((r) => (
                   <option key={r} value={r}>
                     {HAT_LABELS[r]}
                   </option>

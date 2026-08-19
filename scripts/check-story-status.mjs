@@ -87,18 +87,25 @@ function checkArchitectureConstraints() {
   // Sourced from lib/auth/role-labels.ts's ROLES array rather than hardcoded, so this check
   // can't silently drift out of sync with the actual role list again (it previously matched
   // roles that no longer exist and missed several that do).
+  // No fallback: a parse failure here used to degrade to a stale hardcoded list,
+  // which is exactly how this check drifted out of sync before. If the canonical
+  // file can't be parsed, that is a bug in this script or a change to the ROLES
+  // shape, and either way the commit should stop rather than be waved through on
+  // a list that no longer describes reality.
   function buildRoleStringPattern() {
-    const fallback = /["'](tag_admin|tag_exec|tag_csd|admin|cse|cso|client_owner|closer|csm|executive|onboarding|tag_ops)["']/g;
-    try {
-      const labelsContent = readFileSync(join(repoRoot, "lib/auth/role-labels.ts"), "utf8");
-      const arrayMatch = labelsContent.match(/export const ROLES = \[([\s\S]*?)\] as const/);
-      if (!arrayMatch) return fallback;
-      const roles = [...arrayMatch[1].matchAll(/["']([a-z_]+)["']/g)].map((m) => m[1]);
-      if (roles.length === 0) return fallback;
-      return new RegExp(`["'](${roles.join("|")})["']`, "g");
-    } catch {
-      return fallback;
+    const labelsContent = readFileSync(join(repoRoot, "lib/auth/role-labels.ts"), "utf8");
+    const objectMatch = labelsContent.match(/export const ROLES = \{([\s\S]*?)\} as const/);
+    if (!objectMatch) {
+      throw new Error(
+        "check-story-status: could not parse ROLES from lib/auth/role-labels.ts. " +
+          "If the ROLES shape changed, update buildRoleStringPattern() in this script."
+      );
     }
+    const roles = [...objectMatch[1].matchAll(/:\s*["']([a-z_]+)["']/g)].map((m) => m[1]);
+    if (roles.length === 0) {
+      throw new Error("check-story-status: parsed zero roles from lib/auth/role-labels.ts.");
+    }
+    return new RegExp(`["'](${roles.join("|")})["']`, "g");
   }
   const ROLE_STRING_PATTERN = buildRoleStringPattern();
   const ROLE_HELPER_PATTERN =
