@@ -7,6 +7,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3010
+    },
+    {
+      "name": "tag-cockpit-web",
+      "runtimeExecutable": "/opt/homebrew/bin/npm",
+      "runtimeArgs": ["--prefix", "web", "start", "--", "--port", "4210"],
+      "port": 4210
     }
   ]
 }

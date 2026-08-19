@@ -74,13 +74,48 @@ for (const f of files) {
 function checkArchitectureConstraints() {
   const constraintIssues = [];
 
-  // Check 1: inline role literals (not via a ROLES.*/isRole/hasAnyRole helper from lib/auth/roles.ts).
+  // Check 1: inline role literals (not via a ROLES.*/isRole/hasAnyRole helper from lib/auth/roles.ts,
+  // or its Angular-side port at web/src/app/core/models/role.model.ts).
   // Scoped per staged file (not the whole commit's diff text) so an exemption in one file can't
   // paper over a violation in an unrelated one, and the canonical definition files are excluded
   // since role strings are expected to live there.
-  const ROLE_DEFINITION_FILES = ["lib/auth/roles.ts", "lib/auth/role-labels.ts"];
-  const ROLE_STRING_PATTERN = /["'](tag_admin|tag_exec|tag_csd|admin|cse|cso|client_owner|closer|csm|executive|onboarding|tag_ops)["']/g;
-  const ROLE_HELPER_PATTERN = /\bROLES\.|\bisRole\(|\bhasAnyRole\(|\beffectiveRole\(|from\s+["'][^"']*auth\/roles["']/;
+  const ROLE_DEFINITION_FILES = [
+    "lib/auth/roles.ts",
+    "lib/auth/role-labels.ts",
+    "web/src/app/core/models/role.model.ts",
+  ];
+  // Sourced from lib/auth/role-labels.ts's ROLES array rather than hardcoded, so this check
+  // can't silently drift out of sync with the actual role list again (it previously matched
+  // roles that no longer exist and missed several that do).
+  function buildRoleStringPattern() {
+    const fallback = /["'](tag_admin|tag_exec|tag_csd|admin|cse|cso|client_owner|closer|csm|executive|onboarding|tag_ops)["']/g;
+    try {
+      const labelsContent = readFileSync(join(repoRoot, "lib/auth/role-labels.ts"), "utf8");
+      const arrayMatch = labelsContent.match(/export const ROLES = \[([\s\S]*?)\] as const/);
+      if (!arrayMatch) return fallback;
+      const roles = [...arrayMatch[1].matchAll(/["']([a-z_]+)["']/g)].map((m) => m[1]);
+      if (roles.length === 0) return fallback;
+      return new RegExp(`["'](${roles.join("|")})["']`, "g");
+    } catch {
+      return fallback;
+    }
+  }
+  const ROLE_STRING_PATTERN = buildRoleStringPattern();
+  const ROLE_HELPER_PATTERN =
+    /\bROLES\.|\bisRole\(|\bhasAnyRole\(|\beffectiveRole\(|from\s+["'][^"']*(auth\/roles|role\.model|role-labels)["']/;
+
+  // Strip comments from a diff/file body before pattern-matching, so illustrative code in a
+  // JSDoc example (e.g. a route-path string that happens to share text with a role name) isn't
+  // flagged as a role check. Line-oriented and not a full parser, but covers `//`, `/* */`, and
+  // leading `*` JSDoc continuation lines, which is what a diff of TS source actually contains.
+  function stripComments(text) {
+    return text
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n")
+      .filter((line) => !/^\+?\s*\*/.test(line))
+      .map((line) => line.replace(/\/\/.*/, ""))
+      .join("\n");
+  }
 
   for (const file of staged) {
     if (!/\.(ts|tsx)$/.test(file) || ROLE_DEFINITION_FILES.includes(file)) continue;
@@ -90,7 +125,7 @@ function checkArchitectureConstraints() {
     } catch {
       continue;
     }
-    const roleStrings = fileDiff.match(ROLE_STRING_PATTERN) || [];
+    const roleStrings = stripComments(fileDiff).match(ROLE_STRING_PATTERN) || [];
     if (roleStrings.length === 0) continue;
     // The helper/import may live on an unchanged line (e.g. an existing `import type { Role }`
     // above a newly-edited literal array below it), which a -U0 diff won't show. Fall back to

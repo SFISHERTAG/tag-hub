@@ -1,0 +1,42 @@
+import { HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { Observable, catchError, finalize, map, of, shareReplay, switchMap, throwError } from 'rxjs';
+
+/**
+ * Session cookie is httpOnly (set by /api/auth/session), so this interceptor
+ * doesn't attach a bearer token itself — it ensures credentials are sent, and
+ * on a 401 attempts exactly one shared refresh before retrying, so N
+ * concurrent requests that all 401 at once trigger one refresh call, not N.
+ */
+let refreshInFlight: Observable<boolean> | null = null;
+
+const REFRESH_URL = '/api/auth/session';
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const http = inject(HttpClient);
+  const authedReq = req.withCredentials ? req : req.clone({ withCredentials: true });
+
+  return next(authedReq).pipe(
+    catchError((error: unknown) => {
+      const isAuthEndpoint = authedReq.url.includes('/api/auth/');
+      if (!(error instanceof HttpErrorResponse) || error.status !== 401 || isAuthEndpoint) {
+        return throwError(() => error);
+      }
+
+      if (!refreshInFlight) {
+        refreshInFlight = http.get(REFRESH_URL, { withCredentials: true }).pipe(
+          map(() => true),
+          catchError(() => of(false)),
+          finalize(() => {
+            refreshInFlight = null;
+          }),
+          shareReplay(1),
+        );
+      }
+
+      return refreshInFlight.pipe(
+        switchMap((refreshed) => (refreshed ? next(authedReq) : throwError(() => error))),
+      );
+    }),
+  );
+};

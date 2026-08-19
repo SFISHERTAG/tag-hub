@@ -1,0 +1,67 @@
+@use '@angular/material' as mat;
+
+// TAG Cockpit is dark-only by design (true black has no light-mode equivalent),
+// so this file sets static values rather than light-dark() pairs. If a light
+// variant is ever needed, wrap each override below in light-dark(<light>, <dark>).
+//
+// Single override point for the entire theme. Every widget/card in the app
+// reads colors via var(--mat-sys-*), never a raw hex — retuning elevation or
+// contrast only ever means editing this one block. Zero !important, zero
+// ::ng-deep: these are plain CSS custom properties on html, inherited past
+// ViewEncapsulation, consumed by Material's own component styles automatically.
+@mixin apply {
+  color-scheme: dark;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$violet-palette,
+        // placeholder seed hue — swap for the TAG brand primary, one-line edit.
+        theme-type: dark,
+      ),
+      typography: '-apple-system, BlinkMacSystemFont, Roboto, sans-serif',
+      density: 0,
+    )
+  );
+
+  @include mat.theme-overrides(
+    (
+      // Canvas forced to literal pure black.
+      surface: #000000,
+      background: #000000,
+      surface-dim: #000000,
+
+      // Elevation ladder — each tier solved independently against #000000
+      // (not derived from `surface`) so cards stay visible in daylight
+      // instead of inheriting M3's default near-black-on-near-black spacing.
+      surface-container-lowest: #2b2330,
+      // 1.39:1 vs black — least emphasis only
+      surface-container-low: #403845,
+      // 1.87:1 vs black — bottom-sheet class
+      surface-container: #514956,
+      // 2.44:1 vs black — default widget/panel fill
+      surface-container-high: #5d5562,
+      // 2.94:1 vs black — datepicker/overlay
+      surface-container-highest: #675f6c,
+      // 3.43:1 vs black — filled cards (ceiling tier)
+
+      // Text. on-surface clears >=4.5:1 on every surface tier above; route
+      // body-weight text through on-surface (not on-surface-variant) when it
+      // sits on surface-container-high/-highest.
+      on-surface: #e7e5ea,
+      on-surface-variant: #c9c6d1,
+
+      // Borders
+      outline: #948f9c,
+      outline-variant: #48454e,
+
+      // Primary accent (placeholder hue, swap when brand primary is finalized)
+      primary: #9ec1ff,
+      on-primary: #06305c,
+
+      // Error
+      error: #ffb4ab,
+      on-error: #690005,
+    )
+  );
+}

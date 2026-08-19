@@ -1,0 +1,19 @@
+// Theme tokens live in one place: styles/_theme.scss. See CLAUDE.md's theme
+// contract — no component .scss may declare a raw hex color, ever.
+@use 'styles/theme';
+
+html {
+  height: 100%;
+  @include theme.apply;
+}
+
+body {
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+  height: 100%;
+}
+/* You can add global styles to this file, and also import other style files */

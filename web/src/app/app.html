@@ -1,0 +1,38 @@
+<mat-toolbar>
+  <span class="app-title">{{ title() }}</span>
+</mat-toolbar>
+
+<mat-sidenav-container class="shell">
+  @if (isWide()) {
+    <mat-sidenav mode="side" opened class="rail">
+      <mat-nav-list>
+        @for (item of navItems; track item.path) {
+          <a mat-list-item [routerLink]="item.path" routerLinkActive="active-link">
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+          </a>
+        }
+      </mat-nav-list>
+    </mat-sidenav>
+  }
+
+  <mat-sidenav-content class="content" [class.with-bottom-nav]="!isWide()">
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+@if (!isWide()) {
+  <nav class="bottom-nav">
+    @for (item of navItems; track item.path) {
+      <a
+        mat-button
+        [routerLink]="item.path"
+        routerLinkActive="active-link"
+        class="bottom-nav-item"
+      >
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+}

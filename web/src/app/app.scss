@@ -1,0 +1,49 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.app-title {
+  font: var(--mat-sys-title-large);
+}
+
+.shell {
+  height: calc(100% - 64px);
+}
+
+.rail {
+  width: 232px;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+}
+
+.content {
+  padding: 16px;
+
+  &.with-bottom-nav {
+    padding-bottom: 72px;
+  }
+}
+
+.bottom-nav {
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline: 0;
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--mat-sys-surface-container);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding-block: 4px;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font: var(--mat-sys-label-small);
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.active-link {
+  color: var(--mat-sys-primary);
+}
