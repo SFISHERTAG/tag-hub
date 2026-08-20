@@ -5,6 +5,7 @@ import { createDriveFolder } from "../google";
 import { addToOtpWhitelist, saveTenantResources, logProvisioningEvent } from "../firestore";
 import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email";
 import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
+import { checkWebhookSecret } from "../lib/webhooks/secret";
 
 /**
  * Phase 1: Webhook triggered when checkbox "Initiate Onboarding" is checked
@@ -21,6 +22,8 @@ import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from 
 export async function handlePhase1(req: Request, res: Response): Promise<void> {
   let eventId: string | undefined;
   try {
+    checkWebhookSecret("Phase 1", req, "PHASE1_WEBHOOK_SECRET");
+
     const webhook = req.body;
 
     // Extract data from GHL webhook
