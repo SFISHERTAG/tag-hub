@@ -13,6 +13,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Other isolated agent worktrees live here, nested under this repo root,
+    // each a full separate checkout — linting them as part of this one
+    // crashes on the sheer volume and reports issues that have nothing to
+    // do with this checkout's actual source (see the same fix in
+    // vitest.config.mts).
+    ".claude/worktrees/**",
   ]),
   {
     plugins: { import: importPlugin },
