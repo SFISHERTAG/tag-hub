@@ -22,6 +22,12 @@ client with its own project fallback; it does not any more. The Cloud
 Functions side (`functions/src/firestore.ts`) is a separate runtime with its
 own client, by design.
 
+**Undefined field values.** Both clients set `ignoreUndefinedProperties`.
+The Cloud Functions client did not, which meant any write carrying an
+optional field that happened to be undefined threw mid-provisioning, after
+the GHL, Slack and Drive resources for that client already existed. Do not
+remove it without giving every call site a compensating path first.
+
 **Seed scripts.** Any script under `scripts/setup-*` that writes must call
 `assertSafeToSeed()` from `lib/seed-guard.ts` before its first write. It
 refuses an unset project, the production project, and `NODE_ENV=production`.

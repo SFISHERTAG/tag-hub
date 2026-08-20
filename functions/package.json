@@ -1,7 +1,7 @@
 {
   "name": "tag-automation-functions",
   "version": "1.0.0",
-  "description": "TAG client onboarding automation — Cloud Functions",
+  "description": "TAG client onboarding automation \u2014 Cloud Functions",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -9,9 +9,10 @@
     "dev": "tsc --watch",
     "test": "vitest run",
     "lint": "eslint src",
-    "deploy": "npm run deploy:phase1 && npm run deploy:phase2",
+    "deploy": "npm run deploy:phase1 && npm run deploy:phase2 && npm run deploy:phase3",
     "deploy:phase1": "gcloud functions deploy phase1-provisioning --gen2 --region=us-central1 --runtime=nodejs22 --trigger-http --allow-unauthenticated --entry-point=phase1Provisioning --set-secrets=PHASE1_WEBHOOK_SECRET=phase1-webhook-secret:latest",
-    "deploy:phase2": "gcloud functions deploy phase2-intake-submit --gen2 --region=us-central1 --runtime=nodejs22 --trigger-http --allow-unauthenticated --entry-point=phase2IntakeSubmit"
+    "deploy:phase2": "gcloud functions deploy phase2-intake-submit --gen2 --region=us-central1 --runtime=nodejs22 --trigger-http --allow-unauthenticated --entry-point=phase2IntakeSubmit",
+    "deploy:phase3": "gcloud functions deploy phase3-meta-setup --gen2 --region=us-central1 --runtime=nodejs22 --trigger-http --allow-unauthenticated --entry-point=phase3MetaSetup"
   },
   "dependencies": {
     "@google-cloud/firestore": "^7.11.0",

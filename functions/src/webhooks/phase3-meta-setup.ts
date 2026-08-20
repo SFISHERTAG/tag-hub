@@ -31,6 +31,12 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
   // ReferenceError on every single failure instead of logging one.
   let locationId: string | undefined;
   let eventId: string | undefined;
+  /**
+   * Which client-facing email has already been sent, if any. An email is the
+   * one thing here that cannot be taken back, so it decides whether the catch
+   * below may release the idempotency claim for a retry.
+   */
+  let clientEmailSent: string | null = null;
   try {
     const { email, intakeData, slackChannelId } = req.body;
     locationId = req.body.locationId;
@@ -112,6 +118,11 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
         systemUserId,
         instructions: getMetaAccessInstructions(metaAdAccountId, systemUserId),
       });
+      // Set only after the send resolves. A send that rejects delivered
+      // nothing, and a mailer outage is the common transient failure here —
+      // that has to stay retryable. What must not repeat is a *later* step
+      // failing after the client already has the email.
+      clientEmailSent = "meta_access_request";
 
       console.log("[Phase 3] Meta access request email sent to client");
 
@@ -179,6 +190,7 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
         setupUrl: `${process.env.META_SETUP_GUIDE_URL || "https://facebook.com/ads/manager/setup"}`,
         supportEmail: process.env.TAG_TEAM_EMAIL || "support@taxadvisorygrowth.net",
       });
+      clientEmailSent = "meta_setup_guide";
 
       console.log("[Phase 3] Meta setup guide sent to client");
 
@@ -239,10 +251,19 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("[Phase 3] Error:", error);
 
-    if (eventId) {
+    if (eventId && clientEmailSent === null) {
       await clearProcessed("phase3", eventId).catch((clearError) => {
         console.error("[Phase 3] Failed to release idempotency claim:", clearError);
       });
+    } else if (eventId) {
+      // The client-facing email has already gone out. Releasing the claim
+      // here lets a retry send it a second time, which is worse than a
+      // stalled provisioning run — so the claim is held and a human decides.
+      console.error(
+        `[Phase 3] Failed after sending the "${clientEmailSent}" email to the client — ` +
+          "idempotency claim HELD so a retry cannot re-send it. Resolve manually, then clear " +
+          "the claim to allow a rerun.",
+      );
     }
 
     // Log error to Postgres

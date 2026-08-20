@@ -2,6 +2,16 @@ import { Firestore } from "@google-cloud/firestore";
 
 const db = new Firestore({
   projectId: process.env.GOOGLE_CLOUD_PROJECT,
+  // Matches lib/firestore.ts on the app side, which has always had it.
+  //
+  // Without this, any write carrying an optional field that happens to be
+  // undefined throws "Cannot use 'undefined' as a Firestore value". That is
+  // not a theoretical shape here: `logProvisioningEvent` spreads a `details`
+  // object built from local variables that are genuinely undefined on some
+  // real paths, and `saveIntakeSubmission` spreads whatever the intake form
+  // sent. The throw lands after the external resources have been created,
+  // which is what turns a bad write into duplicated client resources.
+  ignoreUndefinedProperties: true,
 });
 
 /**

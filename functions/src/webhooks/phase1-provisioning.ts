@@ -22,6 +22,24 @@ import { requireWebhookSecret } from "../lib/webhooks/secret";
 export async function handlePhase1(req: Request, res: Response): Promise<void> {
   let eventId: string | undefined;
 
+  /**
+   * Set the moment the first irreversible external resource exists.
+   *
+   * The catch below releases the idempotency claim so a retry can genuinely
+   * retry, which is right while nothing has happened yet and wrong the
+   * moment something has. Steps 1 to 6 clone a GHL sub-account, create a
+   * Slack channel and a Drive folder, whitelist a login, and open a
+   * Fulfillment opportunity, and none of them are idempotent on their own.
+   * A failure after any of that — including the Firestore write at step 7 —
+   * used to release the claim and let GHL's retry run all six a second time
+   * for the same client.
+   *
+   * There is no rollback available here: the resources are in four systems
+   * that share no transaction. So the claim is held, the request still fails
+   * loudly, and the log says exactly what exists and what does not.
+   */
+  let createdResources: Record<string, string> | null = null;
+
   // Unlike Phase 2 and Phase 3, this check rejects rather than warns. Step 4
   // below writes the caller-supplied contact email into the OTP whitelist,
   // which is what gates real sign-in — so an unauthenticated call here does
@@ -85,6 +103,7 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
       throw new Error('Template account "Template Do Not Delete" not found');
     }
 
+    // Everything from here on creates real, un-rollback-able resources.
     const newLocationId = await cloneLocation(templateLocationId, clientName);
     console.log(`[Phase 1] Created GHL location: ${newLocationId}`);
 
@@ -95,10 +114,13 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
       details: { clientName, clientEmail, opportunityId },
     });
 
+    createdResources = { ghlLocationId: newLocationId };
+
     // Step 2: Create Slack channel
     console.log("[Phase 1] Creating Slack channel...");
     const slackChannelId = await createSlackChannel(clientName);
     console.log(`[Phase 1] Created Slack channel: ${slackChannelId}`);
+    createdResources.slackChannelId = slackChannelId;
 
     // Step 3: Invite client to Slack as single-channel guest
     console.log("[Phase 1] Inviting client to Slack channel...");
@@ -113,6 +135,7 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
 
     const driveFolderId = await createDriveFolder(sharedDriveId, clientName);
     console.log(`[Phase 1] Created Drive folder: ${driveFolderId}`);
+    createdResources.driveFolderId = driveFolderId;
 
     // Step 5: Add client email to OTP whitelist
     console.log("[Phase 1] Adding to OTP whitelist...");
@@ -133,6 +156,7 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
       status: "Appointment Scheduled",
     });
     console.log(`[Phase 1] Created Fulfillment opportunity: ${fulfillmentOpportunityId}`);
+    createdResources.fulfillmentOpportunityId = fulfillmentOpportunityId;
 
     // Step 7: Save tenant resources to Firestore
     console.log("[Phase 1] Saving to Firestore...");
@@ -180,15 +204,29 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
     });
   } catch (error) {
     console.error("[Phase 1] Error:", error);
-    // Provisioning didn't actually complete — release the claim so a retry
-    // after the underlying issue is fixed isn't treated as a duplicate forever.
-    if (eventId) {
+
+    if (eventId && createdResources === null) {
+      // Nothing was created, so a retry is a clean retry. Release the claim
+      // so the delivery isn't treated as a duplicate forever.
       await clearProcessed("phase1", eventId).catch((clearError) => {
         console.error("[Phase 1] Failed to release idempotency claim:", clearError);
       });
+    } else if (eventId) {
+      // Resources already exist. Releasing the claim here would let GHL's
+      // retry clone a second sub-account, open a second Slack channel and
+      // re-send the intake email for the same client. Holding the claim
+      // means a human finishes it; that is recoverable, duplicates are not.
+      console.error(
+        "[Phase 1] Partial provisioning — idempotency claim HELD so a retry cannot duplicate " +
+          "these resources. Finish or clean up manually, then clear the claim to allow a rerun. " +
+          `Created: ${JSON.stringify(createdResources)}`,
+      );
     }
+
     res.status(500).json({
       error: error instanceof Error ? error.message : "Unknown error",
+      partial: createdResources !== null,
+      created: createdResources ?? undefined,
     });
   }
 }

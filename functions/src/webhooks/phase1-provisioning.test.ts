@@ -154,6 +154,35 @@ describe("handlePhase1 idempotency", () => {
     expect(cloneLocation).toHaveBeenCalledTimes(2);
     expect(second.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
+
+  it("holds the claim when the failure lands after resources already exist", async () => {
+    // The cascade this closes: a throw at any step past the GHL clone used to
+    // release the claim, so GHL's retry cloned a second sub-account, opened a
+    // second Slack channel and Drive folder, and re-sent the intake email for
+    // the same client. None of those are rollback-able and none are
+    // idempotent, so the claim is held and a human finishes the run.
+    sendIntakeFormEmail.mockRejectedValueOnce(new Error("Mailer down"));
+
+    const first = fakeReqRes(payload);
+    await handlePhase1(first.req, first.res);
+
+    expect(first.status).toHaveBeenCalledWith(500);
+    expect(first.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        partial: true,
+        created: expect.objectContaining({ ghlLocationId: "loc-123", slackChannelId: "channel-1" }),
+      }),
+    );
+
+    const second = fakeReqRes(payload);
+    await handlePhase1(second.req, second.res);
+
+    // The retry must not re-provision anything.
+    expect(cloneLocation).toHaveBeenCalledTimes(1);
+    expect(createSlackChannel).toHaveBeenCalledTimes(1);
+    expect(createDriveFolder).toHaveBeenCalledTimes(1);
+    expect(second.json).toHaveBeenCalledWith({ success: true, duplicate: true });
+  });
 });
 
 describe("handlePhase1 authentication", () => {
