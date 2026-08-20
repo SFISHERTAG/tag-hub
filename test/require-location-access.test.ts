@@ -8,6 +8,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const verifySessionCookie = vi.fn();
 const cookieStore = new Map<string, { value: string }>();
+let liveClaims: Record<string, unknown> | undefined;
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({
@@ -23,6 +24,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth/admin", () => ({
   adminAuth: () => ({ verifySessionCookie }),
+  // Roles are read from the live claims, not the cookie snapshot. Returning
+  // undefined here means "no live claims available", which is the documented
+  // fall-back-to-cookie path — the tests below set roles on the cookie.
+  getLiveClaims: async () => liveClaims,
   SESSION_COOKIE: "hub_session",
 }));
 
@@ -35,6 +40,7 @@ const { requireLocationAccess } = await import("@/lib/auth/session");
 beforeEach(() => {
   vi.clearAllMocks();
   cookieStore.clear();
+  liveClaims = undefined;
 });
 
 describe("requireLocationAccess", () => {

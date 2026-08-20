@@ -11,6 +11,7 @@ import type { Role } from "@/lib/auth/roles";
 
 const verifySessionCookie = vi.fn();
 const cookieStore = new Map<string, { value: string }>();
+let liveClaims: Record<string, unknown> | undefined;
 const clientDocs = new Map<string, Record<string, unknown>>();
 
 vi.mock("next/headers", () => ({
@@ -27,6 +28,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth/admin", () => ({
   adminAuth: () => ({ verifySessionCookie }),
+  // Roles are read from the live claims, not the cookie snapshot. Returning
+  // undefined here means "no live claims available", which is the documented
+  // fall-back-to-cookie path — the tests below set roles on the cookie.
+  getLiveClaims: async () => liveClaims,
   SESSION_COOKIE: "hub_session",
 }));
 
@@ -67,6 +72,7 @@ function signInAs(role: Role, locations: string[], uid = "user-a") {
 beforeEach(() => {
   vi.clearAllMocks();
   cookieStore.clear();
+  liveClaims = undefined;
   clientDocs.clear();
   clientDocs.set("client-a", { ghl_location_id: "tenant-a", csm_assigned: "csm@tag.test" });
   clientDocs.set("client-b", { ghl_location_id: "tenant-b", csm_assigned: "other@tag.test" });
@@ -136,5 +142,33 @@ describe("requireInternalRole", () => {
   it("allows a CSM", async () => {
     signInAs("tag_csm", ["tenant-a"]);
     await expect(requireInternalRole()).resolves.toBeDefined();
+  });
+});
+
+describe("live claims", () => {
+  it("applies a role downgrade without waiting for the cookie to expire", async () => {
+    // The cookie still says client_owner on tenant-a. The admin has since
+    // moved this user off that account. Before roles were read live, the
+    // stale cookie kept working for up to 14 days.
+    signInAs("client_owner", ["tenant-a"]);
+    liveClaims = { roles: [{ role: "client_owner", locations: ["tenant-z"] }] };
+
+    await expect(requireOwnedLocation("tenant-a")).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(requireOwnedLocation("tenant-z")).resolves.toBeDefined();
+  });
+
+  it("treats cleared claims as signed out", async () => {
+    signInAs("tag_exec", []);
+    liveClaims = { roles: [] };
+
+    await expect(requireOwnedLocation("tenant-a")).rejects.toBeInstanceOf(UnauthenticatedError);
+  });
+
+  it("falls back to the cookie's claims when the live lookup fails", async () => {
+    // An Admin SDK blip must not sign every signed-in user out.
+    signInAs("client_owner", ["tenant-a"]);
+    liveClaims = undefined;
+
+    await expect(requireOwnedLocation("tenant-a")).resolves.toBeDefined();
   });
 });

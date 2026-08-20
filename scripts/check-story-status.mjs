@@ -29,8 +29,16 @@ function parseStory(file) {
   const tasks = [...text.matchAll(/^- \[( |x)\]/gim)];
   const checked = tasks.filter((t) => t[1].toLowerCase() === "x").length;
   const total = tasks.length;
-  // Files referenced in backticks anywhere in the doc (Tasks/Dev notes), e.g. `lib/foo/bar.ts`
-  const referenced = [...text.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)].map((m) => m[1]);
+  // Files referenced in backticks anywhere in the doc (Tasks/Dev notes), e.g. `lib/foo/bar.ts`.
+  //
+  // Path-qualified references only. Story docs also write bare basenames in
+  // prose (`actions.ts`, `page.tsx`, `route.ts`), and those matched any file
+  // with that name anywhere in the repo — one doc mentioning `page.tsx` was
+  // enough to flag almost every commit, which trains people to append a
+  // meaningless note to a doc they did not touch.
+  const referenced = [...text.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)]
+    .map((m) => m[1])
+    .filter((ref) => ref.includes("/"));
   return { file, status, checked, total, referenced };
 }
 
@@ -60,7 +68,11 @@ for (const f of files) {
   // Pre-commit mode: this story's own referenced files are in the staged diff, but the
   // story doc itself was NOT staged, which likely means a status update was skipped.
   if (staged.length > 0) {
-    const touchesReferenced = s.referenced.some((ref) => staged.some((sf) => sf.endsWith(ref)));
+    // Match on a path-segment boundary so `lib/auth/roles.ts` cannot be
+    // satisfied by `vendor/lib/auth/roles.ts`.
+    const touchesReferenced = s.referenced.some((ref) =>
+      staged.some((sf) => sf === ref || sf.endsWith(`/${ref}`))
+    );
     const docStaged = staged.includes(rel);
     if (touchesReferenced && !docStaged && s.status && !/^done$/i.test(s.status)) {
       problems.push(
