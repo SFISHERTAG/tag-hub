@@ -7,6 +7,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "test": "vitest run",
+    "lint": "eslint src",
     "deploy": "npm run deploy:phase1 && npm run deploy:phase2",
     "deploy:phase1": "gcloud functions deploy phase1-provisioning --gen2 --region=us-central1 --runtime=nodejs22 --trigger-http --allow-unauthenticated --entry-point=phase1Provisioning",
     "deploy:phase2": "gcloud functions deploy phase2-intake-submit --gen2 --region=us-central1 --runtime=nodejs22 --trigger-http --allow-unauthenticated --entry-point=phase2IntakeSubmit"

@@ -39,30 +39,41 @@ export async function addToOtpWhitelist(email: string): Promise<void> {
 export async function saveTenantResources(
   locationId: string,
   data: {
-    name: string;
-    slackChannelId: string;
-    driveFolderId: string;
+    name?: string;
+    slackChannelId?: string;
+    driveFolderId?: string;
     googleDocId?: string;
     ownerEmail?: string;
     metaAdAccountId?: string;
     metaBusinessId?: string;
     metaPixelId?: string;
+    metaSetupStatus?: string;
+    metaAccessRequestedAt?: string;
+    metaSetupGuidesentAt?: string;
   }
 ): Promise<void> {
-  const metaFields: Record<string, string> = {};
-  if (data.metaAdAccountId) metaFields.metaAdAccountId = data.metaAdAccountId;
-  if (data.metaBusinessId) metaFields.metaBusinessId = data.metaBusinessId;
-  if (data.metaPixelId) metaFields.metaPixelId = data.metaPixelId;
+  // Firestore's client rejects explicit `undefined` field values, so only
+  // fields the caller actually provided go into the write — this is what
+  // lets phase3's partial "just update Meta status" calls merge onto a
+  // location phase1 already created without clobbering the rest with
+  // undefined.
+  const fields: Record<string, string> = {};
+  if (data.name !== undefined) fields.name = data.name;
+  if (data.slackChannelId !== undefined) fields.slackChannelId = data.slackChannelId;
+  if (data.driveFolderId !== undefined) fields.driveFolderId = data.driveFolderId;
+  if (data.googleDocId !== undefined) fields.googleDocId = data.googleDocId;
+  if (data.ownerEmail !== undefined) fields.ownerEmail = data.ownerEmail;
+  if (data.metaAdAccountId) fields.metaAdAccountId = data.metaAdAccountId;
+  if (data.metaBusinessId) fields.metaBusinessId = data.metaBusinessId;
+  if (data.metaPixelId) fields.metaPixelId = data.metaPixelId;
+  if (data.metaSetupStatus) fields.metaSetupStatus = data.metaSetupStatus;
+  if (data.metaAccessRequestedAt) fields.metaAccessRequestedAt = data.metaAccessRequestedAt;
+  if (data.metaSetupGuidesentAt) fields.metaSetupGuidesentAt = data.metaSetupGuidesentAt;
 
   await db.collection("locations").doc(locationId).set(
     {
       locationId,
-      name: data.name,
-      slackChannelId: data.slackChannelId,
-      driveFolderId: data.driveFolderId,
-      googleDocId: data.googleDocId,
-      ownerEmail: data.ownerEmail,
-      ...metaFields,
+      ...fields,
       services: {
         vslFunnel: true,
         adManagement: true,
@@ -84,7 +95,14 @@ export async function saveTenantResources(
 export async function logProvisioningEvent(
   locationId: string,
   event: {
-    type: "phase1_started" | "phase1_complete" | "phase2_started" | "phase2_complete";
+    type:
+      | "phase1_started"
+      | "phase1_complete"
+      | "phase2_started"
+      | "phase2_complete"
+      | "phase3_started"
+      | "phase3_access_requested"
+      | "phase3_setup_guide_sent";
     timestamp: Date;
     details?: Record<string, unknown>;
     error?: string;

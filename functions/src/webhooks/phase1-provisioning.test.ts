@@ -43,10 +43,10 @@ vi.mock("@google-cloud/firestore", () => {
   return { Firestore };
 });
 
-const cloneLocation = vi.fn(async () => "loc-123");
-const findLocationByName = vi.fn(async () => "template-loc");
-const createOpportunity = vi.fn(async () => "opp-999");
-const getPipelines = vi.fn(async () => [{ id: "pipe-1", name: "Fulfillment" }]);
+const cloneLocation = vi.fn(async (..._args: unknown[]) => "loc-123");
+const findLocationByName = vi.fn(async (..._args: unknown[]) => "template-loc");
+const createOpportunity = vi.fn(async (..._args: unknown[]) => "opp-999");
+const getPipelines = vi.fn(async (..._args: unknown[]) => [{ id: "pipe-1", name: "Fulfillment" }]);
 
 vi.mock("../ghl", () => ({
   cloneLocation: (...args: unknown[]) => cloneLocation(...args),
@@ -55,29 +55,29 @@ vi.mock("../ghl", () => ({
   getPipelines: (...args: unknown[]) => getPipelines(...args),
 }));
 
-const createSlackChannel = vi.fn(async () => "channel-1");
-const inviteSlackGuest = vi.fn(async () => undefined);
+const createSlackChannel = vi.fn(async (..._args: unknown[]) => "channel-1");
+const inviteSlackGuest = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../slack", () => ({
   createSlackChannel: (...args: unknown[]) => createSlackChannel(...args),
   inviteSlackGuest: (...args: unknown[]) => inviteSlackGuest(...args),
 }));
 
-const createDriveFolder = vi.fn(async () => "folder-1");
+const createDriveFolder = vi.fn(async (..._args: unknown[]) => "folder-1");
 vi.mock("../google", () => ({
   createDriveFolder: (...args: unknown[]) => createDriveFolder(...args),
 }));
 
-const addToOtpWhitelist = vi.fn(async () => undefined);
-const saveTenantResources = vi.fn(async () => undefined);
-const logProvisioningEvent = vi.fn(async () => undefined);
+const addToOtpWhitelist = vi.fn(async (..._args: unknown[]) => undefined);
+const saveTenantResources = vi.fn(async (..._args: unknown[]) => undefined);
+const logProvisioningEvent = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../firestore", () => ({
   addToOtpWhitelist: (...args: unknown[]) => addToOtpWhitelist(...args),
   saveTenantResources: (...args: unknown[]) => saveTenantResources(...args),
   logProvisioningEvent: (...args: unknown[]) => logProvisioningEvent(...args),
 }));
 
-const sendIntakeFormEmail = vi.fn(async () => undefined);
-const sendProvisioningConfirmation = vi.fn(async () => undefined);
+const sendIntakeFormEmail = vi.fn(async (..._args: unknown[]) => undefined);
+const sendProvisioningConfirmation = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../email", () => ({
   sendIntakeFormEmail: (...args: unknown[]) => sendIntakeFormEmail(...args),
   sendProvisioningConfirmation: (...args: unknown[]) => sendProvisioningConfirmation(...args),
