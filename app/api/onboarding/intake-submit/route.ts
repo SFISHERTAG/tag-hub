@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
+import { authorizeOnboardingTrigger } from "@/lib/api/webhook-auth";
 
 /**
  * POST /api/onboarding/intake-submit
  *
  * Receives intake form submission and forwards to Phase 2 Cloud Function.
- * This endpoint can be:
- * 1. Called directly from a form (client-side)
- * 2. Triggered by GHL webhook
- * 3. Called manually from admin interface
+ * Callable by TAG staff (admin interface) or by a machine caller holding
+ * PHASE2_WEBHOOK_SECRET (the GHL webhook). Not callable anonymously: the
+ * body names a real client's locationId, and everything downstream of here
+ * provisions against that tenant.
  */
 export async function POST(request: NextRequest) {
+  const denied = await authorizeOnboardingTrigger("intake-submit", request, "PHASE2_WEBHOOK_SECRET");
+  if (denied) return denied;
+
   try {
     const body = await request.json();
 
@@ -42,9 +46,14 @@ export async function POST(request: NextRequest) {
         // retry on a transient network error) should be recognized as the
         // same delivery even if body key order or whitespace differs from
         // Phase 2's own content hash of the raw JSON.
+        // Keyed on the client and contact rather than the whole payload.
+        // Hashing `intakeData` too meant a resubmission carrying different
+        // data read as a fresh delivery, so the provisioning pipeline would
+        // run a second time for the same client. Same client, same contact
+        // is the same delivery; a genuinely new intake changes one of them.
         "x-idempotency-key": crypto
           .createHash("sha256")
-          .update(JSON.stringify({ locationId, email, intakeData }))
+          .update(JSON.stringify({ phase: "phase2", locationId, email }))
           .digest("hex"),
       },
       body: JSON.stringify({ locationId, email, intakeData }),

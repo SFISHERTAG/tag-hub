@@ -6,7 +6,7 @@ import { addToOtpWhitelist, saveTenantResources, logProvisioningEvent } from "..
 import { provisionClientOwner } from "../auth";
 import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email";
 import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
-import { checkWebhookSecret } from "../lib/webhooks/secret";
+import { requireWebhookSecret } from "../lib/webhooks/secret";
 
 /**
  * Phase 1: Webhook triggered when checkbox "Initiate Onboarding" is checked
@@ -22,9 +22,20 @@ import { checkWebhookSecret } from "../lib/webhooks/secret";
  */
 export async function handlePhase1(req: Request, res: Response): Promise<void> {
   let eventId: string | undefined;
-  try {
-    checkWebhookSecret("Phase 1", req, "PHASE1_WEBHOOK_SECRET");
 
+  // Unlike Phase 2 and Phase 3, this check rejects rather than warns. Step 4
+  // below writes the caller-supplied contact email into the OTP whitelist,
+  // which is what gates real sign-in — so an unauthenticated call here does
+  // not just provision resources, it hands out a working login. Configure
+  // PHASE1_WEBHOOK_SECRET on the function and set the same value as the
+  // bearer token on the GHL webhook.
+  const auth = requireWebhookSecret("Phase 1", req, "PHASE1_WEBHOOK_SECRET");
+  if (!auth.ok) {
+    res.status(auth.status).json({ error: auth.message });
+    return;
+  }
+
+  try {
     const webhook = req.body;
 
     // Extract data from GHL webhook
