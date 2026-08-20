@@ -66,7 +66,8 @@ export interface FlowAuditLog {
   table_name: string;
   record_id: string;
   action: "create" | "update" | "delete";
-  changes: Record<string, { old: any; new: any }>;
+  /** Field name to before/after. Values are whatever column type changed, so `unknown` is the honest type; readers narrow at the point of use. */
+  changes: Record<string, { old: unknown; new: unknown }>;
   changed_by: string;
   admin_note: string | null;
   parent_change_id: string | null;

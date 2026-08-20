@@ -124,7 +124,7 @@ export function SetterDashboard({
               {(["urgent", "normal", "aged"] as const).map((priority) => (
                 <button
                   key={priority}
-                  onClick={() => setFilter(priority as any)}
+                  onClick={() => setFilter(priority)}
                   className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                     filter === priority
                       ? "bg-accent text-background"

@@ -70,7 +70,7 @@ describe("getAdRoas safe division", () => {
     expect(row!.spend).toBe(0);
     expect(row!.revenue).toBe(5000);
     expect(row!.roas).toBeNull();
-    expect(Number.isFinite(row!.roas as any)).toBe(false);
+    expect(Number.isFinite(row!.roas)).toBe(false);
   });
 
   it("shows a real 0.00 ROAS for an ad with spend but zero conversions", async () => {

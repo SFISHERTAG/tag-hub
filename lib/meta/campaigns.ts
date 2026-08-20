@@ -21,6 +21,32 @@ export interface MetaCampaign {
   created_time: string;
 }
 
+/**
+ * The Graph API's own shape for the fields requested below, as opposed to
+ * `MetaCampaign`, which is ours. Every field is optional because Meta omits
+ * rather than nulls, and every numeric comes back as a string. Typing this
+ * rather than reaching for `any` is what makes the string-to-number coercion
+ * at each call site visible instead of implied.
+ */
+interface RawCampaign {
+  id: string;
+  name?: string;
+  status?: MetaCampaign["status"];
+  created_time?: string;
+  start_date?: string;
+  end_date?: string;
+  objective?: string;
+}
+
+/** Raw insights row. Meta returns all of these as strings. */
+interface RawInsights {
+  spend?: string;
+  impressions?: string;
+  clicks?: string;
+  conversions?: string;
+  lead_generation_by_ad_id?: Record<string, number>;
+}
+
 export interface MetaCampaignMetrics {
   spend: number;
   impressions: number;
@@ -50,7 +76,7 @@ export async function getAdAccountCampaigns(adAccountId: string): Promise<ApiRes
     const accountPath = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
 
     const response = (
-      await api.call<{ data: any[] }>(
+      await api.call<{ data: RawCampaign[] }>(
         "GET",
         `/${accountPath}/campaigns`,
         {
@@ -80,14 +106,14 @@ export async function getAdAccountCampaigns(adAccountId: string): Promise<ApiRes
 
       campaigns.push({
         id: campaign.id,
-        name: campaign.name,
-        status: campaign.status,
+        name: campaign.name ?? "Untitled campaign",
+        status: campaign.status ?? "PAUSED",
         spend_24h: metrics.spend,
         impressions_24h: metrics.impressions,
         clicks_24h: metrics.clicks,
         leads_24h: metrics.leads,
         roas_24h: metrics.conversions > 0 ? metrics.spend / metrics.conversions : undefined,
-        created_time: campaign.created_time,
+        created_time: campaign.created_time ?? "",
         start_date: campaign.start_date,
         end_date: campaign.end_date,
       });
@@ -106,7 +132,7 @@ async function getCampaignMetrics(campaignId: string, datePreset: string): Promi
   const api = getMetaApi();
 
   const response = (
-    await api.call<{ data: any[] }>(
+    await api.call<{ data: RawInsights[] }>(
       "GET",
       `/${campaignId}/insights`,
       {
@@ -122,15 +148,18 @@ async function getCampaignMetrics(campaignId: string, datePreset: string): Promi
 
   const data = response[0];
 
+  const spend = parseFloat(data.spend ?? "") || 0;
+  const conversions = parseInt(data.conversions ?? "") || 0;
+
   return {
-    spend: parseFloat(data.spend) || 0,
-    impressions: parseInt(data.impressions) || 0,
-    clicks: parseInt(data.clicks) || 0,
-    conversions: parseInt(data.conversions) || 0,
+    spend,
+    impressions: parseInt(data.impressions ?? "") || 0,
+    clicks: parseInt(data.clicks ?? "") || 0,
+    conversions,
     leads: data.lead_generation_by_ad_id
-      ? Object.values(data.lead_generation_by_ad_id as Record<string, number>).reduce((a, b) => a + b, 0)
+      ? Object.values(data.lead_generation_by_ad_id).reduce((a, b) => a + b, 0)
       : 0,
-    roas: data.conversions > 0 ? parseFloat(data.spend) / parseInt(data.conversions) : 0,
+    roas: conversions > 0 ? spend / conversions : 0,
   };
 }
 
@@ -144,7 +173,7 @@ export async function getCampaignDetail(campaignId: string): Promise<ApiResult<M
   return withErrorHandling(`getCampaignDetail(${campaignId})`, async () => {
     const api = getMetaApi();
 
-    const response = await api.call<any>(
+    const response = await api.call<RawCampaign>(
       "GET",
       `/${campaignId}`,
       {
@@ -165,14 +194,14 @@ export async function getCampaignDetail(campaignId: string): Promise<ApiResult<M
 
     return {
       id: response.id,
-      name: response.name,
-      status: response.status,
+      name: response.name ?? "Untitled campaign",
+      status: response.status ?? "PAUSED",
       spend_24h: metrics.spend,
       impressions_24h: metrics.impressions,
       clicks_24h: metrics.clicks,
       leads_24h: metrics.leads,
       roas_24h: metrics.roas,
-      created_time: response.created_time,
+      created_time: response.created_time ?? "",
       start_date: response.start_date,
       end_date: response.end_date,
     };
@@ -188,7 +217,7 @@ export async function unpauseCampaign(campaignId: string): Promise<{ status: "AC
   const api = getMetaApi();
 
   try {
-    await api.call<any>("POST", `/${campaignId}`, { status: "ACTIVE" });
+    await api.call<{ success?: boolean }>("POST", `/${campaignId}`, { status: "ACTIVE" });
   } catch (error) {
     throw new MetaApiError(`/${campaignId}`, error);
   }
@@ -207,7 +236,7 @@ export async function getCampaignCreativeCount(campaignId: string): Promise<numb
     const api = getMetaApi();
 
     const response = (
-      await api.call<{ data: any[] }>(
+      await api.call<{ data: { id: string }[] }>(
         "GET",
         `/${campaignId}/ads`,
         {

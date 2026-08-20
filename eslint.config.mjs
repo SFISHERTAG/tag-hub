@@ -13,6 +13,23 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+
+    // Generated, vendored, or compiled output. None of it is authored here,
+    // and linting it made the gate structurally unpassable: 26 of the 77
+    // errors on this branch came from minified Angular vendor bundles in a
+    // build cache and from an archived script. A rule nobody can satisfy is
+    // a rule everybody learns to ignore, which is how the whole lint gate
+    // ended up decorative.
+    ".angular/**",
+    "_archive/**",
+    "functions/dist/**",
+    "coverage/**",
+
+    // Dead tree, kept for reference and already excluded from typecheck in
+    // tsconfig.json for the same reason: zero call sites anywhere in app/,
+    // lib/, test/ or functions/. Queued for deletion in the cleanup pass;
+    // ignored here so it cannot hold the gate red until then.
+    "src/**",
   ]),
   {
     plugins: { import: importPlugin },

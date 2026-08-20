@@ -25,13 +25,20 @@ function timeRange(days: number): { since: string; until: string } {
   return { since: isoDate(since), until: isoDate(until) };
 }
 
+/** Graph API insights row at ad level. `spend` arrives as a string. */
+interface RawAdInsightsRow {
+  ad_id: string;
+  ad_name?: string;
+  spend?: string;
+}
+
 async function fetchAdInsights(
   api: ReturnType<typeof getMetaApi>,
   accountPath: string,
   days: number,
 ): Promise<Map<string, { adName: string; spend: number }>> {
   const response = (
-    await api.call<{ data: any[] }>("GET", `/${accountPath}/insights`, {
+    await api.call<{ data: RawAdInsightsRow[] }>("GET", `/${accountPath}/insights`, {
       level: "ad",
       fields: ["ad_id", "ad_name", "spend"],
       time_range: timeRange(days),
@@ -41,7 +48,10 @@ async function fetchAdInsights(
 
   const byAd = new Map<string, { adName: string; spend: number }>();
   for (const row of response ?? []) {
-    byAd.set(row.ad_id, { adName: row.ad_name, spend: parseFloat(row.spend) || 0 });
+    byAd.set(row.ad_id, {
+      adName: row.ad_name ?? "Untitled ad",
+      spend: parseFloat(row.spend ?? "") || 0,
+    });
   }
   return byAd;
 }

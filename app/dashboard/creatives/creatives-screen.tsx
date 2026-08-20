@@ -6,13 +6,37 @@ import { CreativeCard, type Creative } from './creative-card';
 import { CreativeApprovalModal } from '../modals/creative-approval-modal';
 import type { CreativeForDisplay } from '@/lib/dashboard/data-fetchers';
 
+/**
+ * The server type carries values this card cannot render — platform "meta"
+ * and "other", format "document" — and the `as any` casts meant those fell
+ * through to a colour map with no entry, rendering blank. Mapped explicitly
+ * with a named fallback so an unhandled value degrades visibly rather than
+ * to nothing.
+ */
+const PLATFORM_MAP: Record<CreativeForDisplay["platform"], Creative["platform"]> = {
+  facebook: "facebook",
+  instagram: "instagram",
+  google: "google",
+  tiktok: "tiktok",
+  meta: "facebook",
+  other: "google",
+};
+
+const FORMAT_MAP: Record<CreativeForDisplay["format"], Creative["format"]> = {
+  image: "image",
+  video: "video",
+  carousel: "carousel",
+  text: "text",
+  document: "text",
+};
+
 // Map server data to client display format
 function mapCreativeForDisplay(creative: CreativeForDisplay): Creative {
   return {
     id: creative.id,
     title: creative.title,
-    platform: creative.platform as any,
-    format: creative.format as any,
+    platform: PLATFORM_MAP[creative.platform],
+    format: FORMAT_MAP[creative.format],
     status: creative.status,
     thumbnail: undefined, // Thumbnails would need separate handling
     description: creative.description,

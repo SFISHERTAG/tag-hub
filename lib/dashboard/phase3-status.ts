@@ -81,6 +81,19 @@ export async function getPhase3Status(locationId: string): Promise<ApiResult<Pha
 }
 
 /**
+ * `automation_logs` row for the phase-3 events selected below. `details` is
+ * a jsonb column, so its inner fields stay optional and are narrowed here
+ * rather than assumed.
+ */
+type Phase3EventRow = {
+  location_id: string;
+  phase: string;
+  event: string;
+  details: { has_existing_account?: boolean; error?: string } | null;
+  created_at: string;
+};
+
+/**
  * Get all Phase 3 events for a client (full audit trail).
  */
 export async function getPhase3History(locationId: string): Promise<ApiResult<Phase3Status[]>> {
@@ -100,7 +113,7 @@ export async function getPhase3History(locationId: string): Promise<ApiResult<Ph
       [locationId]
     );
 
-    return result.rows.map((row: Record<string, any>) => ({
+    return result.rows.map((row: Phase3EventRow) => ({
       locationId: row.location_id,
       phase: row.phase,
       event: row.event,

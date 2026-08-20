@@ -113,11 +113,13 @@ export function Stat({
  * "needs attention". `warn` is orange rather than amber for the same reason:
  * amber sitting next to the accent is not distinguishable at badge size.
  */
+export type BadgeTone = "neutral" | "ok" | "warn" | "danger" | "info";
+
 export function Badge({
   tone = "neutral",
   children,
 }: {
-  tone?: "neutral" | "ok" | "warn" | "danger" | "info";
+  tone?: BadgeTone;
   children: React.ReactNode;
 }) {
   const tones = {

@@ -3,6 +3,15 @@ import { pool } from "@/lib/postgres";
 import type { Course, Section, Subsection, Checkbox } from "./types";
 
 /**
+ * Row shapes as the SELECTs above actually return them: snake_case columns,
+ * nullable where the schema allows it. Named rather than left as `any` so a
+ * column rename breaks here instead of producing `undefined` in the UI.
+ */
+type SubsectionRow = { id: string; title: string; loom_id: string | null; content: string };
+type SectionRow = { id: string; title: string };
+type CourseRow = { id: string; slug: string; title: string; description: string | null };
+
+/**
  * Course content, in Postgres.
  *
  * Was a hand-edited static Record<string, Course> — every content change
@@ -26,7 +35,7 @@ async function getSubsections(sectionId: string): Promise<Subsection[]> {
   );
 
   return Promise.all(
-    result.rows.map(async (row: any) => ({
+    result.rows.map(async (row: SubsectionRow) => ({
       id: row.id,
       title: row.title,
       loomId: row.loom_id ?? undefined,
@@ -43,7 +52,7 @@ async function getSections(courseId: string): Promise<Section[]> {
   );
 
   return Promise.all(
-    result.rows.map(async (row: any) => ({
+    result.rows.map(async (row: SectionRow) => ({
       id: row.id,
       title: row.title,
       subsections: await getSubsections(row.id),
@@ -71,10 +80,11 @@ export async function getAllCourses(): Promise<Course[]> {
   const result = await pool.query("SELECT id, slug, title, description FROM courses ORDER BY display_order");
 
   return Promise.all(
-    result.rows.map(async (row: any) => ({
+    result.rows.map(async (row: CourseRow) => ({
       id: row.slug,
       title: row.title,
-      description: row.description,
+      // The column is nullable; Course.description is not.
+      description: row.description ?? "",
       sections: await getSections(row.id),
     })),
   );

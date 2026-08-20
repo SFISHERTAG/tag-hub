@@ -64,7 +64,12 @@ export function CustomizeClient({
       widgets = [
         ...page.widgets,
         {
-          id: `${widgetId}_${Date.now()}`,
+          // This function toggles, so a page holds at most one placement per
+          // widget id and the widget id is already unique within the page.
+          // The clock-based suffix it replaced was both unnecessary and a
+          // render-purity violation (the placement id is persisted, so two
+          // saves of the same layout produced two different ids).
+          id: widgetId,
           widgetId,
           position: { x: 0, y: 0 },
           size: widget.defaultSize,

@@ -1,5 +1,5 @@
 import "server-only";
-import { google } from "googleapis";
+import { google, type drive_v3 } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
@@ -32,6 +32,29 @@ async function getAuthClient() {
 }
 
 /**
+ * `google.drive()` types its `auth` option against googleapis-common's own
+ * copy of the auth classes, which is a structurally identical but nominally
+ * distinct type from the one google-auth-library returns here. That mismatch
+ * is what the `as any` casts were papering over. Narrowed to the option's
+ * declared type instead, so the cast no longer erases the rest of the call.
+ */
+type DriveAuth = drive_v3.Options["auth"];
+
+/** Maps Drive's API shape onto ours, filling the optionals it leaves out. */
+function toDriveFile(file: drive_v3.Schema$File): DriveFile {
+  return {
+    id: file.id || "",
+    name: file.name || "Untitled",
+    mimeType: file.mimeType || "application/octet-stream",
+    createdTime: file.createdTime || "",
+    modifiedTime: file.modifiedTime || "",
+    size: file.size ?? undefined,
+    webViewLink: file.webViewLink ?? undefined,
+    parents: file.parents ?? undefined,
+  };
+}
+
+/**
  * List files in a Google Drive folder.
  * Returns files with metadata (name, type, dates, size, link).
  */
@@ -40,7 +63,7 @@ export async function listDriveFiles(folderId: string): Promise<ApiResult<DriveF
 
   return withErrorHandling(`listDriveFiles(${folderId})`, async () => {
     const auth = await getAuthClient();
-    const drive = google.drive({ version: "v3", auth: auth as any });
+    const drive = google.drive({ version: "v3", auth: auth as DriveAuth });
 
     const result = await drive.files.list({
       q: `'${folderId}' in parents and trashed=false`,
@@ -50,18 +73,7 @@ export async function listDriveFiles(folderId: string): Promise<ApiResult<DriveF
       pageSize: 100,
     });
 
-    return (
-      result.data.files?.map((file: any) => ({
-        id: file.id || "",
-        name: file.name || "Untitled",
-        mimeType: file.mimeType || "application/octet-stream",
-        createdTime: file.createdTime || "",
-        modifiedTime: file.modifiedTime || "",
-        size: file.size,
-        webViewLink: file.webViewLink,
-        parents: file.parents,
-      })) || []
-    );
+    return result.data.files?.map(toDriveFile) ?? [];
   });
 }
 
@@ -71,7 +83,7 @@ export async function listDriveFiles(folderId: string): Promise<ApiResult<DriveF
 export async function getDriveFile(fileId: string): Promise<ApiResult<DriveFile | null>> {
   return withErrorHandling(`getDriveFile(${fileId})`, async () => {
     const auth = await getAuthClient();
-    const drive = google.drive({ version: "v3", auth: auth as any });
+    const drive = google.drive({ version: "v3", auth: auth as DriveAuth });
 
     const file = await drive.files.get({
       fileId,
@@ -81,16 +93,7 @@ export async function getDriveFile(fileId: string): Promise<ApiResult<DriveFile 
 
     if (!file.data.id) return null;
 
-    return {
-      id: file.data.id,
-      name: (file.data as any).name || "Untitled",
-      mimeType: file.data.mimeType || "application/octet-stream",
-      createdTime: (file.data as any).createdTime || "",
-      modifiedTime: (file.data as any).modifiedTime || "",
-      size: (file.data as any).size,
-      webViewLink: file.data.webViewLink || undefined,
-      parents: (file.data as any).parents as string[] | undefined,
-    };
+    return toDriveFile(file.data);
   });
 }
 

@@ -115,7 +115,9 @@ export async function PATCH(
     }
 
     // Track changes for audit
-    const changes: Record<string, { old: any; new: any }> = {};
+    // Values are whatever column changed, so `unknown` is the honest type —
+    // this is written straight to the audit log, never read back here.
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
 
     if (body.content !== undefined && body.content !== existingScript.content) {
       changes["content"] = {
