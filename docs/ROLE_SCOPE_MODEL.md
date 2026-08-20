@@ -93,6 +93,80 @@ Widgets stay role-gated for *availability* and become scope-driven for *content*
 
 ---
 
+## The same conflation one layer down: data vs. presentation
+
+**The ask:** view ROAS as a line, a bare number, a heat map — whatever suits. The visual is a
+choice about *reading* the number, not a property of the number.
+
+**Today the two are welded together.** `WIDGET_REGISTRY` has eleven entries, each a
+data-plus-visual bundle: `spend_roas`, `leads_funnel`, `kpi_summary`, `pipeline_board`. And
+`app/dashboard/widget-grid.tsx:66–90+` renders them with a hardcoded `if / else if` chain on
+`placement.widgetId`, one branch per id. So "ROAS as a bar chart instead" is not a setting —
+it is a twelfth registry entry and another branch in the chain. That chain grows linearly
+with (metrics × visuals), which is the shape of a problem that gets worse forever.
+
+### Split them
+
+**Metric** — a named data source. Declares its *shape*, who may see it, and nothing about
+appearance:
+
+```ts
+type Metric = {
+  id: "roas" | "spend" | "leads" | "show_rate" | ...;
+  shape: "scalar" | "timeseries" | "categorical" | "funnel" | "matrix";
+  availableFor: Role[];           // as today
+  // fetched through the scope resolver above
+};
+```
+
+**Visual** — a renderer, declaring which shapes it can draw:
+
+```ts
+type Visual = {
+  id: "number" | "line" | "bar" | "donut" | "heatmap" | "sparkline" | "table";
+  accepts: Shape[];
+};
+```
+
+**Widget instance** — what a user actually saves on their dashboard:
+
+```ts
+{ metricId: "roas", visualId: "line", size: {...}, options: {...} }
+```
+
+**The compatibility rule does the work.** A visual may render a metric only if
+`visual.accepts.includes(metric.shape)`. That is what stops the picker offering nonsense — a
+heat map of a single scalar — without anyone hand-maintaining a matrix. Add a metric and every
+compatible visual works on it immediately; add a visual and it works on every metric of the
+shapes it accepts. The if-chain becomes a lookup.
+
+**Some of the vocabulary already exists.** `app/ui.tsx` has `Stat` (the bare number), `Donut`,
+and `BarChart` with `Segment` / `BarSeries` types. Those are three visuals already written
+against generic data shapes rather than against ROAS specifically. Line and heat map would be
+new; the pattern is established.
+
+### How it composes with everything above
+
+```
+widget = metric  ×  visual  ×  scope
+         what      how it     whose
+         number    is drawn   rows
+```
+
+Three independent choices. Role gates which metrics are offered; scope decides whose rows
+fill them; the user picks the visual. Each axis can change without touching the other two —
+which is the actual test of whether the split is right.
+
+### Migration
+
+Saved dashboards reference the old bundled ids, so keep a compatibility map:
+`spend_roas → { metric: "roas", visual: "line" }`, and so on for the eleven. Existing configs
+keep working, the if-chain is deleted in one step rather than eleven, and nobody's dashboard
+resets. Worth doing in that order — a rewrite that silently empties every saved dashboard
+would be a bad first impression of a feature whose whole point is personalisation.
+
+---
+
 ## Authority is a fourth thing, and it is not a role
 
 Carried over from `docs/ONBOARDING_INTAKE_WIZARD_BRIEF.md` §3f: what you may *change* is
