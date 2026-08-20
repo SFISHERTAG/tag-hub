@@ -132,11 +132,25 @@ export async function PATCH(
       changes["notes"] = { old: existingScript.notes, new: body.notes };
     }
 
+    /*
+     * Pass the body's fields through untouched.
+     *
+     * These used to be `body.why ?? null`, which turned "the caller did not
+     * mention this field" into "set this field to NULL" — `updateScript`
+     * skips `undefined` but writes an explicit `null`. So a partial edit that
+     * sent only `content` silently wiped why, notes and version_tag. Worse,
+     * the audit `changes` block above only records fields the body actually
+     * carried, so the wipe left no trace: the log said one field changed
+     * while three were destroyed.
+     *
+     * Undefined now means "leave alone" and an explicit null still clears the
+     * field, which is what a partial update should mean.
+     */
     const updated = await updateScript(scriptId, {
       content: body.content,
-      why: body.why ?? null,
-      notes: body.notes ?? null,
-      version_tag: body.version_tag ?? null,
+      why: body.why,
+      notes: body.notes,
+      version_tag: body.version_tag,
       tags: body.tags,
       updated_by: session.email || "unknown",
     });

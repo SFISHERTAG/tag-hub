@@ -39,7 +39,7 @@ describe("revertChange audit direction", () => {
           },
         ],
       }) // SELECT flow_audit_log
-      .mockResolvedValueOnce(undefined) // UPDATE flow_scripts
+      .mockResolvedValueOnce({ rowCount: 1 }) // UPDATE flow_scripts (one row restored)
       .mockResolvedValueOnce(undefined) // INSERT flow_audit_log (the revert's own entry)
       .mockResolvedValueOnce(undefined); // COMMIT
 
@@ -62,5 +62,37 @@ describe("revertChange audit direction", () => {
       content: { old: "New script text", new: "Old script text" },
     });
     expect(loggedChanges).not.toEqual(originalChanges);
+  });
+
+  it("reports failure when the record it would restore no longer exists", async () => {
+    // A hard-deleted script updates zero rows. This used to commit anyway,
+    // write a revert entry into the audit log, and return true — so the UI
+    // said "reverted" while nothing had been restored and the log claimed a
+    // change that never happened.
+    clientQuery
+      .mockResolvedValueOnce(undefined) // BEGIN
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: "audit1",
+            org_id: "org1",
+            table_name: "flow_scripts",
+            record_id: "deleted-script",
+            changes: JSON.stringify({ content: { old: "Old", new: "New" } }),
+          },
+        ],
+      }) // SELECT flow_audit_log
+      .mockResolvedValueOnce({ rowCount: 0 }) // UPDATE matched nothing
+      .mockResolvedValueOnce(undefined); // ROLLBACK
+
+    await expect(revertChange("audit1", "manager@tag.test")).resolves.toBe(false);
+
+    const logged = clientQuery.mock.calls.some((call) =>
+      String(call[0]).includes("INSERT INTO flow_audit_log"),
+    );
+    expect(logged).toBe(false);
+
+    const rolledBack = clientQuery.mock.calls.some((call) => String(call[0]) === "ROLLBACK");
+    expect(rolledBack).toBe(true);
   });
 });
