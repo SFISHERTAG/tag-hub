@@ -34,10 +34,19 @@ substitutions:
   # against. Not a stand-in for per-client multi-tenant routing; that is
   # Story 1.2/1.6, still blocked on GHL account consolidation.
   _GHL_LOCATION_ID: rb6hPt8Ue77L4abghRMc
-  # Must exactly match what's registered as the redirect URI on the
-  # Marketplace app, and must be pinned to the _SERVICE name above — changing
-  # one without the other breaks the OAuth callback.
-  _GHL_REDIRECT_URI: https://tag-hub-git-vdsoboedgq-uc.a.run.app/api/oauth/callback
+  # The origin this deployment is served from. Pins the CSRF Origin check on
+  # every session-minting route to one exact value instead of falling back to
+  # comparing Origin against Host. Must be scheme + host, no trailing slash.
+  _APP_ORIGIN: https://hub.taxadvisorygrowth.com
+  # Must exactly match what's registered as the redirect URI on the GHL
+  # Marketplace app. Changing one without the other breaks the OAuth callback,
+  # and the GHL side is not editable from this repo.
+  #
+  # DO NOT DEPLOY until both are true: the hub.taxadvisorygrowth.com
+  # certificate has issued, and the Marketplace app's redirect URI has been
+  # changed to this value. Deploying earlier points the callback at a host that
+  # does not serve yet.
+  _GHL_REDIRECT_URI: https://hub.taxadvisorygrowth.com/api/oauth/callback
   _GMAIL_SENDER: support@taxadvisorygrowth.net
   # tag-postgres (Cloud SQL) reached over the Unix socket Cloud Run mounts at
   # /cloudsql/<connection-name> when --add-cloudsql-instances is set below —
@@ -118,7 +127,7 @@ steps:
       # Introduced in code without being added here — every tag_exec/tag_csm/
       # tag_sales/tag_sales_manager hit on /closer/flow 500'd until this line
       # existed.
-      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
+      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,APP_ORIGIN=${_APP_ORIGIN},GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
       # GHL_PIT is deliberately absent. It is a single-location development
       # fallback, and leaving it set in production would let a token-resolution
       # bug silently serve one tenant's credential for every other tenant.
