@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSession } from "@/lib/auth/session";
+import { getSession, ownsLocation } from "@/lib/auth/session";
 import { isClientUser } from "@/lib/dashboard/location-selection";
 import { setTaskComplete } from "@/lib/onboarding/store";
 import { logAction } from "@/lib/audit/store";
@@ -19,6 +19,12 @@ export async function markTaskComplete(
   }
   if (isClientUser(session.currentRole)) {
     return { ok: false, error: "Only TAG staff can update the checklist." };
+  }
+  // "Not a client user" is not the same as "this client is yours". Without
+  // this any CSM could tick another client's onboarding tasks — including
+  // "Fund the account" — and it would land in the audit log as legitimate.
+  if (!(await ownsLocation(session, locationId))) {
+    return { ok: false, error: "That client account is not available to this login." };
   }
 
   try {

@@ -2,6 +2,7 @@
 
 import { firestore } from "@/lib/firestore";
 import { getAdAccountCampaigns, type MetaCampaign, getCampaignCreativeCount } from "@/lib/meta/campaigns";
+import { requireOwnedClient } from "@/lib/auth/session";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
@@ -18,6 +19,8 @@ export async function getCampaignsWithCreativesForClient(
   clientId: string,
 ): Promise<ApiResult<CampaignWithCreativeCount[]>> {
   return withErrorHandling(`getCampaignsWithCreativesForClient(${clientId})`, async () => {
+    await requireOwnedClient(clientId);
+
     // Get client's Meta ad account ID from Firestore
     const clientDoc = await firestore().collection("clients").doc(clientId).get();
 

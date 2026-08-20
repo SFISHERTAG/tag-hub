@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveSuggestion } from "@/lib/flow/db";
-import { getSession } from "@/lib/auth/session";
+import { getSuggestion, resolveSuggestion } from "@/lib/flow/db";
+import { getSession, requireOwnedLocation } from "@/lib/auth/session";
+import { toErrorResponse } from "@/lib/api/route-guard";
 import { hasAnyRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,15 @@ export async function POST(
       );
     }
 
+    // The suggestion carries the org it belongs to; approving writes a new
+    // live script version, so a reviewer from one tenant must not be able to
+    // resolve another tenant's suggestion by id.
+    const suggestion = await getSuggestion(suggestionId);
+    if (!suggestion) {
+      return NextResponse.json({ error: "Suggestion not found" }, { status: 404 });
+    }
+    await requireOwnedLocation(suggestion.org_id);
+
     const resolved = await resolveSuggestion(
       suggestionId,
       body.action,
@@ -46,6 +56,8 @@ export async function POST(
 
     return NextResponse.json(resolved);
   } catch (error) {
+    const denied = toErrorResponse(error);
+    if (denied) return denied;
     console.error("Error resolving script suggestion:", error);
     const message = error instanceof Error ? error.message : "Failed to resolve suggestion";
     const status = message.includes("not found") ? 404 : message.includes("already") ? 409 : 500;

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "./admin";
 import { isRole, type Role } from "./roles";
 import { listAllLocationIds } from "../ghl/tenants";
+import { firestore } from "../firestore";
 
 /**
  * Server-side session resolution.
@@ -142,22 +143,73 @@ export async function requireSession(): Promise<Session> {
 }
 
 /**
- * Enforces that the session has access to the requested location.
- * Throws 403 if not permitted. Call this before every GHL request.
+ * Tenant ownership.
+ *
+ * Every server action and route handler that accepts a caller-supplied
+ * tenant-scoped id (`locationId`, `orgId`, `clientId`, `campaignId`) has to
+ * check that id against the caller's own session. A role check alone is not
+ * enough: `client_closer` is a legitimate role, but it is legitimate for
+ * exactly one tenant, and nothing about the role says which. Before this
+ * gate existed the check was written per-call-site, which meant it was
+ * mostly not written at all.
+ *
+ * `ownsLocation` is the single predicate. Everything below is a thin wrapper
+ * that decides what to do when it returns false — redirect, throw, or return
+ * a typed result — so the access rule itself lives in one place.
  */
-export async function requireLocationAccess(locationId: string): Promise<void> {
-  const session = await getSession();
-  if (!session) redirect("/signin");
 
-  // tag_exec, tag_csd, and admin can access any location
-  if (
-    session.currentRole === "tag_exec" ||
-    session.currentRole === "tag_csd" ||
-    session.currentRole === "admin"
-  )
-    return;
+/** Roles whose remit is the whole book of business, not one tenant. */
+const ALL_TENANT_ROLES: readonly Role[] = ["admin", "tag_exec", "tag_csd"];
 
-  if (session.locations.includes(locationId)) return;
+/**
+ * TAG staff. Internal roles see across tenants by design (the CS coverage
+ * model: a CSM picking up a peer's book during PTO is a feature, see
+ * `getClientsForCsm`). Client roles never do.
+ */
+const INTERNAL_ROLES: readonly Role[] = [
+  "admin",
+  "tag_exec",
+  "tag_csd",
+  "tag_csm",
+  "tag_sales_manager",
+  "tag_sales",
+  "tag_setter_manager",
+  "tag_setter",
+];
+
+/** Thrown when a session is valid but the requested tenant is not theirs. */
+export class ForbiddenError extends Error {
+  readonly status = 403;
+  constructor(message: string) {
+    super(message);
+    this.name = "ForbiddenError";
+  }
+}
+
+/** Thrown when there is no valid session at all. */
+export class UnauthenticatedError extends Error {
+  readonly status = 401;
+  constructor(message = "Not signed in.") {
+    super(message);
+    this.name = "UnauthenticatedError";
+  }
+}
+
+/** True if `role` belongs to TAG staff rather than a client tenant. */
+export function isInternalRole(role: Role): boolean {
+  return INTERNAL_ROLES.includes(role);
+}
+
+/**
+ * The one access predicate. Never redirects and never throws, so it is safe
+ * in a route handler, a server action, or a page.
+ */
+export async function ownsLocation(session: Session, locationId: string): Promise<boolean> {
+  if (!locationId) return false;
+
+  if (ALL_TENANT_ROLES.includes(session.currentRole)) return true;
+
+  if (session.locations.includes(locationId)) return true;
 
   // A CSM's static grant doesn't include their whole book — client
   // assignment is dynamic (Firestore, not custom claims). Entering a client
@@ -167,11 +219,96 @@ export async function requireLocationAccess(locationId: string): Promise<void> {
   if (session.currentRole === "tag_csm") {
     const impersonation = await getImpersonation();
     if (impersonation && impersonation.locationId === locationId && impersonation.actorId === session.uid) {
-      return;
+      return true;
     }
   }
 
-  throw new Error(
+  return false;
+}
+
+/**
+ * Enforces that the session has access to the requested location.
+ * Redirects an unauthenticated caller to sign-in and throws 403 otherwise.
+ * Use in pages and server components; route handlers want
+ * `requireOwnedLocation` instead, which throws rather than redirecting.
+ */
+export async function requireLocationAccess(locationId: string): Promise<void> {
+  const session = await getSession();
+  if (!session) redirect("/signin");
+  if (await ownsLocation(session, locationId)) return;
+
+  throw new ForbiddenError(
     `403 Forbidden: location ${locationId} not in permitted locations: ${session.locations.join(", ")}`,
   );
+}
+
+/**
+ * Same check as `requireLocationAccess`, but throws `UnauthenticatedError`
+ * instead of issuing a redirect, and hands back the session so the caller
+ * does not resolve it twice. This is the form route handlers and server
+ * actions want: a `redirect()` thrown out of a POST handler surfaces as an
+ * opaque failure rather than a 401.
+ */
+export async function requireOwnedLocation(locationId: string): Promise<Session> {
+  const session = await getSession();
+  if (!session) throw new UnauthenticatedError();
+  if (await ownsLocation(session, locationId)) return session;
+
+  throw new ForbiddenError(`Location ${locationId} is not available to this account.`);
+}
+
+/**
+ * Enforces that the caller is TAG staff. Cross-tenant reads by internal
+ * roles are intentional (coverage), so the gate for those paths is "are you
+ * staff at all", not "is this tenant yours" — but it still has to be asked.
+ */
+export async function requireInternalRole(): Promise<Session> {
+  const session = await getSession();
+  if (!session) throw new UnauthenticatedError();
+  if (!isInternalRole(session.currentRole)) {
+    throw new ForbiddenError("This data is available to TAG staff only.");
+  }
+  return session;
+}
+
+/**
+ * Resolves a `clients/{clientId}` document to its tenant and enforces that
+ * the caller may see it.
+ *
+ * The CSM surfaces are keyed by Firestore client id rather than GHL location
+ * id, so they need their own resolution step — but the rule underneath is
+ * the same one `ownsLocation` applies. Internal roles pass on the coverage
+ * model (any CSM can pull up a peer's book, deliberately); a client-tenant
+ * role has to actually own the location the client record points at.
+ *
+ * Returns the resolved location id so the caller does not read the document
+ * a second time.
+ */
+export async function requireOwnedClient(
+  clientId: string,
+): Promise<{ session: Session; locationId: string | null }> {
+  const session = await getSession();
+  if (!session) throw new UnauthenticatedError();
+
+  // Staff see across the book by design. Skip the document read entirely
+  // rather than paying for it on every internal dashboard fetch.
+  if (isInternalRole(session.currentRole)) {
+    return { session, locationId: null };
+  }
+
+  if (!clientId) throw new ForbiddenError("No client specified.");
+
+  const doc = await firestore().collection("clients").doc(clientId).get();
+  if (!doc.exists) {
+    // Deliberately the same error a forbidden client gets: a client role
+    // must not be able to probe which client ids exist.
+    throw new ForbiddenError(`Client ${clientId} is not available to this account.`);
+  }
+
+  const locationId = doc.data()?.ghl_location_id;
+  if (typeof locationId !== "string" || !(await ownsLocation(session, locationId))) {
+    throw new ForbiddenError(`Client ${clientId} is not available to this account.`);
+  }
+
+  return { session, locationId };
 }

@@ -2,7 +2,8 @@
 
 import { firestore } from "@/lib/firestore";
 import { fetchCreatives, type CreativeForDisplay } from "@/lib/dashboard/data-fetchers";
-import { type ApiResult } from "@/lib/api/errorInterceptor";
+import { requireOwnedClient, requireOwnedLocation } from "@/lib/auth/session";
+import { fail, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Campaign reference for a creative.
@@ -28,6 +29,16 @@ export async function getCreativesWithCampaigns(
   clientId: string,
   locationId: string,
 ): Promise<ApiResult<CreativeWithCampaigns[]>> {
+  // Both ids are caller-supplied and they are checked separately on
+  // purpose: passing your own clientId alongside someone else's locationId
+  // would otherwise read another tenant's Drive assets.
+  try {
+    await requireOwnedClient(clientId);
+    await requireOwnedLocation(locationId);
+  } catch (error) {
+    return fail(`getCreativesWithCampaigns(${clientId}, ${locationId})`, error);
+  }
+
   // Fetch creatives from Google Drive — a real failure here (not "no files")
   // fails the whole result rather than rendering an empty/misleading list.
   const creativesResult = await fetchCreatives(locationId);

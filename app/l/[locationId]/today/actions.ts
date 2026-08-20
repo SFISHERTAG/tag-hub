@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import { getSession, getImpersonation } from "@/lib/auth/session";
+import { getSession, getImpersonation, ownsLocation } from "@/lib/auth/session";
 import { hasAnyRole } from "@/lib/auth/roles";
 import {
   setAppointmentStatus,
@@ -165,6 +165,12 @@ export async function setFollowUpConfig(
   if (!session) return { ok: false, error: "Not signed in." };
   if (!hasAnyRole(session.currentRole, ["client_manager", "client_owner"])) {
     return { ok: false, error: "Only a closing manager or owner can change this." };
+  }
+  // The role check above says "a closing manager" — it does not say *whose*.
+  // locationId comes from the caller, so without this a manager for one
+  // client can silently rewrite another client's follow-up aging rules.
+  if (!(await ownsLocation(session, locationId))) {
+    return { ok: false, error: "That client account is not available to this login." };
   }
   if (!Number.isFinite(config.value) || config.value <= 0) {
     return { ok: false, error: "Threshold must be a positive number." };

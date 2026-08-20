@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSuggestion } from "@/lib/flow/db";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireOwnedLocation } from "@/lib/auth/session";
+import { toErrorResponse } from "@/lib/api/route-guard";
 import { hasAnyRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,12 @@ export async function POST(
       );
     }
 
+    // org_id arrives in the request body, so it is caller-supplied like any
+    // path parameter — without this check a closer can file a suggestion
+    // against another tenant's card and have it approved onto their live
+    // framework.
+    await requireOwnedLocation(body.org_id);
+
     const suggestion = await createSuggestion(cardId, {
       org_id: body.org_id,
       suggested_content: body.suggested_content,
@@ -53,6 +60,8 @@ export async function POST(
 
     return NextResponse.json(suggestion, { status: 201 });
   } catch (error) {
+    const denied = toErrorResponse(error);
+    if (denied) return denied;
     console.error("Error creating script suggestion:", error);
     return NextResponse.json({ error: "Failed to create suggestion" }, { status: 500 });
   }

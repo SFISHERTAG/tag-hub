@@ -99,3 +99,24 @@ export function toPausedCampaign(state: CampaignLaunchState): PausedCampaign {
     status: "paused",
   };
 }
+
+/**
+ * True if `campaignId` was launched from this location.
+ *
+ * Story 5.5's activation takes a caller-supplied campaign id and hands it
+ * straight to Meta, where unpausing it starts real ad spend. The launch
+ * store is already scoped per-location (`locations/{id}/campaignLaunches`),
+ * so it is the record of which tenant a campaign belongs to — that makes
+ * this the ownership check for a Meta campaign id.
+ */
+export async function locationOwnsCampaign(
+  locationId: string,
+  campaignId: string,
+): Promise<boolean> {
+  const snapshot = await firestore()
+    .collection(COLLECTION(locationId))
+    .where("campaignId", "==", campaignId)
+    .limit(1)
+    .get();
+  return !snapshot.empty;
+}

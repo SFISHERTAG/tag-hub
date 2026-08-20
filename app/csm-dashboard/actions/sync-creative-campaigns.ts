@@ -3,12 +3,18 @@
 import { firestore } from "@/lib/firestore";
 import { getAdAccountCampaigns } from "@/lib/meta/campaigns";
 import { getCreativesForCampaign } from "@/lib/meta/creatives";
+import { requireOwnedClient } from "@/lib/auth/session";
 
 /**
  * Sync creative-to-campaign mappings from Meta to Firestore.
  * For each campaign, fetches its ads and stores the relationship.
  */
 export async function syncCreativeToCampaignMappings(clientId: string): Promise<void> {
+  // This one writes — it batch-overwrites the client's meta_creatives
+  // subcollection — so it is gated before the try, letting an access failure
+  // reject rather than being swallowed by the catch below.
+  await requireOwnedClient(clientId);
+
   try {
     // Get client's Meta ad account ID
     const clientDoc = await firestore().collection("clients").doc(clientId).get();

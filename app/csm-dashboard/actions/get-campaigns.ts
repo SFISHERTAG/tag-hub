@@ -2,6 +2,7 @@
 
 import { firestore } from "@/lib/firestore";
 import { getAdAccountCampaigns, type MetaCampaign } from "@/lib/meta/campaigns";
+import { requireOwnedClient } from "@/lib/auth/session";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
@@ -10,6 +11,8 @@ import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
  */
 export async function getCampaignsForClient(clientId: string): Promise<ApiResult<MetaCampaign[]>> {
   return withErrorHandling(`getCampaignsForClient(${clientId})`, async () => {
+    await requireOwnedClient(clientId);
+
     // Get client's Meta ad account ID from Firestore
     const clientDoc = await firestore().collection("clients").doc(clientId).get();
 

@@ -1,5 +1,5 @@
 import "server-only";
-import { requireSession } from "@/lib/auth/session";
+import { requireSession, requireOwnedLocation, ForbiddenError } from "@/lib/auth/session";
 import { unpauseCampaign } from "@/lib/meta/campaigns";
 import { updateOpportunityStage } from "@/lib/ghl/opportunities";
 import { findStageId } from "@/lib/ghl/pipelines";
@@ -11,6 +11,7 @@ import { getTenant } from "@/lib/ghl/tenants";
 import {
   campaignLaunchKey,
   getCampaignLaunchState,
+  locationOwnsCampaign,
   reserveCampaignLaunch,
   updateCampaignLaunch,
   toPausedCampaign,
@@ -101,6 +102,10 @@ export async function createPausedCampaign(
         "so creation can target that client's Meta ad account and audit log.",
     );
   }
+
+  // Creation targets the tenant's Meta ad account and writes their audit
+  // log, so the location has to be the caller's before any of that starts.
+  await requireOwnedLocation(locationId);
 
   const template = getCampaignTemplate(templateId);
   if (!template) {
@@ -315,6 +320,18 @@ export async function activateCampaign(
   opportunityId: string,
 ): Promise<ActivationResult> {
   const session = await requireSession();
+
+  // This is the one call in the codebase that starts real ad spend, and both
+  // ids reaching it are caller-supplied. A campaign id is not a secret — it
+  // shows up in URLs and support tickets — so without these two checks a CSM
+  // who has seen another client's campaign id can switch on that client's
+  // budget without their consent.
+  await requireOwnedLocation(locationId);
+  if (!(await locationOwnsCampaign(locationId, campaignId))) {
+    throw new ForbiddenError(
+      `Campaign ${campaignId} was not launched from location ${locationId} — refusing to activate it.`,
+    );
+  }
 
   await unpauseCampaign(campaignId);
 
