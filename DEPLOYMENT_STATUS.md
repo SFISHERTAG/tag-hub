@@ -2,7 +2,11 @@
 
 **Deployment Date:** August 16, 2026 (Evening)  
 **Status:** 🚀 DEPLOYING TO PRODUCTION  
-**Deployment Type:** Automatic Cloud Build trigger
+**Deployment Type:** ~~Automatic Cloud Build trigger~~ Manual (`gcloud builds submit`) — corrected below
+
+---
+
+> **Correction, August 19, 2026:** This document's "automatic trigger" claim is false and was never true. `gcloud builds triggers list` returns zero items — no Cloud Build trigger has ever existed for this project. A push to `main` does not deploy anything; every deployment described below required someone to run `gcloud builds submit` by hand. As of this correction, production is still running an image built from commit `d5795ae` (`d5795ae-local` — note the `-local` suffix, itself a sign this was a manual local build, not a pipeline output), which is 15 commits behind `phase2-high-severity-bugs`'s current tip. The Phase 3 rollout this document narrates should be read as one team member's point-in-time account of what they believed was happening on Aug 16, not as a description of a real automated pipeline.
 
 ---
 
@@ -22,7 +26,7 @@ Changes:
 
 **Status:** ✅ Pushed to https://github.com/SFISHERTAG/tag-hub
 
-**Cloud Build Trigger:** Automatically started  
+**Cloud Build Trigger:** ~~Automatically started~~ No trigger exists; this assumed one would fire and none did (see correction above)  
 **Expected Deployment Time:** ~5-10 minutes  
 **Production URL:** https://tag-hub-git-vdsoboedgq-uc.a.run.app
 
