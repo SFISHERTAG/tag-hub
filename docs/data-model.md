@@ -8,6 +8,11 @@ boundary changes. Same commit as the code change.
 
 **Location:** Google Cloud Firestore (GCP project: `GOOGLE_CLOUD_PROJECT`)
 
+`GOOGLE_CLOUD_PROJECT` has no fallback (`lib/firestore.ts#firestore()` throws immediately if it's
+unset) — it used to default to the real production project id, so a missing env var silently
+connected local/dev/script runs to live production data instead of failing. `lib/auth/otp.ts` now
+uses this same shared client rather than constructing its own.
+
 ### Collections
 
 | Collection | Purpose | Primary key | Replicated to Postgres? |

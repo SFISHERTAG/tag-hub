@@ -44,7 +44,16 @@ if (role && !ROLES.includes(role)) {
   process.exit(1);
 }
 
-const projectId = process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub";
+// No fallback, on purpose — this script creates real users and grants real
+// roles (including tag_exec, "the closest thing to a super admin"). An
+// unset env var silently defaulting to the production project means a
+// mistyped command grants production access instead of failing loudly.
+const projectId = process.env.GOOGLE_CLOUD_PROJECT;
+if (!projectId) {
+  console.error("GOOGLE_CLOUD_PROJECT is not set. Refusing to run against an unknown/default project.");
+  process.exit(1);
+}
+console.log(`Targeting Firebase project: ${projectId}`);
 if (getApps().length === 0) initializeApp({ projectId });
 const auth = getAuth();
 
