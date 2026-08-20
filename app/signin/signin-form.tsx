@@ -433,7 +433,7 @@ export function SignInForm({ next }: { next: string }) {
             setError(null);
             setNotice(null);
           }}
-          className="text-chrome-ink-2/40 underline-offset-2 transition-colors hover:text-white hover:underline"
+          className="text-chrome-ink-2/85 underline-offset-2 transition-colors hover:text-white hover:underline"
         >
           Use a different email
         </button>
@@ -441,7 +441,7 @@ export function SignInForm({ next }: { next: string }) {
           type="button"
           disabled={pending}
           onClick={() => requestCode()}
-          className="text-chrome-ink-2/40 underline-offset-2 transition-colors hover:text-white hover:underline disabled:opacity-60"
+          className="text-chrome-ink-2/85 underline-offset-2 transition-colors hover:text-white hover:underline disabled:opacity-60"
         >
           Resend code
         </button>
