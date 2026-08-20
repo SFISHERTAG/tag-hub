@@ -276,6 +276,55 @@ The one thing that would flip this decision: if staff picking up half-finished f
 firm operational requirement rather than a nice-to-have, the embed cannot do it at any price,
 and the custom build is the only path.
 
+## 3e. The snapshot — verify where the form and custom fields actually live
+
+Two unrelated things both get called "GHL client" in this repo. Keep them apart:
+
+- **GHL API client** — the code that makes HTTP calls to GHL. There are two implementations
+  (`lib/ghl/` and `functions/src/ghl.ts`), which CLAUDE.md flags as an audit finding. A code
+  duplication problem. Nothing to do with snapshots.
+- **GHL sub-account** ("location") — a customer's own space inside GHL. That *is* the snapshot's
+  business.
+
+So the duplicate-client warning in §3c is not a snapshot concern. **But the snapshot matters
+here for a different and more load-bearing reason.**
+
+### How provisioning works today
+
+Phase 1 (`functions/src/webhooks/phase1-provisioning.ts:72–77`) finds a location literally named
+`"Template Do Not Delete"` and calls `POST /location/{id}/snapshot` (`functions/src/ghl.ts:68`)
+to clone it. **Every client gets their own cloned sub-account from that template.** Custom
+fields, pipelines and workflows come along with the clone.
+
+### The unresolved question
+
+The form, however, is configured as a **single** URL:
+`GHL_FORM_URL=<share link to intake form in TAG agency account>` (`functions/README.md:69`) —
+one env var, one form, described as living in the *agency* account, not the template. Phase 1
+appends `?email=...&locationId=...` to it (`phase1-provisioning.ts:138`).
+
+Those two facts are in tension, and the answer decides real work:
+
+**If the form is part of the snapshot** (cloned per client), then every client has their own
+form *and their own custom-field ids* — GHL generates fresh ids on clone. A single
+`GHL_FORM_URL` env var cannot be correct, the embed needs a per-client URL resolved at
+runtime, and a custom-field writer would need per-location id lookup rather than one static
+map. This is the expensive branch.
+
+**If it is one shared agency form** (what the env var implies), field ids are stable and
+global, the embed is trivially simple, and `?locationId=` is how a submission is attributed.
+But then a second question follows immediately: *a single agency-level form does not natively
+write custom fields into a cloned sub-account.* So either those fields are not actually being
+populated in the client's own location today, or something else is doing it — worth confirming
+rather than assuming, given the stated requirement is that answers "land correctly into the
+custom fields of GHL."
+
+> **Verify in GHL before choosing a path.** Open `"Template Do Not Delete"` and check whether
+> the intake form and its custom fields are in it. Then open one real cloned client location
+> and check whether that client's contact record actually shows the intake answers in custom
+> fields. Fifteen minutes in the GHL UI settles both branches, and it gates §3c and §3d alike.
+> Nothing in this repo can answer it.
+
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
 1. **Data model as contract.** Code may not declare a new Firestore collection without
