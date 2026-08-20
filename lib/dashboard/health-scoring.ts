@@ -31,6 +31,14 @@ export interface ClientHealth {
   sla_score: number;
   alert_count: number;
   last_updated: string;
+  /**
+   * True when this score came from `getMockMetrics` rather than a live
+   * reading. Carried on the data rather than left to each renderer to
+   * remember, because a consumer several layers from the fetch (the
+   * escalation rule engine, a CSV export, an alert) cannot otherwise tell a
+   * placeholder from a measurement.
+   */
+  is_sample?: boolean;
 }
 
 // Default weights

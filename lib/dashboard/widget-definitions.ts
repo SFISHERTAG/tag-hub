@@ -124,8 +124,20 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
   },
 };
 
-/** Widget ids backed by lib/dashboard/mock-metrics.ts rather than a live data source yet. */
-export const MOCK_METRICS_WIDGET_IDS = ["leads_funnel", "spend_roas", "kpi_summary"];
+/**
+ * Widget ids backed by lib/dashboard/mock-metrics.ts rather than a live data
+ * source yet. `portfolio` and `client_health` belong here because the health
+ * score and status they render come from `getMockMetrics`, which returns the
+ * same numbers for every client — they were rendering with no disclosure at
+ * all, which is how a CSM ends up escalating on an invented figure.
+ */
+export const MOCK_METRICS_WIDGET_IDS = [
+  "leads_funnel",
+  "spend_roas",
+  "kpi_summary",
+  "portfolio",
+  "client_health",
+];
 
 export function getAvailableWidgets(role: Role): WidgetDefinition[] {
   return Object.values(WIDGET_REGISTRY).filter((w) => w.availableFor.includes(role));

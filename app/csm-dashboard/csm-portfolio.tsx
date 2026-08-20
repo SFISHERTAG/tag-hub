@@ -9,6 +9,8 @@ import { ListView } from "./views/list-view";
 import { KanbanView } from "./views/kanban-view";
 import { EscalationView } from "./views/escalation-view";
 import { ClientDetailModal } from "./modals/client-detail-modal";
+import { SampleDataBanner } from "../dashboard/widgets/sample-data-banner";
+import { HEALTH_SAMPLE_DATA_NOTICE } from "@/lib/dashboard/mock-metrics";
 
 type ViewMode = "grid" | "list" | "kanban" | "escalations";
 type StatusFilter = "all" | "excellent" | "healthy" | "at-risk" | "critical" | "alert";
@@ -81,6 +83,16 @@ export function CSMPortfolio({
           <h1 className="text-2xl font-semibold text-ink">CSM Dashboard</h1>
           <p className="text-sm text-ink-2">Manage {clients.length} assigned clients</p>
         </div>
+
+        {/*
+          Every health score, status badge and escalation bucket on this page
+          and in all four views below comes from getMockMetrics, which
+          returns the same numbers for every client. It rendered with no
+          disclosure at all, feeding real escalation calls.
+        */}
+        {clients.some((c) => c.health.is_sample) && (
+          <SampleDataBanner what={HEALTH_SAMPLE_DATA_NOTICE} />
+        )}
 
         {error && (
           <div className="rounded-lg border border-danger/30 bg-danger-tint px-3 py-2 text-sm text-danger">

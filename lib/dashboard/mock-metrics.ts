@@ -53,12 +53,25 @@ export type MockMetrics = {
  * budget/lead-target columns) — inventing a number here would let an
  * unconfirmed threshold quietly drive real escalations. Same call this
  * codebase already made in sample-data-banner.tsx: real-shaped numbers, not
- * blanks, until the real integration lands as one unit. Pair any UI that
- * reads this with <SampleDataBanner /> (app/dashboard/widgets/sample-data-banner.tsx).
+ * blanks, until the real integration lands as one unit.
+ *
+ * Note that the `clientId` argument is ignored: every client gets the same
+ * four numbers, so the health score, the status badge and the escalation
+ * bucket derived from them are identical for the whole book. Any surface
+ * that renders them must carry `HEALTH_SAMPLE_DATA_NOTICE` via
+ * <SampleDataBanner />, and `ClientHealth.is_sample` marks the values
+ * themselves so a consumer can tell without knowing where they came from.
  */
 export function getMockMetrics(_clientId: string): HealthMetrics {
   return { roas: 95, spend: 102, leads: 88, sla: 97 };
 }
+
+/** The disclosure that has to accompany anything derived from getMockMetrics. */
+export const HEALTH_SAMPLE_DATA_NOTICE =
+  "client health scores, statuses and escalation buckets below are computed from placeholder " +
+  "metrics that are the same for every client. Do not escalate, or hold off on escalating, " +
+  "based on these. Live scoring needs per-client spend and lead targets, which the schema " +
+  "does not carry yet.";
 
 export const MOCK_METRICS: MockMetrics = {
   kpis: {

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { type ClientData, type ClientAlert } from "@/lib/dashboard/csm-clients-types";
 import { getClientAlertsForClient } from "@/app/csm-dashboard/actions/get-client-alerts";
 import { Stat } from "@/app/ui";
+import { SampleDataBanner } from "@/app/dashboard/widgets/sample-data-banner";
+import { HEALTH_SAMPLE_DATA_NOTICE } from "@/lib/dashboard/mock-metrics";
 
 interface OverviewTabProps {
   client: ClientData;
@@ -31,6 +33,13 @@ export function OverviewTab({ client }: OverviewTabProps) {
 
   return (
     <div className="space-y-6">
+      {/*
+        The modal can be opened directly from a link, so it repeats the
+        portfolio's disclosure rather than relying on the banner one level up
+        being on screen. Every Stat below is placeholder-derived.
+      */}
+      {client.health.is_sample && <SampleDataBanner what={HEALTH_SAMPLE_DATA_NOTICE} />}
+
       {/* Health Status */}
       <div>
         <h3 className="text-sm font-semibold text-ink mb-3">Health Status</h3>

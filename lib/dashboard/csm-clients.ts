@@ -62,6 +62,10 @@ async function buildClientData(
   const metrics = getMockMetrics(clientId);
   const health = calculateHealthScore(metrics);
   health.clientId = clientId;
+  // Every score on this path is placeholder-derived. Marked here, at the one
+  // place the mock enters real client data, so nothing downstream has to
+  // know where it came from to know not to trust it.
+  health.is_sample = true;
 
   // A failed alert fetch degrades this one client's alert_count to 0 rather
   // than failing the whole list — alerts are a supplementary annotation, not

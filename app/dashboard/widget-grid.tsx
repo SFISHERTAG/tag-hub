@@ -20,6 +20,7 @@ import { TopDeals } from "./widgets/top-deals";
 import { SpendCharts } from "./widgets/spend-charts";
 import { RoasTable } from "./widgets/roas-table";
 import { SampleDataBanner } from "./widgets/sample-data-banner";
+import { HEALTH_SAMPLE_DATA_NOTICE } from "@/lib/dashboard/mock-metrics";
 import { PipelineBoardWidget } from "./widgets/pipeline-board-widget";
 import { DayViewWidget } from "./widgets/day-view-widget";
 import { PortfolioWidget } from "./widgets/portfolio-widget";
@@ -56,11 +57,21 @@ export function WidgetGrid({
   const mockOnlyWidgetIds = MOCK_METRICS_WIDGET_IDS.filter(
     (id) => !(id === "leads_funnel" && funnel) && !(id === "spend_roas" && roas),
   );
-  const hasMockMetricsWidget = widgets.some((w) => mockOnlyWidgetIds.includes(w.widgetId));
+  const mockWidgetIds = widgets.map((w) => w.widgetId).filter((id) => mockOnlyWidgetIds.includes(id));
+
+  // Health scores and spend figures are two different fabrications, so the
+  // banner names whichever is actually on the page. Health takes precedence
+  // when both are present: it is the one that drives escalation decisions.
+  const hasMockHealth = mockWidgetIds.some((id) => id === "portfolio" || id === "client_health");
+  const hasMockSpend = mockWidgetIds.some((id) => id !== "portfolio" && id !== "client_health");
 
   return (
     <div className="space-y-4">
-      {hasMockMetricsWidget && <SampleDataBanner />}
+      {hasMockHealth ? (
+        <SampleDataBanner what={HEALTH_SAMPLE_DATA_NOTICE} />
+      ) : hasMockSpend ? (
+        <SampleDataBanner />
+      ) : null}
       <div className="grid auto-rows-max gap-4" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
         {widgets.map((placement) => {
           const widget = WIDGET_REGISTRY[placement.widgetId];
