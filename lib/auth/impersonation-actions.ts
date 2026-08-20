@@ -43,7 +43,13 @@ export async function exitImpersonation(): Promise<void> {
   const impersonation = await getImpersonation();
 
   if (impersonation) {
-    await closeImpersonationEntry(impersonation.locationId, impersonation.auditEntryId);
+    // actorId comes from the same unsigned cookie, so closeImpersonationEntry
+    // verifies it against the stored document rather than trusting it.
+    await closeImpersonationEntry(
+      impersonation.locationId,
+      impersonation.auditEntryId,
+      impersonation.actorId,
+    );
   }
 
   const jar = await cookies();

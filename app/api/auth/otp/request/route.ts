@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { adminAuth } from "@/lib/auth/admin";
-import { issueCode } from "@/lib/auth/otp";
+import { checkCooldown, issueCode, recordCooldown } from "@/lib/auth/otp";
 import { sendMail, signInCodeMail } from "@/lib/auth/mailer";
+import { apiError, rejectCrossSite } from "@/lib/auth/session-cookie";
 
 export const dynamic = "force-dynamic";
 
@@ -29,18 +30,37 @@ function isUserNotFound(error: unknown): boolean {
  * is no self-signup, so an endpoint that distinguished the two would be a
  * membership oracle — anyone could learn which of TAG's clients have accounts.
  */
+const CONTEXT = "POST /api/auth/otp/request";
+
 export async function POST(request: NextRequest) {
+  const crossSite = rejectCrossSite(request, CONTEXT);
+  if (crossSite) return crossSite;
+
   let email: string | undefined;
 
   try {
-    const body = await request.json();
-    email = typeof body?.email === "string" ? body.email.trim() : undefined;
+    const body: unknown = await request.json();
+    const parsed = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+    email = typeof parsed.email === "string" ? parsed.email.trim() : undefined;
   } catch {
-    return NextResponse.json({ error: "Malformed request." }, { status: 400 });
+    return apiError("Malformed request.", CONTEXT, 400);
   }
 
   if (!email || !email.includes("@")) {
-    return NextResponse.json({ error: "Enter a valid email." }, { status: 400 });
+    return apiError("Enter a valid email.", CONTEXT, 400);
+  }
+
+  // Cooldown is checked BEFORE the user lookup, so the response is identical
+  // for an address that exists and one that does not. Checking it afterwards
+  // made `cooldown: true` reachable only for real accounts, which turned the
+  // resend timer into the membership oracle the rest of this route is careful
+  // to avoid.
+  const cooldown = await checkCooldown(email);
+  if (cooldown.blocked) {
+    return NextResponse.json(
+      { ok: true, cooldown: true, retryAfterSeconds: Math.ceil(cooldown.retryAfterMs / 1000) },
+      { status: 200, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   try {
@@ -63,36 +83,31 @@ export async function POST(request: NextRequest) {
        * not — both cases below return the same 200.
        */
       console.error("OTP request failed during user lookup:", error);
-      return NextResponse.json(
-        { error: "Could not send a code. Try again." },
-        { status: 500 },
-      );
+      return apiError("Could not send a code. Try again.", CONTEXT, 500);
     }
 
-    return NextResponse.json({ ok: true });
+    // Start the cooldown window even though nothing was sent. Skipping it would
+    // mean an unknown address never produces the cooldown response, restoring
+    // the oracle from the opposite direction.
+    await recordCooldown(email);
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   }
 
   try {
     const outcome = await issueCode(email);
 
     if (!outcome.sent) {
+      // Raced with a concurrent request between the check above and here.
       return NextResponse.json(
-        {
-          ok: true,
-          cooldown: true,
-          retryAfterSeconds: Math.ceil(outcome.retryAfterMs / 1000),
-        },
-        { status: 200 },
+        { ok: true, cooldown: true, retryAfterSeconds: Math.ceil(outcome.retryAfterMs / 1000) },
+        { status: 200, headers: { "Cache-Control": "no-store" } },
       );
     }
 
     await sendMail(signInCodeMail(email, outcome.code));
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("OTP request failed:", error);
-    return NextResponse.json(
-      { error: "Could not send a code. Try again." },
-      { status: 500 },
-    );
+    return apiError("Could not send a code. Try again.", CONTEXT, 500);
   }
 }

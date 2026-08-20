@@ -46,9 +46,51 @@ function doc(email: string) {
   return firestore().doc(`authCodes/${key(email)}`);
 }
 
+/**
+ * Resend cooldown, kept separate from the code document so that deleting a code
+ * (on success, expiry, or too many attempts) cannot also clear the rate limit.
+ * Keyed by the same hash, so it reveals no address either.
+ */
+function cooldownDoc(email: string) {
+  return firestore().doc(`authCodeCooldowns/${key(email)}`);
+}
+
 export type RequestOutcome =
   | { sent: true; code: string; expiresAt: number }
   | { sent: false; reason: "cooldown"; retryAfterMs: number };
+
+export type CooldownState = { blocked: true; retryAfterMs: number } | { blocked: false };
+
+/**
+ * Resend cooldown for an address, checked WITHOUT regard to whether a user
+ * exists.
+ *
+ * Separated from issueCode so the request route can apply it uniformly. It
+ * previously ran only after a successful user lookup, which made the cooldown
+ * response an account-existence oracle: submit any address twice inside the
+ * window, and only a real one answered with `cooldown: true`.
+ */
+export async function checkCooldown(email: string): Promise<CooldownState> {
+  const snapshot = await cooldownDoc(email).get();
+  if (!snapshot.exists) return { blocked: false };
+
+  const lastIssuedAt = (snapshot.data()?.lastIssuedAt as Timestamp | undefined)?.toMillis() ?? 0;
+  const sinceLast = Date.now() - lastIssuedAt;
+  if (sinceLast >= RESEND_COOLDOWN_MS) return { blocked: false };
+
+  return { blocked: true, retryAfterMs: RESEND_COOLDOWN_MS - sinceLast };
+}
+
+/**
+ * Starts the cooldown window for an address.
+ *
+ * Called for unknown addresses too. Without that, an unknown address never sets
+ * a cooldown and so never produces the cooldown response, which reintroduces the
+ * oracle from the other direction.
+ */
+export async function recordCooldown(email: string): Promise<void> {
+  await cooldownDoc(email).set({ lastIssuedAt: Timestamp.now() });
+}
 
 /**
  * Issues a code. Returns it so the caller can deliver it — this module does not
@@ -56,19 +98,15 @@ export type RequestOutcome =
  */
 export async function issueCode(email: string): Promise<RequestOutcome> {
   const ref = doc(email);
-  const existing = await ref.get();
 
-  if (existing.exists) {
-    const data = existing.data()!;
-    const issuedAt = (data.issuedAt as Timestamp | undefined)?.toMillis() ?? 0;
-    const sinceLast = Date.now() - issuedAt;
-    if (sinceLast < RESEND_COOLDOWN_MS) {
-      return {
-        sent: false,
-        reason: "cooldown",
-        retryAfterMs: RESEND_COOLDOWN_MS - sinceLast,
-      };
-    }
+  // The cooldown lives on its own document, which verifyCode never touches.
+  // Reading it off the code document made it resettable by the caller: burn the
+  // five attempts (or wait for expiry), verifyCode deletes the code document,
+  // and the next request sees no document and issues immediately. That is an
+  // unbounded issue rate against an address, from an unauthenticated caller.
+  const cooldown = await checkCooldown(email);
+  if (cooldown.blocked) {
+    return { sent: false, reason: "cooldown", retryAfterMs: cooldown.retryAfterMs };
   }
 
   // randomInt is drawn from a CSPRNG. Math.random is not, and a predictable
@@ -82,6 +120,7 @@ export async function issueCode(email: string): Promise<RequestOutcome> {
     issuedAt: Timestamp.now(),
     attempts: 0,
   });
+  await recordCooldown(email);
 
   return { sent: true, code, expiresAt };
 }
@@ -90,40 +129,56 @@ export type VerifyOutcome =
   | { ok: true }
   | { ok: false; reason: "invalid" | "expired" | "too-many-attempts" };
 
+/**
+ * Checks a code and consumes an attempt.
+ *
+ * Runs in a transaction because read-gate-write is not enough: the previous
+ * version read a snapshot, compared `attempts` against the cap, and only then
+ * wrote an incremented value. N parallel guesses all read the same pre-increment
+ * value, all pass the cap, and all get a comparison — so the cap bounded the
+ * count of sequential guesses, not the count of guesses. Against a 6-digit code
+ * that is the difference between five tries and as many as an attacker can open
+ * connections for. FieldValue.increment would fix the counter and leave the gate
+ * racing; only a transaction fixes both.
+ */
 export async function verifyCode(
   email: string,
   code: string,
 ): Promise<VerifyOutcome> {
   const ref = doc(email);
-  const snapshot = await ref.get();
 
-  if (!snapshot.exists) return { ok: false, reason: "invalid" };
+  return firestore().runTransaction(async (tx): Promise<VerifyOutcome> => {
+    const snapshot = await tx.get(ref);
+    if (!snapshot.exists) return { ok: false, reason: "invalid" };
 
-  const data = snapshot.data()!;
-  const attempts = (data.attempts as number) ?? 0;
-  const expiresAt = (data.expiresAt as Timestamp).toMillis();
+    const data = snapshot.data();
+    if (!data) return { ok: false, reason: "invalid" };
 
-  if (attempts >= MAX_ATTEMPTS) {
-    await ref.delete();
-    return { ok: false, reason: "too-many-attempts" };
-  }
+    const attempts = (data.attempts as number) ?? 0;
+    const expiresAt = (data.expiresAt as Timestamp).toMillis();
 
-  if (Date.now() > expiresAt) {
-    await ref.delete();
-    return { ok: false, reason: "expired" };
-  }
+    if (attempts >= MAX_ATTEMPTS) {
+      tx.delete(ref);
+      return { ok: false, reason: "too-many-attempts" };
+    }
 
-  const expected = Buffer.from(data.codeHash as string);
-  const actual = Buffer.from(hashCode(email, code.trim()));
-  const matches =
-    expected.length === actual.length && timingSafeEqual(expected, actual);
+    if (Date.now() > expiresAt) {
+      tx.delete(ref);
+      return { ok: false, reason: "expired" };
+    }
 
-  if (!matches) {
-    await ref.update({ attempts: attempts + 1 });
-    return { ok: false, reason: "invalid" };
-  }
+    const expected = Buffer.from(data.codeHash as string);
+    const actual = Buffer.from(hashCode(email, code.trim()));
+    const matches =
+      expected.length === actual.length && timingSafeEqual(expected, actual);
 
-  // Single use. Deleting on success prevents replay of an intercepted code.
-  await ref.delete();
-  return { ok: true };
+    if (!matches) {
+      tx.update(ref, { attempts: attempts + 1 });
+      return { ok: false, reason: "invalid" };
+    }
+
+    // Single use. Deleting on success prevents replay of an intercepted code.
+    tx.delete(ref);
+    return { ok: true };
+  });
 }

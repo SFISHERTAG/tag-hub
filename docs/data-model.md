@@ -15,8 +15,9 @@ boundary changes. Same commit as the code change.
 | `orgs` | Organizations and their tenants | doc ID | No |
 | `locations` | Client sub-accounts within an org | doc ID | No |
 | `users` | Sign-in identities and session auth | doc ID (Firebase UID) | No |
-| `otp` | One-time sign-in tokens (temporary) | email | No, auto-expires |
-| `audit_log` | Immutable record of all sensitive actions | doc ID (auto) | No |
+| `authCodes` | Hashed 6-digit sign-in codes | sha256 of the lowercased email | **No TTL policy configured** |
+| `authCodeCooldowns` | Resend rate limit, one doc per address | sha256 of the lowercased email | **No TTL policy configured** |
+| `locations/{id}/auditLog` | Immutable record of sensitive actions, per tenant | doc ID (auto) | No |
 | `flow_scripts` | FLOW automation editor content | doc ID | No |
 | `creatives` | Campaign creative assets | doc ID | No |
 | `bug_reports` | Client-submitted bugs and feedback | doc ID | No |
@@ -26,6 +27,28 @@ sub-millisecond lookups, immutable audit trail (`setOnServer()` guards). None of
 these are read from Postgres.
 
 ---
+
+
+### Auth collections (corrected 10.2)
+
+These three rows previously read `otp` and a top-level `audit_log`, neither of
+which exists. The real names are above; `lib/auth/otp.ts` writes `authCodes` and
+`lib/audit/store.ts` writes a per-location `auditLog` subcollection.
+
+`authCodeCooldowns` is new in story 10.2 and is deliberately a separate document
+from `authCodes`. The resend cooldown used to live on the code document, and
+`verifyCode` deletes that document on success, on expiry, and on too many
+attempts — so a caller could clear their own rate limit by burning five wrong
+guesses. Splitting them means nothing on the verify path can reset the limit.
+
+Neither collection has a Firestore TTL policy. Both hold only a hash of an
+address plus timestamps, so the exposure is storage growth rather than data
+retention, but a TTL on `expiresAt` (authCodes) and `lastIssuedAt`
+(authCodeCooldowns) is the obvious follow-up and is not done.
+
+Codes are stored hashed and bound to the address they were issued for, so a
+Firestore reader cannot sign in as anyone or replay a code against a different
+account.
 
 ## Postgres (computed views &amp; logs)
 

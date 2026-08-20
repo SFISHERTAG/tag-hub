@@ -14,6 +14,16 @@ export default defineConfig({
      * files that everyone learned to scroll past.
      */
     exclude: ["**/node_modules/**", "**/dist/**", "functions/**", "web/**", "_archive/**"],
+    /**
+     * lib/config.ts validates at import and throws on a missing required key,
+     * which is the whole point of it — but that also means a test importing
+     * anything downstream of it needs a configured environment, exactly like a
+     * real one. These are dummy values; nothing here reaches a live service.
+     */
+    env: {
+      FIREBASE_API_KEY: "test-firebase-api-key",
+      GOOGLE_CLOUD_PROJECT: "tag-test-project",
+    },
   },
   resolve: {
     alias: {

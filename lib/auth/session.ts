@@ -73,7 +73,26 @@ export async function getSession(): Promise<Session | null> {
   const jar = await cookies();
   const cookie = jar.get(SESSION_COOKIE)?.value;
   if (!cookie) return null;
+  return resolveSession(cookie, jar.get(ROLE_COOKIE)?.value);
+}
 
+/**
+ * Resolves a session from a cookie value and a requested hat, without reading
+ * the cookie jar.
+ *
+ * Split out of getSession() so a route that is about to CHANGE the hat can
+ * resolve the resulting session before writing the cookie. Deriving it any other
+ * way leaks: `locations` for tag_exec, tag_csd and admin is every known
+ * location, so carrying the old hat's list into a narrower one would report
+ * tenant access the new hat does not have.
+ *
+ * `requestedRole` is still validated against the caller's own grants here, so
+ * passing an arbitrary value cannot widen anything.
+ */
+export async function resolveSession(
+  cookie: string,
+  requestedRole: string | undefined,
+): Promise<Session | null> {
   try {
     // checkRevoked: a disabled or signed-out user is rejected on their next
     // request rather than lingering until the cookie expires.
@@ -103,8 +122,7 @@ export async function getSession(): Promise<Session | null> {
     // Fallback: no valid roles means unauthenticated.
     if (roleGrants.length === 0) return null;
 
-    // Determine current role from cookie, or use first available.
-    const requestedRole = jar.get(ROLE_COOKIE)?.value;
+    // Determine current role from the request, or use first available.
     const availableRoles = roleGrants.map((r) => r.role);
     const currentRole: Role = isRole(requestedRole) && availableRoles.includes(requestedRole)
       ? (requestedRole as Role)

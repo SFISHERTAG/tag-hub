@@ -124,13 +124,44 @@ export async function createImpersonationEntry(
 }
 
 /**
- * Story 3.5 AC3 — updates the same document from `createImpersonationEntry`
- * with an exit time. Never creates a second document. Called from Story
- * 3.4's exit action.
+ * Story 3.5 AC3 — updates the same document `createImpersonationEntry` made
+ * with an exit time. Never creates a second document.
+ *
+ * `actorId` is required and verified, because every argument here arrives from
+ * the `hub_impersonation` cookie, which is unsigned. httpOnly stops page
+ * scripts reading it; it does nothing about a crafted request. Without an
+ * ownership check this was a bare `.update()` against any document id under any
+ * location, so an authenticated user could stamp an exit time onto another
+ * person's open impersonation entry — closing a record of access that was still
+ * live, which is precisely the trail Story 3.5 exists to keep.
+ *
+ * Returns whether an entry was actually closed. A caller must not treat false
+ * as fatal (the cookie may simply be stale) but must not report success either.
  */
-export async function closeImpersonationEntry(locationId: string, entryId: string): Promise<void> {
-  await firestore()
-    .collection(`locations/${locationId}/auditLog`)
-    .doc(entryId)
-    .update({ exitTimestamp: Date.now() });
+export async function closeImpersonationEntry(
+  locationId: string,
+  entryId: string,
+  actorId: string,
+): Promise<boolean> {
+  const ref = firestore().collection(`locations/${locationId}/auditLog`).doc(entryId);
+
+  return firestore().runTransaction(async (tx) => {
+    const snapshot = await tx.get(ref);
+    if (!snapshot.exists) return false;
+
+    const data = snapshot.data();
+    if (!data) return false;
+
+    // Shape and ownership, both required. The action check stops an arbitrary
+    // audit document of another kind being stamped; the actor check stops one
+    // user closing another's entry.
+    if (data.action !== "impersonation") return false;
+    if (data.actorId !== actorId) return false;
+    // Already closed. Re-stamping would overwrite the real exit time with a
+    // later one, understating how long the access lasted.
+    if (data.exitTimestamp !== null) return false;
+
+    tx.update(ref, { exitTimestamp: Date.now() });
+    return true;
+  });
 }

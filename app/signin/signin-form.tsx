@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithCustomToken } from "firebase/auth";
-import { clientAuth } from "@/lib/auth/client";
 
 type Step = "email" | "code";
 
@@ -63,28 +61,18 @@ export function SignInForm({ next }: { next: string }) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data?.error ?? "That code is not right.");
+        // Error bodies are now ApiError ({ message, context, status }), the same
+        // shape the rest of the app uses. `error` is read as a fallback only
+        // because a 500 from an unmigrated path could still produce it.
+        setError(data?.message ?? data?.error ?? "That code is not right.");
         setPending(false);
         return;
       }
 
-      const credential = await signInWithCustomToken(
-        clientAuth(),
-        data.customToken,
-      );
-      const idToken = await credential.user.getIdToken();
-
-      const session = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!session.ok) {
-        setError("Could not start a session. Try again.");
-        setPending(false);
-        return;
-      }
+      // The session cookie is already set: /api/auth/otp/verify now completes
+      // the custom-token exchange server-side and returns the session payload,
+      // so the browser never handles a Firebase credential. Nothing to do here
+      // but navigate.
 
       router.replace(next);
       router.refresh();
