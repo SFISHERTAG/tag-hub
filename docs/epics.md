@@ -6,6 +6,12 @@ inform.
 
 Status values: `Done` · `In progress` · `Ready` · `Blocked` · `Draft`
 
+Ideas raised mid-build that are not yet promoted into an epic live in
+[`docs/scope-creep-queue.md`](scope-creep-queue.md). Nothing enters the table
+below from that queue until it is argued and given a disposition. Check it
+before opening a new epic, so a queued idea is not rebuilt from scratch or
+re-litigated.
+
 ---
 
 ## Epic 1 — Foundation and access
