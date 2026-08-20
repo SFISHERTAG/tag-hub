@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveSuggestion } from "@/lib/flow/db";
-import { getSession } from "@/lib/auth/session";
+import { getSuggestion, resolveSuggestion } from "@/lib/flow/db";
+import { getSession, requireLocationAccess } from "@/lib/auth/session";
 import { hasAnyRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +37,15 @@ export async function POST(
       );
     }
 
+    // suggestionId alone doesn't carry an org — look the suggestion up first
+    // so a reviewer can only resolve suggestions against orgs they actually
+    // have access to, not just any id they can guess or enumerate.
+    const suggestion = await getSuggestion(suggestionId);
+    if (!suggestion) {
+      return NextResponse.json({ error: "Suggestion not found" }, { status: 404 });
+    }
+    await requireLocationAccess(suggestion.org_id);
+
     const resolved = await resolveSuggestion(
       suggestionId,
       body.action,
@@ -46,6 +55,9 @@ export async function POST(
 
     return NextResponse.json(resolved);
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith("403 Forbidden")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     console.error("Error resolving script suggestion:", error);
     const message = error instanceof Error ? error.message : "Failed to resolve suggestion";
     const status = message.includes("not found") ? 404 : message.includes("already") ? 409 : 500;

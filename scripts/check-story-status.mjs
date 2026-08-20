@@ -29,8 +29,13 @@ function parseStory(file) {
   const tasks = [...text.matchAll(/^- \[( |x)\]/gim)];
   const checked = tasks.filter((t) => t[1].toLowerCase() === "x").length;
   const total = tasks.length;
-  // Files referenced in backticks anywhere in the doc (Tasks/Dev notes), e.g. `lib/foo/bar.ts`
-  const referenced = [...text.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)].map((m) => m[1]);
+  // Files referenced in backticks anywhere in the doc (Tasks/Dev notes), e.g. `lib/foo/bar.ts`.
+  // Requires at least one path separator — a bare `db.ts`/`types.ts` used as shorthand in
+  // prose is too ambiguous to attribute to one file, and matching it via endsWith() below
+  // would false-positive against every other module with the same filename.
+  const referenced = [...text.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)]
+    .map((m) => m[1])
+    .filter((ref) => ref.includes("/"));
   return { file, status, checked, total, referenced };
 }
 

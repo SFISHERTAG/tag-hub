@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSuggestionsForOrg } from "@/lib/flow/db";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireLocationAccess } from "@/lib/auth/session";
 import { hasAnyRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,8 @@ export async function GET(
     }
 
     const { orgId } = await params;
+    await requireLocationAccess(orgId);
+
     const statusParam = request.nextUrl.searchParams.get("status") ?? "pending";
     const status =
       statusParam === "all" ? undefined : (statusParam as "pending" | "approved" | "rejected");
@@ -30,6 +32,9 @@ export async function GET(
     const suggestions = await getSuggestionsForOrg(orgId, status);
     return NextResponse.json(suggestions);
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith("403 Forbidden")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     console.error("Error fetching script suggestions:", error);
     return NextResponse.json({ error: "Failed to fetch suggestions" }, { status: 500 });
   }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFullFramework } from "@/lib/flow/db";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireLocationAccess } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +20,16 @@ export async function GET(
 
     const { orgId } = await params;
 
-    // Verify user has access to this org (simplified — could check permissions)
     if (!orgId) {
       return NextResponse.json(
         { error: "Invalid org ID" },
         { status: 400 }
       );
     }
+
+    // A client-role orgId is the caller's own GHL locationId — this is the
+    // actual access check, not the truthiness check that used to sit here.
+    await requireLocationAccess(orgId);
 
     const framework = await getFullFramework(orgId);
     if (!framework) {
@@ -38,6 +41,9 @@ export async function GET(
 
     return NextResponse.json(framework);
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith("403 Forbidden")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     console.error("Error fetching framework:", error);
     return NextResponse.json(
       { error: "Failed to fetch framework" },
