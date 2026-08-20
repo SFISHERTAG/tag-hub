@@ -118,15 +118,23 @@ export async function assignIndividualRoleAction(
   if (denied) return denied;
   if (!isRole(role)) return { ok: false, error: "Invalid role." };
 
+  // Checked before the grant, not after.
+  //
+  // This used to write the claims first and only then discover the user had
+  // no email, returning an error the admin read as "nothing happened" while
+  // the role was already live on the account. A precondition that runs after
+  // the irreversible step is not a precondition.
+  const needsCsRecord = role === "tag_csm" || role === "tag_csd";
+  if (needsCsRecord && !email) {
+    return { ok: false, error: "This user has no email on file — cannot set CS reporting line." };
+  }
+
   try {
     await assignIndividualRole(uid, role as Role, parseLocations(locationsRaw));
 
     // CS org reporting line — only tag_csm/tag_csd participate in the
     // rollup, and the csm collection is keyed by email, not uid.
-    if (role === "tag_csm" || role === "tag_csd") {
-      if (!email) {
-        return { ok: false, error: "This user has no email on file — cannot set CS reporting line." };
-      }
+    if (needsCsRecord && email) {
       const csmRole: CsmRole = role === "tag_csd" ? "csd" : "csm";
       await upsertCsmRecord({ email, role: csmRole, managerEmail: managerEmail || null });
     }
