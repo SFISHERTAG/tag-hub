@@ -6,6 +6,7 @@
 import { execSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { extractReferencedFiles } from "./lib/story-references.mjs";
 
 const STORIES_DIR = "docs/stories";
 const repoRoot = execSync("git rev-parse --show-toplevel").toString().trim();
@@ -29,16 +30,7 @@ function parseStory(file) {
   const tasks = [...text.matchAll(/^- \[( |x)\]/gim)];
   const checked = tasks.filter((t) => t[1].toLowerCase() === "x").length;
   const total = tasks.length;
-  // Files referenced in backticks anywhere in the doc (Tasks/Dev notes), e.g. `lib/foo/bar.ts`.
-  // Requires at least one path separator — a bare `db.ts`/`types.ts` used as shorthand in
-  // prose is too ambiguous to attribute to one file, and matching it via endsWith() below
-  // would false-positive against every other module with the same filename. Also excludes a
-  // reference immediately followed by "(Story N.N)" — that's this doc explicitly attributing
-  // the file to a *different* story's dev notes as cross-reference context, not claiming it.
-  const referenced = [...text.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)]
-    .filter((m) => !/^\s*\(Story\s/i.test(text.slice(m.index + m[0].length, m.index + m[0].length + 20)))
-    .map((m) => m[1])
-    .filter((ref) => ref.includes("/"));
+  const referenced = extractReferencedFiles(text);
   return { file, status, checked, total, referenced };
 }
 

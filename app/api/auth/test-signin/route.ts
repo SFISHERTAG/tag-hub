@@ -1,15 +1,17 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "@/lib/auth/admin";
-import type { Role } from "@/lib/auth/roles";
+import { isRole } from "@/lib/auth/roles";
 
 /**
  * Test auth endpoint — bypasses OTP for development.
- * Only available if TEST_AUTH_ENABLED=true in environment.
+ * Only available if TEST_AUTH_ENABLED=true in environment, AND only outside
+ * production — two independent checks, since this mints a real session
+ * cookie for any email/role with no password or OTP. Either check alone
+ * being flipped by mistake is not enough on its own to open this up.
  */
 
-const TEST_AUTH_ENABLED = process.env.TEST_AUTH_ENABLED === "true";
+const TEST_AUTH_ENABLED = process.env.TEST_AUTH_ENABLED === "true" && process.env.NODE_ENV !== "production";
 
 export async function POST(request: Request) {
   if (!TEST_AUTH_ENABLED) {
@@ -26,11 +28,17 @@ export async function POST(request: Request) {
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
+    if (!isRole(role)) {
+      return new Response(
+        JSON.stringify({ error: `Unknown role "${role}"` }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
     // Create a custom token with role claims
     const customToken = await adminAuth().createCustomToken(email, {
       email,
-      role: role as Role,
+      role,
       test_user: true,
     });
 
