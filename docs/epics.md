@@ -232,7 +232,7 @@ Angular, so a screen exists in exactly one place and no defect gets fixed twice.
 | --- | --- | --- |
 | 10.1 | Contract hardening and boundary enforcement | In Progress |
 | 10.2 | Real session wiring and the auth surface | Draft |
-| 10.3 | Responsive shell and navigation | Draft |
+| 10.3 | Responsive shell and navigation | In Progress |
 | 10.4 | Shared M3 primitives, portfolio and bug reports | Draft |
 | 10.5 | GHL integration module | Draft |
 | 10.6 | Widget dashboard and the clients book | Draft |
