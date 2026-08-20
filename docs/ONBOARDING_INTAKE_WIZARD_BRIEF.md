@@ -1,9 +1,10 @@
 # Intake Wizard + Welcome Tour — build brief (ON HOLD)
 
-**Status: not built. Fully specified.** All six decisions answered (§3), the Google Doc
-question resolved (§3b), and the architecture stated (§3c). Two things stand between this and
-code, both mechanical: export the GHL custom-field ids, and decide the trigger order in §3c.
-This is a context-gathering handoff, not an implementation.
+**Status: not built. Two viable paths.** §3d proposes embedding the existing GHL form rather
+than rebuilding it — much cheaper, and it deletes the highest-risk work, but it cannot do the
+autosave/resume/staff-pickup of decision D. **Read §3d first and decide that before anything
+else**; it determines whether most of §1–§3c is needed at all. This is a context-gathering
+handoff, not an implementation.
 Nothing in `app/` or `lib/` was changed. Pick this up in a fresh session inside
 `/Users/home/projects/TAG` on branch `onboarding-intake-wizard-scaffold`.
 
@@ -216,6 +217,64 @@ pipeline going. Today `POST /api/onboarding/intake-submit` calls Phase 2 directl
 
 Do not do both, or a single submit fires Phase 2 twice. The content-hash idempotency guard
 would catch an identical double-fire, but not two calls whose bodies differ slightly.
+
+## 3d. Cheaper option — embed the GHL form instead of rebuilding it
+
+**Proposal:** don't rebuild the form. Embed the existing GHL form in the app's intake step,
+styled with custom CSS, and let GHL keep writing its own custom fields.
+
+**This is a strong trade and it should be taken seriously.** It deletes the most expensive
+and riskiest work in this brief:
+
+| Problem it removes | Where it came from |
+|---|---|
+| Writing GHL custom fields over the API | §3c — net-new code, nothing in the repo can do it |
+| Exporting and matching field ids byte-for-byte | §1 — named the highest-risk step in the build |
+| Silent Gemini prompt drift from a mistyped key | §1 — the failure mode that motivated that risk |
+| Choosing which GHL client owns the write | §3c — CLAUDE.md's duplicate-client finding |
+| Phase 2 double-trigger | §3c — resolves itself; GHL's webhook stays the only trigger |
+
+GHL's form writes GHL's fields, exactly as today. Everything downstream — Phase 2, Gemini,
+the Doc, Phase 3 — is untouched and already proven. **Already in place:** the form URL
+carries `?email=` and `?locationId=` (`phase1-provisioning.ts:138`), so an embed associates
+the submission the same way the emailed link does. No new contract.
+
+### What it costs — one real conflict, stated plainly
+
+**It contradicts resolved decision D.** You asked for per-step autosave, resume exactly where
+they stopped, and **staff able to open and continue a half-finished form**. An embedded
+third-party form does not give you that:
+
+- Cross-origin iframe — the app cannot see or touch the answers mid-flight
+- No resume-where-you-left-off across sessions for the client
+- No second editor: staff cannot pick up a client's partial form
+- No editor identity for the audit trail (client vs. which staff member)
+
+Smaller costs: styling must be done **inside GHL's form builder**, not from the app — a
+cross-origin iframe cannot be styled by the parent page, so the app's design tokens
+(`bg-surface`, `text-ink`, dark mode) will not reach it, and matching the look is fiddly and
+approximate. And the gate's completion signal has to come from GHL's webhook rather than the
+app watching directly. That last one is fine: decision C already fails open, so the worst
+case is a client sees the welcome tour a second time.
+
+**Needs verifying in GHL before committing** (product capability, not answerable from this
+repo): whether the form is a Form or a Survey, whether multi-page/multi-step is available on
+that type, and how much the custom-CSS field actually reaches.
+
+### Recommendation — embed first
+
+Ship the embed as v1. Keep the custom wizard as the documented fallback, not the plan.
+
+The reason is evidence, not cost. **The form has never been used in production** (§3F), so
+there is currently *no data* on whether clients actually abandon it midway. Autosave, resume,
+and staff-pickup were specified against a hypothetical. Build the cheap version, watch what
+real clients do with 20+ free-text questions, and rebuild only if abandonment turns out to
+be real. If it is, §1–§3c are still here and still accurate — nothing in this brief is wasted
+by trying the embed first.
+
+The one thing that would flip this decision: if staff picking up half-finished forms is a
+firm operational requirement rather than a nice-to-have, the embed cannot do it at any price,
+and the custom build is the only path.
 
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
