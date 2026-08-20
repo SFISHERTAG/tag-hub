@@ -51,9 +51,18 @@ export async function POST(request: NextRequest) {
 
   const response = wantsJson
     ? NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } })
-    : // 303, not the default 307. A 307 preserves the method, so the browser
+    : // A host-RELATIVE Location, resolved by the browser against the request it
+      // already made. Building an absolute URL from `request.nextUrl.origin`
+      // reads the container's own bind address inside Cloud Run, so signing out
+      // sent people to https://0.0.0.0:8080/signin. Confirmed in production
+      // before the fix; see test/signout-redirect.test.ts.
+      //
+      // Relative needs no host detection, no x-forwarded-* parsing and no
+      // configured base URL, so it cannot drift per environment.
+      //
+      // 303, not the default 307. A 307 preserves the method, so the browser
       // would re-POST to /signin.
-      NextResponse.redirect(new URL("/signin", request.nextUrl.origin), 303);
+      new NextResponse(null, { status: 303, headers: { Location: "/signin" } });
 
   // All three cookies, on both branches. Clearing only the session leaves
   // hub_role and hub_impersonation behind, so the next person to sign in on a
