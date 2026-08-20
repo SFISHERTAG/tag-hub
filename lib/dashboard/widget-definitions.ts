@@ -124,8 +124,13 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
   },
 };
 
-/** Widget ids backed by lib/dashboard/mock-metrics.ts rather than a live data source yet. */
-export const MOCK_METRICS_WIDGET_IDS = ["leads_funnel", "spend_roas", "kpi_summary"];
+/**
+ * Widget ids backed by lib/dashboard/mock-metrics.ts rather than a live data
+ * source yet. portfolio/client_health render getMockMetrics()-derived health
+ * scores and escalation status — the same fabrication as the KPI widgets,
+ * just reached through lib/dashboard/csm-clients.ts instead of directly.
+ */
+export const MOCK_METRICS_WIDGET_IDS = ["leads_funnel", "spend_roas", "kpi_summary", "portfolio", "client_health"];
 
 export function getAvailableWidgets(role: Role): WidgetDefinition[] {
   return Object.values(WIDGET_REGISTRY).filter((w) => w.availableFor.includes(role));
