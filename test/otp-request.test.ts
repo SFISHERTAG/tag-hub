@@ -23,7 +23,7 @@ vi.mock("@/lib/auth/mailer", () => ({
   sendMail: (mail: unknown) => sendMail(mail),
   signInCodeMail: (email: string, code: string) => ({
     to: email,
-    subject: `${code} is your TAG Hub sign-in code`,
+    subject: `${code} is your TAG Hub verification code`,
     text: code,
   }),
 }));

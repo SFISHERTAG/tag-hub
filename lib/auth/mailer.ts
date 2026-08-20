@@ -63,14 +63,25 @@ export async function sendMail(mail: Mail): Promise<void> {
   );
 }
 
+/**
+ * The sign-in code email.
+ *
+ * Shaped for the on-device scanners in iOS and macOS Mail, which offer a code
+ * for one-tap autofill only when they can identify it. Two things decide that:
+ * the word "code" sitting immediately against the digits, and the digits being
+ * the only number in the message. Both the subject and the opening line follow
+ * the first rule, and the expiry is spelled out rather than written as "10
+ * minutes" to satisfy the second, since a competing number is the usual reason
+ * a code stops being detected. Keep it that way when editing this copy.
+ */
 export function signInCodeMail(email: string, code: string): Mail {
   return {
     to: email,
-    subject: `${code} is your TAG Hub sign-in code`,
+    subject: `${code} is your TAG Hub verification code`,
     text: [
-      `Your sign-in code is ${code}`,
+      `Your TAG Hub verification code is ${code}`,
       "",
-      "It expires in 10 minutes and can only be used once.",
+      "The code expires in ten minutes and can only be used once.",
       "If you did not request it, you can ignore this email.",
     ].join("\n"),
   };

@@ -1,11 +1,129 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithCustomToken } from "firebase/auth";
 import { clientAuth } from "@/lib/auth/client";
 
 type Step = "email" | "code";
+
+/**
+ * Enter should do exactly what pressing Sign in does.
+ *
+ * Implicit form submission is meant to give this for free, but it does not
+ * fire reliably for these single-field steps, and an email box that swallows
+ * Enter reads as a broken page. `requestSubmit` is used rather than calling
+ * the handler directly because it is the button's own path: constraint
+ * validation runs, then a real submit event is dispatched.
+ *
+ * `isComposing` guards an IME candidate window, where Enter is choosing a
+ * character rather than finishing the form.
+ */
+function submitOnEnter(event: React.KeyboardEvent<HTMLInputElement>) {
+  if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+  event.preventDefault();
+  event.currentTarget.form?.requestSubmit();
+}
+
+const CODE_LENGTH = 6;
+
+/**
+ * Six boxes, one input.
+ *
+ * The boxes are presentation only. A single real `<input>` sits transparently
+ * over them and holds the whole code, because the two things that matter here
+ * both want one field: iOS and macOS hand an autofilled code to a single
+ * `one-time-code` input rather than distributing it across six, and a pasted
+ * "123-456" has to land somewhere it can be cleaned up as a whole. Six real
+ * inputs would look identical and break both.
+ */
+function CodeBoxes({
+  value,
+  onChange,
+  onKeyDown,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+
+  // Which box the next digit lands in. Clamped so a full code keeps the last
+  // box lit rather than pointing past the end.
+  const active = Math.min(value.length, CODE_LENGTH - 1);
+
+  /**
+   * The real caret is hidden, so leaving it mid-string would send typing
+   * somewhere the boxes cannot show. Every interaction pins it to the end.
+   */
+  function caretToEnd() {
+    const el = ref.current;
+    if (el) el.setSelectionRange(el.value.length, el.value.length);
+  }
+
+  return (
+    <div className="relative">
+      <div className="flex justify-between gap-2" aria-hidden="true">
+        {Array.from({ length: CODE_LENGTH }, (_, i) => {
+          const lit = focused && i === active;
+          return (
+            <div
+              key={i}
+              className={`flex h-12 flex-1 items-center justify-center rounded-md border bg-chrome-hover font-mono text-lg text-white transition-colors ${
+                lit ? "border-accent" : "border-chrome-line"
+              }`}
+            >
+              {value[i] ?? (lit ? <span className="h-5 w-px animate-pulse bg-accent" /> : null)}
+            </div>
+          );
+        })}
+      </div>
+
+      <input
+        ref={ref}
+        id="code"
+        name="code"
+        // `text` with a numeric mode, so a leading zero is never dropped.
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]{6}"
+        required
+        autoFocus
+        // The pairing iOS and macOS look for before offering the code from
+        // Mail in the QuickType bar. Autocorrect and spellcheck are off so
+        // nothing rewrites the digits on the way in.
+        autoComplete="one-time-code"
+        autoCorrect="off"
+        spellCheck={false}
+        value={value}
+        // Deliberately no `maxLength`: it truncates before this runs, so a
+        // pasted "123-456" would arrive as "123-45" and clean up to five
+        // digits. Strip first, then take six.
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))}
+        onKeyDown={onKeyDown}
+        onFocus={() => {
+          setFocused(true);
+          caretToEnd();
+        }}
+        onBlur={() => setFocused(false)}
+        onSelect={caretToEnd}
+        className={
+          // Covers the boxes so a click anywhere focuses it, and renders
+          // nothing of its own. Transparent text rather than `opacity-0` or
+          // `display:none`, both of which risk the field being passed over as
+          // an autofill target. The `-webkit-autofill` pair stops Chrome
+          // painting its autofill background over the boxes.
+          "absolute inset-0 h-full w-full cursor-default bg-transparent text-center " +
+          "font-mono text-lg text-transparent caret-transparent outline-none " +
+          "selection:bg-transparent " +
+          "[&:-webkit-autofill]:[-webkit-text-fill-color:transparent] " +
+          "[&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]"
+        }
+      />
+    </div>
+  );
+}
 
 export function SignInForm({ next }: { next: string }) {
   const router = useRouter();
@@ -15,6 +133,34 @@ export function SignInForm({ next }: { next: string }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const codeFormRef = useRef<HTMLFormElement>(null);
+
+  /**
+   * The code that was last sent for verification without the user asking.
+   * Without it the effect below would resubmit the same rejected code every
+   * time `pending` settled, and a wrong code would spin forever.
+   */
+  const autoSubmitted = useRef<string | null>(null);
+
+  /**
+   * A full code submits itself.
+   *
+   * An autofilled code is the whole point: the digits arrive from the QuickType
+   * bar in one shot, and asking for a button press after that is a step with
+   * nothing left to decide. Typing the sixth digit reads the same way.
+   *
+   * `requestSubmit` again rather than calling `submitCode`, so this and the
+   * button take an identical path. A code that was already tried and rejected
+   * is not retried on its own; the button stays available for that.
+   */
+  useEffect(() => {
+    if (step !== "code" || pending) return;
+    if (code.length !== CODE_LENGTH) return;
+    if (autoSubmitted.current === code) return;
+
+    autoSubmitted.current = code;
+    codeFormRef.current?.requestSubmit();
+  }, [step, code, pending]);
 
   async function requestCode(event?: React.FormEvent) {
     event?.preventDefault();
@@ -102,10 +248,12 @@ export function SignInForm({ next }: { next: string }) {
       <form onSubmit={requestCode} className="space-y-4">
         <input
           id="email"
+          name="email"
           type="email"
           required
           autoFocus
           autoComplete="email"
+          onKeyDown={submitOnEnter}
           placeholder="Email"
           // The placeholder is the only remaining label, so the accessible name
           // has to come from here — a placeholder alone is not one, and it
@@ -134,7 +282,7 @@ export function SignInForm({ next }: { next: string }) {
   }
 
   return (
-    <form onSubmit={submitCode} className="space-y-4">
+    <form ref={codeFormRef} onSubmit={submitCode} className="space-y-4">
       <div className="space-y-1.5">
         <label
           htmlFor="code"
@@ -145,20 +293,7 @@ export function SignInForm({ next }: { next: string }) {
         <p className="text-center text-xs text-ink-3">
           Sent to {email} · expires in 10 minutes
         </p>
-        <input
-          id="code"
-          // `text` with a numeric mode, so a leading zero is never dropped.
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]{6}"
-          maxLength={6}
-          required
-          autoFocus
-          autoComplete="one-time-code"
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className={`${inputClass} text-center font-mono text-lg tracking-[0.4em]`}
-        />
+        <CodeBoxes value={code} onChange={setCode} onKeyDown={submitOnEnter} />
       </div>
 
       {notice && (
@@ -184,6 +319,7 @@ export function SignInForm({ next }: { next: string }) {
           onClick={() => {
             setStep("email");
             setCode("");
+            autoSubmitted.current = null;
             setError(null);
             setNotice(null);
           }}
