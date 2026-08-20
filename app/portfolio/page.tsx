@@ -18,7 +18,22 @@ export default async function PortfolioPage({
   // health/escalation data model already exists.
   if (view === "escalations") redirect("/csm-dashboard?view=escalations");
 
-  const tenants = await Promise.all(session.locations.map((id) => getTenant(id)));
+  // `Promise.all` rejects on the first failure, so one unreachable tenant
+  // record took down the whole switcher and every other client with it — the
+  // page a CSM uses to get anywhere. Settled per tenant instead: the ones
+  // that resolve still render, and the ones that do not are named rather
+  // than silently missing.
+  const results = await Promise.allSettled(session.locations.map((id) => getTenant(id)));
+
+  const tenants = results
+    .map((result, i) => {
+      if (result.status === "fulfilled") return result.value;
+      console.error(`[portfolio] Tenant lookup failed for ${session.locations[i]}:`, result.reason);
+      return null;
+    })
+    .filter((tenant): tenant is NonNullable<typeof tenant> => tenant !== null);
+
+  const unavailableCount = results.length - tenants.length;
   tenants.sort((a, b) => a.name.localeCompare(b.name));
 
   return (
@@ -29,6 +44,14 @@ export default async function PortfolioPage({
           {tenants.length} {tenants.length === 1 ? "client" : "clients"}
         </span>
       </div>
+
+      {unavailableCount > 0 && (
+        <p className="rounded-md border border-warn/30 bg-warn-tint px-3 py-2 text-sm text-warn">
+          {unavailableCount} {unavailableCount === 1 ? "client" : "clients"} could not
+          be loaded and {unavailableCount === 1 ? "is" : "are"} missing from this
+          list. The rest are shown below.
+        </p>
+      )}
 
       {tenants.length === 0 ? (
         <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">

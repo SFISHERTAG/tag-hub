@@ -1,4 +1,5 @@
 import { getSession } from "@/lib/auth/session";
+import { hasAnyRole } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 import { DarkScope } from "../dashboard/dark-scope";
 import { CSMPortfolio } from "./csm-portfolio";
@@ -15,7 +16,7 @@ export default async function CSMDashboardPage({
   const { view } = await searchParams;
 
   // Only CSMs and managers can access
-  if (!["tag_csm", "tag_exec", "tag_sales_manager"].includes(session.currentRole)) {
+  if (!hasAnyRole(session.currentRole, ["tag_csm", "tag_csd", "tag_exec", "tag_sales_manager"])) {
     return (
       <div className="max-w-2xl rounded-lg border border-warn/30 bg-warn-tint p-6 text-warn">
         <h2 className="text-base font-semibold">Access denied</h2>
