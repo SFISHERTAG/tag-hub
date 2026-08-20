@@ -1,72 +1,147 @@
-# Phase 3 Deployment Status
+# Deploying TAG Hub
 
-**Deployment Date:** August 16, 2026 (Evening)  
-**Status:** 🚀 DEPLOYING TO PRODUCTION  
-**Deployment Type:** Automatic Cloud Build trigger
+**Last verified:** 2026-08-20 against live GCP state.
+
+> Corrects this file's previous claim of an automatic push-to-main Cloud Build
+> trigger. That trigger does not exist and never did. `gcloud builds triggers
+> list --project=tag-success-hub` returns 0 items. **Pushing to `main` deploys
+> nothing.**
 
 ---
 
-## What's Being Deployed
+## How a deploy actually happens
 
-### ✅ Hub Repository (Just Pushed)
+Manually, with `gcloud builds submit`, from a checkout of exactly what should
+ship. Cloud Build then builds the image, pushes it to Artifact Registry, and
+runs `gcloud run deploy`, all per `cloudbuild.yaml`.
+
+```bash
+gcloud builds submit \
+  --project=tag-success-hub \
+  --config=cloudbuild.yaml \
+  --substitutions="SHORT_SHA=<sha>-<label>,_FIREBASE_API_KEY=<key>,_FIREBASE_AUTH_DOMAIN=<domain>" \
+  .
 ```
-Commit: f3b02fc
-Branch: main
-Changes:
-  - Phase 3 backend wiring (c30751f)
-  - Import path fixes (f3b02fc)
-  - Postgres integration complete
-  - CSM dashboard Phase 3 tab
-  - Client onboarding Phase 3 screen
+
+### The two substitutions are not optional
+
+Both traps below fail silently, and both are invisible on `next dev`.
+
+1. **`_FIREBASE_API_KEY` and `_FIREBASE_AUTH_DOMAIN` default to `""`** in
+   `cloudbuild.yaml`, with a comment saying the trigger supplies them. There is
+   no trigger. Omit them and you ship an image whose `lib/auth/client.ts` throws
+   on `clientAuth()`, so sign-in dies at the code-verification step while the
+   page itself looks fine. Take the values from `.env.local`. The Firebase web
+   API key is public by design and is not a secret.
+
+2. **`$SHORT_SHA` is empty on a manual submit.** Cloud Build only populates it
+   for builds it triggered itself, so `cloudbuild.yaml`'s image tag resolves to
+   a bare `tag-hub-git:` and the build fails. Pass it explicitly. The `-local`
+   suffix on the older `d5795ae-local` image is a previous instance of exactly
+   this.
+
+### Deploying a subset of a branch
+
+`gcloud builds submit` uploads the working tree, not a git ref, so ship a
+worktree that contains precisely the intended commits rather than trusting the
+branch you happen to be on:
+
+```bash
+git worktree add /tmp/deploy <commit-currently-in-production> --detach
+git -C /tmp/deploy cherry-pick <commit>
+# submit from /tmp/deploy, then:
+git tag deploy/<label>-<sha> <sha>   # keeps the deployed commit reachable
+git worktree remove /tmp/deploy
 ```
 
-**Status:** ✅ Pushed to https://github.com/SFISHERTAG/tag-hub
+---
 
-**Cloud Build Trigger:** Automatically started  
-**Expected Deployment Time:** ~5-10 minutes  
-**Production URL:** https://tag-hub-git-vdsoboedgq-uc.a.run.app
+## What is live right now
+
+| | |
+|---|---|
+| Service | `tag-hub-git`, region `us-central1` |
+| URL | https://tag-hub-git-vdsoboedgq-uc.a.run.app |
+| Revision | `tag-hub-git-00014-8k7` |
+| Image | `tag-hub-git:9ad54f4-redirect` |
+
+That image is commit `d5795ae` plus two cherry-picked commits: the sign-in
+autofill work (`deploy/signin-bd12902`) and the host-relative redirect fix
+(`deploy/redirect-9ad54f4`).
+
+**`main` is not production.** As of 2026-08-20, `main` is 13 commits behind
+`claude/signin-autofill-improvements-97e3fd`, and production is a cherry-picked
+subset of neither. Never infer what is live from git history. Check the running
+revision's image tag:
+
+```bash
+gcloud run services describe tag-hub-git --region=us-central1 \
+  --format="value(status.latestReadyRevisionName,spec.template.spec.containers[0].image)"
+```
 
 ---
 
-## Deployment Checklist
+## Verifying a deploy
 
-### Automatic Deployment (Cloud Build)
-- [x] Hub pushed to main
-- [ ] Cloud Build job started (watch: https://console.cloud.google.com/cloud-build)
-- [ ] Docker image built
-- [ ] Image pushed to Artifact Registry
-- [ ] Cloud Run service updated
-- [ ] New revision deployed
+```bash
+# Which revision is serving, and is it taking traffic
+gcloud run services describe tag-hub-git --region=us-central1 \
+  --format="value(status.traffic[0].revisionName,status.traffic[0].percent)"
 
-### Manual Verification Needed
-- [ ] Check Cloud Build status
-- [ ] Verify deployment succeeded
-- [ ] Test Phase 3 functionality in production
-- [ ] Monitor logs for errors
+# Logs
+gcloud logging read \
+  "resource.type=cloud_run_revision AND resource.labels.service_name=tag-hub-git" \
+  --limit=50
+```
+
+`gcloud builds list --filter="source.repoSource.branchName:main"` appears in
+older notes and matches nothing, because manual submits have a storage source
+rather than a repo source. Use `gcloud builds list --limit=5`.
 
 ---
 
-## What's Included in Deployment
+## Rolling back
 
-### Backend (Functions)
-✅ Already in hub repository as `functions/` subdirectory:
-- `functions/src/webhooks/phase3-meta-setup.ts` — Phase 3 webhook
-- `functions/src/postgres.ts` — Postgres client
-- `functions/sql/001_create_automation_logs.sql` — Database schema
-- Email templates for Phase 3
-- All integration with Phase 2
+Shift traffic to a known-good revision. This is instant and needs no rebuild:
 
-### Frontend (Hub)
-✅ Just deployed:
-- CSM Dashboard Phase 3 Status tab
-- Client Onboarding Phase 3 screen
-- Postgres connection (`lib/postgres.ts`)
-- Phase 3 status reader (`lib/dashboard/phase3-status.ts`)
-- Server actions for status queries
-- All necessary environment variables
+```bash
+gcloud run services update-traffic tag-hub-git --region=us-central1 \
+  --to-revisions=tag-hub-git-00013-5fc=100
+```
 
-### Database (Postgres)
-⚠️ **NOTE:** Schema needs manual setup (first-time only)
+Recent revisions, newest first: `00014-8k7`, `00013-5fc`, `00012-kbw`,
+`00011-2mk`, `00010-4nq`. List them with `gcloud run revisions list
+--service=tag-hub-git --region=us-central1`.
+
+Older notes here suggested redeploying an image tagged `:previous`. No such tag
+exists; that command would fail.
+
+---
+
+## Configuration
+
+`cloudbuild.yaml` is the single source of truth for what production runs with,
+and it is commented with the reasoning behind each value. Do not maintain a
+second copy of the environment here, which is how the previous version of this
+file drifted.
+
+Two things worth knowing without opening it:
+
+- Secrets come from Secret Manager (`GHL_CLIENT_SECRET`, `SLACK_BOT_TOKEN`,
+  `DB_PASSWORD`). Nothing secret is passed as a substitution.
+- `--set-env-vars` replaces the entire set on every deploy, so a variable that
+  is not listed in `cloudbuild.yaml` does not exist in production, no matter
+  what a previous revision had. `GHL_LOCATION_ID_TAG_GROWTH` was added in code
+  without being added there, and every internal-role hit on `/closer/flow` 500'd
+  until it was.
+
+---
+
+## Postgres schema
+
+Status unverified in this pass. The `automation_logs` schema below was written
+for a first-time setup on the production database; confirm whether it is
+already installed before running it.
 
 ```sql
 -- Run this once on production database:
@@ -111,190 +186,21 @@ WHERE status = 'error' OR error IS NOT NULL;
 
 ---
 
-## Monitoring Deployment
+## History: Phase 3 deployment, 2026-08-16
 
-### Cloud Build Status
-```bash
-# Check build status
-gcloud builds list --filter="source.repoSource.branchName:main" --limit=5
+Kept as a record. The claims in it about automatic deployment were wrong.
 
-# Watch logs
-gcloud builds log <BUILD_ID> --stream
-```
+Commit `f3b02fc` was pushed to `main` in the belief that this triggered a Cloud
+Build job. It did not, because no trigger exists. Any Phase 3 code that reached
+production did so through a later manual `gcloud builds submit`, not through
+that push.
 
-### Cloud Run Status
-```bash
-# Check service status
-gcloud run services describe tag-hub-git --region us-central1
+Phase 3 verification that was outstanding at the time, and is not tracked
+anywhere else:
 
-# View recent deployments
-gcloud run services describe tag-hub-git --region us-central1 --format='value(status.traffic[].revisionName)'
-
-# Stream logs
-gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=tag-hub-git" --limit 50 --format json
-```
-
----
-
-## Post-Deployment Tasks
-
-### Immediate (Required Before Testing)
-1. [ ] Verify Cloud Build completed successfully
-2. [ ] Verify Cloud Run service is running (green status)
-3. [ ] **Setup Postgres schema** (one-time, if not already done)
-4. [ ] Configure environment variables in Cloud Run:
-   - DB_HOST
-   - DB_PORT
-   - DB_USER
-   - DB_PASSWORD
-   - DB_NAME
-
-### Testing (Next)
-1. [ ] Test Phase 1 trigger with GHL
-2. [ ] Test Phase 2 form submission
-3. [ ] Verify Phase 3 fires automatically
-4. [ ] Check Postgres logs for all events
-5. [ ] Monitor Slack notifications
-6. [ ] Check email delivery
-
-### Monitoring (Ongoing)
-1. [ ] Watch Cloud Run logs for errors
-2. [ ] Monitor Postgres connection pool
-3. [ ] Track Phase 3 event flow
-4. [ ] Alert on any failures
-
----
-
-## Rollback Plan
-
-If deployment issues occur:
-
-```bash
-# Rollback to previous revision
-gcloud run deploy tag-hub-git \
-  --region us-central1 \
-  --image us-central1-docker.pkg.dev/tag-success-hub/hub/tag-hub-git:previous
-
-# Or point traffic to previous revision
-gcloud run services update-traffic tag-hub-git \
-  --to-revisions REVISION_NAME=100
-```
-
----
-
-## Environment Variables Required in Production
-
-```
-# Postgres
-DB_HOST=your-postgres-host
-DB_PORT=5432
-DB_USER=tag_app_user
-DB_PASSWORD=your-secure-password
-DB_NAME=tag_automation
-
-# GHL
-GHL_CLIENT_ID=your-client-id
-GHL_CLIENT_SECRET=your-client-secret
-GHL_REDIRECT_URI=https://tag-hub-git-vdsoboedgq-uc.a.run.app/api/oauth/callback
-
-# Firebase
-GOOGLE_CLOUD_PROJECT=tag-success-hub
-NEXT_PUBLIC_FIREBASE_API_KEY=your-key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=tag-success-hub.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=tag-success-hub
-
-# Meta
-META_BUSINESS_ID=2499756636894332
-META_APP_ID=your-app-id
-META_APP_SECRET=your-app-secret
-META_SYSTEM_USER_TOKEN=your-system-user-token
-
-# Email/Slack
-SLACK_BOT_TOKEN=your-slack-token
-MAIL_PROVIDER=gmail
-```
-
----
-
-## Current Status
-
-| Component | Status | Details |
-|-----------|--------|---------|
-| Code | ✅ Committed | f3b02fc on main |
-| Git Push | ✅ Complete | Pushed to origin/main |
-| Cloud Build | 🔄 In Progress | Watch console |
-| Deployment | 🔄 Deploying | ~5-10 min ETA |
-| Database | ⚠️ Needs Setup | Schema ready, run script above |
-| Testing | ⏳ Pending | After deployment confirms |
-
----
-
-## Next Steps
-
-1. **Watch Cloud Build** (should complete in 5-10 minutes)
-   - Navigate to: https://console.cloud.google.com/cloud-build
-   - Look for build job for tag-hub-git
-
-2. **Verify Deployment** (after Cloud Build completes)
-   - Check: https://console.cloud.google.com/run
-   - Service should show green ✓ status
-
-3. **Setup Database** (one-time)
-   - Connect to production Postgres
-   - Run schema creation script above
-   - Verify tables created
-
-4. **Test End-to-End** (tomorrow or next)
-   - Create test client in GHL
-   - Trigger Phase 1
-   - Monitor Postgres for events
-
----
-
-## Deployment Timeline
-
-```
-19:00 - Code committed to main
-19:05 - Pushed to remote (Cloud Build triggered)
-19:10-19:15 - Build running
-19:15-19:20 - Deployment to Cloud Run
-19:20 - Live in production (assuming no errors)
-
-[+1 day] - Test with real client
-[+2 days] - Full CSM team access
-[+3 days] - Monitor first client through flow
-```
-
----
-
-## Support
-
-### If Deployment Fails
-1. Check Cloud Build logs for errors
-2. Verify all environment variables are set
-3. Check Postgres connectivity
-4. Review recent code changes
-
-### If Testing Fails
-1. Check Cloud Run logs
-2. Verify Postgres schema is installed
-3. Test Postgres connectivity from Cloud Run
-4. Check environment variables in Cloud Run console
-
----
-
-## Summary
-
-✅ **Phase 3 is now deploying to production!**
-
-- Backend automation: Ready
-- Frontend integration: Ready  
-- Database schema: Ready (needs manual setup)
-- Deployment: In progress
-- Testing: Pending deployment confirmation
-
-Estimated live in production: **~5-10 minutes**
-
-Check Cloud Build console for real-time status.
-
-🚀 **Phase 3 Deployment Launched!**
+- Test Phase 1 trigger with GHL
+- Test Phase 2 form submission
+- Verify Phase 3 fires automatically
+- Check Postgres logs for all events
+- Monitor Slack notifications
+- Check email delivery

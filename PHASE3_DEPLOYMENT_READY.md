@@ -155,10 +155,15 @@ npm run deploy # Or manual Cloud Functions deploy
 ```
 
 ### 2. Deploy Hub
+
+There is no Cloud Build trigger; pushing to `main` deploys nothing. Deploys are
+a manual `gcloud builds submit`, and two substitutions must be passed or
+sign-in breaks in production. See `DEPLOYMENT_STATUS.md` for the full command
+and the reasoning.
+
 ```bash
-cd hub
-# Hub is already configured for Cloud Run via cloudbuild.yaml
-git push origin main  # Triggers automatic Cloud Build
+gcloud builds submit --project=tag-success-hub --config=cloudbuild.yaml \
+  --substitutions="SHORT_SHA=<sha>-<label>,_FIREBASE_API_KEY=<key>,_FIREBASE_AUTH_DOMAIN=<domain>" .
 # Monitor: https://console.cloud.google.com/cloud-build
 ```
 
