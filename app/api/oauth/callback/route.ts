@@ -6,6 +6,22 @@ import { saveAgencyToken, saveLocationToken } from "@/lib/ghl/store";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * A host-relative redirect.
+ *
+ * These handlers used to build an absolute URL from `request.nextUrl.origin`,
+ * which inside Cloud Run is the container's own bind address rather than the
+ * address the browser used, so a completed install landed on
+ * `https://0.0.0.0:8080/`. A relative Location is resolved by the browser
+ * against the request it already made and needs no host detection at all.
+ *
+ * 303 rather than the 307 `NextResponse.redirect` defaults to, so the browser
+ * issues a plain GET for the destination.
+ */
+function redirectTo(path: string): NextResponse {
+  return new NextResponse(null, { status: 303, headers: { Location: path } });
+}
+
 const STATE_COOKIE = "ghl_oauth_state";
 
 function statesMatch(a: string | undefined, b: string | null): boolean {
@@ -70,9 +86,11 @@ export async function GET(request: NextRequest) {
         updatedAt: now,
       });
 
-      return NextResponse.redirect(
-        new URL("/?installed=agency", request.nextUrl.origin),
-      );
+      // Relative Location for the same reason as sign-out: inside Cloud Run
+      // `request.nextUrl.origin` is the container's bind address, so an
+      // absolute URL built from it sends the installer to
+      // `https://0.0.0.0:8080/`. See `app/api/auth/signout/route.ts`.
+      return redirectTo("/?installed=agency");
     }
 
     if (token.locationId) {
@@ -86,11 +104,8 @@ export async function GET(request: NextRequest) {
         updatedAt: now,
       });
 
-      return NextResponse.redirect(
-        new URL(
-          `/?installed=location&locationId=${token.locationId}`,
-          request.nextUrl.origin,
-        ),
+      return redirectTo(
+        `/?installed=location&locationId=${token.locationId}`,
       );
     }
 
