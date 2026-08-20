@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
-import { Firestore, Timestamp } from "@google-cloud/firestore";
+import { Timestamp } from "@google-cloud/firestore";
+import { firestore } from "../firestore";
 
 /**
  * Six-digit email one-time passcodes.
@@ -18,16 +19,13 @@ const CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_ATTEMPTS = 5;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 
-let db: Firestore | null = null;
-function firestore(): Firestore {
-  if (!db) {
-    db = new Firestore({
-      projectId: process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub",
-      ignoreUndefinedProperties: true,
-    });
-  }
-  return db;
-}
+/*
+ * Uses the app's shared Firestore client rather than opening a second one.
+ * The private client this replaced carried its own
+ * `GOOGLE_CLOUD_PROJECT || "tag-success-hub"` fallback, which is how a
+ * duplicated default becomes four independent ways to write to production
+ * by accident. Project selection now happens once, in lib/config.ts.
+ */
 
 /** Email is the document id, so normalise it the same way every time. */
 function key(email: string): string {

@@ -44,7 +44,17 @@ if (role && !ROLES.includes(role)) {
   process.exit(1);
 }
 
-const projectId = process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub";
+// No default. This script creates real users with real role claims, and a
+// silent fallback to the production project id meant a forgotten export
+// created them there. Unlike the seed scripts, production is a legitimate
+// target here — it just has to be named.
+const projectId = process.env.GOOGLE_CLOUD_PROJECT?.trim();
+if (!projectId) {
+  console.error("GOOGLE_CLOUD_PROJECT is not set. Refusing to create a user in an unknown project.");
+  console.error("Set it explicitly, e.g. GOOGLE_CLOUD_PROJECT=tag-success-hub node scripts/create-user.mjs ...");
+  process.exit(1);
+}
+console.log(`Target GCP project: ${projectId}`);
 if (getApps().length === 0) initializeApp({ projectId });
 const auth = getAuth();
 

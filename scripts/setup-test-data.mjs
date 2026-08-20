@@ -8,8 +8,42 @@ import { Firestore } from "@google-cloud/firestore";
 const TEST_CLIENT_ID = "cMIc51hn6ziLwWtC8t0n";
 const TEST_CSM_EMAIL = "test@taxadvisorygrowth.net";
 
+/**
+ * Guard, per CLAUDE.md: "Seed scripts detect NODE_ENV and the target GCP
+ * project before any .set() write. No exceptions."
+ *
+ * The projectId below used to fall back to "tag-success-hub", the real
+ * production project — so running this locally without exporting the
+ * variable overwrote live client records with the fabricated data below and
+ * printed a success message. Mirrors lib/seed-guard.ts, which the TypeScript
+ * seed scripts use; duplicated rather than imported because this file is
+ * plain .mjs with no TypeScript loader.
+ */
+const PRODUCTION_PROJECT_ID = "tag-success-hub";
+const projectId = process.env.GOOGLE_CLOUD_PROJECT?.trim();
+
+if (!projectId) {
+  console.error(
+    "setup-test-data: GOOGLE_CLOUD_PROJECT is not set. Refusing to run against an unknown " +
+      `or default project — the default used to be ${PRODUCTION_PROJECT_ID}.`,
+  );
+  process.exit(1);
+}
+if (projectId === PRODUCTION_PROJECT_ID) {
+  console.error(
+    `setup-test-data: GOOGLE_CLOUD_PROJECT is ${projectId}, the production project. ` +
+      "Refusing to write fabricated seed data to live client records.",
+  );
+  process.exit(1);
+}
+if (process.env.NODE_ENV === "production") {
+  console.error("setup-test-data: NODE_ENV is production. Refusing to seed.");
+  process.exit(1);
+}
+console.log(`setup-test-data: seeding into GCP project "${projectId}".`);
+
 const db = new Firestore({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub",
+  projectId,
   ignoreUndefinedProperties: true,
 });
 

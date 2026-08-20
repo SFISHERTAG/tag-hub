@@ -3,18 +3,46 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "@/lib/auth/admin";
 import type { Role } from "@/lib/auth/roles";
+import { isProductionProject } from "@/lib/config";
 
 /**
  * Test auth endpoint — bypasses OTP for development.
- * Only available if TEST_AUTH_ENABLED=true in environment.
+ *
+ * This mints a real `hub_session` cookie for any email and any role, with no
+ * password, no OTP, and no check that the email belongs to a real user. It
+ * was gated on one boolean, `TEST_AUTH_ENABLED`, which put a single
+ * environment-variable typo between "disabled" and "instant admin access for
+ * anyone who finds the URL".
+ *
+ * Now it needs three independent things to be true, in the order a mistake
+ * is most likely to happen:
+ *
+ * 1. NODE_ENV is not production. A production deploy cannot enable this at
+ *    all, however the flag is set.
+ * 2. The GCP project is not the production one, so a local run pointed at
+ *    production Firestore cannot mint sessions against real accounts.
+ * 3. TEST_AUTH_ENABLED is explicitly "true".
+ *
+ * Same double-check the mailer's console-fallback path in this codebase
+ * already does. Read per request rather than at module load so a
+ * misconfiguration cannot be baked into a warm server.
  */
-
-const TEST_AUTH_ENABLED = process.env.TEST_AUTH_ENABLED === "true";
-
-export async function POST(request: Request) {
-  if (!TEST_AUTH_ENABLED) {
+function testAuthRefusal(): Response | null {
+  if (process.env.NODE_ENV === "production") {
+    return new Response("Test auth is not available in production", { status: 403 });
+  }
+  if (isProductionProject()) {
+    return new Response("Test auth is not available against the production project", { status: 403 });
+  }
+  if (process.env.TEST_AUTH_ENABLED !== "true") {
     return new Response("Test auth is disabled", { status: 403 });
   }
+  return null;
+}
+
+export async function POST(request: Request) {
+  const refused = testAuthRefusal();
+  if (refused) return refused;
 
   try {
     const body = await request.json();

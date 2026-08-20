@@ -8,6 +8,25 @@ boundary changes. Same commit as the code change.
 
 **Location:** Google Cloud Firestore (GCP project: `GOOGLE_CLOUD_PROJECT`)
 
+**Project selection.** `GOOGLE_CLOUD_PROJECT` is required and has no default.
+`lib/config.ts` is the only place that resolves it, and it throws on start if
+the variable is unset. It previously defaulted to `tag-success-hub`, the real
+production project, in four separate modules — so a local run that forgot to
+export the variable wrote to live client data instead of failing. Nothing
+falls back to a project id any more; `PRODUCTION_PROJECT_ID` is exported only
+so guards can recognise and refuse it.
+
+**One client.** Every app-side Firestore access goes through
+`firestore()` in `lib/firestore.ts`. `lib/auth/otp.ts` used to open a second
+client with its own project fallback; it does not any more. The Cloud
+Functions side (`functions/src/firestore.ts`) is a separate runtime with its
+own client, by design.
+
+**Seed scripts.** Any script under `scripts/setup-*` that writes must call
+`assertSafeToSeed()` from `lib/seed-guard.ts` before its first write. It
+refuses an unset project, the production project, and `NODE_ENV=production`.
+Enforced by `scripts/check-story-status.mjs`.
+
 ### Collections
 
 | Collection | Purpose | Primary key | Replicated to Postgres? |

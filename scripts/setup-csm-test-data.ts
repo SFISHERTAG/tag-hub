@@ -1,4 +1,5 @@
 import { firestore } from "../lib/firestore";
+import { assertSafeToSeed } from "../lib/seed-guard";
 
 /**
  * One-time script to set up CSM Dashboard test data.
@@ -10,6 +11,10 @@ const TEST_CSM_EMAIL = "test@taxadvisorygrowth.net";
 
 async function setupTestData() {
   console.log("🚀 Setting up CSM Dashboard test data...\n");
+
+  // Refuses an unset or production GOOGLE_CLOUD_PROJECT before any write.
+  // Every .set()/.add() below fabricates client data.
+  assertSafeToSeed("setup-csm-test-data");
 
   try {
     // 1. Create test client

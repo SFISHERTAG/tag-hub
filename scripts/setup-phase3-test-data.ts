@@ -1,4 +1,5 @@
 import { firestore } from "../lib/firestore";
+import { assertSafeToSeed } from "../lib/seed-guard";
 
 /**
  * Script to set up Phase 3 test data (creative-campaign mappings).
@@ -11,6 +12,10 @@ const TEST_CLIENT_ID = "cMIc51hn6ziLwWtC8t0n";
 
 async function setupPhase3TestData() {
   console.log("🚀 Setting up Phase 3 test data (creative-campaign mappings)...\n");
+
+  // Refuses an unset or production GOOGLE_CLOUD_PROJECT before any write.
+  // Every .set()/.add() below fabricates client data.
+  assertSafeToSeed("setup-phase3-test-data");
 
   try {
     // Sample Meta campaign and creative IDs (these would be real IDs from Meta Ads Manager)

@@ -159,11 +159,17 @@ function checkArchitectureConstraints() {
   for (const script of seedScriptsEdited) {
     try {
       const scriptContent = readFileSync(join(repoRoot, script), "utf8");
+      // The shared guard in lib/seed-guard.ts checks both, and checking both
+      // in one place is the point. A script that calls it satisfies the rule
+      // without having to repeat the literals inline — otherwise this check
+      // pushes every seed script back to its own copy of the guard, which is
+      // how two of them ended up with no guard at all.
+      const usesSharedGuard = /assertSafeToSeed\s*\(/.test(scriptContent);
       const hasNodeEnvCheck = /NODE_ENV|process\.env\.NODE_ENV/.test(scriptContent);
       const hasProjectCheck = /GOOGLE_CLOUD_PROJECT|process\.env\.GOOGLE_CLOUD_PROJECT/.test(scriptContent);
-      if (!hasNodeEnvCheck || !hasProjectCheck) {
+      if (!usesSharedGuard && (!hasNodeEnvCheck || !hasProjectCheck)) {
         constraintIssues.push(
-          `${script}: seed scripts must check NODE_ENV and GOOGLE_CLOUD_PROJECT before any .set() writes.`
+          `${script}: seed scripts must call assertSafeToSeed() from lib/seed-guard.ts, or check NODE_ENV and GOOGLE_CLOUD_PROJECT inline, before any .set() writes.`
         );
       }
     } catch {
