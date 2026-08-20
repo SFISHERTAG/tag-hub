@@ -325,6 +325,61 @@ custom fields of GHL."
 > fields. Fifteen minutes in the GHL UI settles both branches, and it gates §3c and §3d alike.
 > Nothing in this repo can answer it.
 
+## 3f. The intake email should land in the app — and one piece is missing
+
+**Intent:** the Phase 1 intake email stops linking to a GHL-hosted form and instead links into
+the Hub. The client signs in with the six-digit code, meets the intake gate, completes it,
+and goes straight into the welcome tour. One destination, not two systems.
+
+This is the right shape and it makes §3d simpler either way — embedded or rebuilt, the form
+is now *inside* the app, and the email is just a front door.
+
+### Phase 1 already does most of the setup
+
+`functions/src/webhooks/phase1-provisioning.ts` runs nine steps: clone the GHL tenancy from
+`"Template Do Not Delete"`, create the Slack channel, invite the client as a single-channel
+guest, create the Drive folder, **add the client's email to the OTP whitelist** (step 5),
+create the Fulfillment opportunity, save tenant resources, email the intake form, notify TAG.
+
+### The gap: no Hub account is ever created
+
+Sign-in is gated on **Firebase Auth user existence**, not on that whitelist.
+`app/api/auth/otp/request/route.ts` calls `adminAuth().getUserByEmail(email)` and only issues a
+code if the user exists. Two consequences:
+
+1. **`auth/otpWhitelist` is written and never read.** Nothing in `lib/` or `app/` reads that
+   document — the app does not consult it at any point. Phase 1's step 5 has no effect on
+   whether anyone can sign in. *(Latent bug in that same write, moot only because nothing
+   reads it: `FieldValue.arrayUnion([email])` at `functions/src/firestore.ts:16` passes an
+   array where arrayUnion takes varargs, so it would store a nested array rather than the
+   string. Evidence this path was never exercised end to end.)*
+
+2. **Phase 1 never creates the user or sets claims.** The only `setCustomUserClaims` call in
+   the codebase is `lib/auth/admin.ts:100`, driven by an admin through the admin UI. A newly
+   provisioned client therefore has no Hub account, no role, and no `locations` claim.
+
+**What the client experiences today if the email points at the Hub:** they enter their address,
+the endpoint deliberately reports success whether or not the account exists (a documented
+anti-enumeration choice — it must not become a membership oracle), and **no code ever arrives.**
+They wait on an email that cannot come, with nothing on screen explaining why. The design is
+correct for its threat model and actively unhelpful for a client who is *supposed* to be there.
+
+### What has to be added
+
+Phase 1 needs a step that creates the Firebase Auth user and sets their claims — role
+(`client_owner`) and the `locations` claim scoping them to the tenancy just cloned. This is
+the same admin-provisions-then-they-sign-in model already described for staff; for clients,
+Phase 1 *is* the admin, it just does not do that part yet.
+
+Then decide, deliberately:
+
+- **Whitelist:** make the app read `auth/otpWhitelist`, or delete step 5 as dead code. Do not
+  leave a security-shaped write that nothing enforces — the next reader will assume it works.
+- **Ordering:** the user must exist *before* the intake email goes out, or the first click
+  lands on a sign-in that silently fails.
+- **Role assignment:** `client_owner` automatically at provisioning, or an admin confirms it?
+  Automatic is the only version where the email-lands-in-app flow works unattended.
+
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
 1. **Data model as contract.** Code may not declare a new Firestore collection without
