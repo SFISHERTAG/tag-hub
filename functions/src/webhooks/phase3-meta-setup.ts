@@ -3,7 +3,7 @@ import { saveTenantResources, logProvisioningEvent } from "../firestore";
 import { sendMetaAccessRequest, sendMetaSetupGuide } from "../email";
 import { postMessage } from "../slack";
 import { logAutomationEvent, logMetaSetup } from "../postgres";
-import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
+import { hasBeenProcessed, claimEvent, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
 import { checkWebhookSecret } from "../lib/webhooks/secret";
 
 /**
@@ -58,9 +58,11 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
       res.json({ success: true, duplicate: true });
       return;
     }
-    try {
-      await markProcessed("phase3", eventId);
-    } catch {
+    // Only a real ALREADY_EXISTS is a concurrent delivery. A Firestore
+    // outage used to land here too and answer the sender "handled, duplicate",
+    // which drops the event permanently: the sender stops retrying and
+    // nothing ever processed it.
+    if ((await claimEvent("phase3", eventId)) === "duplicate") {
       console.log(`[Phase 3] Concurrent delivery for ${eventId}, skipping`);
       res.json({ success: true, duplicate: true });
       return;

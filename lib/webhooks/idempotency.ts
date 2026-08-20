@@ -34,6 +34,42 @@ export async function markProcessed(source: string, eventId: string): Promise<vo
     .create({ source, eventId, processedAt: Date.now() });
 }
 
+/** Firestore's gRPC status code for ALREADY_EXISTS. */
+const ALREADY_EXISTS = 6;
+
+/**
+ * Claims an event id, distinguishing "someone else has it" from "the claim
+ * itself failed".
+ *
+ * `markProcessed` was called inside a bare `catch {}` that treated every
+ * failure as a concurrent delivery and answered the sender with
+ * `{ success: true, duplicate: true }`. A genuine ALREADY_EXISTS is exactly
+ * that, but a Firestore outage, a permission error, or a network timeout is
+ * not — and each one told the sender its event had been handled. The sender
+ * stops retrying, nothing ever processed the event, and there is no record
+ * that anything went wrong.
+ *
+ * So the ALREADY_EXISTS case returns "duplicate" and everything else throws,
+ * which surfaces as a 500 and lets the sender retry.
+ */
+export async function claimEvent(
+  source: string,
+  eventId: string,
+): Promise<"claimed" | "duplicate"> {
+  try {
+    await markProcessed(source, eventId);
+    return "claimed";
+  } catch (error) {
+    const code = (error as { code?: unknown })?.code;
+    if (code === ALREADY_EXISTS) return "duplicate";
+
+    // Some transports surface it as a message rather than a numeric code.
+    if (error instanceof Error && /already exists/i.test(error.message)) return "duplicate";
+
+    throw error;
+  }
+}
+
 /**
  * Releases a claimed event id after the guarded work actually failed, so a
  * legitimate retry (once the underlying problem is fixed) can run instead of
