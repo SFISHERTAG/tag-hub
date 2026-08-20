@@ -1,0 +1,74 @@
+name: CI
+
+# The pre-commit hook is the fast feedback loop, but it is opt-in: it only runs
+# on a machine where `npm run hooks:install` has been run, and `--no-verify`
+# skips it entirely. This is the copy that cannot be skipped.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  contracts:
+    name: Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # check-story-status inspects the staged/changed set against the base,
+          # so it needs more than the default single commit.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Role list parity
+        run: npm run check:role-parity
+
+      - name: Story status and architecture constraints
+        run: npm run check:story-status
+
+  next:
+    name: Next app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+      - name: Tests
+        run: npm test
+      # `npm run lint` is deliberately absent. It has 47 pre-existing errors in
+      # real source (45 of them no-explicit-any), which predate the Angular
+      # migration. Adding it here would make CI red on day one and teach
+      # everyone to ignore it. It goes in once those are cleared; the story for
+      # that is tracked separately.
+
+  angular:
+    name: Angular gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --prefix web
+      # The three commands CLAUDE.md names as the phase gate, run separately so
+      # a failure says which one.
+      - name: Build
+        run: npm run web:build
+      - name: Lint
+        run: npm run web:lint
+      - name: Test
+        run: npm run web:test

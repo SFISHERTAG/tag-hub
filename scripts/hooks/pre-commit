@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# Tracked pre-commit hook.
+#
+# Lives here rather than in .git/hooks because .git/ is not version controlled:
+# a hook there produces no diff, cannot be staged, and cannot satisfy the
+# definition of done. It is also shared across worktrees via core.hooksPath, so
+# a change made while working in one worktree silently affects every other.
+#
+# Install with: npm run hooks:install
+# CI runs the same checks, so a machine without the hook installed still cannot
+# merge a violation.
+
+set -e
+
+echo "pre-commit: story status, role parity, architecture constraints"
+node scripts/check-story-status.mjs
+node scripts/check-role-parity.mjs
+
+# The Angular gate only runs when the commit actually touches web/. It is the
+# slowest check here and irrelevant to a backend-only commit.
+if git diff --cached --name-only | grep -q '^web/'; then
+  if [ ! -d web/node_modules ]; then
+    echo "pre-commit: web/node_modules missing — run 'npm ci --prefix web' first." >&2
+    exit 1
+  fi
+
+  echo "pre-commit: web/ touched, running the Angular gate"
+  # The Angular CLI has a Node floor (see web/package.json engines) that the
+  # common default versions fall below, and it aborts with no output at all
+  # rather than a version error, which is not a discoverable failure.
+  if ! npm --prefix web run build -- --configuration production >/dev/null 2>&1; then
+    echo "pre-commit: ng build failed. Run 'npm run web:build' to see why." >&2
+    echo "pre-commit: if it exits silently, check your Node version against web/package.json engines." >&2
+    exit 1
+  fi
+  npm --prefix web run lint
+  npm --prefix web run test -- --watch=false
+fi
+
+echo "pre-commit: all checks passed"

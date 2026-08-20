@@ -10,6 +10,7 @@
     "test": "vitest run",
     "check:story-status": "node scripts/check-story-status.mjs",
     "check:role-parity": "node scripts/check-role-parity.mjs",
+    "hooks:install": "node scripts/install-hooks.mjs",
     "web:build": "npm --prefix web run build -- --configuration production",
     "web:lint": "npm --prefix web run lint",
     "web:test": "npm --prefix web run test -- --watch=false",

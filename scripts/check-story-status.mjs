@@ -124,7 +124,30 @@ function checkArchitectureConstraints() {
       .join("\n");
   }
 
+  // Angular templates are checked too, and more strictly. A .ts file can hold a
+  // legitimate role literal next to an import of the canonical list, which is
+  // why the helper/import escape below exists. A template cannot: there is no
+  // way to write `*hasPermission="'tag_csm'"` correctly, since the binding takes
+  // a Role from the component, so any role string in HTML is a violation.
   for (const file of staged) {
+    if (/\.html$/.test(file)) {
+      let templateContent = "";
+      try {
+        templateContent = readFileSync(join(repoRoot, file), "utf8");
+      } catch {
+        continue; // Deleted.
+      }
+      // HTML comments, not the JS comment syntax stripComments() handles.
+      const withoutComments = templateContent.replace(/<!--[\s\S]*?-->/g, "");
+      const templateRoles = withoutComments.match(ROLE_STRING_PATTERN) || [];
+      for (const match of templateRoles) {
+        constraintIssues.push(
+          `${file}: inline role string ${match} found in a template. Bind to a Role from the ` +
+            `component (via ROLES.*) instead — a template has no legitimate reason to name a role.`
+        );
+      }
+      continue;
+    }
     if (!/\.(ts|tsx)$/.test(file) || ROLE_DEFINITION_FILES.includes(file)) continue;
     let fileDiff;
     try {
