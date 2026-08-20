@@ -12,6 +12,7 @@ type Props = {
 
 export function CoursePlayer({ course, initialProgress }: Props) {
   const [progress, setProgress] = useState(initialProgress);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const getCheckboxState = useCallback(
     (sectionId: string, subsectionId: string, checkboxId: string): boolean => {
@@ -30,8 +31,33 @@ export function CoursePlayer({ course, initialProgress }: Props) {
     ) => {
       const key = `${sectionId}/${subsectionId}/${checkboxId}`;
 
+      /*
+       * Restore the previous value on failure, rather than deleting the key.
+       *
+       * The rollback used to `delete` the entry, which is not an undo: it is
+       * "no record", and `getCheckboxState` reads that as unchecked. So a
+       * failed save while *unchecking* a box the user had genuinely completed
+       * erased that completion from the screen. Their real progress was still
+       * on the server, but they saw it disappear and had no reason not to
+       * redo the work.
+       */
+      const previous = progress.get(key);
+
       // Optimistic update
       setProgress((prev) => new Map(prev).set(key, { completed, completedAt: Date.now() }));
+
+      const rollback = () => {
+        setProgress((prev) => {
+          const next = new Map(prev);
+          if (previous === undefined) {
+            next.delete(key);
+          } else {
+            next.set(key, previous);
+          }
+          return next;
+        });
+        setSaveError("Couldn't save that change — it has been undone. Check your connection and try again.");
+      };
 
       // Send to server
       try {
@@ -48,23 +74,15 @@ export function CoursePlayer({ course, initialProgress }: Props) {
         });
 
         if (!res.ok) {
-          // Revert on error
-          setProgress((prev) => {
-            const next = new Map(prev);
-            next.delete(key);
-            return next;
-          });
+          rollback();
+          return;
         }
+        setSaveError(null);
       } catch {
-        // Revert on error
-        setProgress((prev) => {
-          const next = new Map(prev);
-          next.delete(key);
-          return next;
-        });
+        rollback();
       }
     },
-    [course.id],
+    [course.id, progress],
   );
 
   const calculateProgress = useCallback(() => {
@@ -103,6 +121,15 @@ export function CoursePlayer({ course, initialProgress }: Props) {
           </span>
         </div>
       </header>
+
+      {saveError && (
+        <p
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger-tint px-3 py-2 text-sm text-danger"
+        >
+          {saveError}
+        </p>
+      )}
 
       <div className="relative space-y-6">
         {course.sections.map((section) => (
