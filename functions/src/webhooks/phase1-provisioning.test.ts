@@ -85,8 +85,22 @@ vi.mock("../email", () => ({
 
 const { handlePhase1 } = await import("./phase1-provisioning");
 
-function fakeReqRes(body: unknown) {
-  const req = { body, header: () => undefined } as unknown as Parameters<typeof handlePhase1>[0];
+const WEBHOOK_SECRET = "phase1-test-secret";
+
+/**
+ * Phase 1 now rejects a call without a valid bearer token — the endpoint
+ * writes into the OTP whitelist, so it authenticates rather than warns.
+ * These are idempotency tests, so they send a valid token; the auth
+ * behaviour has its own cases below.
+ */
+// `null` means "send no Authorization header at all" — an explicit
+// `undefined` would fall back to the default parameter instead.
+function fakeReqRes(body: unknown, authorization: string | null = `Bearer ${WEBHOOK_SECRET}`) {
+  const req = {
+    body,
+    header: (name: string) =>
+      name.toLowerCase() === "authorization" ? (authorization ?? undefined) : undefined,
+  } as unknown as Parameters<typeof handlePhase1>[0];
   const json = vi.fn();
   const status = vi.fn(() => ({ json }));
   const res = { json, status } as unknown as Parameters<typeof handlePhase1>[1];
@@ -97,6 +111,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   stores.clear();
   process.env.TAG_SHARED_DRIVE_ID = "shared-drive-1";
+  process.env.PHASE1_WEBHOOK_SECRET = WEBHOOK_SECRET;
 });
 
 describe("handlePhase1 idempotency", () => {
@@ -138,5 +153,42 @@ describe("handlePhase1 idempotency", () => {
     // The failed attempt didn't count as "processed" — the retry actually runs.
     expect(cloneLocation).toHaveBeenCalledTimes(2);
     expect(second.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
+});
+
+describe("handlePhase1 authentication", () => {
+  const validBody = {
+    opportunity: { id: "opp-auth", name: "Auth Co" },
+    contact: { name: "Auth Co", email: "owner@authco.test" },
+  };
+
+  it("rejects a call with no bearer token before doing any provisioning", async () => {
+    const { req, res, json, status } = fakeReqRes(validBody, null);
+    await handlePhase1(req, res);
+
+    expect(status).toHaveBeenCalledWith(401);
+    expect(json).toHaveBeenCalledWith({ error: "Unauthorized." });
+    // The whole point: the OTP whitelist write must not have happened.
+    expect(addToOtpWhitelist).not.toHaveBeenCalled();
+    expect(cloneLocation).not.toHaveBeenCalled();
+  });
+
+  it("rejects a mismatched token", async () => {
+    const { req, res, status } = fakeReqRes(validBody, "Bearer not-the-secret");
+    await handlePhase1(req, res);
+
+    expect(status).toHaveBeenCalledWith(401);
+    expect(addToOtpWhitelist).not.toHaveBeenCalled();
+  });
+
+  it("fails closed with a 500 when the secret is not configured", async () => {
+    // A half-finished deploy takes the endpoint offline rather than leaving
+    // it open, which is the failure mode this check exists to prevent.
+    delete process.env.PHASE1_WEBHOOK_SECRET;
+    const { req, res, status } = fakeReqRes(validBody);
+    await handlePhase1(req, res);
+
+    expect(status).toHaveBeenCalledWith(500);
+    expect(addToOtpWhitelist).not.toHaveBeenCalled();
   });
 });
