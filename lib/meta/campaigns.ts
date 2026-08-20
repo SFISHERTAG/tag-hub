@@ -15,7 +15,18 @@ export interface MetaCampaign {
   impressions_24h: number;
   clicks_24h: number;
   leads_24h: number;
-  roas_24h?: number;
+  /**
+   * Cost per conversion over the last 24h, in USD. Named for what it is.
+   *
+   * This was `roas_24h` and it computed `spend / conversions` — the inverse
+   * of ROAS, which is `revenue / spend`. Every decision built on it read
+   * backwards: for ROAS higher is better, for cost per conversion lower is.
+   * It is not a naming slip that could be fixed by flipping the division,
+   * either: the insights fields requested below carry no revenue at all, so
+   * a real ROAS cannot be derived from this call. `lib/dashboard/roas.ts`
+   * computes the genuine article from GHL opportunity revenue.
+   */
+  costPerConversion24h?: number;
   start_date?: string;
   end_date?: string;
   created_time: string;
@@ -53,7 +64,8 @@ export interface MetaCampaignMetrics {
   clicks: number;
   conversions: number;
   leads: number;
-  roas: number;
+  /** Cost per conversion in USD. See the note on `costPerConversion24h`. */
+  costPerConversion: number;
 }
 
 /**
@@ -112,7 +124,8 @@ export async function getAdAccountCampaigns(adAccountId: string): Promise<ApiRes
         impressions_24h: metrics.impressions,
         clicks_24h: metrics.clicks,
         leads_24h: metrics.leads,
-        roas_24h: metrics.conversions > 0 ? metrics.spend / metrics.conversions : undefined,
+        costPerConversion24h:
+          metrics.conversions > 0 ? metrics.spend / metrics.conversions : undefined,
         created_time: campaign.created_time ?? "",
         start_date: campaign.start_date,
         end_date: campaign.end_date,
@@ -143,7 +156,7 @@ async function getCampaignMetrics(campaignId: string, datePreset: string): Promi
   ).data;
 
   if (!response || response.length === 0) {
-    return { spend: 0, impressions: 0, clicks: 0, conversions: 0, leads: 0, roas: 0 };
+    return { spend: 0, impressions: 0, clicks: 0, conversions: 0, leads: 0, costPerConversion: 0 };
   }
 
   const data = response[0];
@@ -159,7 +172,7 @@ async function getCampaignMetrics(campaignId: string, datePreset: string): Promi
     leads: data.lead_generation_by_ad_id
       ? Object.values(data.lead_generation_by_ad_id).reduce((a, b) => a + b, 0)
       : 0,
-    roas: conversions > 0 ? spend / conversions : 0,
+    costPerConversion: conversions > 0 ? spend / conversions : 0,
   };
 }
 
@@ -200,7 +213,7 @@ export async function getCampaignDetail(campaignId: string): Promise<ApiResult<M
       impressions_24h: metrics.impressions,
       clicks_24h: metrics.clicks,
       leads_24h: metrics.leads,
-      roas_24h: metrics.roas,
+      costPerConversion24h: metrics.costPerConversion,
       created_time: response.created_time ?? "",
       start_date: response.start_date,
       end_date: response.end_date,

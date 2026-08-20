@@ -6,7 +6,7 @@ import { getSession, getImpersonation } from "@/lib/auth/session";
 import { updateOpportunityStage, closeOpportunity } from "@/lib/ghl/opportunities";
 import { getContact } from "@/lib/ghl/contacts";
 import { logAction } from "@/lib/audit/store";
-import { isFulfillmentStage, STAGE_TASKS } from "@/lib/onboarding/stage-tasks";
+import { parseFulfillmentStage, STAGE_TASKS } from "@/lib/onboarding/stage-tasks";
 import { completeStageTasks } from "@/lib/onboarding/store";
 import { dispatchClosedWon } from "@/lib/meta/conversions";
 import { withErrorHandling } from "@/lib/api/errorInterceptor";
@@ -45,11 +45,12 @@ export async function moveOpportunityStagAction(
     // tasks (story 5.1, AC4) — stage names (PR1-AP5) are unique to that
     // pipeline, so matching against the fixed task map is enough to tell
     // this apart from a Sales-pipeline move without threading a pipeline id.
-    if (previousStageName && isFulfillmentStage(previousStageName)) {
+    const previousStage = parseFulfillmentStage(previousStageName);
+    if (previousStage) {
       await completeStageTasks(
         locationId,
         opportunityId,
-        STAGE_TASKS[previousStageName].map((task) => task.id),
+        STAGE_TASKS[previousStage].map((task) => task.id),
       );
     }
 
