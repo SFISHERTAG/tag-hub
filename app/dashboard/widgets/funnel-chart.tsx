@@ -24,7 +24,7 @@ export function FunnelChart({ result }: { result: FunnelCountsResult }) {
     );
   }
 
-  const { stages, showRateDenominator, dqBreakdown } = result;
+  const { stages, showRateDenominator, dqBreakdown, truncated } = result;
   const leads = stages[0]?.count ?? 0;
 
   if (leads === 0) {
@@ -72,6 +72,13 @@ export function FunnelChart({ result }: { result: FunnelCountsResult }) {
           })}
         </tbody>
       </table>
+      {truncated && (
+        <p className="mt-3 rounded border border-warn/30 bg-warn-tint px-2.5 py-1.5 text-xs text-warn">
+          Partial data: more contacts exist in this window than could be
+          fetched, so every stage below is an undercount. Narrow the window
+          for a complete funnel.
+        </p>
+      )}
       {(dqBreakdown.preCall > 0 || dqBreakdown.onCall > 0) && (
         <p className="mt-3 text-xs text-ink-3">
           DQ breakdown: <span className="font-medium text-ink-2">{dqBreakdown.preCall} pre-call</span>{" "}

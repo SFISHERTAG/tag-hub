@@ -2,6 +2,7 @@
 
 import { PageTabs } from './page-tabs';
 import { WidgetGrid } from './widget-grid';
+import { FreshnessIndicator } from '../l/[locationId]/freshness-indicator';
 import type { DashboardConfig } from '@/lib/dashboard/widget';
 import type { CsmBookSummary, DepartmentSummary } from '@/lib/dashboard/team-rollup';
 import type { ClientData } from '@/lib/dashboard/csm-clients-types';
@@ -15,6 +16,8 @@ interface DashboardPageClientProps {
   config: DashboardConfig;
   currentPageId: string;
   userEmail: string;
+  locationId: string | null;
+  lastUpdated: number | null;
   teamHealthRollup?: CsmBookSummary[];
   departmentOverview?: DepartmentSummary;
   portfolioClients?: ClientData[];
@@ -29,6 +32,8 @@ export function DashboardPageClient({
   config,
   currentPageId,
   userEmail,
+  locationId,
+  lastUpdated,
   teamHealthRollup,
   departmentOverview,
   portfolioClients,
@@ -56,6 +61,13 @@ export function DashboardPageClient({
           <h1 className="text-2xl font-bold text-ink">Dashboard</h1>
           <p className="text-sm text-chrome-ink-2">{userEmail}</p>
         </div>
+        {locationId && (
+          <FreshnessIndicator
+            locationId={locationId}
+            timestamp={lastUpdated}
+            revalidatePathOverride="/dashboard"
+          />
+        )}
       </div>
 
       {/* Page Tabs */}
