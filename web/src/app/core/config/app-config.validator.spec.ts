@@ -11,7 +11,7 @@ import type { AppConfig } from './app-config';
  */
 
 function config(overrides: Partial<AppConfig> = {}): AppConfig {
-  return { production: false, apiBaseUrl: '', ...overrides };
+  return { production: false, apiBaseUrl: '', googleClientId: '', ...overrides };
 }
 
 describe('validateAppConfig', () => {
@@ -60,6 +60,7 @@ describe('validateAppConfig', () => {
       validateAppConfig({
         production: 'yes' as unknown as boolean,
         apiBaseUrl: 'https://api.example.com',
+        googleClientId: '',
       });
     } catch (error) {
       message = error instanceof Error ? error.message : String(error);
@@ -67,5 +68,25 @@ describe('validateAppConfig', () => {
 
     expect(message).toContain('production');
     expect(message).toContain('apiBaseUrl');
+  });
+
+  describe('googleClientId', () => {
+    it('accepts an empty value, which means Google sign-in is off', () => {
+      expect(() => validateAppConfig(config({ googleClientId: '' }))).not.toThrow();
+    });
+
+    it('accepts a well-formed client id', () => {
+      expect(() =>
+        validateAppConfig(config({ googleClientId: '123-abc.apps.googleusercontent.com' })),
+      ).not.toThrow();
+    });
+
+    it('rejects a truncated paste', () => {
+      // Fails at render time inside Google's script with an opaque message
+      // otherwise, which is a miserable thing to debug.
+      expect(() => validateAppConfig(config({ googleClientId: '123-abc' }))).toThrow(
+        /apps\.googleusercontent\.com/,
+      );
+    });
   });
 });

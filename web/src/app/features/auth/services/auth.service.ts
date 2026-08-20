@@ -8,6 +8,7 @@ import type { ApiResult } from '../../../core/models/api-result.model';
 const REQUEST_URL = '/api/auth/otp/request';
 const VERIFY_URL = '/api/auth/otp/verify';
 const SIGNOUT_URL = '/api/auth/signout';
+const GOOGLE_URL = '/api/auth/google';
 
 /** Shape of the request endpoint's success body. */
 export interface CodeRequested {
@@ -46,6 +47,19 @@ export class AuthService {
    */
   async verifyCode(email: string, code: string): Promise<ApiResult<Session>> {
     const result = await firstValueFrom(this.api.post<Session>(VERIFY_URL, { email, code }));
+    if (!result.error) this.rbac.applySession(result.data);
+    return result;
+  }
+
+  /**
+   * Exchanges a Google Identity Services credential for a session.
+   *
+   * The credential is an ID token, verified server-side against our own client
+   * id as the expected audience. Nothing about it is trusted here: this method
+   * only carries it across.
+   */
+  async signInWithGoogle(credential: string): Promise<ApiResult<Session>> {
+    const result = await firstValueFrom(this.api.post<Session>(GOOGLE_URL, { credential }));
     if (!result.error) this.rbac.applySession(result.data);
     return result;
   }

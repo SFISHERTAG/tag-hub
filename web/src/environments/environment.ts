@@ -17,4 +17,7 @@ import type { AppConfig } from '../app/core/config/app-config';
 export const environment: AppConfig = {
   production: false,
   apiBaseUrl: '',
+  // Set from GOOGLE_SIGNIN_CLIENT_ID once the OAuth client exists. Empty means
+  // the Google button is not rendered; the OTP flow is unaffected.
+  googleClientId: '',
 };

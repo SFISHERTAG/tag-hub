@@ -7,6 +7,7 @@ import { AuthService } from '../services/auth.service';
 import { ok } from '../../../core/models/api-result.model';
 import type { Session } from '../../../core/models/session.model';
 import { ROLES } from '../../../core/models/role.model';
+import { APP_CONFIG } from '../../../core/config/app-config';
 
 /**
  * Story: two behaviours here are security-relevant rather than cosmetic.
@@ -22,6 +23,7 @@ import { ROLES } from '../../../core/models/role.model';
 
 const requestCode = vi.fn();
 const verifyCode = vi.fn();
+const signInWithGoogle = vi.fn();
 
 function session(): Session {
   return {
@@ -34,7 +36,7 @@ function session(): Session {
   };
 }
 
-function setup(next: string | null = null) {
+function setup(next: string | null = null, googleClientId = '') {
   const navigateByUrl = vi.fn().mockResolvedValue(true);
 
   TestBed.configureTestingModule({
@@ -45,7 +47,11 @@ function setup(next: string | null = null) {
       // satisfy a test provider would be the wrong direction.
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: AuthService, useValue: { requestCode, verifyCode } },
+      { provide: AuthService, useValue: { requestCode, verifyCode, signInWithGoogle } },
+      {
+        provide: APP_CONFIG,
+        useValue: { production: false, apiBaseUrl: '', googleClientId },
+      },
       {
         provide: ActivatedRoute,
         useValue: {
@@ -68,6 +74,8 @@ function setup(next: string | null = null) {
 function view(component: Signin) {
   return component as unknown as {
     step: () => string;
+    googleEnabled: boolean;
+    signInWithGoogle: (credential: string) => Promise<void>;
     email: { set: (v: string) => void };
     code: { set: (v: string) => void };
     error: () => string | null;
@@ -82,6 +90,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
   requestCode.mockResolvedValue(ok({ ok: true }));
+  signInWithGoogle.mockResolvedValue(ok(session()));
   verifyCode.mockResolvedValue(ok(session()));
 });
 
@@ -201,5 +210,44 @@ describe('Signin', () => {
 
     expect(v.step()).toBe('email');
     expect(v.cooldownSeconds()).toBe(0);
+  });
+
+  it('hides the Google button when no client id is configured', () => {
+    const { component, fixture } = setup(null, '');
+
+    expect(view(component).googleEnabled).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-google-button')).toBeNull();
+  });
+
+  it('shows the Google button when a client id is configured', () => {
+    const { component, fixture } = setup(null, 'abc.apps.googleusercontent.com');
+
+    expect(view(component).googleEnabled).toBe(true);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-google-button'),
+    ).not.toBeNull();
+  });
+
+  it('navigates to a safe destination after Google sign-in', async () => {
+    const { component, navigateByUrl } = setup('https://evil.example.com', 'abc.apps.googleusercontent.com');
+
+    await view(component).signInWithGoogle('a.b.c');
+
+    // The `next` sanitisation has to cover this path too, not just the code one.
+    expect(signInWithGoogle).toHaveBeenCalledWith('a.b.c');
+    expect(navigateByUrl).toHaveBeenCalledWith('/');
+  });
+
+  it('surfaces a Google sign-in failure without navigating', async () => {
+    signInWithGoogle.mockResolvedValue({
+      data: null,
+      error: { message: 'This account is not set up for TAG Hub.', context: 'x', status: 401 },
+    });
+    const { component, navigateByUrl } = setup(null, 'abc.apps.googleusercontent.com');
+
+    await view(component).signInWithGoogle('a.b.c');
+
+    expect(view(component).error()).toBe('This account is not set up for TAG Hub.');
+    expect(navigateByUrl).not.toHaveBeenCalled();
   });
 });

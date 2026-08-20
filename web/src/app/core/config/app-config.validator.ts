@@ -48,6 +48,17 @@ export function validateAppConfig(config: AppConfig): void {
     }
   }
 
+  if (typeof config.googleClientId !== 'string') {
+    problems.push('`googleClientId` must be a string (empty means Google sign-in is off)');
+  } else if (config.googleClientId !== '' && !config.googleClientId.endsWith('.apps.googleusercontent.com')) {
+    // A truncated or wrong-field paste fails at render time inside Google's
+    // script with an opaque message, so catch the shape here instead.
+    problems.push(
+      '`googleClientId` does not look like a Google client id (expected it to end with ' +
+        '".apps.googleusercontent.com"). Leave it empty to disable Google sign-in.',
+    );
+  }
+
   if (problems.length > 0) {
     throw new Error(
       `Invalid AppConfig:\n${problems.map((p) => `  - ${p}`).join('\n')}\n` +

@@ -22,6 +22,13 @@ export interface AppConfig {
    * origin that set it.
    */
   readonly apiBaseUrl: string;
+  /**
+   * Google Identity Services client id. Empty is legitimate and means Google
+   * sign-in is not configured: the button is not rendered and the screen is
+   * OTP-only. Public by design — it ships in the bundle and identifies the app
+   * rather than authorising anything.
+   */
+  readonly googleClientId: string;
 }
 
 export const APP_CONFIG = new InjectionToken<AppConfig>('APP_CONFIG');

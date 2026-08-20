@@ -88,7 +88,7 @@ const appOrigin = optional("APP_ORIGIN");
  * answers 503 and the Angular sign-in screen renders OTP only. It never
  * degrades to a permissive path.
  *
- * Distinct from NEXT_PUBLIC_GOOGLE_PICKER_CLIENT_ID (.env.example:75), which is
+ * Distinct from NEXT_PUBLIC_GOOGLE_PICKER_CLIENT_ID, which is
  * the Drive Picker's client and is not an end-user sign-in credential.
  */
 const googleSigninClientId = optional("GOOGLE_SIGNIN_CLIENT_ID");

@@ -16,6 +16,11 @@
     </mat-card-header>
 
     <mat-card-content>
+      @if (step() === 'email' && googleEnabled) {
+        <app-google-button (credential)="signInWithGoogle($event)" />
+        <div class="signin__divider"><span>or</span></div>
+      }
+
       @if (step() === 'email') {
         <form (ngSubmit)="submitEmail()">
           <mat-form-field appearance="outline" class="signin__field">

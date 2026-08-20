@@ -14,6 +14,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AuthService } from '../services/auth.service';
+import { GoogleButton } from '../google-button/google-button';
+import { APP_CONFIG } from '../../../core/config/app-config';
 import { safeNext } from '../services/safe-next';
 
 type Step = 'email' | 'code';
@@ -41,6 +43,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
+    GoogleButton,
   ],
   templateUrl: './signin.html',
   styleUrl: './signin.scss',
@@ -49,6 +52,10 @@ export class Signin {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly config = inject(APP_CONFIG);
+
+  /** Google sign-in renders only when an OAuth client id is configured. */
+  protected readonly googleEnabled = this.config.googleClientId !== '';
 
   protected readonly step = signal<Step>('email');
   protected readonly email = signal('');
@@ -112,6 +119,22 @@ export class Signin {
     // The session cookie is already set and the session already applied, so
     // navigate straight on. Left pending so the form cannot be resubmitted
     // during the transition.
+    this.stopCooldown();
+    await this.router.navigateByUrl(safeNext(this.route.snapshot.queryParamMap.get('next')));
+  }
+
+  protected async signInWithGoogle(credential: string): Promise<void> {
+    this.pending.set(true);
+    this.error.set(null);
+
+    const result = await this.auth.signInWithGoogle(credential);
+
+    if (result.error) {
+      this.pending.set(false);
+      this.error.set(result.error.message);
+      return;
+    }
+
     this.stopCooldown();
     await this.router.navigateByUrl(safeNext(this.route.snapshot.queryParamMap.get('next')));
   }
