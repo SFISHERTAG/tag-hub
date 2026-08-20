@@ -84,6 +84,9 @@ function CodeBoxes({
         ref={ref}
         id="code"
         name="code"
+        // The visible "Six-digit code" label was removed for the sparser
+        // layout, so the accessible name has to be carried here instead.
+        aria-label="Six-digit code"
         // `text` with a numeric mode, so a leading zero is never dropped.
         type="text"
         inputMode="numeric"
@@ -141,6 +144,74 @@ export function SignInForm({ next }: { next: string }) {
    * time `pending` settled, and a wrong code would spin forever.
    */
   const autoSubmitted = useRef<string | null>(null);
+
+  /**
+   * A sign-in link from the email fills the boxes and signs the user in.
+   *
+   * The credentials arrive in the URL fragment (`#e=...&c=...`) rather than the
+   * query string, so they are never sent to the server: not in request logs,
+   * not in a `Referer`. Reading them here, in the browser, is the only way they
+   * can be used at all.
+   *
+   * Nothing is verified in this effect. It populates the same state that typing
+   * would, and the auto-submit effect below does the rest, so the link path and
+   * the typing path converge immediately rather than being two flows.
+   *
+   * The fragment is stripped afterwards with `replaceState`, so the code is not
+   * left sitting in the address bar or in a shareable URL. Doing it here rather
+   * than after verification means a failed code is cleared too.
+   *
+   * `react-hooks/set-state-in-effect` is suppressed rather than worked around,
+   * and the reason is a hard constraint rather than convenience. A fragment is
+   * readable only in the browser, so the server cannot render the code step,
+   * and moving this into a `useState` initialiser would make the first client
+   * render disagree with the server's HTML: a hydration mismatch. Rendering the
+   * email step and then switching is the only correct order, and that is a
+   * post-mount state update by definition. The cascade the rule guards against
+   * cannot happen here, since the effect has an empty dependency list and
+   * clears the fragment it reads.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    function consumeLink() {
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+
+      const params = new URLSearchParams(hash);
+      const linkedEmail = params.get("e");
+      const linkedCode = params
+        .get("c")
+        ?.replace(/\D/g, "")
+        .slice(0, CODE_LENGTH);
+
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
+
+      if (!linkedEmail || !linkedCode) return;
+
+      setEmail(linkedEmail);
+      setCode(linkedCode);
+      setStep("code");
+    }
+
+    consumeLink();
+
+    /**
+     * Also on `hashchange`, which is not belt and braces.
+     *
+     * Adding a fragment to the URL the browser is already showing is a
+     * same-document navigation: no remount, so a mount-only effect never runs.
+     * That is exactly what happens to someone who requests a code, leaves the
+     * tab open on this page, then clicks the link in their mail client and has
+     * it reuse that tab. Found by doing it.
+     */
+    window.addEventListener("hashchange", consumeLink);
+    return () => window.removeEventListener("hashchange", consumeLink);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /**
    * A full code submits itself.
@@ -243,9 +314,39 @@ export function SignInForm({ next }: { next: string }) {
   const inputClass =
     "w-full rounded-md border border-chrome-line bg-chrome-hover px-3 py-2 text-sm text-white outline-none focus:border-accent";
 
+  /**
+   * The submit button, kept and made almost invisible rather than deleted.
+   *
+   * Deleting it would cost more than it looks. A real `<button type="submit">`
+   * is what screen readers announce as the way out of the form, what a keyboard
+   * user reaches by tab, and what native implicit submission needs. Opacity
+   * hides it from sight without hiding it from any of that: assistive
+   * technology ignores `opacity`, so the control is still fully announced.
+   *
+   * It surfaces on hover or keyboard focus, so it is discoverable the moment
+   * anyone looks for it, and otherwise the only instruction on the page is the
+   * cursor sitting in a field.
+   */
+  const ghostButton =
+    "w-full rounded-md px-4 py-2 text-xs font-medium text-chrome-ink-2 " +
+    "opacity-0 transition-opacity duration-200 hover:opacity-100 " +
+    "focus-visible:opacity-100 focus-visible:outline-none " +
+    "focus-visible:ring-1 focus-visible:ring-accent disabled:opacity-0";
+
+  /**
+   * The only sign that Enter did anything, now that no button changes its
+   * label. A form that looks inert after a keypress is the exact complaint that
+   * started this work, so silence is not an option even in a sparse design.
+   */
+  const activity = pending ? (
+    <div className="h-px w-full animate-pulse bg-accent" aria-hidden="true" />
+  ) : (
+    <div className="h-px w-full" aria-hidden="true" />
+  );
+
   if (step === "email") {
     return (
-      <form onSubmit={requestCode} className="space-y-4">
+      <form onSubmit={requestCode} className="space-y-3" aria-busy={pending}>
         <input
           id="email"
           name="email"
@@ -264,37 +365,36 @@ export function SignInForm({ next }: { next: string }) {
           className={`${inputClass} text-center placeholder:text-chrome-ink-2`}
         />
 
+        {activity}
+
         {error && (
           <p role="alert" className="text-center text-sm text-danger">
             {error}
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink disabled:opacity-60"
-        >
-          {pending ? "Signing in…" : "Sign in"}
+        {/* Announced, not shown: replaces the button label that used to say so. */}
+        <p role="status" className="sr-only">
+          {pending ? "Sending your sign-in code" : ""}
+        </p>
+
+        <button type="submit" disabled={pending} className={ghostButton}>
+          Send code
         </button>
       </form>
     );
   }
 
   return (
-    <form ref={codeFormRef} onSubmit={submitCode} className="space-y-4">
-      <div className="space-y-1.5">
-        <label
-          htmlFor="code"
-          className="block text-center text-sm text-chrome-ink-2"
-        >
-          Six-digit code
-        </label>
-        <p className="text-center text-xs text-ink-3">
-          Sent to {email} · expires in 10 minutes
-        </p>
-        <CodeBoxes value={code} onChange={setCode} onKeyDown={submitOnEnter} />
-      </div>
+    <form
+      ref={codeFormRef}
+      onSubmit={submitCode}
+      className="space-y-3"
+      aria-busy={pending}
+    >
+      <CodeBoxes value={code} onChange={setCode} onKeyDown={submitOnEnter} />
+
+      {activity}
 
       {notice && (
         <p className="text-center text-xs text-chrome-ink-2">{notice}</p>
@@ -305,15 +405,25 @@ export function SignInForm({ next }: { next: string }) {
         </p>
       )}
 
+      <p role="status" className="sr-only">
+        {pending ? "Checking your code" : `Enter the code sent to ${email}`}
+      </p>
+
       <button
         type="submit"
-        disabled={pending || code.length !== 6}
-        className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink disabled:opacity-60"
+        disabled={pending || code.length !== CODE_LENGTH}
+        className={ghostButton}
       >
-        {pending ? "Verifying…" : "Sign in"}
+        Sign in
       </button>
 
-      <div className="flex justify-center gap-5 text-xs">
+      {/*
+        Kept deliberately, against the instinct to strip everything. A code
+        expires in ten minutes and resending is rate limited, so without these
+        an expired code is a dead end with no visible way out. They are the two
+        smallest things on the page and they only surface on hover.
+      */}
+      <div className="flex justify-center gap-5 text-[11px]">
         <button
           type="button"
           onClick={() => {
@@ -323,7 +433,7 @@ export function SignInForm({ next }: { next: string }) {
             setError(null);
             setNotice(null);
           }}
-          className="text-chrome-ink-2 underline-offset-2 hover:text-white hover:underline"
+          className="text-chrome-ink-2/40 underline-offset-2 transition-colors hover:text-white hover:underline"
         >
           Use a different email
         </button>
@@ -331,7 +441,7 @@ export function SignInForm({ next }: { next: string }) {
           type="button"
           disabled={pending}
           onClick={() => requestCode()}
-          className="text-chrome-ink-2 underline-offset-2 hover:text-white hover:underline disabled:opacity-60"
+          className="text-chrome-ink-2/40 underline-offset-2 transition-colors hover:text-white hover:underline disabled:opacity-60"
         >
           Resend code
         </button>

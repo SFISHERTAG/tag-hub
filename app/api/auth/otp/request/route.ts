@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { adminAuth } from "@/lib/auth/admin";
 import { issueCode } from "@/lib/auth/otp";
 import { sendMail, signInCodeMail } from "@/lib/auth/mailer";
+import { signInLink } from "@/lib/auth/base-url";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +87,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await sendMail(signInCodeMail(email, outcome.code));
+    /**
+     * The link is an enhancement; the code is the product.
+     *
+     * `signInLink` throws when `PUBLIC_BASE_URL` is unset or unusable, and
+     * letting that propagate would mean one missing config value locks
+     * everybody out of the Hub rather than costing them one click. That is the
+     * same shape of failure as the empty Firebase substitution that shipped a
+     * sign-in page which could not verify anything.
+     *
+     * Not a silent catch: the reason is logged at error level, and the code
+     * still goes out. Only the convenience is lost, and it is lost visibly.
+     */
+    let link: string | undefined;
+    try {
+      link = signInLink(email, outcome.code);
+    } catch (error) {
+      console.error(
+        "Sign-in link omitted from the code email; sending the code alone:",
+        error,
+      );
+    }
+
+    await sendMail(signInCodeMail(email, outcome.code, link));
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("OTP request failed:", error);
