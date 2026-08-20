@@ -1,7 +1,7 @@
 import "server-only";
 import { getPipelines } from "@/lib/ghl/pipelines";
 import { getOpportunities, groupByStage } from "@/lib/ghl/opportunities";
-import { GhlConfigError, LocationNotAuthorizedError, devLocationId } from "@/lib/ghl/tokens";
+import { GhlConfigError, LocationNotAuthorizedError } from "@/lib/ghl/tokens";
 
 export type PipelineStageRollup = { id: string; name: string; count: number; value: number };
 
@@ -16,13 +16,12 @@ export type PipelineBoardResult =
  * cell — this is deliberately the funnel-table treatment applied to real
  * opportunity data: counts and value per stage, not individual cards.
  *
- * Uses the same `devLocationId()` single-tenant resolution app/page.tsx
- * already uses — this codebase doesn't yet route a signed-in session to a
- * specific client's GHL location, so this widget can't do more than that
- * page does today.
+ * locationId is the caller's responsibility to resolve (see
+ * lib/dashboard/location-selection.ts#getLocationForDashboard) and must
+ * already be checked against the caller's session — this function has no
+ * way to know who's asking.
  */
-export async function getPipelineBoardSummary(): Promise<PipelineBoardResult> {
-  const locationId = devLocationId();
+export async function getPipelineBoardSummary(locationId: string): Promise<PipelineBoardResult> {
   if (!locationId) {
     return { ok: false, message: "No GHL location configured yet." };
   }

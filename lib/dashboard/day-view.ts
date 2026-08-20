@@ -1,14 +1,17 @@
 import "server-only";
 import { fetchCalls, type CallForDisplay } from "./data-fetchers";
-import { GhlConfigError, LocationNotAuthorizedError, devLocationId } from "@/lib/ghl/tokens";
+import { GhlConfigError, LocationNotAuthorizedError } from "@/lib/ghl/tokens";
 
 export type DayViewResult =
   | { ok: true; calls: CallForDisplay[] }
   | { ok: false; message: string };
 
-/** Today's appointments, same single-tenant `devLocationId()` resolution as getPipelineBoardSummary. */
-export async function getTodayCalls(): Promise<DayViewResult> {
-  const locationId = devLocationId();
+/**
+ * Today's appointments. locationId is the caller's responsibility to
+ * resolve and check against the caller's session — see
+ * lib/dashboard/location-selection.ts#getLocationForDashboard.
+ */
+export async function getTodayCalls(locationId: string): Promise<DayViewResult> {
   if (!locationId) {
     return { ok: false, message: "No GHL location configured yet." };
   }

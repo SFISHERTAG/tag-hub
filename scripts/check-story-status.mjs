@@ -32,8 +32,11 @@ function parseStory(file) {
   // Files referenced in backticks anywhere in the doc (Tasks/Dev notes), e.g. `lib/foo/bar.ts`.
   // Requires at least one path separator — a bare `db.ts`/`types.ts` used as shorthand in
   // prose is too ambiguous to attribute to one file, and matching it via endsWith() below
-  // would false-positive against every other module with the same filename.
+  // would false-positive against every other module with the same filename. Also excludes a
+  // reference immediately followed by "(Story N.N)" — that's this doc explicitly attributing
+  // the file to a *different* story's dev notes as cross-reference context, not claiming it.
   const referenced = [...text.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)]
+    .filter((m) => !/^\s*\(Story\s/i.test(text.slice(m.index + m[0].length, m.index + m[0].length + 20)))
     .map((m) => m[1])
     .filter((ref) => ref.includes("/"));
   return { file, status, checked, total, referenced };
