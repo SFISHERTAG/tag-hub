@@ -1,4 +1,5 @@
 import "server-only";
+import { DEFAULT_TIME_ZONE } from "../time/zone";
 import { getAppointments, type Appointment, type AppointmentStatus } from "@/lib/ghl/appointments";
 import { getTenant } from "@/lib/ghl/tenants";
 import { GhlConfigError, LocationNotAuthorizedError, devLocationId } from "@/lib/ghl/tokens";
@@ -71,7 +72,11 @@ function monthGridRange(now: Date): { startMs: number; endMs: number; monthLabel
   return {
     startMs: gridStart.getTime(),
     endMs: gridEnd.getTime(),
-    monthLabel: firstOfMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+    monthLabel: firstOfMonth.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+      timeZone: DEFAULT_TIME_ZONE,
+    }),
   };
 }
 

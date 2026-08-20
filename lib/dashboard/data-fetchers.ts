@@ -1,4 +1,5 @@
 import "server-only";
+import { DEFAULT_TIME_ZONE } from "../time/zone";
 import { getAppointments, dayRange, formatTime, type Appointment } from "@/lib/ghl/appointments";
 import { listDriveFiles, categorizeFile, getFileTypeIcon, formatFileSize, type DriveFile } from "@/lib/google/drive";
 import { getLocationConfig } from "./location-config";
@@ -136,7 +137,7 @@ function mapDriveFileToCreative(file: DriveFile): CreativeForDisplay {
     submittedAt: file.createdTime || new Date().toISOString(),
     fileId: file.id,
     webViewLink: file.webViewLink,
-    description: `Modified ${new Date(file.modifiedTime).toLocaleDateString()}`,
+    description: `Modified ${new Date(file.modifiedTime).toLocaleDateString("en-US", { timeZone: DEFAULT_TIME_ZONE })}`,
   };
 }
 

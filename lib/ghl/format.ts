@@ -1,3 +1,5 @@
+import { DEFAULT_TIME_ZONE } from "../time/zone";
+
 /**
  * Presentation helpers, safe on both sides of the boundary.
  *
@@ -35,7 +37,12 @@ export function displayName(contact: Contact): string {
   return contact.contactName?.trim() || composed || contact.email || "Unnamed";
 }
 
-export function formatDate(iso: string | undefined): string {
+/**
+ * Same reasoning as formatTime: without an explicit zone this renders in the
+ * process timezone. The date is the more dangerous of the two, because an
+ * evening appointment in Central falls on the NEXT day in UTC.
+ */
+export function formatDate(iso: string | undefined, timeZone: string = DEFAULT_TIME_ZONE): string {
   if (!iso) return "—";
   const date = new Date(iso);
   return Number.isNaN(date.getTime())
@@ -44,6 +51,7 @@ export function formatDate(iso: string | undefined): string {
         month: "short",
         day: "numeric",
         year: "numeric",
+        timeZone,
       });
 }
 
@@ -62,12 +70,21 @@ export function formatMoney(value: number): string {
   }).format(value || 0);
 }
 
-export function formatTime(iso: string): string {
+/**
+ * An explicit `timeZone` is required, not optional.
+ *
+ * Without it `toLocaleTimeString` uses the process timezone, which is the
+ * developer's zone locally and UTC in Cloud Run, so appointment times rendered
+ * five or six hours off with no error to notice. The argument defaults rather
+ * than being omitted so a future per-tenant zone is a call-site change.
+ */
+export function formatTime(iso: string, timeZone: string = DEFAULT_TIME_ZONE): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime())
     ? "—"
     : date.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
+        timeZone,
       });
 }

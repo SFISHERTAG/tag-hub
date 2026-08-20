@@ -1,6 +1,7 @@
 import { Panel, Badge } from "../../ui";
 import { StatusControls } from "@/app/l/[locationId]/today/status-controls";
 import { formatTime } from "@/lib/ghl/format";
+import { DEFAULT_TIME_ZONE } from "@/lib/time/zone";
 import type { OwnerCalendarResult, OwnerAppointment } from "@/lib/dashboard/owner-calendar";
 
 const STATUS_TONE: Record<string, "ok" | "warn" | "danger" | "neutral" | "info"> = {
@@ -84,7 +85,12 @@ function UpcomingRow({ locationId, appointment }: { locationId: string; appointm
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-ink">{appointment.title}</p>
         <p className="text-xs text-ink-3">
-          {new Date(appointment.startTime).toLocaleDateString("en-US", { month: "short", day: "numeric" })} ·{" "}
+          {new Date(appointment.startTime).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            timeZone: DEFAULT_TIME_ZONE,
+          })}{" "}
+          ·{" "}
           {formatTime(appointment.startTime)}–{formatTime(appointment.endTime)}
         </p>
       </div>

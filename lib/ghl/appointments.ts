@@ -1,4 +1,5 @@
 import "server-only";
+import { DEFAULT_TIME_ZONE } from "../time/zone";
 import { ghl } from "./client";
 
 /** GHL's calendar endpoints are pinned to an older API version than the rest. */
@@ -114,14 +115,57 @@ export async function setAppointmentStatus(
   });
 }
 
-/** Start and end of the local day, in epoch milliseconds. */
-export function dayRange(offsetDays = 0): { startMs: number; endMs: number } {
-  const start = new Date();
-  start.setDate(start.getDate() + offsetDays);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setHours(23, 59, 59, 999);
-  return { startMs: start.getTime(), endMs: end.getTime() };
+/**
+ * Start and end of a day IN A NAMED TIMEZONE, in epoch milliseconds.
+ *
+ * `setHours(0,0,0,0)` mutates in the process timezone. That is the developer's
+ * zone locally and UTC in Cloud Run, so "today" began at 7pm the previous
+ * evening Central: after about 6pm a closer opening /today saw none of that
+ * evening's remaining calls and tomorrow's list under the heading "Today".
+ *
+ * Computed by asking Intl what the wall-clock date is in `timeZone`, then
+ * finding the instant that reads as midnight there. Done this way rather than
+ * with a fixed offset because Central is UTC-6 or UTC-5 depending on daylight
+ * saving, and a hardcoded offset is wrong for half the year.
+ */
+export function dayRange(
+  offsetDays = 0,
+  timeZone: string = DEFAULT_TIME_ZONE,
+): { startMs: number; endMs: number } {
+  const now = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000);
+
+  // The Y/M/D that `now` falls on, as seen in timeZone.
+  const [{ value: month }, , { value: day }, , { value: year }] =
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now);
+
+  // Midnight that calendar day, in timeZone, expressed as an instant. Guessed
+  // as UTC first, then corrected by the zone's offset at that moment.
+  const guess = Date.parse(`${year}-${month}-${day}T00:00:00Z`);
+  const offsetMs = guess - Date.parse(zonedIsoString(new Date(guess), timeZone));
+  const startMs = guess + offsetMs;
+
+  return { startMs, endMs: startMs + 24 * 60 * 60 * 1000 - 1 };
+}
+
+/** The wall-clock time in `timeZone`, formatted so Date.parse reads it as UTC. */
+function zonedIsoString(instant: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(instant);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}Z`;
 }
 
 export { formatTime } from "./format";
