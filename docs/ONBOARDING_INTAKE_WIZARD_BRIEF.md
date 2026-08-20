@@ -1,6 +1,8 @@
 # Intake Wizard + Welcome Tour — build brief (ON HOLD)
 
-**Status: not built.** This is a context-gathering handoff, not an implementation.
+**Status: not built, but no longer blocked.** All six open decisions are now answered
+(§3). One question remains before code: whether a re-submit updates the existing Google Doc
+or creates a new one (§3b). This is a context-gathering handoff, not an implementation.
 Nothing in `app/` or `lib/` was changed. Pick this up in a fresh session inside
 `/Users/home/projects/TAG` on branch `onboarding-intake-wizard-scaffold`.
 
@@ -100,38 +102,72 @@ Adding a dep for something parked is the wrong trade.
 
 ---
 
-## 3. Decisions — three resolved, three still open
+## 3. Decisions — all six resolved
 
-**RESOLVED — A. Who sees it?** The **client**, inbound. This is a client-facing greeting, not
-a staff tool. It does not belong on the existing staff-only `/onboarding` route.
+**A. Who sees it?** The **client**, inbound. Not the staff-only `/onboarding` route.
 
-**RESOLVED — B. What triggers it at sign-in?** A **hard gate**, CCE-style. Client signs in →
-is met by the form → answers → passes the gate → tour. *(An earlier draft of this brief
-recommended a soft nudge. That was wrong and has been struck.)*
+**B. Trigger?** A **hard gate** at sign-in. Client signs in → meets the form → answers →
+passes → tour. *(An earlier draft recommended a soft nudge. Wrong; struck.)*
 
-**RESOLVED — E. Tour timing.** The tour fires immediately on clearing the gate, as orientation
-for someone seeing the product for the first time.
+**C. What marks the gate cleared?** Track it, but **fail open, never locked out.** If the
+state is missing or unreadable, the client sees the welcome tour again on next login. A
+repeated tour is a minor annoyance; a client locked out of their own product is an incident.
+Staff override still required for the intake half. Design note: this makes "not sure" a safe
+state, which means the completion check does not need to be bulletproof to ship.
 
-**Also settled — build the tour framework, not its content.** What gets highlighted is not
-decided and does not need to be. Build the mechanism — overlay, target resolution, step
-sequencing, "seen" state — driven by a step list that is data, so steps can be written later
-without touching the machinery. Ship it switched off.
+**D. Resume?** Yes, fully. Per-step autosave; the client resumes exactly where they stopped.
+**Staff can open and continue a half-finished form** — so drafts are not private to the
+client, and the draft record needs an editor identity (client vs. which staff member) for the
+audit trail. Reuse `logAction` (`lib/audit/store.ts`), as the checklist does.
+
+**E. Tour timing?** Immediately on clearing the gate. Build the framework, not its content —
+steps are data, supplied later. Ship it switched off.
+
+**F. Coexist with the GHL form?** **Non-issue — the GHL form never went into production use.**
+It was built to prove the answers land in the custom fields, and that is all it did. So there
+is no dual-write problem, no precedence question, and no migration window. The in-app wizard
+is the **first real use** of this path.
+
+> **This changes §1's highest-risk step.** "Capture a real Phase 2 payload" assumed production
+> traffic exists. It may not. The source of truth for field keys is the **GHL form's
+> custom-field definitions** — export those. Then send one test submission through
+> `/api/onboarding/intake-submit` and diff what Phase 2 actually receives against the export.
+> The risk is unchanged and still the highest in the build; only the method of retiring it is.
 
 ---
 
-**OPEN — C. What marks the gate cleared?** No `onboardingCompleted` equivalent exists on TAG's
-session or claims. Options: derive from `intakeData/latest` existing; a new tenant field; or
-tie to the PR1 checklist task. Deriving adds no state to keep in sync and is the cheapest.
-A hard gate makes this load-bearing — get it wrong and a client is locked out of their own
-product, so whatever is chosen needs a staff override path.
+## 3b. The living Google Doc — a conflict to resolve before building
 
-**OPEN — D. Resume semantics.** 20+ substantive free-text questions is a multi-sitting form,
-and a hard gate makes abandoning it costly. Per-step autosave is effectively mandatory.
-Decide whether partial drafts are visible to the CSM.
+Phase 2 does more than store answers. `functions/src/webhooks/phase2-intake-submit.ts`:
 
-**OPEN — F. Relationship to the GHL form during transition.** Does the in-app gate replace the
-emailed link outright, or run alongside it? If alongside, two sources can write
-`intakeData/latest` — decide precedence before, not after.
+1. Creates a Drive folder and a Google Doc titled `{clientName} - Onboarding Doc`
+2. Fills it with four Gemini-generated sections, added as tabs (`addDocTab`)
+3. Shares it to the client's email **as `reader`** (`functions/src/google.ts:191`)
+
+That doc is the intended shared, running, living document. Three things about it collide with
+a save-and-resume wizard, and none are hypothetical:
+
+**1. A later resubmission creates a second doc, it does not update the first.** The
+idempotency guard is explicit that it blocks exact-body retries while allowing "a genuinely
+different later resubmission for the same location" (comment at line 41–46) — and that path
+runs `createGoogleDoc` again. With autosave, resume, and staff editing a client's draft,
+meaningfully-different submissions stop being an edge case and become the normal path. Left
+alone, a client accumulates several docs with the same name and no indication which is current.
+
+**2. The client is a `reader`.** They cannot write to the document they are meant to live in.
+`shareGoogleDoc` already takes `"reader" | "writer"` — this is a one-argument decision, but
+it is a decision.
+
+**3. `appendToGoogleDoc` exists and Phase 2 never calls it after creation.** The mechanism for
+growing the doc over time is already written and unused. That is very likely the intended
+tool for updates-after-first-submit.
+
+**Decide before building:** does a re-submit *update* the existing doc (append or replace a
+tab, keeping one stable URL), or *create* a new one? A living document argues for one stable
+doc and one stable link, which points at storing `googleDocId` on the tenant record and
+having Phase 2 update in place when it is already set. Worth confirming that intent before a
+line of wizard code is written, because it decides whether the wizard's submit is a one-shot
+event or an ongoing sync.
 
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
