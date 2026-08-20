@@ -32,6 +32,12 @@ on their onboarding call. Its full question set is transcribed in
 
 Those five sections are the natural wizard steps.
 
+**What this replaces.** Phase 1 (`functions/src/webhooks/phase1-provisioning.ts:135–139`)
+currently *emails* the client a GHL-hosted form link:
+`${GHL_FORM_URL}?email=...&locationId=...`. The client leaves the product to answer, and the
+answers come back by webhook. The ask is to delete that detour: greet the client with the same
+questions inside the app instead of mailing them elsewhere.
+
 **Where intake data goes today.** `POST /api/onboarding/intake-submit`
 (`app/api/onboarding/intake-submit/route.ts`) takes `{ locationId, email, intakeData }`,
 hashes the body into an `x-idempotency-key`, and forwards to the Phase 2 Cloud Function
@@ -39,13 +45,27 @@ at `PHASE2_WEBHOOK_URL`. Phase 2 (`functions/src/webhooks/phase2-intake-submit.t
 persists via `saveIntakeSubmission()` → `locations/{locationId}/intakeData/latest`
 (`functions/src/firestore.ts:123`), then generates content with Gemini and triggers Phase 3.
 
-**Critical constraint on field naming:** `intakeData` is consumed as an opaque
-`Record<string, unknown>` and JSON-stringified straight into four Gemini prompts —
-`generateUVP`, `generateAdCopy`, `generatePreCallScript`, `generateProjectCharter`
-(`functions/src/gemini.ts`). Only `businessName` / `clientName` / `metaAdAccountId` are
-read structurally anywhere. So **the wizard's field keys become LLM prompt content.**
-They must be descriptive and stable; renaming one silently changes generated copy.
-A wizard that emits the same `intakeData` shape needs no Phase 2/3 changes at all.
+**Critical constraint — the field keys are already decided, and they are not in this repo.**
+`intakeData` is consumed as an opaque `Record<string, unknown>` and JSON-stringified straight
+into four Gemini prompts — `generateUVP`, `generateAdCopy`, `generatePreCallScript`,
+`generateProjectCharter` (`functions/src/gemini.ts`). Only `businessName` / `clientName` /
+`metaAdAccountId` are read structurally anywhere.
+
+So the wizard's field keys **are** LLM prompt content, and they must match what the existing
+GHL form already sends, byte for byte. This is a port of a form that exists, not a new form:
+same questions, same custom fields, same payload. Change a key and the generated UVP, ad copy,
+pre-call script and project charter all quietly change with it.
+
+`TAG_Client_Onboarding_Canvas.md` gives you the **questions**. It does not give you the
+**keys**. The keys live in the GHL form itself, reachable via `GHL_FORM_URL`.
+
+> **Do this before writing any schema:** capture one real Phase 2 payload (or export the GHL
+> form's custom-field definitions) and derive `intake-schema.ts` from that. Typing the keys by
+> hand off the canvas transcript will produce plausible-looking names that silently differ from
+> production. This is the single highest-risk step in the build.
+
+Get that right and Phase 2/3 need no changes at all — the wizard just becomes a second caller
+of the same contract.
 
 ---
 
@@ -80,35 +100,38 @@ Adding a dep for something parked is the wrong trade.
 
 ---
 
-## 3. Open decisions — the "logic and options" this is parked on
+## 3. Decisions — three resolved, three still open
 
-These are why it's on hold. None should be guessed.
+**RESOLVED — A. Who sees it?** The **client**, inbound. This is a client-facing greeting, not
+a staff tool. It does not belong on the existing staff-only `/onboarding` route.
 
-**A. Who sees the wizard?** Intake is answered by the *client* (`client_owner`), but
-`/onboarding` today is staff-only. Options: a separate client-facing route; the same route
-branching on `isClientUser`; or CSM-fills-on-behalf via the Story 3.3 impersonation path.
-These are materially different builds — decide before writing the page.
+**RESOLVED — B. What triggers it at sign-in?** A **hard gate**, CCE-style. Client signs in →
+is met by the form → answers → passes the gate → tour. *(An earlier draft of this brief
+recommended a soft nudge. That was wrong and has been struck.)*
 
-**B. What triggers it at sign-in?** Options: hard block like CCE (`!onboardingCompleted`
-→ wizard, no app access); soft banner//nudge; or an emailed deep link with no sign-in gate
-at all. CCE's hard block works because a member with no profile can't use the product;
-a TAG client with no intake still has a dashboard worth seeing. **Recommendation: soft.**
+**RESOLVED — E. Tour timing.** The tour fires immediately on clearing the gate, as orientation
+for someone seeing the product for the first time.
 
-**C. What marks it complete?** There is no `onboardingCompleted` equivalent on TAG's
-session/claims. Options: derive from `intakeData/latest` existing; a new tenant field; or
-tie to the PR1 checklist task. Deriving is cheapest and adds no state to keep in sync.
-
-**D. Resume semantics.** 20+ substantive free-text questions is a multi-sitting form.
-Per-step autosave is near-mandatory; decide whether partial drafts are visible to the CSM.
-
-**E. Does the tour follow the wizard, or run independently?** And is it once-per-user
-(localStorage, as CCE does) or once-per-role?
-
-**F. Relationship to the GHL form.** Does the in-app wizard *replace* it, or run alongside
-during transition? If alongside, two sources can write `intakeData/latest` — decide
-precedence before, not after.
+**Also settled — build the tour framework, not its content.** What gets highlighted is not
+decided and does not need to be. Build the mechanism — overlay, target resolution, step
+sequencing, "seen" state — driven by a step list that is data, so steps can be written later
+without touching the machinery. Ship it switched off.
 
 ---
+
+**OPEN — C. What marks the gate cleared?** No `onboardingCompleted` equivalent exists on TAG's
+session or claims. Options: derive from `intakeData/latest` existing; a new tenant field; or
+tie to the PR1 checklist task. Deriving adds no state to keep in sync and is the cheapest.
+A hard gate makes this load-bearing — get it wrong and a client is locked out of their own
+product, so whatever is chosen needs a staff override path.
+
+**OPEN — D. Resume semantics.** 20+ substantive free-text questions is a multi-sitting form,
+and a hard gate makes abandoning it costly. Per-step autosave is effectively mandatory.
+Decide whether partial drafts are visible to the CSM.
+
+**OPEN — F. Relationship to the GHL form during transition.** Does the in-app gate replace the
+emailed link outright, or run alongside it? If alongside, two sources can write
+`intakeData/latest` — decide precedence before, not after.
 
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
