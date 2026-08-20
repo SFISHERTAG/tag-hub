@@ -1,8 +1,9 @@
 # Intake Wizard + Welcome Tour — build brief (ON HOLD)
 
-**Status: not built, but no longer blocked.** All six open decisions are now answered
-(§3). One question remains before code: whether a re-submit updates the existing Google Doc
-or creates a new one (§3b). This is a context-gathering handoff, not an implementation.
+**Status: not built. Fully specified.** All six decisions answered (§3), the Google Doc
+question resolved (§3b), and the architecture stated (§3c). Two things stand between this and
+code, both mechanical: export the GHL custom-field ids, and decide the trigger order in §3c.
+This is a context-gathering handoff, not an implementation.
 Nothing in `app/` or `lib/` was changed. Pick this up in a fresh session inside
 `/Users/home/projects/TAG` on branch `onboarding-intake-wizard-scaffold`.
 
@@ -136,38 +137,85 @@ is the **first real use** of this path.
 
 ---
 
-## 3b. The living Google Doc — a conflict to resolve before building
+## 3b. The living Google Doc — RESOLVED: update in place, one link
 
-Phase 2 does more than store answers. `functions/src/webhooks/phase2-intake-submit.ts`:
+Phase 2 (`functions/src/webhooks/phase2-intake-submit.ts`) creates a Drive folder and a Doc
+titled `{clientName} - Onboarding Doc`, fills it with four Gemini-generated tabs
+(`addDocTab`), and shares it to the client as `reader` (`functions/src/google.ts:191`).
 
-1. Creates a Drive folder and a Google Doc titled `{clientName} - Onboarding Doc`
-2. Fills it with four Gemini-generated sections, added as tabs (`addDocTab`)
-3. Shares it to the client's email **as `reader`** (`functions/src/google.ts:191`)
+**Decision: a re-submit updates the existing document. One doc, one stable link, forever.**
 
-That doc is the intended shared, running, living document. Three things about it collide with
-a save-and-resume wizard, and none are hypothetical:
+Today a meaningfully different resubmission calls `createGoogleDoc` again and produces a
+*second* doc with the same title (the idempotency guard blocks only exact-body retries —
+see the comment at lines 41–46). With autosave, resume, and staff editing a client's draft,
+resubmission stops being an edge case, so this would have produced doc sprawl with no
+indication which is current.
 
-**1. A later resubmission creates a second doc, it does not update the first.** The
-idempotency guard is explicit that it blocks exact-body retries while allowing "a genuinely
-different later resubmission for the same location" (comment at line 41–46) — and that path
-runs `createGoogleDoc` again. With autosave, resume, and staff editing a client's draft,
-meaningfully-different submissions stop being an edge case and become the normal path. Left
-alone, a client accumulates several docs with the same name and no indication which is current.
+**This is cheap to implement — the state already exists.** `googleDocId` and `driveFolderId`
+are already persisted on the tenant record (`functions/src/firestore.ts:44–45`, written at
+`phase2-intake-submit.ts:156–157`). The change is a branch at the top of the doc step:
 
-**2. The client is a `reader`.** They cannot write to the document they are meant to live in.
-`shareGoogleDoc` already takes `"reader" | "writer"` — this is a one-argument decision, but
-it is a decision.
+- `tenantData.googleDocId` **set** → update that doc in place, keep the id, skip re-sharing
+- **not set** → create as today, then persist the id (existing path)
 
-**3. `appendToGoogleDoc` exists and Phase 2 never calls it after creation.** The mechanism for
-growing the doc over time is already written and unused. That is very likely the intended
-tool for updates-after-first-submit.
+`appendToGoogleDoc` (`functions/src/google.ts:103`) already exists and is never called after
+creation — it is the obvious tool for the update path, though replacing a tab's content is
+likely closer to intent than appending, so that revisions don't stack endlessly.
 
-**Decide before building:** does a re-submit *update* the existing doc (append or replace a
-tab, keeping one stable URL), or *create* a new one? A living document argues for one stable
-doc and one stable link, which points at storing `googleDocId` on the tenant record and
-having Phase 2 update in place when it is already set. Worth confirming that intent before a
-line of wizard code is written, because it decides whether the wizard's submit is a one-shot
-event or an ongoing sync.
+**One small thing still open:** the client is shared as `reader` and so cannot write in the
+document. `shareGoogleDoc` already accepts `"reader" | "writer"` — a one-argument change if
+you want the client contributing to it. Recommend leaving it `reader` unless client edits are
+actually wanted: TAG generates, the client reads, and a read-only doc cannot be accidentally
+broken by the person it was made for.
+
+---
+
+## 3c. Architecture — the form is a front end over GHL, and GCP does the work
+
+Stated intent, in order:
+
+1. The **old GHL form is canonical.** Its questions are the question set. Do not rewrite,
+   reorder, or "improve" them while porting.
+2. Rebuild it as a **custom-embedded, multi-page quiz** at the app's onboarding entry.
+3. Answers must **land in GHL's custom fields**, exactly as the GHL-hosted form would have.
+4. **GCP builds everything downstream** from there — the Cloud Functions generate the Doc,
+   the Gemini content, and drive Phase 3.
+
+So the wizard is a front door. It is not the system of record and it does not generate
+anything; it captures answers, puts them where GHL expects them, and lets the existing
+pipeline run.
+
+### The gap: nothing in this repo can write a GHL custom field
+
+This is net-new code, and it is the piece the plan currently lacks.
+
+| Surface | What it can do |
+|---|---|
+| `lib/ghl/contacts.ts` | Read-mostly — `searchContacts`, `getContact`, `getNotes`. One write: `addNote` (POST). **No contact update. No custom-field write.** |
+| `functions/src/ghl.ts` | Generic `ghlCall<T>` supporting GET/POST/PUT/DELETE, plus location/opportunity helpers. Transport exists; **no custom-field helper.** |
+
+When the form lived in GHL, custom fields were populated by GHL for free. Move the form
+into the app and that stops happening — the wizard has to write them back over the API.
+Needed: an `updateContactCustomFields(locationId, contactId, fields)` helper on top of the
+existing transport, plus the custom-field **ids** exported from GHL (the same export §1
+already calls the highest-risk step — one export answers both).
+
+**Where it lives matters.** CLAUDE.md's architecture-isolation rule calls out the duplicate
+GHL client (`functions/src/ghl.ts` vs. `lib/ghl/`) as a real audit finding. Do not add a
+third implementation. Decide deliberately which side owns the write and have the other call
+it through an endpoint.
+
+### Trigger order — decide before wiring
+
+The wizard now has two downstream effects: write custom fields to GHL, and set the GCP
+pipeline going. Today `POST /api/onboarding/intake-submit` calls Phase 2 directly. Options:
+
+- **Wizard writes GHL, then calls Phase 2 directly** (keeps today's path; most predictable)
+- **Wizard writes GHL, GHL webhook triggers Phase 2** (matches the original design, adds a
+  hop and a failure mode)
+
+Do not do both, or a single submit fires Phase 2 twice. The content-hash idempotency guard
+would catch an identical double-fire, but not two calls whose bodies differ slightly.
 
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
