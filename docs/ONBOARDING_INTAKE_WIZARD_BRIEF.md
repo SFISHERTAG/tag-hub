@@ -407,6 +407,43 @@ user is in. Put `client_owner` first, or the founder's first ever screen is the 
 **3. Every grant is scoped to their own location.** Never `locations: []` for a client role.
 The empty array is the all-tenancies wildcard.
 
+#### Two axes: seeing the numbers is not authority
+
+`client_owner`'s description — "One client's spend, ROAS, and outcomes" — is **reporting**.
+It is visibility into results, not permission to change the system. Those are separate axes,
+and the role list flattens them, so it is easy to misread one as the other.
+
+**Authority lives in `admin` alone.** It gates all four configuration surfaces, each checked
+directly against `session.currentRole`:
+
+| Surface | Gate |
+|---|---|
+| `app/admin/tenants/` (+ `actions.ts`) | `currentRole !== "admin"` |
+| `app/admin/users/` (+ `actions.ts`) | `currentRole !== "admin"` |
+| `app/admin/courses/` (+ `actions.ts`) | `currentRole !== "admin"` |
+| `app/admin/knowledge-base/` (+ actions) | `hasAnyRole(currentRole, ["admin"])` |
+
+**All real system changes go through `admin`, and no client is granted it.** The founder's
+grant in the block above gives them their own numbers and their own working views — nothing
+more. That is correct and should stay that way.
+
+Note also that `admin`, `tag_exec` and `tag_csd` are cross-tenancy by construction: their
+`locations` is replaced with `listAllLocationIds()` at session build
+(`lib/auth/session.ts:118–120`), overriding whatever the grant said. A third reason not to
+reach for those constants when provisioning a client.
+
+#### Future `client_admin` — not a one-line addition
+
+A client-scoped admin is anticipated but does not exist. Worth recording *now* why it is
+larger than it looks: **every admin check today is global.** They compare a role string and
+consult no location at all, because `admin` is TAG-wide by definition. A `client_admin` would
+be authority *bounded to one tenancy*, which means each of those four surfaces needs a
+"which locations may this person change?" dimension it currently has no concept of — plus
+the `listAllLocationIds()` override above must not apply to it.
+
+So it is a permissions-model change, not a new entry in `ROLES`. Anyone estimating it from
+the role list alone will underestimate it substantially.
+
 #### Open: what does a multi-hat user's tour do?
 
 The welcome tour highlights different navigation per role, and the staff flow specifies "no
