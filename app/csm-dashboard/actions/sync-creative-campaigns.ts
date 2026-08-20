@@ -3,6 +3,7 @@
 import { firestore } from "@/lib/firestore";
 import { getAdAccountCampaigns } from "@/lib/meta/campaigns";
 import { getCreativesForCampaign } from "@/lib/meta/creatives";
+import { requireCsmAccess } from "./access";
 
 /**
  * Sync creative-to-campaign mappings from Meta to Firestore.
@@ -10,6 +11,8 @@ import { getCreativesForCampaign } from "@/lib/meta/creatives";
  */
 export async function syncCreativeToCampaignMappings(clientId: string): Promise<void> {
   try {
+    await requireCsmAccess();
+
     // Get client's Meta ad account ID
     const clientDoc = await firestore().collection("clients").doc(clientId).get();
 

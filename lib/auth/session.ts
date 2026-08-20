@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "./admin";
-import { isRole, type Role } from "./roles";
+import { hasAnyRole, isRole, type Role } from "./roles";
 import { listAllLocationIds } from "../ghl/tenants";
 
 /**
@@ -138,6 +138,22 @@ export async function getSession(): Promise<Session | null> {
 export async function requireSession(): Promise<Session> {
   const session = await getSession();
   if (!session) redirect("/signin");
+  return session;
+}
+
+/**
+ * Returns the session if its current role is one of `allowed`, otherwise
+ * throws. Unlike `requireSession`, this never redirects — it's for server
+ * actions and API routes that are directly callable in their own right (not
+ * just reached through a component tree that already filtered the UI), where
+ * a thrown error becomes a normal failure result instead of a navigation.
+ */
+export async function requireRole(allowed: readonly Role[]): Promise<Session> {
+  const session = await getSession();
+  if (!session) throw new Error("Not signed in.");
+  if (!hasAnyRole(session.currentRole, allowed)) {
+    throw new Error(`Not authorized: role "${session.currentRole}" cannot perform this action.`);
+  }
   return session;
 }
 
