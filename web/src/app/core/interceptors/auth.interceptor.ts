@@ -29,7 +29,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       if (!refreshInFlight) {
-        refreshInFlight = http.post(REFRESH_URL, null, { withCredentials: true }).pipe(
+        // An object body, not null: HttpClient only sets Content-Type when it
+        // can infer one, and the refresh endpoint rejects anything that is not
+        // application/json as part of its cross-site check. A null body would
+        // send no Content-Type and 415.
+        refreshInFlight = http.post(REFRESH_URL, {}, { withCredentials: true }).pipe(
           map(() => true),
           catchError(() => of(false)),
           finalize(() => {
