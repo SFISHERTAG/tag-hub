@@ -84,12 +84,86 @@ their working roles at `self` — with `client_owner` first so it is the default
 
 One resolver, used everywhere, in the shape of the existing `requireLocationAccess` but a
 level finer: `resolveScope(session) → { locations, uids | "all" }`, and every metric fetcher
-takes that filter instead of a bare `locationId`. That is the real cost — not the type
-change, but threading the filter through each fetcher and making sure none of them forget.
-Same failure mode CLAUDE.md already flags for tenant isolation: a fetcher that ignores the
-filter silently shows one person another person's numbers.
+takes that filter instead of a bare `locationId`.
 
 Widgets stay role-gated for *availability* and become scope-driven for *content*.
+
+### Making a forgotten filter impossible, not merely forbidden
+
+A fetcher that ignores the scope filter silently shows one person another person's numbers.
+It fails quietly, looks correct in review, and is found by a user rather than by a test. The
+governing principle from `hotpath/context.md` Part 2 applies exactly: *it needs to be the only
+available pattern, not a rule to remember.*
+
+Four mechanisms, strongest first. **All four use machinery this repo already runs.**
+
+**1. Make the unscoped call unrepresentable.** Brand the filter so only the resolver can mint
+one:
+
+```ts
+declare const brand: unique symbol;
+export type ScopeFilter = {
+  locations: string[];
+  uids: string[] | "all";
+  readonly [brand]: "scope";        // no object literal satisfies this
+};
+export async function resolveScope(session: Session): Promise<ScopeFilter>;
+```
+
+No fetcher accepts a bare `locationId`. Since nothing outside the resolver module can
+construct a `ScopeFilter`, "forgetting" to scope stops being a mistake you can make — the call
+does not typecheck. This is the one that actually closes the hole; the rest are backstops.
+
+**2. The registry demands the fetcher.** A metric declares how it is fetched, and the
+signature requires the filter:
+
+```ts
+type Metric = {
+  id: string;
+  shape: Shape;
+  availableFor: Role[];
+  fetch: (scope: ScopeFilter, period: Period) => Promise<MetricData>;
+};
+```
+
+There is then no such thing as an unscoped metric — not because reviewers catch it, but
+because the type has nowhere to put one.
+
+**3. Cut off the back door with ESLint.** `eslint.config.*` already enforces architecture
+isolation via `import/no-restricted-paths` zones (lines 30–55). Add one:
+
+```
+target: ["lib/dashboard/**", "app/dashboard/**"],
+from:   ["lib/postgres", "lib/firestore"],
+message: "Dashboard data access goes through the metric registry, which applies scope."
+```
+
+Without this, someone bypasses the registry with a direct query and the type safety above
+never gets a chance to help.
+
+**4. One registry-driven test, written once, covering every metric forever.** `test/` already
+has `require-location-access.test.ts` — but note what it does and does not do: it verifies the
+*guard behaves correctly*, not that every call site *uses* it. A fetcher that skips the guard
+passes that test. Close that gap by iterating the registry rather than listing metrics:
+
+```ts
+for (const metric of Object.values(METRIC_REGISTRY)) {
+  it(`${metric.id} honours scope`, async () => {
+    const selfRows   = await metric.fetch(scopeFor("self", "user-a"), period);
+    const otherRows  = await metric.fetch(scopeFor("self", "user-b"), period);
+    expect(selfRows).not.toEqual(otherRows);       // and assert the filter reached the query
+  });
+}
+```
+
+Because it enumerates the registry, **a new metric that ignores scope fails CI the day it is
+added**, with nobody having remembered to write a test for it. That is the "get it right once,
+centrally" property — the coverage is structural, not per-widget diligence.
+
+**Also do the boring thing:** `resolveScope` fails closed. Unknown role, missing grant, or an
+unrecognised scope value yields the narrowest filter (`self`, own uid), never the widest.
+`getTenant` already fails closed on a missing document (`lib/ghl/tenants.ts:42–44`) — same
+instinct, one level down.
 
 ---
 
