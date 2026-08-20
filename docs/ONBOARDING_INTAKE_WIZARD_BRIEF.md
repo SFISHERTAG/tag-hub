@@ -444,6 +444,42 @@ the `listAllLocationIds()` override above must not apply to it.
 So it is a permissions-model change, not a new entry in `ROLES`. Anyone estimating it from
 the role list alone will underestimate it substantially.
 
+**Do not call it `client_admin`.** Two reasons, one structural and one a footgun:
+
+*The word already means something else here.* `admin` means TAG-wide authority over every
+tenancy. Reusing it for a tenancy-bounded role invites exactly the conflation this section
+exists to prevent — a reader seeing `client_admin` will reasonably assume "admin, scoped",
+when the whole point is that it is a different and much narrower thing.
+
+*Substring matching.* Every authority check today is exact — `currentRole !== "admin"` or
+`hasAnyRole(..., ["admin"])`. Verified: nothing anywhere does `.includes("admin")`,
+`endsWith`, or a regex. That safety is a property of current code, not something enforced.
+The day someone writes `role.includes("admin")` as a shortcut, a client role named
+`client_admin` silently gains TAG-wide config access. A name without the substring removes
+that failure mode permanently instead of relying on everyone remembering.
+
+*Where it would live matters too.* The four admin surfaces are all under `/admin/*` and are
+TAG-global. Tenancy-scoped authority belongs in the route space that already exists for it —
+`app/l/[locationId]/` — not under `/admin/`.
+
+**Consider not making it a role at all.** The distinction drawn above is job function
+(role) versus authority (what you may change). TAG's `client_*` roles are all job titles —
+owner, manager, closer, setter manager, setter. Authority is a *different axis*, so
+expressing it as another job title flattens the two again. A capability on the existing
+grant models it directly:
+
+```ts
+{ role: "client_owner", locations: [locationId], canManageUsers: true }
+```
+
+`RoleGrant` (`lib/auth/session.ts:25`) already carries per-grant data, so this extends what
+is there rather than multiplying the role list. It also composes: a founder wearing four
+hats holds the capability once, on the grant that warrants it, instead of needing a fifth
+role that duplicates one of the other four's views.
+
+If it must be a role, `client_operator` or `client_principal` both avoid the substring and
+read as authority rather than reporting.
+
 #### Open: what does a multi-hat user's tour do?
 
 The welcome tour highlights different navigation per role, and the staff flow specifies "no
