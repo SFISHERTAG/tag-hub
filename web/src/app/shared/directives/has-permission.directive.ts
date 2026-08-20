@@ -7,7 +7,10 @@ import type { Role } from '../../core/models/role.model';
  * The API re-checks every request; a hidden button is never the security
  * control.
  *
- * Usage: <button *hasPermission="['tag_exec', 'admin']">...</button>
+ * Usage: <button *hasPermission="[ROLES.TAG_EXEC, ROLES.ADMIN]">...</button>
+ *
+ * Always ROLES.*, never a bare string. The pre-commit check strips comments
+ * before matching, so an inline literal here would pass and then be copied.
  */
 @Directive({
   selector: '[hasPermission]',

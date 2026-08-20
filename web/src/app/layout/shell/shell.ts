@@ -7,6 +7,8 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
+import { NAV_ITEMS } from '../nav/nav-items';
 import { map } from 'rxjs';
 
 /**
@@ -24,22 +26,6 @@ import { map } from 'rxjs';
  */
 const SIDENAV_BREAKPOINT = '(min-width: 840px)';
 
-interface NavItem {
-  readonly path: string;
-  readonly label: string;
-  readonly icon: string;
-}
-
-/** Placeholder nav — each feature area's route is added as its module lands in Phase 3. */
-const NAV_ITEMS: readonly NavItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { path: '/portfolio', label: 'Portfolio', icon: 'business' },
-  { path: '/csm-dashboard', label: 'CSM', icon: 'groups' },
-  { path: '/onboarding', label: 'Onboarding', icon: 'checklist' },
-  { path: '/closer', label: 'FLOW', icon: 'record_voice_over' },
-  { path: '/setter', label: 'Setter', icon: 'speed' },
-  { path: '/admin', label: 'Admin', icon: 'admin_panel_settings' },
-];
 
 @Component({
   selector: 'app-shell',
@@ -52,6 +38,7 @@ const NAV_ITEMS: readonly NavItem[] = [
     MatListModule,
     MatIconModule,
     MatButtonModule,
+    HasPermissionDirective,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
