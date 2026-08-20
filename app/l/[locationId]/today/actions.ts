@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import { getSession, getImpersonation } from "@/lib/auth/session";
+import { getSession, getImpersonation, requireLocationAccess } from "@/lib/auth/session";
 import { hasAnyRole } from "@/lib/auth/roles";
 import {
   setAppointmentStatus,
@@ -171,6 +171,7 @@ export async function setFollowUpConfig(
   }
 
   try {
+    await requireLocationAccess(locationId);
     await saveFollowUpConfig(locationId, config);
   } catch (error) {
     return {
