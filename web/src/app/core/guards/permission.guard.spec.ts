@@ -35,7 +35,10 @@ function state(url = '/test'): RouterStateSnapshot {
 function configure(session: Session | null) {
   const rbac: RbacService = {
     session: signal(session).asReadonly(),
-    switchRole: () => undefined,
+    load: () => Promise.resolve(),
+    switchRole: () =>
+      Promise.resolve({ data: null, error: { message: 'stub', context: 'test' } }),
+    applySession: () => undefined,
   };
   TestBed.configureTestingModule({
     providers: [provideRouter([]), { provide: RBAC_SERVICE, useValue: rbac }],
@@ -55,6 +58,7 @@ function sessionWith(currentRole: Role): Session {
     currentRole,
     availableRoles: [currentRole],
     locations: [],
+    impersonation: null,
   };
 }
 

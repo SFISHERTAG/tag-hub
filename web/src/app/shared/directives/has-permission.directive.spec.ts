@@ -38,14 +38,23 @@ function setup(initialRole: Role) {
     currentRole: initialRole,
     availableRoles: [initialRole],
     locations: [],
+    impersonation: null,
   });
 
   const rbac: RbacService = {
     session: session.asReadonly(),
+    load: () => Promise.resolve(),
+    // Sets synchronously before resolving, so a test can switch and then
+    // detectChanges() without awaiting.
     switchRole: (role: Role) => {
       const current = session();
       if (current) session.set({ ...current, currentRole: role });
+      const next = session();
+      return Promise.resolve(
+        next ? { data: next, error: null } : { data: null, error: { message: 'no session', context: 'test' } },
+      );
     },
+    applySession: (value) => session.set(value),
   };
 
   TestBed.configureTestingModule({
@@ -103,7 +112,13 @@ describe('HasPermissionDirective', () => {
   });
 
   it('hides everything when there is no session', () => {
-    const rbac: RbacService = { session: signal(null).asReadonly(), switchRole: () => undefined };
+    const rbac: RbacService = {
+      session: signal(null).asReadonly(),
+      load: () => Promise.resolve(),
+      switchRole: () =>
+        Promise.resolve({ data: null, error: { message: 'stub', context: 'test' } }),
+      applySession: () => undefined,
+    };
     TestBed.configureTestingModule({
       imports: [Host],
       providers: [{ provide: RBAC_SERVICE, useValue: rbac }, PermissionService],
@@ -123,7 +138,13 @@ describe('PermissionService', () => {
   });
 
   it('denies every check when signed out', () => {
-    const rbac: RbacService = { session: signal(null).asReadonly(), switchRole: () => undefined };
+    const rbac: RbacService = {
+      session: signal(null).asReadonly(),
+      load: () => Promise.resolve(),
+      switchRole: () =>
+        Promise.resolve({ data: null, error: { message: 'stub', context: 'test' } }),
+      applySession: () => undefined,
+    };
     TestBed.configureTestingModule({
       providers: [{ provide: RBAC_SERVICE, useValue: rbac }, PermissionService],
     });

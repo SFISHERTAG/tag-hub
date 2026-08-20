@@ -1,0 +1,82 @@
+<main class="signin">
+  <mat-card appearance="outlined" class="signin__card">
+    @if (pending()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Working" />
+    }
+
+    <mat-card-header>
+      <mat-card-title>TAG Hub</mat-card-title>
+      <mat-card-subtitle>
+        @if (step() === 'email') {
+          Sign in with your work email.
+        } @else {
+          Enter the {{ codeLength }}-digit code sent to {{ email() }}.
+        }
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (step() === 'email') {
+        <form (ngSubmit)="submitEmail()">
+          <mat-form-field appearance="outline" class="signin__field">
+            <mat-label>Email</mat-label>
+            <input
+              matInput
+              type="email"
+              name="email"
+              autocomplete="email"
+              inputmode="email"
+              required
+              [ngModel]="email()"
+              (ngModelChange)="email.set($event)"
+              [disabled]="pending()"
+            />
+          </mat-form-field>
+
+          <button matButton="filled" type="submit" [disabled]="!canSubmitEmail()">
+            Send code
+          </button>
+        </form>
+      } @else {
+        <form (ngSubmit)="submitCode()">
+          <mat-form-field appearance="outline" class="signin__field">
+            <mat-label>{{ codeLength }}-digit code</mat-label>
+            <input
+              matInput
+              type="text"
+              name="code"
+              autocomplete="one-time-code"
+              inputmode="numeric"
+              [attr.maxlength]="codeLength"
+              required
+              [ngModel]="code()"
+              (ngModelChange)="code.set($event)"
+              [disabled]="pending()"
+            />
+          </mat-form-field>
+
+          <div class="signin__actions">
+            <button matButton="filled" type="submit" [disabled]="!canSubmitCode()">
+              Sign in
+            </button>
+            <button matButton type="button" (click)="resend()" [disabled]="!canResend()">
+              @if (cooldownSeconds() > 0) {
+                Resend in {{ cooldownSeconds() }}s
+              } @else {
+                Resend code
+              }
+            </button>
+          </div>
+
+          <button matButton type="button" class="signin__back" (click)="backToEmail()">
+            Use a different email
+          </button>
+        </form>
+      }
+
+      @if (error(); as message) {
+        <p class="signin__error" role="alert">{{ message }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

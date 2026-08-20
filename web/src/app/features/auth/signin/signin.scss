@@ -1,0 +1,38 @@
+// Every colour comes from an M3 system token. No raw hex anywhere, per the
+// theme contract: the token system carries elevation, and a hand-picked
+// near-black on black is invisible on a phone in daylight.
+
+.signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 100dvh;
+  padding: 1.5rem;
+}
+
+.signin__card {
+  inline-size: 100%;
+  max-inline-size: 24rem;
+}
+
+.signin__field {
+  inline-size: 100%;
+}
+
+.signin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.signin__back {
+  margin-block-start: 0.75rem;
+}
+
+.signin__error {
+  margin-block-start: 1rem;
+  margin-block-end: 0;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-medium);
+}

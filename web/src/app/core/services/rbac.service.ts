@@ -1,18 +1,41 @@
 import { InjectionToken, Signal } from '@angular/core';
 import type { Role } from '../models/role.model';
 import type { Session } from '../models/session.model';
+import type { ApiResult } from '../models/api-result.model';
 
 /**
- * Contract for wherever session/role data comes from. Components and
- * PermissionService depend on this interface only, never a concrete class —
- * swapping MockRbacService for a real HTTP-backed implementation later is a
- * one-line provider change in app.config.ts, zero component changes.
+ * Contract for wherever session data comes from. Components, guards and
+ * PermissionService depend on this interface only, never a concrete class, so
+ * swapping the implementation is a one-line provider change.
+ *
+ * The one rule every implementation must honour: a session is REPLACED from a
+ * server response, never patched. `locations` is derived from `currentRole` on
+ * the server and for the wide hats requires a lookup, so a client that mutated
+ * `currentRole` alone would report tenant access the new hat does not have.
+ * That is why `switchRole` is asynchronous and returns a result: it is a round
+ * trip, not a local assignment.
  */
 export interface RbacService {
-  /** Current session, or null if signed out. */
+  /** Current session, or null when signed out. */
   readonly session: Signal<Session | null>;
-  /** Switches the active hat to one of the user's availableRoles. */
-  switchRole(role: Role): void;
+
+  /**
+   * Resolves the session from the server. Called once from the app
+   * initializer, before any route activates, so no guard ever observes a
+   * transient null on a cold load. Resolves rather than rejects when signed
+   * out: "no session" is an answer, not a failure.
+   */
+  load(): Promise<void>;
+
+  /** Switches the active hat. Round-trips and replaces the whole session. */
+  switchRole(role: Role): Promise<ApiResult<Session>>;
+
+  /**
+   * Replaces the session from a payload another service already fetched, so a
+   * sign-in or an impersonation change does not need a second round trip to be
+   * reflected. Pass null to clear.
+   */
+  applySession(session: Session | null): void;
 }
 
 export const RBAC_SERVICE = new InjectionToken<RbacService>('RBAC_SERVICE');

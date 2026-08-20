@@ -3,6 +3,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   isDevMode,
+  inject,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -13,7 +14,8 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { RBAC_SERVICE } from './core/services/rbac.service';
 import { MockRbacService } from './core/services/mock-rbac.service';
-import { SignedOutRbacService } from './core/services/signed-out-rbac.service';
+import { HttpRbacService } from './core/services/http-rbac.service';
+import { RbacService } from './core/services/rbac.service';
 import { APP_CONFIG } from './core/config/app-config';
 import { validateAppConfig } from './core/config/app-config.validator';
 import { environment } from '../environments/environment';
@@ -37,12 +39,23 @@ export const appConfig: ApplicationConfig = {
     // HttpErrorResponse and may retry, and only a failure that survives the
     // retry becomes a typed ApiError for the caller.
     provideHttpClient(withInterceptors([errorInterceptor, authInterceptor])),
-    // Story 10.2 replaces both of these with HttpRbacService. Until then, the
-    // mock is confined to development: it carries a hardcoded tag_exec session
-    // including `admin` in availableRoles, so providing it unconditionally (as
-    // this did) meant every guard passed for everyone in a production bundle.
-    // Production fails closed instead — no session, so every guard denies.
-    { provide: RBAC_SERVICE, useClass: isDevMode() ? MockRbacService : SignedOutRbacService },
+    // The mock stays confined to development so `ng serve` works without a
+    // running API. It carries a hardcoded tag_exec session including `admin` in
+    // availableRoles, so providing it unconditionally (as this once did) meant
+    // every guard passed for everyone in a production bundle.
+    { provide: RBAC_SERVICE, useClass: isDevMode() ? MockRbacService : HttpRbacService },
+    // Resolve the session BEFORE any route activates.
+    //
+    // provideAppInitializer awaits a returned promise, and the router's default
+    // initialNavigation runs in a bootstrap listener after those settle, so
+    // route activation genuinely waits. Without this, authGuard reads a signal
+    // that is still null on a cold load and bounces a signed-in user to
+    // /signin — a bug that only ever appears on first paint.
+    //
+    // This holds only while nobody adds withEnabledBlockingInitialNavigation()
+    // to provideRouter: that registers a competing initializer and navigates
+    // concurrently. Do not add it.
+    provideAppInitializer(() => inject<RbacService>(RBAC_SERVICE).load()),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
