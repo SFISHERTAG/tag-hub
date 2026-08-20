@@ -37,6 +37,11 @@ substitutions:
   # The origin this deployment is served from. Pins the CSRF Origin check on
   # every session-minting route to one exact value instead of falling back to
   # comparing Origin against Host. Must be scheme + host, no trailing slash.
+  # Server-side key for the Identity Toolkit exchange. MUST be a runtime env var,
+  # not only a --build-arg. lib/config.ts reads it via process.env[name] with a
+  # dynamic key, and Next only inlines NEXT_PUBLIC_* when accessed STATICALLY, so
+  # the build-arg below never reaches the running container. Without this the
+  # config gate throws at import and every auth route 500s: nobody can sign in.
   _APP_ORIGIN: https://hub.taxadvisorygrowth.com
   # Google Identity Services sign-in client. Public by design — it ships in the
   # browser bundle. The server passes it to verifyIdToken as the expected
@@ -73,6 +78,26 @@ images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest
 
 steps:
+  # Fail the build, not the deployed container, when a required substitution is
+  # missing. _FIREBASE_API_KEY defaults to "" and deploys are submitted by hand
+  # with substitutions on the command line, so forgetting the flag used to mean
+  # a green build that 500s on every auth route because lib/config.ts throws at
+  # import. A failed build is a five-second fix; a broken sign-in is an outage.
+  - id: check-substitutions
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        missing=""
+        [ -z "${_FIREBASE_API_KEY}" ] && missing="$$missing _FIREBASE_API_KEY"
+        if [ -n "$$missing" ]; then
+          echo "Missing required substitution(s):$$missing"
+          echo "Re-submit with --substitutions=_FIREBASE_API_KEY=<key>,..."
+          exit 1
+        fi
+        echo "Required substitutions present."
+
   # Pull the previous image so unchanged layers are reused. Without this every
   # build reinstalls node_modules from scratch.
   - id: pull-cache
@@ -136,7 +161,7 @@ steps:
       # Introduced in code without being added here — every tag_exec/tag_csm/
       # tag_sales/tag_sales_manager hit on /closer/flow 500'd until this line
       # existed.
-      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,APP_ORIGIN=${_APP_ORIGIN},GOOGLE_SIGNIN_CLIENT_ID=${_GOOGLE_SIGNIN_CLIENT_ID},GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
+      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,APP_ORIGIN=${_APP_ORIGIN},FIREBASE_API_KEY=${_FIREBASE_API_KEY},GOOGLE_SIGNIN_CLIENT_ID=${_GOOGLE_SIGNIN_CLIENT_ID},GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
       # GHL_PIT is deliberately absent. It is a single-location development
       # fallback, and leaving it set in production would let a token-resolution
       # bug silently serve one tenant's credential for every other tenant.
