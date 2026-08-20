@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { hasAnyRole } from "@/lib/auth/roles";
 import { loadDashboardConfig } from "@/lib/dashboard/customization";
+import { filterWidgetsForRole } from "@/lib/dashboard/widget";
+import { resolveDashboardLocation } from "@/lib/dashboard/location-selection";
+import { ownsLocation } from "@/lib/auth/session";
 import { getAssignedClients, getTeamClients, getDepartmentClients } from "@/lib/dashboard/csm-clients";
 import type { ClientData } from "@/lib/dashboard/csm-clients-types";
 import { summarizeByCsm, summarizeDepartment } from "@/lib/dashboard/team-rollup";
@@ -20,13 +23,36 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect("/signin");
 
-  // Load dashboard config for current role
-  const config = await loadDashboardConfig(session.uid, session.currentRole);
+  // Load dashboard config for current role.
+  //
+  // The saved layout is caller-supplied data — it was written by a server
+  // action, but a layout can also outlive a role change. Filtering here is
+  // the second half of the allowlist enforced on save: nothing below fetches
+  // data for a widget id this role is not entitled to.
+  const config = filterWidgetsForRole(
+    session.currentRole,
+    await loadDashboardConfig(session.uid, session.currentRole),
+  );
   const currentPage = config.pages[config.currentPage];
 
   if (!currentPage) redirect("/");
 
   const widgetIds = new Set(currentPage.widgets.map((w) => w.widgetId));
+
+  // Which tenant's GHL data these widgets read. Resolved from the session
+  // and then access-checked, rather than from a global env var: two client
+  // tenants with the same widget must not resolve to the same location.
+  const resolved = resolveDashboardLocation(session);
+  const locationId =
+    resolved.ok && (await ownsLocation(session, resolved.locationId))
+      ? resolved.locationId
+      : null;
+  const noLocation: { ok: false; message: string } = {
+    ok: false,
+    message: resolved.ok
+      ? "This login does not have access to that client account."
+      : resolved.message,
+  };
 
   // Widgets that need role-scoped or external data the generic
   // widget-registry path doesn't fetch — pulled here rather than in
@@ -62,23 +88,23 @@ export default async function DashboardPage() {
   }
 
   if (widgetIds.has("pipeline_board")) {
-    pipelineBoard = await getPipelineBoardSummary();
+    pipelineBoard = locationId ? await getPipelineBoardSummary(locationId) : noLocation;
   }
 
   if (widgetIds.has("day_view")) {
-    dayView = await getTodayCalls();
+    dayView = locationId ? await getTodayCalls(locationId) : noLocation;
   }
 
   if (widgetIds.has("leads_funnel")) {
-    funnel = await getDashboardFunnelCounts(30);
+    funnel = locationId ? await getDashboardFunnelCounts(locationId, 30) : noLocation;
   }
 
   if (widgetIds.has("owner_calendar")) {
-    ownerCalendar = await getOwnerCalendar();
+    ownerCalendar = locationId ? await getOwnerCalendar(locationId) : noLocation;
   }
 
   if (widgetIds.has("spend_roas")) {
-    roas = await getDashboardAdRoas(30);
+    roas = locationId ? await getDashboardAdRoas(locationId, 30) : noLocation;
   }
 
   return (

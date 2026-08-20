@@ -66,6 +66,34 @@ vi.mock("@/lib/audit/store", () => ({
   logAction: async () => "audit-doc-id",
 }));
 
+/**
+ * `createPausedCampaign` gates on tenant ownership before it does anything
+ * else, and that gate reads the session cookie — which has no request scope
+ * in a unit test. Faked as "signed in, owns the two locations these tests use" so these assertions stay
+ * on the idempotency guard rather than turning into auth tests. The refusal
+ * path has its own coverage in the ownership tests.
+ */
+vi.mock("@/lib/auth/session", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
+  const session = {
+    uid: "user-1",
+    email: "csm@tagadvisory.test",
+    currentRole: "tag_csm" as const,
+    availableRoles: ["tag_csm" as const],
+    locations: ["loc_1", "loc_2"],
+  };
+  return {
+    ...actual,
+    getSession: async () => session,
+    requireSession: async () => session,
+    ownsLocation: async (_s: unknown, locationId: string) => session.locations.includes(locationId),
+    requireOwnedLocation: async (locationId: string) => {
+      if (!session.locations.includes(locationId)) throw new actual.ForbiddenError("not yours");
+      return session;
+    },
+  };
+});
+
 const metaCallMock = vi.fn();
 let nextId = 1;
 

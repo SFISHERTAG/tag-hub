@@ -1,7 +1,7 @@
 import "server-only";
 import { getAppointments, type Appointment, type AppointmentStatus } from "@/lib/ghl/appointments";
 import { getTenant } from "@/lib/ghl/tenants";
-import { GhlConfigError, LocationNotAuthorizedError, devLocationId } from "@/lib/ghl/tokens";
+import { GhlConfigError, LocationNotAuthorizedError } from "@/lib/ghl/tokens";
 
 export type OwnerAppointment = {
   id: string;
@@ -82,12 +82,7 @@ function monthGridRange(now: Date): { startMs: number; endMs: number; monthLabel
  * falls back to the location's whole calendar rather than showing nothing —
  * a client with no admin-configured owner still gets a usable view.
  */
-export async function getOwnerCalendar(): Promise<OwnerCalendarResult> {
-  const locationId = devLocationId();
-  if (!locationId) {
-    return { ok: false, message: "No GHL location configured yet." };
-  }
-
+export async function getOwnerCalendar(locationId: string): Promise<OwnerCalendarResult> {
   try {
     const tenant = await getTenant(locationId);
     const now = new Date();

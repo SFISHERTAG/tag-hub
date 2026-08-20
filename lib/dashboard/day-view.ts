@@ -1,18 +1,19 @@
 import "server-only";
 import { fetchCalls, type CallForDisplay } from "./data-fetchers";
-import { GhlConfigError, LocationNotAuthorizedError, devLocationId } from "@/lib/ghl/tokens";
+import { GhlConfigError, LocationNotAuthorizedError } from "@/lib/ghl/tokens";
 
 export type DayViewResult =
   | { ok: true; calls: CallForDisplay[] }
   | { ok: false; message: string };
 
-/** Today's appointments, same single-tenant `devLocationId()` resolution as getPipelineBoardSummary. */
-export async function getTodayCalls(): Promise<DayViewResult> {
-  const locationId = devLocationId();
-  if (!locationId) {
-    return { ok: false, message: "No GHL location configured yet." };
-  }
-
+/**
+ * Scoped to the caller's own tenant. `locationId` is resolved from the
+ * session by the dashboard page (see lib/dashboard/location-selection.ts)
+ * and access-checked there. These fetchers used to read a single global
+ * `GHL_LOCATION_ID` env var instead, which meant every client tenant that
+ * added this widget saw whichever location that var happened to point at.
+ */
+export async function getTodayCalls(locationId: string): Promise<DayViewResult> {
   try {
     const calls = await fetchCalls(locationId, 0);
     return { ok: true, calls };

@@ -130,3 +130,33 @@ export const MOCK_METRICS_WIDGET_IDS = ["leads_funnel", "spend_roas", "kpi_summa
 export function getAvailableWidgets(role: Role): WidgetDefinition[] {
   return Object.values(WIDGET_REGISTRY).filter((w) => w.availableFor.includes(role));
 }
+
+/**
+ * The authorization check behind `availableFor`.
+ *
+ * `getAvailableWidgets` decides what the customize picker offers, which is a
+ * UI concern. This is the same question asked as a permission: a saved
+ * layout arrives from the caller, so its widget ids have to be re-checked on
+ * the way in and again before any data is fetched for them. Without it a
+ * tag_setter can save a layout naming the owner's calendar or the closer's
+ * pipeline board and read live deal values on the next page load.
+ */
+export function canUseWidget(role: Role, widgetId: string): boolean {
+  return WIDGET_REGISTRY[widgetId]?.availableFor.includes(role) ?? false;
+}
+
+/**
+ * Drops any widget the role may not use, preserving order and layout for the
+ * rest. Filtering rather than rejecting is deliberate on the read path: a
+ * layout saved before a role change should degrade to the widgets that are
+ * still allowed, not render an error page.
+ */
+export function filterWidgetsForRole(role: Role, config: DashboardConfig): DashboardConfig {
+  return {
+    ...config,
+    pages: config.pages.map((page) => ({
+      ...page,
+      widgets: page.widgets.filter((w) => canUseWidget(role, w.widgetId)),
+    })),
+  };
+}

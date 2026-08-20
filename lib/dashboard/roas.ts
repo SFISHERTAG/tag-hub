@@ -4,7 +4,7 @@ import { getTenant } from "@/lib/ghl/tenants";
 import { getPipelines } from "@/lib/ghl/pipelines";
 import { getOpportunities, type Opportunity } from "@/lib/ghl/opportunities";
 import { getContact } from "@/lib/ghl/contacts";
-import { GhlConfigError, LocationNotAuthorizedError, devLocationId } from "@/lib/ghl/tokens";
+import { GhlConfigError, LocationNotAuthorizedError } from "@/lib/ghl/tokens";
 
 export type RoasRow = {
   adId: string;
@@ -135,11 +135,16 @@ export async function getAdRoas(locationId: string, days = 30): Promise<RoasTabl
   }
 }
 
-/** Same single-tenant `devLocationId()` resolution as getPipelineBoardSummary / getDashboardFunnelCounts. */
-export async function getDashboardAdRoas(days = 30): Promise<RoasTableResult> {
-  const locationId = devLocationId();
-  if (!locationId) {
-    return { ok: false, message: "No GHL location configured yet." };
-  }
+/**
+ * Scoped to the caller's own tenant. `locationId` is resolved from the
+ * session by the dashboard page (see lib/dashboard/location-selection.ts)
+ * and access-checked there. These fetchers used to read a single global
+ * `GHL_LOCATION_ID` env var instead, which meant every client tenant that
+ * added this widget saw whichever location that var happened to point at.
+ */
+export async function getDashboardAdRoas(
+  locationId: string,
+  days = 30,
+): Promise<RoasTableResult> {
   return getAdRoas(locationId, days);
 }
