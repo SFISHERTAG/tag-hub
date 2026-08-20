@@ -236,6 +236,47 @@ function checkArchitectureConstraints() {
     }
   }
 
+  // Check 5: the Google sign-in client id exists in two places and they must match.
+  // The browser initialises the GIS button with the value baked into the Angular
+  // bundle; the server passes its own copy to verifyIdToken as the expected
+  // audience. If they drift, every Google sign-in fails with a wrong-recipient
+  // error that reads like a code bug rather than a config one.
+  const CLIENT_ID_PATTERN = /[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com/;
+  function readClientId(relPath, pattern) {
+    try {
+      const match = readFileSync(join(repoRoot, relPath), "utf8").match(pattern);
+      return match ? match[1] : null;
+    } catch {
+      return null;
+    }
+  }
+
+  const angularClientId = readClientId(
+    "web/src/environments/environment.prod.ts",
+    /googleClientId:\s*["']([^"']*)["']/,
+  );
+  const deployClientId = readClientId(
+    "cloudbuild.yaml",
+    /_GOOGLE_SIGNIN_CLIENT_ID:\s*(\S+)/,
+  );
+
+  // Both empty is a valid state: Google sign-in simply is not configured, the
+  // button is not rendered, and the endpoint returns 503.
+  if (angularClientId !== null && deployClientId !== null) {
+    if (angularClientId !== deployClientId) {
+      constraintIssues.push(
+        `Google sign-in client id mismatch. web/src/environments/environment.prod.ts has ` +
+          `"${angularClientId}", cloudbuild.yaml has "${deployClientId}". The browser and the ` +
+          `server audience check must use the identical value.`,
+      );
+    } else if (angularClientId !== "" && !CLIENT_ID_PATTERN.test(angularClientId)) {
+      constraintIssues.push(
+        `Google sign-in client id "${angularClientId}" is not shaped like a Google client id. ` +
+          `Expected it to end with .apps.googleusercontent.com.`,
+      );
+    }
+  }
+
   return constraintIssues;
 }
 

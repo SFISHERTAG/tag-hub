@@ -38,6 +38,15 @@ substitutions:
   # every session-minting route to one exact value instead of falling back to
   # comparing Origin against Host. Must be scheme + host, no trailing slash.
   _APP_ORIGIN: https://hub.taxadvisorygrowth.com
+  # Google Identity Services sign-in client. Public by design — it ships in the
+  # browser bundle. The server passes it to verifyIdToken as the expected
+  # audience, so this value and web/src/environments/*.ts must stay identical or
+  # every Google sign-in fails with a wrong-recipient error.
+  #
+  # Distinct from the Drive Picker's client, deliberately: the Picker uses a
+  # sensitive scope, and sharing one client would drag sign-in into a
+  # verification process it does not otherwise need.
+  _GOOGLE_SIGNIN_CLIENT_ID: 872900877746-krfb0k16i2279qhkbqq93162sqvrjf4g.apps.googleusercontent.com
   # Must exactly match what's registered as the redirect URI on the GHL
   # Marketplace app. Changing one without the other breaks the OAuth callback,
   # and the GHL side is not editable from this repo.
@@ -127,7 +136,7 @@ steps:
       # Introduced in code without being added here — every tag_exec/tag_csm/
       # tag_sales/tag_sales_manager hit on /closer/flow 500'd until this line
       # existed.
-      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,APP_ORIGIN=${_APP_ORIGIN},GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
+      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,APP_ORIGIN=${_APP_ORIGIN},GOOGLE_SIGNIN_CLIENT_ID=${_GOOGLE_SIGNIN_CLIENT_ID},GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
       # GHL_PIT is deliberately absent. It is a single-location development
       # fallback, and leaving it set in production would let a token-resolution
       # bug silently serve one tenant's credential for every other tenant.

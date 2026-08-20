@@ -17,7 +17,8 @@ import type { AppConfig } from '../app/core/config/app-config';
 export const environment: AppConfig = {
   production: false,
   apiBaseUrl: '',
-  // Set from GOOGLE_SIGNIN_CLIENT_ID once the OAuth client exists. Empty means
-  // the Google button is not rendered; the OTP flow is unaffected.
-  googleClientId: '',
+  // Public by design: it ships in this bundle and identifies the app rather
+  // than authorising anything. The matching client secret is NOT used by the
+  // Sign in with Google flow and must never appear in this repo.
+  googleClientId: '872900877746-krfb0k16i2279qhkbqq93162sqvrjf4g.apps.googleusercontent.com',
 };
