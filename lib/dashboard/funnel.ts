@@ -1,5 +1,5 @@
 import "server-only";
-import { searchContacts } from "@/lib/ghl/contacts";
+import { listContactsAddedSince } from "@/lib/ghl/contacts";
 import { getAppointments } from "@/lib/ghl/appointments";
 import { getPipelines } from "@/lib/ghl/pipelines";
 import { getOpportunities } from "@/lib/ghl/opportunities";
@@ -23,6 +23,14 @@ export type FunnelCountsResult =
        */
       showRateDenominator: number;
       dqBreakdown: { preCall: number; onCall: number };
+      /**
+       * True when the contact fetch hit its page cap and this funnel is an
+       * undercount. It used to be reported as a complete result: the lead
+       * fetch took one 100-contact page and filtered it client-side, so any
+       * location with more than 100 contacts in the window under-reported
+       * every stage while still returning ok: true.
+       */
+      truncated: boolean;
     }
   | { ok: false; message: string };
 
@@ -45,7 +53,7 @@ export async function getFunnelCounts(
     const now = Date.now();
     const windowStartMs = now - days * 24 * 60 * 60 * 1000;
 
-    const contacts = await searchContacts(locationId, { limit: 100 });
+    const { contacts, truncated } = await listContactsAddedSince(locationId, windowStartMs);
     const leads = contacts.filter((contact) => {
       const addedMs = Date.parse(contact.dateAdded ?? "");
       return !Number.isNaN(addedMs) && addedMs >= windowStartMs;
@@ -83,6 +91,14 @@ export async function getFunnelCounts(
     const onCallDqContactIds = new Set<string>();
     for (const appt of invalidAppointments) {
       if (!appt.contactId) continue;
+      // A contact who did show, on some other appointment, is not a pre-call
+      // DQ no matter what a second appointment says. These sets are keyed by
+      // contact while the outcomes are per appointment, so without this a
+      // contact with both a showed appointment and a pre-call DQ came out of
+      // the denominator while staying in the numerator — which is how a show
+      // rate over 100% renders.
+      if (showedContactIds.has(appt.contactId)) continue;
+
       const outcome = outcomes.get(appt.id);
       if (outcome?.timing === "pre-call") {
         preCallDqContactIds.add(appt.contactId);
@@ -111,6 +127,7 @@ export async function getFunnelCounts(
       ],
       showRateDenominator,
       dqBreakdown: { preCall: preCallDqContactIds.size, onCall: onCallDqContactIds.size },
+      truncated,
     };
   } catch (error) {
     if (error instanceof GhlConfigError || error instanceof LocationNotAuthorizedError) {

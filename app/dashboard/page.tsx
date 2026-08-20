@@ -5,6 +5,7 @@ import { loadDashboardConfig } from "@/lib/dashboard/customization";
 import { filterWidgetsForRole } from "@/lib/dashboard/widget";
 import { resolveDashboardLocation } from "@/lib/dashboard/location-selection";
 import { ownsLocation } from "@/lib/auth/session";
+import { getLastUpdated } from "@/lib/dashboard/freshness";
 import { getAssignedClients, getTeamClients, getDepartmentClients } from "@/lib/dashboard/csm-clients";
 import type { ClientData } from "@/lib/dashboard/csm-clients-types";
 import { summarizeByCsm, summarizeDepartment } from "@/lib/dashboard/team-rollup";
@@ -19,9 +20,15 @@ import { DashboardPageClient } from "./page-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/signin");
+
+  const { page: requestedPageId } = await searchParams;
 
   // Load dashboard config for current role.
   //
@@ -33,7 +40,12 @@ export default async function DashboardPage() {
     session.currentRole,
     await loadDashboardConfig(session.uid, session.currentRole),
   );
-  const currentPage = config.pages[config.currentPage];
+  // PageTabs links to /dashboard?page=<id>, and nothing read that parameter —
+  // every tab rendered the same page, so multi-page dashboards were a no-op.
+  // An unknown or absent id falls back to the saved current page rather than
+  // erroring, so a stale bookmark degrades instead of breaking.
+  const currentPage =
+    config.pages.find((p) => p.id === requestedPageId) ?? config.pages[config.currentPage];
 
   if (!currentPage) redirect("/");
 
@@ -107,6 +119,14 @@ export default async function DashboardPage() {
     roas = locationId ? await getDashboardAdRoas(locationId, 30) : noLocation;
   }
 
+  // PRD-required "as of" indicator. It existed as a component and a data
+  // source, wired only into the location-scoped layout — never into the
+  // dashboard people actually use. Freshness failing is not a reason to fail
+  // the page, so it degrades to "no timestamp" rather than throwing.
+  const lastUpdated = locationId
+    ? await getLastUpdated(locationId).catch(() => ({ timestamp: null, source: null }))
+    : { timestamp: null, source: null };
+
   return (
     <DarkScope>
       <div className="mx-auto max-w-6xl">
@@ -115,6 +135,8 @@ export default async function DashboardPage() {
           config={config}
           currentPageId={currentPage.id}
           userEmail={session.email || "Your Account"}
+          locationId={locationId}
+          lastUpdated={lastUpdated.timestamp}
           teamHealthRollup={teamHealthRollup}
           departmentOverview={departmentOverview}
           portfolioClients={portfolioClients}

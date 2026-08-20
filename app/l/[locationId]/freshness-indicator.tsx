@@ -7,15 +7,22 @@ import { refreshFreshness } from "./freshness-actions";
 export function FreshnessIndicator({
   locationId,
   timestamp,
+  revalidatePathOverride,
 }: {
   locationId: string;
   timestamp: number | null;
+  /**
+   * Which route to invalidate on refresh. Defaults to this location's own
+   * layout; the /dashboard route passes its own path, since revalidating
+   * /l/<id> would leave the page the user is looking at untouched.
+   */
+  revalidatePathOverride?: string;
 }) {
   const [isPending, startTransition] = useTransition();
 
   const handleRefresh = () => {
     startTransition(async () => {
-      await refreshFreshness(locationId);
+      await refreshFreshness(locationId, revalidatePathOverride);
     });
   };
 
