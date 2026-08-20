@@ -7,6 +7,10 @@ import {
 import { getSession } from "@/lib/auth/session";
 import { hasAnyRole } from "@/lib/auth/roles";
 import { getFollowUpCandidates, getFollowUpConfig } from "@/lib/ghl/store";
+import {
+  resolveFollowUpQueue,
+  FOLLOW_UP_LOOKAHEAD_DAYS,
+} from "@/lib/followup/queue";
 import { GhlConfigError } from "@/lib/ghl/tokens";
 import { StatusControls } from "./status-controls";
 import { PrepPanel } from "./prep-panel";
@@ -69,46 +73,6 @@ const OFFSET_LABELS: Record<string, { days: number; label: string }> = {
   today: { days: 0, label: "Today" },
   tomorrow: { days: 1, label: "Tomorrow" },
 };
-
-/** How far ahead to look when checking whether a follow-up contact already has a new booking (story 2.8 AC4). */
-const FOLLOW_UP_LOOKAHEAD_DAYS = 30;
-
-/**
- * Filters follow-up candidates down to ones still owed a follow-up: cleared
- * once a newer appointment is booked (AC4), aged out past the configured
- * threshold (AC2/AC3). Plain function, not a component — keeps `Date.now()`
- * out of TodayPage's render body.
- */
-function resolveFollowUpQueue(
-  candidates: Awaited<ReturnType<typeof getFollowUpCandidates>>,
-  nearbyAppointments: Awaited<ReturnType<typeof getAppointments>>,
-  config: { mode: "days" | "attempts"; value: number },
-): Awaited<ReturnType<typeof getFollowUpCandidates>> {
-  const latestBookingByContact = new Map<string, number>();
-  for (const appt of nearbyAppointments) {
-    if (!appt.contactId || appt.status === "cancelled") continue;
-    const startsAt = Date.parse(appt.startTime);
-    if (Number.isNaN(startsAt)) continue;
-    const current = latestBookingByContact.get(appt.contactId) ?? -Infinity;
-    if (startsAt > current) latestBookingByContact.set(appt.contactId, startsAt);
-  }
-
-  const now = Date.now();
-
-  return candidates.filter((candidate) => {
-    const newestBooking = latestBookingByContact.get(candidate.contactId);
-    if (newestBooking !== undefined && newestBooking > candidate.markedAt) return false;
-
-    if (config.mode === "days") {
-      const daysSince = (now - candidate.markedAt) / 86_400_000;
-      if (daysSince > config.value) return false;
-    } else if (candidate.attempts > config.value) {
-      return false;
-    }
-
-    return true;
-  });
-}
 
 export default async function TodayPage({
   params,

@@ -235,9 +235,17 @@ export async function requireRole(allowed: readonly Role[]): Promise<Session> {
  * Enforces that the session has access to the requested location.
  * Throws 403 if not permitted. Call this before every GHL request.
  */
-export async function requireLocationAccess(locationId: string): Promise<void> {
-  const session = await getSession();
-  if (!session) redirect("/signin");
+/**
+ * Whether this session may reach this location.
+ *
+ * Extracted from `requireLocationAccess` rather than duplicated: that
+ * function redirects an unauthenticated caller, which a server action
+ * returning a result object cannot catch without swallowing the redirect. So
+ * callers that need the answer rather than the enforcement ask this. One
+ * rule, two ways of reacting to it.
+ */
+export async function ownsLocation(session: Session, locationId: string): Promise<boolean> {
+  if (!locationId) return false;
 
   // tag_exec, tag_csd, and admin can access any location
   if (
@@ -245,9 +253,9 @@ export async function requireLocationAccess(locationId: string): Promise<void> {
     session.currentRole === ROLES.TAG_CSD ||
     session.currentRole === ROLES.ADMIN
   )
-    return;
+    return true;
 
-  if (session.locations.includes(locationId)) return;
+  if (session.locations.includes(locationId)) return true;
 
   // A CSM's static grant doesn't include their whole book — client
   // assignment is dynamic (Firestore, not custom claims). Entering a client
@@ -257,9 +265,17 @@ export async function requireLocationAccess(locationId: string): Promise<void> {
   if (session.currentRole === ROLES.TAG_CSM) {
     const impersonation = await getImpersonation();
     if (impersonation && impersonation.locationId === locationId && impersonation.actorId === session.uid) {
-      return;
+      return true;
     }
   }
+
+  return false;
+}
+
+export async function requireLocationAccess(locationId: string): Promise<void> {
+  const session = await getSession();
+  if (!session) redirect("/signin");
+  if (await ownsLocation(session, locationId)) return;
 
   throw new Error(
     `403 Forbidden: location ${locationId} not in permitted locations: ${session.locations.join(", ")}`,
