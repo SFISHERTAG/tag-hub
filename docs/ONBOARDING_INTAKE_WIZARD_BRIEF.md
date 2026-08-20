@@ -366,10 +366,54 @@ correct for its threat model and actively unhelpful for a client who is *suppose
 
 ### What has to be added
 
-Phase 1 needs a step that creates the Firebase Auth user and sets their claims — role
-(`client_owner`) and the `locations` claim scoping them to the tenancy just cloned. This is
-the same admin-provisions-then-they-sign-in model already described for staff; for clients,
-Phase 1 *is* the admin, it just does not do that part yet.
+Phase 1 needs a step that creates the Firebase Auth user and sets their claims, scoped to
+the tenancy just cloned. This is the same admin-provisions-then-they-sign-in model already
+described for staff; for clients, Phase 1 *is* the admin, it just does not do that part yet.
+
+#### The first user is the founder, and they need several roles
+
+The person who onboards is normally the founder or whoever signed the cheque. They need
+executive-level access to their own business **and** frequently the working roles too —
+setter, closer, closer manager — because in a small firm the owner is also the one running
+calls.
+
+**The model already supports this.** `setUserClaims` takes an *array* of grants
+(`lib/auth/admin.ts:97`), each `{ role, locations }`, and the hat switcher lets one person
+move between the roles they hold. Multi-role is native, not a workaround:
+
+```ts
+await setUserClaims(uid, [
+  { role: "client_owner",          locations: [newLocationId] },
+  { role: "client_setter_manager", locations: [newLocationId] },
+  { role: "client_closer",         locations: [newLocationId] },
+  { role: "client_setter",         locations: [newLocationId] },
+]);
+```
+
+**Three things to get right:**
+
+**1. "Executive" must not mean `tag_exec`.** `tag_exec` is *TAG's* executive, and
+`promoteToExec` grants it with `locations: []` — empty meaning **all locations**
+(`lib/auth/admin.ts:108`). Granting it to a client founder would show them every other TAG
+client's spend and results. The client-side equivalent is `client_owner`, described in
+`role-labels.ts:57` as "One client's spend, ROAS, and outcomes." Anyone implementing from the
+phrase "they're going to have executive" will reach for the wrong constant. Say `client_owner`
+explicitly in the story.
+
+**2. Array order sets the default hat.** `effectiveRole` falls back to `availableRoles[0]`
+(`lib/auth/roles.ts:52`) when no hat cookie is set — which is exactly the state a brand-new
+user is in. Put `client_owner` first, or the founder's first ever screen is the setter view.
+
+**3. Every grant is scoped to their own location.** Never `locations: []` for a client role.
+The empty array is the all-tenancies wildcard.
+
+#### Open: what does a multi-hat user's tour do?
+
+The welcome tour highlights different navigation per role, and the staff flow specifies "no
+skipping on the first try." For someone holding four hats, "first time" is ambiguous — once
+ever, or once per hat as they switch into it? Once-per-hat is more useful (each view is
+genuinely different) and more annoying. Decide it when the tour steps are written; the
+framework should carry a key that can be either, rather than hardcoding one.
 
 Then decide, deliberately:
 
