@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+import { google, type docs_v1 } from "googleapis";
 
 /**
  * Get authenticated Google API clients using keyless delegation.
@@ -98,6 +98,30 @@ export async function createGoogleDoc(
 }
 
 /**
+ * The character index just past the last character of a document's body.
+ *
+ * `body.content` is an array of structural elements, so `content.length` is a
+ * count of paragraphs and tables, not a character offset — usually 2 or 3 for
+ * a fresh doc. Both append paths used it as an index, so every "append"
+ * inserted a couple of characters into the top of the document instead of at
+ * the end, and successive appends interleaved there in reverse. That is what
+ * garbled every Phase 2 onboarding doc.
+ *
+ * Google Docs rejects an insert at the body's own `endIndex` (that position
+ * belongs to the trailing newline the API owns), so the last valid insertion
+ * point is one before it.
+ */
+function endOfBodyIndex(doc: docs_v1.Schema$Document): number {
+  const content = doc.body?.content;
+  if (!content || content.length === 0) return 1;
+
+  const lastEnd = content[content.length - 1]?.endIndex;
+  if (typeof lastEnd !== "number" || lastEnd < 2) return 1;
+
+  return lastEnd - 1;
+}
+
+/**
  * Append text to a Google Doc (at the end).
  */
 export async function appendToGoogleDoc(
@@ -107,9 +131,8 @@ export async function appendToGoogleDoc(
   const auth = getGoogleAuth();
   const docs = google.docs({ version: "v1", auth });
 
-  // Get doc to find the end index
   const doc = await docs.documents.get({ documentId: docId });
-  const endIndex = doc.data.body?.content?.length ?? 1;
+  const endIndex = endOfBodyIndex(doc.data);
 
   await docs.documents.batchUpdate({
     documentId: docId,
@@ -142,7 +165,7 @@ export async function addDocTab(
 
   // Add content with a heading to simulate a tab
   const doc = await docs.documents.get({ documentId: docId });
-  const endIndex = doc.data.body?.content?.length ?? 1;
+  const endIndex = endOfBodyIndex(doc.data);
 
   await docs.documents.batchUpdate({
     documentId: docId,
