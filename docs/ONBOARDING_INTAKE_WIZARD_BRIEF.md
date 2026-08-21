@@ -336,9 +336,34 @@ against the client's location, so:
 - **Answers in the client's location** — correct multi-tenancy, keeps snapshot automations
   working, but requires the fields to exist in the template and reintroduces per-clone ids.
 
-Worth deciding by asking one question: does anything in the snapshot's own workflows read these
-fields? If not, agency-level is the cheaper and more stable answer, and the stated requirement
-that answers "land correctly into the custom fields of GHL" is satisfied by the agency fields.
+**Decided: answers live in the agency sub-account.** Field ids stay stable and global, there is
+one place to look, and the requirement that answers "land correctly into the custom fields of
+GHL" is satisfied by the agency fields.
+
+Three consequences follow.
+
+**1. Consider un-sharing the form from the template.** With answers living in the agency, a copy
+of the form inside each clone serves no purpose and carries the auto-created-fields risk
+described above — a client submitting the cloned copy would write somewhere nobody reads.
+Removing the share closes that path rather than documenting around it. (Harmless to leave if
+the clone copy is never linked to, but it is one more way for a submission to go missing.)
+
+**2. Intake answers and the client's user live on different contact records.** The form belongs
+to the agency location, so submissions create or update an *agency* contact. The client signing
+into the Hub is a user in their own cloned location. Same human, two records, in two locations.
+Nothing is broken by that, but it means "show me this client's intake answers" is a lookup
+against the agency location, not their own — worth knowing before someone goes looking in the
+clone and concludes the data was lost.
+
+**Email is the join key**, and it already is: `/api/onboarding/intake-submit` takes
+`{ locationId, email, intakeData }`, so the payload carries both the tenancy and the identity
+that links the two records. No new contract needed.
+
+**3. Still worth one check:** does anything in the snapshot's own workflows, automations, or
+merge fields read these intake fields? If yes, those are broken in every clone under this
+decision and need either the fields present in the template or a rewrite to pull from
+elsewhere. If nothing reads them — which is likely, since Phase 2 works entirely from the
+webhook payload — this decision is complete and costs nothing.
 
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
