@@ -84,6 +84,11 @@ project before any `.set()` write. No exceptions.
 ## Build + test as the gate (not code review)
 Phases of work have gates. A phase is not done until `npm run build && npm run test --watch=false && npm run lint` all pass.
 
+`npm run build` is `next build`, which never compiles `functions/src`. Any story touching
+`functions/**` must also pass `npm run check:functions` (the functions workspace's own `tsc`
+and `eslint`). Story 1.8 landed functions-side auth code against a green root gate that
+proved nothing about it, which is the whole reason this line exists.
+
 Do not report progress based on reading the code. Do not say "this should work."
 Only green output counts. If the build fails, the phase is not done.
 
@@ -94,10 +99,11 @@ query waterfall and Postgres pool bounds were never actually tested under load.
 1. Code compiles (`npm run build`)
 2. Tests pass (`npm run test --watch=false`)
 3. Linter passes (`npm run lint`)
-4. Story Status and Tasks are updated in `docs/stories/*.md` (same commit)
-5. If a story touches a data model, `docs/data-model.md` is updated
-6. If a story adds a permission check, `lib/auth/roles.ts` is updated
-7. Pre-commit hooks pass (never `--no-verify`)
+4. If the story touches `functions/**`, `npm run check:functions` passes
+5. Story Status and Tasks are updated in `docs/stories/*.md` (same commit)
+6. If a story touches a data model, `docs/data-model.md` is updated
+7. If a story adds a permission check, `lib/auth/roles.ts` is updated
+8. Pre-commit hooks pass (never `--no-verify`)
 
 ## Carry over from global instructions
 - No em dashes.

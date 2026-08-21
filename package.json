@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "check:story-status": "node scripts/check-story-status.mjs"
+    "check:story-status": "node scripts/check-story-status.mjs",
+    "check:functions": "npm --prefix functions run build && npm --prefix functions run lint"
   },
   "dependencies": {
     "@google-cloud/firestore": "^8.7.1",
