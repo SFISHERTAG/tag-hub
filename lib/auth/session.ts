@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { adminAuth, SESSION_COOKIE } from "./admin";
+import { adminAuth, getLiveClaims, SESSION_COOKIE } from "./admin";
 import { hasAnyRole, isRole, ROLES, type Role } from "./roles";
 import { listAllLocationIds } from "../ghl/tenants";
 
@@ -80,6 +80,46 @@ export type Session = {
   team?: string[];
 };
 
+/**
+ * Reads role grants out of a claims object.
+ *
+ * Shared by the cookie payload and the live-claims lookup, which carry the
+ * same shape. Supports both the old single-role claims and the current
+ * multi-role array so a session issued before the migration still resolves.
+ */
+function parseRoleGrants(claims: Record<string, unknown>): RoleGrant[] {
+  // New format: roles array with role+locations pairs
+  if (Array.isArray(claims.roles)) {
+    return (claims.roles as unknown[])
+      .filter((r): r is Record<string, unknown> => typeof r === "object" && r !== null)
+      .filter((r) => isRole(r.role) && Array.isArray(r.locations))
+      .map((r) => ({
+        role: r.role as Role,
+        locations: (r.locations as string[]).filter((l) => typeof l === "string"),
+        // Anything unrecognised is dropped rather than passed through, so a
+        // malformed claim cannot widen scope. resolveScope then falls back to
+        // the role default and, failing that, to "self".
+        scope:
+          r.scope === "self" || r.scope === "team" || r.scope === "tenancy"
+            ? r.scope
+            : undefined,
+        team: Array.isArray(r.team)
+          ? (r.team as unknown[]).filter((u): u is string => typeof u === "string")
+          : undefined,
+      }));
+  }
+
+  // Old format: single role with locations. Migrate to new format.
+  if (isRole(claims.role)) {
+    const locations = Array.isArray(claims.locations)
+      ? (claims.locations as string[]).filter((l) => typeof l === "string")
+      : [];
+    return [{ role: claims.role as Role, locations }];
+  }
+
+  return [];
+}
+
 /** Returns the verified session, or null. Never throws for an absent session. */
 export async function getSession(): Promise<Session | null> {
   const jar = await cookies();
@@ -110,38 +150,37 @@ export async function resolveSession(
     // request rather than lingering until the cookie expires.
     const decoded = await adminAuth().verifySessionCookie(cookie, true);
 
-    // Support both old single-role and new multi-role custom claims for migration.
-    let roleGrants: RoleGrant[] = [];
-
-    // New format: roles array with role+locations pairs
-    if (Array.isArray(decoded.roles)) {
-      roleGrants = (decoded.roles as unknown[])
-        .filter((r): r is Record<string, unknown> => typeof r === "object" && r !== null)
-        .filter((r) => isRole(r.role) && Array.isArray(r.locations))
-        .map((r) => ({
-          role: r.role as Role,
-          locations: (r.locations as string[]).filter((l) => typeof l === "string"),
-          // Anything unrecognised is dropped rather than passed through, so a
-          // malformed claim cannot widen scope — resolveScope then falls back
-          // to the role default and, failing that, to "self".
-          scope:
-            r.scope === "self" || r.scope === "team" || r.scope === "tenancy"
-              ? r.scope
-              : undefined,
-          team: Array.isArray(r.team)
-            ? (r.team as unknown[]).filter((u): u is string => typeof u === "string")
-            : undefined,
-        }));
-    }
-    // Old format: single role with locations. Migrate to new format.
-    else if (isRole(decoded.role)) {
-      const locations = Array.isArray(decoded.locations)
-        ? (decoded.locations as string[]).filter((l) => typeof l === "string")
-        : [];
-      roleGrants = [{ role: decoded.role as Role, locations }];
+    /*
+     * Roles come from the *live* claims, not from the cookie.
+     *
+     * The cookie's claims are a 14-day-old snapshot taken at sign-in.
+     * `checkRevoked` above notices a disabled or signed-out user; it does not
+     * notice that an admin changed someone's role, so a downgrade did not
+     * take effect until that user next signed in. Someone moved off a client
+     * account, or demoted out of admin, kept their old access for up to two
+     * weeks.
+     *
+     * `getLiveClaims` caches for a minute, so this is not a round trip per
+     * request, and grants made through lib/auth/admin.ts clear the entry
+     * immediately. If the lookup itself fails the cookie's claims stand: an
+     * Admin SDK blip signing every user out is a worse failure than a
+     * downgrade landing a few seconds late.
+     */
+    let claims: Record<string, unknown> = decoded;
+    try {
+      const live = await getLiveClaims(decoded.uid);
+      if (live) claims = live;
+    } catch (error) {
+      console.error(
+        `[resolveSession] Live claims lookup failed for ${decoded.uid}, using cookie claims:`,
+        error,
+      );
     }
 
-    // Fallback: no valid roles means unauthenticated.
+    const roleGrants = parseRoleGrants(claims);
+
+    // Fallback: no valid roles means unauthenticated. This is also what a
+    // full revoke looks like now: claims cleared, next request signed out.
     if (roleGrants.length === 0) return null;
 
     // Determine current role from the request, or use first available.

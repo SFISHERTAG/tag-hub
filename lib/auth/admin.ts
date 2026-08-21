@@ -89,6 +89,50 @@ export function adminAuth(): Auth {
 export const getAdminAuth = adminAuth;
 
 /**
+ * How long a user's custom claims are trusted from cache.
+ *
+ * Claims are baked into the session cookie at sign-in, and that cookie lives
+ * for 14 days. `checkRevoked` catches a disabled or signed-out user, but it
+ * does not notice that an admin changed someone's role — so a downgrade did
+ * not take effect until the user happened to sign in again, up to two weeks
+ * later. Re-reading the live claims fixes that, and this cache is what stops
+ * it costing an Admin SDK round trip on every single request.
+ *
+ * Sixty seconds is the worst-case delay on a downgrade now. Grants made
+ * through this module clear the entry immediately, so the TTL only matters
+ * for changes made elsewhere (the Firebase console, another instance).
+ */
+const CLAIMS_TTL_MS = 60 * 1000;
+
+const claimsCache = new Map<string, { claims: Record<string, unknown> | undefined; expiresAt: number }>();
+
+/**
+ * The user's current custom claims, cached briefly.
+ *
+ * Returns `undefined` if the lookup fails, so the caller can decide. It
+ * deliberately does not throw: an Admin SDK blip should not sign every
+ * signed-in user out.
+ */
+export async function getLiveClaims(uid: string): Promise<Record<string, unknown> | undefined> {
+  const cached = claimsCache.get(uid);
+  if (cached && cached.expiresAt > Date.now()) return cached.claims;
+
+  const user = await getAdminAuth().getUser(uid);
+  claimsCache.set(uid, { claims: user.customClaims, expiresAt: Date.now() + CLAIMS_TTL_MS });
+  return user.customClaims;
+}
+
+/**
+ * Drops a user's cached claims.
+ *
+ * Only clears this instance. On a multi-instance deploy the others fall back
+ * to CLAIMS_TTL_MS, which is the ceiling on how stale any of them can be.
+ */
+export function invalidateClaimsCache(uid: string): void {
+  claimsCache.delete(uid);
+}
+
+/**
  * Set role and locations custom claims on a user.
  * Stores multiple role grants.
  * Admin action — only call from server-side operations.
@@ -100,6 +144,9 @@ export async function setUserClaims(
   await getAdminAuth().setCustomUserClaims(uid, {
     roles: roleGrants,
   });
+  // A downgrade that waits out the TTL on the instance that performed it
+  // would be a strange thing to explain to whoever just made the change.
+  invalidateClaimsCache(uid);
 }
 
 /**
