@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { checkWebhookSecret } from "./secret";
+import { checkWebhookSecret } from "./secret.js";
 
 /**
  * Story: Phase 2/3's caller sends a Bearer token that the handler never

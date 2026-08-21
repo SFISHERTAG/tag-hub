@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { formatIntakeForPrompt } from "./intake-format";
+import { formatIntakeForPrompt } from "./intake-format.js";
 
 /**
  * Model used for every onboarding deliverable.

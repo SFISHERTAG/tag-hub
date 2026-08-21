@@ -90,7 +90,7 @@ vi.mock("../email", () => ({
   sendProvisioningConfirmation: (...args: unknown[]) => sendProvisioningConfirmation(...args),
 }));
 
-const { handlePhase1 } = await import("./phase1-provisioning");
+const { handlePhase1 } = await import("./phase1-provisioning.js");
 
 const WEBHOOK_SECRET = "phase1-test-secret";
 

@@ -14,7 +14,7 @@ import type { Server } from "node:http";
 
 vi.stubEnv("NODE_ENV", "production"); // skip index.ts's own app.listen() side effect
 
-const { errorHandler } = await import("./index");
+const { errorHandler } = await import("./index.js");
 
 describe("errorHandler arity", () => {
   it("declares exactly 4 parameters, which is what Express checks to recognize error middleware", () => {

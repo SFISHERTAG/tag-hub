@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { handlePhase1 } from "./webhooks/phase1-provisioning";
-import { handlePhase2 } from "./webhooks/phase2-intake-submit";
-import { handlePhase3 } from "./webhooks/phase3-meta-setup";
+import { handlePhase1 } from "./webhooks/phase1-provisioning.js";
+import { handlePhase2 } from "./webhooks/phase2-intake-submit.js";
+import { handlePhase3 } from "./webhooks/phase3-meta-setup.js";
 
 /**
  * Export handlers directly for Cloud Functions deployment.

@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { saveTenantResources, logProvisioningEvent } from "../firestore";
-import { sendMetaAccessRequest, sendMetaSetupGuide } from "../email";
-import { postMessage } from "../slack";
-import { logAutomationEvent, logMetaSetup } from "../postgres";
-import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
-import { checkWebhookSecret } from "../lib/webhooks/secret";
+import { saveTenantResources, logProvisioningEvent } from "../firestore.js";
+import { sendMetaAccessRequest, sendMetaSetupGuide } from "../email.js";
+import { postMessage } from "../slack.js";
+import { logAutomationEvent, logMetaSetup } from "../postgres.js";
+import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency.js";
+import { checkWebhookSecret } from "../lib/webhooks/secret.js";
 
 /**
  * Phase 3: Meta Ad Account Setup (triggered after intake form submission).

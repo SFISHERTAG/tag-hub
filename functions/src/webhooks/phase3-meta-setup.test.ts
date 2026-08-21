@@ -68,7 +68,7 @@ vi.mock("../postgres", () => ({
   logMetaSetup: (...args: unknown[]) => logMetaSetup(...args),
 }));
 
-const { handlePhase3 } = await import("./phase3-meta-setup");
+const { handlePhase3 } = await import("./phase3-meta-setup.js");
 
 function fakeReqRes(body: unknown) {
   const req = { body, header: () => undefined } as unknown as Parameters<typeof handlePhase3>[0];

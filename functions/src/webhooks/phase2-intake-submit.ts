@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { createGoogleDoc, shareGoogleDoc, addDocTab } from "../google";
-import { formatIntakeForDoc, unmappedKeys } from "../intake-format";
-import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore";
-import { generateAllContent } from "../gemini";
-import { logAutomationEvent } from "../postgres";
-import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
-import { checkWebhookSecret } from "../lib/webhooks/secret";
+import { createGoogleDoc, shareGoogleDoc, addDocTab } from "../google.js";
+import { formatIntakeForDoc, unmappedKeys } from "../intake-format.js";
+import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore.js";
+import { generateAllContent } from "../gemini.js";
+import { logAutomationEvent } from "../postgres.js";
+import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency.js";
+import { checkWebhookSecret } from "../lib/webhooks/secret.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

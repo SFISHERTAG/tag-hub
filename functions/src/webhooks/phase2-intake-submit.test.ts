@@ -75,7 +75,7 @@ vi.mock("../postgres", () => ({
   logAutomationEvent: (...args: unknown[]) => logAutomationEvent(...args),
 }));
 
-const { handlePhase2 } = await import("./phase2-intake-submit");
+const { handlePhase2 } = await import("./phase2-intake-submit.js");
 
 function fakeReqRes(body: unknown) {
   const req = { body, header: () => undefined } as unknown as Parameters<typeof handlePhase2>[0];

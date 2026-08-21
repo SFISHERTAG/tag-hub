@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { cloneLocation, findLocationByName, createOpportunity, getPipelines } from "../ghl";
-import { createSlackChannel, inviteSlackGuest } from "../slack";
-import { createDriveFolder } from "../google";
-import { addToOtpWhitelist, saveTenantResources, logProvisioningEvent } from "../firestore";
-import { provisionClientOwner } from "../auth";
-import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email";
-import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
-import { requireWebhookSecret } from "../lib/webhooks/secret";
+import { cloneLocation, findLocationByName, createOpportunity, getPipelines } from "../ghl.js";
+import { createSlackChannel, inviteSlackGuest } from "../slack.js";
+import { createDriveFolder } from "../google.js";
+import { addToOtpWhitelist, saveTenantResources, logProvisioningEvent } from "../firestore.js";
+import { provisionClientOwner } from "../auth.js";
+import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email.js";
+import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency.js";
+import { requireWebhookSecret } from "../lib/webhooks/secret.js";
 
 /**
  * Phase 1: Webhook triggered when checkbox "Initiate Onboarding" is checked
