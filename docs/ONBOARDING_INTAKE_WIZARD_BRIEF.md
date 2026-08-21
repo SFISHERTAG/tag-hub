@@ -276,226 +276,69 @@ The one thing that would flip this decision: if staff picking up half-finished f
 firm operational requirement rather than a nice-to-have, the embed cannot do it at any price,
 and the custom build is the only path.
 
-## 3e. The snapshot — verify where the form and custom fields actually live
+## 3e. The snapshot — ANSWERED, with one thing to verify
 
 Two unrelated things both get called "GHL client" in this repo. Keep them apart:
 
-- **GHL API client** — the code that makes HTTP calls to GHL. There are two implementations
-  (`lib/ghl/` and `functions/src/ghl.ts`), which CLAUDE.md flags as an audit finding. A code
-  duplication problem. Nothing to do with snapshots.
-- **GHL sub-account** ("location") — a customer's own space inside GHL. That *is* the snapshot's
-  business.
+- **GHL API client** — the code making HTTP calls. Two implementations (`lib/ghl/` and
+  `functions/src/ghl.ts`), flagged by CLAUDE.md as an audit finding. A code duplication
+  problem, unrelated to snapshots.
+- **GHL sub-account** ("location") — a customer's own space. That is the snapshot's business.
 
-So the duplicate-client warning in §3c is not a snapshot concern. **But the snapshot matters
-here for a different and more load-bearing reason.**
+### How provisioning works
 
-### How provisioning works today
-
-Phase 1 (`functions/src/webhooks/phase1-provisioning.ts:72–77`) finds a location literally named
+Phase 1 (`functions/src/webhooks/phase1-provisioning.ts:72–77`) finds a location named
 `"Template Do Not Delete"` and calls `POST /location/{id}/snapshot` (`functions/src/ghl.ts:68`)
-to clone it. **Every client gets their own cloned sub-account from that template.** Custom
-fields, pipelines and workflows come along with the clone.
+to clone it. Every client gets their own cloned sub-account.
 
-### The unresolved question
+### Confirmed
 
-The form, however, is configured as a **single** URL:
-`GHL_FORM_URL=<share link to intake form in TAG agency account>` (`functions/README.md:69`) —
-one env var, one form, described as living in the *agency* account, not the template. Phase 1
-appends `?email=...&locationId=...` to it (`phase1-provisioning.ts:138`).
+**The intake form lives in the Tax Advisory Growth agency sub-account, and so do the custom
+fields.** Neither originates in the template. The form has now been *shared* to the template;
+the fields have not moved.
 
-Those two facts are in tension, and the answer decides real work:
+That resolves the tension the earlier draft flagged, and mostly in the good direction:
 
-**If the form is part of the snapshot** (cloned per client), then every client has their own
-form *and their own custom-field ids* — GHL generates fresh ids on clone. A single
-`GHL_FORM_URL` env var cannot be correct, the embed needs a per-client URL resolved at
-runtime, and a custom-field writer would need per-location id lookup rather than one static
-map. This is the expensive branch.
+- **Field ids are stable and global.** They belong to one location, not to 91 clones. The
+  export needed for §1's highest-risk step is a one-time job, and a custom-field writer needs
+  no per-location id lookup. The expensive branch is off the table.
+- **The embed gets simpler.** One form, one URL, `?locationId=` for attribution — exactly what
+  `phase1-provisioning.ts:138` already builds.
 
-**If it is one shared agency form** (what the env var implies), field ids are stable and
-global, the embed is trivially simple, and `?locationId=` is how a submission is attributed.
-But then a second question follows immediately: *a single agency-level form does not natively
-write custom fields into a cloned sub-account.* So either those fields are not actually being
-populated in the client's own location today, or something else is doing it — worth confirming
-rather than assuming, given the stated requirement is that answers "land correctly into the
-custom fields of GHL."
+### The thing to verify — sharing a form does not move its fields
 
-> **Verify in GHL before choosing a path.** Open `"Template Do Not Delete"` and check whether
-> the intake form and its custom fields are in it. Then open one real cloned client location
-> and check whether that client's contact record actually shows the intake answers in custom
-> fields. Fifteen minutes in the GHL UI settles both branches, and it gates §3c and §3d alike.
-> Nothing in this repo can answer it.
+A GHL form writes to custom fields defined in the location the form lives in. Sharing the form
+into the template does not carry the field definitions across, so in each cloned client
+location the form's field mappings have nothing local to resolve against. What happens next is
+GHL behaviour this repo cannot tell you: the mappings may break, may silently write back to the
+agency location, or may auto-create fresh fields in the clone with *new ids* — which would
+quietly reintroduce the per-location id problem the paragraph above just retired.
 
-## 3f. The intake email should land in the app — and one piece is missing
+> **Check, in this order:** (1) submit the shared form from inside one cloned client location;
+> (2) look at that client's contact record — did the answers land there, or in the agency
+> sub-account? (3) if they landed in the clone, compare that clone's custom-field ids against
+> the agency's. Same ids means sharing works and everything above holds. Different ids means
+> ids are per-clone after all, and the field export has to happen per location.
 
-**Intent:** the Phase 1 intake email stops linking to a GHL-hosted form and instead links into
-the Hub. The client signs in with the six-digit code, meets the intake gate, completes it,
-and goes straight into the welcome tour. One destination, not two systems.
+### The decision this exposes: where should intake answers live?
 
-This is the right shape and it makes §3d simpler either way — embedded or rebuilt, the form
-is now *inside* the app, and the email is just a front door.
+Downstream does not care. Phase 2 receives `intakeData` in the webhook body and generates the
+Doc from the payload — it never reads GHL custom fields. So the Doc, the Gemini content and
+Phase 3 all work whichever location holds the answers.
 
-### Phase 1 already does most of the setup
+What *does* care is anything inside the client's own cloned location — GHL workflows,
+automations, or merge fields in the snapshot that reference intake values. Those resolve
+against the client's location, so:
 
-`functions/src/webhooks/phase1-provisioning.ts` runs nine steps: clone the GHL tenancy from
-`"Template Do Not Delete"`, create the Slack channel, invite the client as a single-channel
-guest, create the Drive folder, **add the client's email to the OTP whitelist** (step 5),
-create the Fulfillment opportunity, save tenant resources, email the intake form, notify TAG.
+- **Answers in the agency location** — simplest, ids stable, one place to look. But each
+  client's own sub-account has no intake data, and any snapshot automation depending on those
+  fields is broken there.
+- **Answers in the client's location** — correct multi-tenancy, keeps snapshot automations
+  working, but requires the fields to exist in the template and reintroduces per-clone ids.
 
-### The gap: no Hub account is ever created
-
-Sign-in is gated on **Firebase Auth user existence**, not on that whitelist.
-`app/api/auth/otp/request/route.ts` calls `adminAuth().getUserByEmail(email)` and only issues a
-code if the user exists. Two consequences:
-
-1. **`auth/otpWhitelist` is written and never read.** Nothing in `lib/` or `app/` reads that
-   document — the app does not consult it at any point. Phase 1's step 5 has no effect on
-   whether anyone can sign in. *(Latent bug in that same write, moot only because nothing
-   reads it: `FieldValue.arrayUnion([email])` at `functions/src/firestore.ts:16` passes an
-   array where arrayUnion takes varargs, so it would store a nested array rather than the
-   string. Evidence this path was never exercised end to end.)*
-
-2. **Phase 1 never creates the user or sets claims.** The only `setCustomUserClaims` call in
-   the codebase is `lib/auth/admin.ts:100`, driven by an admin through the admin UI. A newly
-   provisioned client therefore has no Hub account, no role, and no `locations` claim.
-
-**What the client experiences today if the email points at the Hub:** they enter their address,
-the endpoint deliberately reports success whether or not the account exists (a documented
-anti-enumeration choice — it must not become a membership oracle), and **no code ever arrives.**
-They wait on an email that cannot come, with nothing on screen explaining why. The design is
-correct for its threat model and actively unhelpful for a client who is *supposed* to be there.
-
-### What has to be added
-
-Phase 1 needs a step that creates the Firebase Auth user and sets their claims, scoped to
-the tenancy just cloned. This is the same admin-provisions-then-they-sign-in model already
-described for staff; for clients, Phase 1 *is* the admin, it just does not do that part yet.
-
-#### The first user is the founder, and they need several roles
-
-The person who onboards is normally the founder or whoever signed the cheque. They need
-executive-level access to their own business **and** frequently the working roles too —
-setter, closer, closer manager — because in a small firm the owner is also the one running
-calls.
-
-**The model already supports this.** `setUserClaims` takes an *array* of grants
-(`lib/auth/admin.ts:97`), each `{ role, locations }`, and the hat switcher lets one person
-move between the roles they hold. Multi-role is native, not a workaround:
-
-```ts
-await setUserClaims(uid, [
-  { role: "client_owner",          locations: [newLocationId] },
-  { role: "client_setter_manager", locations: [newLocationId] },
-  { role: "client_closer",         locations: [newLocationId] },
-  { role: "client_setter",         locations: [newLocationId] },
-]);
-```
-
-**Three things to get right:**
-
-**1. "Executive" must not mean `tag_exec`.** `tag_exec` is *TAG's* executive, and
-`promoteToExec` grants it with `locations: []` — empty meaning **all locations**
-(`lib/auth/admin.ts:108`). Granting it to a client founder would show them every other TAG
-client's spend and results. The client-side equivalent is `client_owner`, described in
-`role-labels.ts:57` as "One client's spend, ROAS, and outcomes." Anyone implementing from the
-phrase "they're going to have executive" will reach for the wrong constant. Say `client_owner`
-explicitly in the story.
-
-**2. Array order sets the default hat.** `effectiveRole` falls back to `availableRoles[0]`
-(`lib/auth/roles.ts:52`) when no hat cookie is set — which is exactly the state a brand-new
-user is in. Put `client_owner` first, or the founder's first ever screen is the setter view.
-
-**3. Every grant is scoped to their own location.** Never `locations: []` for a client role.
-The empty array is the all-tenancies wildcard.
-
-#### Two axes: seeing the numbers is not authority
-
-`client_owner`'s description — "One client's spend, ROAS, and outcomes" — is **reporting**.
-It is visibility into results, not permission to change the system. Those are separate axes,
-and the role list flattens them, so it is easy to misread one as the other.
-
-**Authority lives in `admin` alone.** It gates all four configuration surfaces, each checked
-directly against `session.currentRole`:
-
-| Surface | Gate |
-|---|---|
-| `app/admin/tenants/` (+ `actions.ts`) | `currentRole !== "admin"` |
-| `app/admin/users/` (+ `actions.ts`) | `currentRole !== "admin"` |
-| `app/admin/courses/` (+ `actions.ts`) | `currentRole !== "admin"` |
-| `app/admin/knowledge-base/` (+ actions) | `hasAnyRole(currentRole, ["admin"])` |
-
-**All real system changes go through `admin`, and no client is granted it.** The founder's
-grant in the block above gives them their own numbers and their own working views — nothing
-more. That is correct and should stay that way.
-
-Note also that `admin`, `tag_exec` and `tag_csd` are cross-tenancy by construction: their
-`locations` is replaced with `listAllLocationIds()` at session build
-(`lib/auth/session.ts:118–120`), overriding whatever the grant said. A third reason not to
-reach for those constants when provisioning a client.
-
-#### Future `client_admin` — not a one-line addition
-
-A client-scoped admin is anticipated but does not exist. Worth recording *now* why it is
-larger than it looks: **every admin check today is global.** They compare a role string and
-consult no location at all, because `admin` is TAG-wide by definition. A `client_admin` would
-be authority *bounded to one tenancy*, which means each of those four surfaces needs a
-"which locations may this person change?" dimension it currently has no concept of — plus
-the `listAllLocationIds()` override above must not apply to it.
-
-So it is a permissions-model change, not a new entry in `ROLES`. Anyone estimating it from
-the role list alone will underestimate it substantially.
-
-**Do not call it `client_admin`.** Two reasons, one structural and one a footgun:
-
-*The word already means something else here.* `admin` means TAG-wide authority over every
-tenancy. Reusing it for a tenancy-bounded role invites exactly the conflation this section
-exists to prevent — a reader seeing `client_admin` will reasonably assume "admin, scoped",
-when the whole point is that it is a different and much narrower thing.
-
-*Substring matching.* Every authority check today is exact — `currentRole !== "admin"` or
-`hasAnyRole(..., ["admin"])`. Verified: nothing anywhere does `.includes("admin")`,
-`endsWith`, or a regex. That safety is a property of current code, not something enforced.
-The day someone writes `role.includes("admin")` as a shortcut, a client role named
-`client_admin` silently gains TAG-wide config access. A name without the substring removes
-that failure mode permanently instead of relying on everyone remembering.
-
-*Where it would live matters too.* The four admin surfaces are all under `/admin/*` and are
-TAG-global. Tenancy-scoped authority belongs in the route space that already exists for it —
-`app/l/[locationId]/` — not under `/admin/`.
-
-**Consider not making it a role at all.** The distinction drawn above is job function
-(role) versus authority (what you may change). TAG's `client_*` roles are all job titles —
-owner, manager, closer, setter manager, setter. Authority is a *different axis*, so
-expressing it as another job title flattens the two again. A capability on the existing
-grant models it directly:
-
-```ts
-{ role: "client_owner", locations: [locationId], canManageUsers: true }
-```
-
-`RoleGrant` (`lib/auth/session.ts:25`) already carries per-grant data, so this extends what
-is there rather than multiplying the role list. It also composes: a founder wearing four
-hats holds the capability once, on the grant that warrants it, instead of needing a fifth
-role that duplicates one of the other four's views.
-
-If it must be a role, `client_operator` or `client_principal` both avoid the substring and
-read as authority rather than reporting.
-
-#### Open: what does a multi-hat user's tour do?
-
-The welcome tour highlights different navigation per role, and the staff flow specifies "no
-skipping on the first try." For someone holding four hats, "first time" is ambiguous — once
-ever, or once per hat as they switch into it? Once-per-hat is more useful (each view is
-genuinely different) and more annoying. Decide it when the tour steps are written; the
-framework should carry a key that can be either, rather than hardcoding one.
-
-Then decide, deliberately:
-
-- **Whitelist:** make the app read `auth/otpWhitelist`, or delete step 5 as dead code. Do not
-  leave a security-shaped write that nothing enforces — the next reader will assume it works.
-- **Ordering:** the user must exist *before* the intake email goes out, or the first click
-  lands on a sign-in that silently fails.
-- **Role assignment:** `client_owner` automatically at provisioning, or an admin confirms it?
-  Automatic is the only version where the email-lands-in-app flow works unattended.
+Worth deciding by asking one question: does anything in the snapshot's own workflows read these
+fields? If not, agency-level is the cheaper and more stable answer, and the stated requirement
+that answers "land correctly into the custom fields of GHL" is satisfied by the agency fields.
 
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
