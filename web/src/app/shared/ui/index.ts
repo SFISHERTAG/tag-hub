@@ -16,6 +16,7 @@ export { EmptyState } from './empty-state/empty-state';
 export { ErrorState } from './error-state/error-state';
 export { LoadingState, type LoadingVariant } from './loading-state/loading-state';
 export { DataTable } from './data-table/data-table';
+export { HudGauge } from './hud-gauge/hud-gauge';
 export type { DataTableColumn, DataTableSortMode } from './data-table/data-table.model';
 export { ConfirmDialog } from './confirm-dialog/confirm-dialog';
 export { ConfirmDialogService } from './confirm-dialog/confirm-dialog.service';

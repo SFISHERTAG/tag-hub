@@ -1,0 +1,69 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md's theme
+// contract — including the SVG strokes, which are set here rather than as
+// presentation attributes in the template so a theme change reaches them.
+
+:host {
+  display: block;
+}
+
+.hud-gauge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+}
+
+.hud-gauge__dial {
+  inline-size: 100%;
+  max-inline-size: 9rem;
+  block-size: auto;
+}
+
+.hud-gauge__track,
+.hud-gauge__value {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.hud-gauge__track {
+  stroke: var(--mat-sys-outline-variant);
+}
+
+.hud-gauge__value {
+  stroke: var(--mat-sys-primary);
+  transition: stroke-dasharray 320ms ease-out;
+}
+
+// The dial is centred on the readout rather than stacked above it, which is
+// what makes it read as an instrument instead of a chart with a caption.
+.hud-gauge__readout {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  text-align: center;
+}
+
+.hud-gauge__number {
+  font: var(--mat-sys-headline-small);
+  color: var(--mat-sys-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-gauge__unit {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.hud-gauge__label {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-gauge__value {
+    transition: none;
+  }
+}
