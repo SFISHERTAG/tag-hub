@@ -1,6 +1,5 @@
 import "server-only";
 import { google, type drive_v3 } from "googleapis";
-import { GoogleAuth } from "google-auth-library";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
@@ -24,21 +23,27 @@ export type DriveFile = {
   parents?: string[];
 };
 
-async function getAuthClient() {
-  const auth = new GoogleAuth({
-    scopes: [SCOPE],
-  });
-  return auth.getClient();
-}
-
-/**
- * `google.drive()` types its `auth` option against googleapis-common's own
- * copy of the auth classes, which is a structurally identical but nominally
- * distinct type from the one google-auth-library returns here. That mismatch
- * is what the `as any` casts were papering over. Narrowed to the option's
- * declared type instead, so the cast no longer erases the rest of the call.
+/*
+ * Built from `google.auth`, deliberately, rather than from a direct
+ * `google-auth-library` import.
+ *
+ * There are two copies of google-auth-library in this tree: the top level one
+ * and a nested copy under google-gax, which is the one googleapis types its
+ * `auth` option against. The classes are structurally alike but nominally
+ * distinct, and both carry `#private` fields, so a value of one is never
+ * assignable to the other. That is what the old `as DriveAuth` cast was really
+ * papering over.
+ *
+ * The cast held until google-auth-library 11 added `GdchClient` to the
+ * `AnyAuthClient` union returned by `getClient()`. GdchClient overlaps with
+ * nothing in the target union, so TypeScript stopped allowing the assertion
+ * and the build broke. Constructing through `google.auth` makes the types
+ * identical by construction, so no assertion is needed at all. googleapis
+ * resolves the client itself.
  */
-type DriveAuth = drive_v3.Options["auth"];
+function getAuth() {
+  return new google.auth.GoogleAuth({ scopes: [SCOPE] });
+}
 
 /** Maps Drive's API shape onto ours, filling the optionals it leaves out. */
 function toDriveFile(file: drive_v3.Schema$File): DriveFile {
@@ -62,8 +67,7 @@ export async function listDriveFiles(folderId: string): Promise<ApiResult<DriveF
   if (!folderId) return { data: [], error: null };
 
   return withErrorHandling(`listDriveFiles(${folderId})`, async () => {
-    const auth = await getAuthClient();
-    const drive = google.drive({ version: "v3", auth: auth as DriveAuth });
+    const drive = google.drive({ version: "v3", auth: getAuth() });
 
     const result = await drive.files.list({
       q: `'${folderId}' in parents and trashed=false`,
@@ -82,8 +86,7 @@ export async function listDriveFiles(folderId: string): Promise<ApiResult<DriveF
  */
 export async function getDriveFile(fileId: string): Promise<ApiResult<DriveFile | null>> {
   return withErrorHandling(`getDriveFile(${fileId})`, async () => {
-    const auth = await getAuthClient();
-    const drive = google.drive({ version: "v3", auth: auth as DriveAuth });
+    const drive = google.drive({ version: "v3", auth: getAuth() });
 
     const file = await drive.files.get({
       fileId,
