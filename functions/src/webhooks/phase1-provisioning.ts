@@ -5,7 +5,7 @@ import { createDriveFolder } from "../google.js";
 import { addToOtpWhitelist, saveTenantResources, logProvisioningEvent } from "../firestore.js";
 import { provisionClientOwner } from "../auth.js";
 import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email.js";
-import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency.js";
+import { hasBeenProcessed, claimEvent, clearProcessed, contentEventId } from "../lib/webhooks/idempotency.js";
 import { requireWebhookSecret } from "../lib/webhooks/secret.js";
 
 /**
@@ -69,9 +69,11 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
       res.json({ success: true, duplicate: true });
       return;
     }
-    try {
-      await markProcessed("phase1", eventId);
-    } catch {
+    // Only a real ALREADY_EXISTS is a concurrent delivery. A Firestore
+    // outage used to land here too and answer the sender "handled,
+    // duplicate", which drops the event permanently: the sender stops
+    // retrying and nothing ever processed it.
+    if ((await claimEvent("phase1", eventId)) === "duplicate") {
       console.log(`[Phase 1] Concurrent delivery for ${eventId}, skipping`);
       res.json({ success: true, duplicate: true });
       return;

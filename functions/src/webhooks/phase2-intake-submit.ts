@@ -4,7 +4,7 @@ import { formatIntakeForDoc, unmappedKeys } from "../intake-format.js";
 import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore.js";
 import { generateAllContent } from "../gemini.js";
 import { logAutomationEvent } from "../postgres.js";
-import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency.js";
+import { hasBeenProcessed, claimEvent, clearProcessed, contentEventId } from "../lib/webhooks/idempotency.js";
 import { checkWebhookSecret } from "../lib/webhooks/secret.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -51,9 +51,11 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
       res.json({ success: true, duplicate: true });
       return;
     }
-    try {
-      await markProcessed("phase2", eventId);
-    } catch {
+    // Only a real ALREADY_EXISTS is a concurrent delivery. A Firestore
+    // outage used to land here too and answer the sender "handled,
+    // duplicate", which drops the event permanently: the sender stops
+    // retrying and nothing ever processed it.
+    if ((await claimEvent("phase2", eventId)) === "duplicate") {
       console.log(`[Phase 2] Concurrent delivery for ${eventId}, skipping`);
       res.json({ success: true, duplicate: true });
       return;
