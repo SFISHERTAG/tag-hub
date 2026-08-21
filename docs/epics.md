@@ -240,29 +240,27 @@ Angular, so a screen exists in exactly one place and no defect gets fixed twice.
 | 10.1 | Contract hardening and boundary enforcement | Done | `10.1-angular-contract-hardening.md` |
 | 10.2 | Real session wiring and the auth surface | In Progress | `10.2-real-session-wiring-and-the-auth-surface.md` |
 | 10.3 | Responsive shell and navigation | In Progress | `10.3-responsive-shell-and-navigation.md` |
-| 10.4 | **Unresolved — see below** | Draft | `10.4-production-hardening-release.md` |
+| 10.4 | Shared M3 primitives, portfolio and bug reports | Draft | `10.4-shared-m3-primitives-portfolio-and-bug-reports.md` |
 | 10.5 | GHL integration module | Draft | `10.5-ghl-integration-module.md` |
 | 10.6 | Widget dashboard and the clients book | Draft | `10.6-widget-dashboard-and-clients-book.md` |
 | 10.7 | Remaining feature modules and legacy removal | Draft | `10.7-remaining-modules-and-legacy-removal.md` |
+| 10.8 | Production hardening and release | Draft | `10.8-production-hardening-and-release.md` |
 
 **Statuses above are taken from the story files, which are authoritative.** This
 table previously had 10.1 as In Progress while its story said Done, and 10.2 as
 Draft while its story said In Progress. Per Story 11.3, where a table and a
 story disagree, the story wins and the table is the thing that was stale.
 
-**10.4 is two different stories under one number, and needs a decision.** This
-table has described it as "Shared M3 primitives, portfolio and bug reports" — the
-first story to ship a real feature end to end. The story file of that number,
-`10.4-production-hardening-release.md`, is instead a deploy-and-soak story:
-getting the unmerged 10.1/10.2 body of work into production before any Angular
-route is flipped.
+**10.4 was two stories under one number; split on 2026-08-21.** This table used
+that number for "Shared M3 primitives, portfolio and bug reports", the first
+story to ship a real feature end to end, while the story file of that number was
+a deploy-and-soak story. Both were real work with different prerequisites.
 
-Both are real work and neither is wrong. They are not the same story and they
-have different prerequisites. Note that Story 11.4 calibrates estimates off "the
-first story that ships a real feature end to end", so it currently points at the
-feature reading of 10.4 rather than at the file. Resolve by renumbering one of
-them; do not leave the number ambiguous, because two stories sharing an id is
-exactly the condition under which one of them silently never gets built.
+10.4 is now the feature story, which is also what Story 11.4 calibrates its
+estimates against. The release story moved to **10.8**, after 10.7's legacy
+removal, because a release belongs at the end of the work it releases. Its
+premise had also gone stale: it was written when the work was 22 unmerged
+commits, and those are merged.
 
 **10.1 is deliberately feature-free.** Every constraint it makes enforceable is
 free to fix while `web/src/app/` holds twelve files, and expensive after fifteen
