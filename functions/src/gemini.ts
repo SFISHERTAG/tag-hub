@@ -1,14 +1,48 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { formatIntakeForPrompt } from "./intake-format";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
+/**
+ * Model used for every onboarding deliverable.
+ *
+ * One constant rather than four literals — these four generations are one
+ * batch producing one document, so they must never drift apart. Changing the
+ * model is then a one-line decision with a visible blast radius.
+ *
+ * `gemini-3.7-flash` is the latest stable Flash. Deliberately not
+ * `gemini-3.1-pro-preview`: this runs unattended in a Cloud Function and seeds
+ * a client-facing document plus live ad copy, which is the wrong place for a
+ * preview model. If output quality warrants Pro later, change it here.
+ */
+const MODEL = "gemini-3.7-flash";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY || "" });
+
+/**
+ * One call path for all four generations.
+ *
+ * The new SDK returns `response.text` as `string | undefined` — the old
+ * `result.response.text()` did not admit that possibility. Undefined here means
+ * a safety block, a truncation, or a response carrying no text part, and the
+ * caller writes straight into a client-facing Google Doc. Failing loudly beats
+ * writing the string "undefined" into it.
+ */
+async function generate(prompt: string, label: string): Promise<string> {
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: prompt,
+  });
+
+  const text = response.text;
+  if (!text || text.trim().length === 0) {
+    throw new Error(`Gemini returned no text for ${label} (model ${MODEL})`);
+  }
+  return text;
+}
 
 /**
  * Generate UVP (Unique Value Proposition) from intake data.
  */
 export async function generateUVP(intakeData: Record<string, unknown>): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   const prompt = `You are a positioning expert for tax advisory firms. Based on this intake data, write a compelling Unique Value Proposition (UVP).
 
 The UVP should:
@@ -22,16 +56,13 @@ ${formatIntakeForPrompt(intakeData)}
 
 Write ONLY the UVP text, no headers or formatting.`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  return generate(prompt, "UVP");
 }
 
 /**
  * Generate ad/VSL copy variations from intake data.
  */
 export async function generateAdCopy(intakeData: Record<string, unknown>): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   const prompt = `You are a copywriter for a tax advisory acquisition funnel. Write compelling ad/VSL copy based on this intake data.
 
 Create 3 variations of 30-second VSL copy:
@@ -55,16 +86,13 @@ ${formatIntakeForPrompt(intakeData)}
 
 Format each variation clearly with the label and the copy.`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  return generate(prompt, "ad copy");
 }
 
 /**
  * Generate pre-call script for closers.
  */
 export async function generatePreCallScript(intakeData: Record<string, unknown>): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   const prompt = `You are a sales training expert. Write a pre-call script for a closer calling a prospect from this tax advisory firm.
 
 The script should:
@@ -95,8 +123,7 @@ Format as:
 **CLOSE**
 [Script]`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  return generate(prompt, "pre-call script");
 }
 
 /**
@@ -105,7 +132,6 @@ Format as:
 export async function generateProjectCharter(
   intakeData: Record<string, unknown>
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `You are a project manager for a tax advisory acquisition engagement. Write a project charter based on this intake data.
 
@@ -125,8 +151,7 @@ ${formatIntakeForPrompt(intakeData)}
 
 Format clearly with sections and subsections.`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  return generate(prompt, "project charter");
 }
 
 /**
