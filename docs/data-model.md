@@ -79,7 +79,29 @@ account.
 | `flow_tabs` / `flow_sections` / `flow_cards` | FLOW framework structure | App writes directly | N/A | Hierarchy under a framework |
 | `flow_scripts` | FLOW card script content (versioned) | App writes directly | N/A | Also see `flow_scripts` in Firestore table above — same name, different store; Postgres is the live editor content, Firestore's is not currently synced from it |
 | `flow_audit_log` | FLOW change history, revert-capable | App writes directly | N/A | Written by `lib/flow/db.ts#logChange` |
-| `flow_script_suggestions` | Closer-submitted script edit suggestions, pending sales-manager review | App writes directly | N/A | Added Phase 2 item 2.5 fast-follow; approving one calls `updateScript` (which writes `flow_audit_log`) |
+| `flow_script_suggestions` | Closer-submitted script edit suggestions, pending sales-manager review | App writes directly | N/A | Added Phase 2 item 2.5 fast-follow; approving one creates a new `flow_scripts` row and writes `flow_audit_log`, all inside one transaction |
+| `csm` | CS org reporting lines (who a CSM reports to) | Firestore `csm/{email}` | N/A | Keyed by email to match `clients.csm_assigned`. Migration 004 briefly created the same table as `csm_directory`; 006 consolidates the two |
+
+**Table grants.** Every table in `public` is read and written by
+`tag_app_user`, granted by 003's blanket
+`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public`. That
+blanket only covers tables existing when it runs, so a migration creating or
+renaming a table after 003 grants explicitly on it (004 and 006 both do). A new
+table added without its own GRANT works on a fresh sequential deploy and fails
+on an existing database, which is the harder of the two to notice.
+
+**Migration order.** `functions/sql/*.sql` run in file-number order, and each
+one has to be safe both on a fresh database and on one that has already seen
+its predecessors. 006 originally assumed the opposite order and failed on
+every clean deploy with `relation "csm" already exists`, because 003 creates
+that table first. It is written as idempotent `DO` blocks now. Any migration
+that renames or drops something an earlier file may also create needs the
+same treatment.
+
+**Suggestion approval is transactional.** `resolveSuggestion` claims the
+suggestion with a conditional `UPDATE ... WHERE status = 'pending'` and does
+the script insert plus the audit write in the same transaction, so two
+concurrent approvals cannot produce two script versions on one card.
 
 **Why Postgres:** structured schema for analytics queries, SQL joins across entities,
 time-series aggregation (sum spend by day), efficient pagination, no real-time

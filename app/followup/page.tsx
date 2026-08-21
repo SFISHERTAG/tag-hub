@@ -7,7 +7,15 @@ import { getContact } from "@/lib/ghl/contacts";
 import { getOpportunityForContact } from "@/lib/ghl/opportunities";
 import { requireSession } from "@/lib/auth/session";
 import { devLocationId, GhlConfigError } from "@/lib/ghl/tokens";
-import { getFollowUpCandidates } from "@/lib/ghl/store";
+import {
+  getFollowUpCandidates,
+  getFollowUpConfig,
+  DEFAULT_FOLLOW_UP_CONFIG,
+} from "@/lib/ghl/store";
+import {
+  resolveFollowUpQueue,
+  FOLLOW_UP_LOOKAHEAD_DAYS,
+} from "@/lib/followup/queue";
 
 export const dynamic = "force-dynamic";
 
@@ -59,30 +67,26 @@ export default async function FollowUpPage() {
   }
 
   // Enrich candidates with appointment and contact data
-  // Check 90 days back and 30 forward for newer appointments
   const rangeStart = dayRange(-90);
-  const rangeEnd = dayRange(30);
+  const rangeEnd = dayRange(FOLLOW_UP_LOOKAHEAD_DAYS);
   const allAppointments = await getAppointments(locationId, {
     startMs: rangeStart.startMs,
     endMs: rangeEnd.endMs,
   });
 
+  // Shared with /today rather than reimplemented here. The inline version
+  // this replaces treated any later appointment as a rebooking, including a
+  // cancelled one — so a no-show whose replacement booking was then
+  // cancelled silently dropped out of the queue, which is precisely the lead
+  // this page exists to surface. It also skipped the aging rules /today
+  // applies, so the two pages disagreed about the same contact.
+  const config = await getFollowUpConfig(locationId).catch(() => DEFAULT_FOLLOW_UP_CONFIG);
+  const stillOwed = resolveFollowUpQueue(candidates, allAppointments, config);
+
   const enriched = await Promise.all(
-    candidates.map(async (candidate) => {
+    stillOwed.map(async (candidate) => {
       const appointment = allAppointments.find((a) => a.id === candidate.appointmentId);
       if (!appointment?.contactId) return null;
-
-      // Check if there's a newer appointment on this contact
-      const newerAppointment = allAppointments.find(
-        (a) =>
-          a.contactId === appointment.contactId &&
-          a.id !== candidate.appointmentId &&
-          new Date(a.startTime).getTime() > new Date(appointment.startTime).getTime(),
-      );
-
-      if (newerAppointment) {
-        return null; // This contact has a newer appointment, not a follow-up
-      }
 
       const contact = await getContact(locationId, appointment.contactId);
       const opportunity = await getOpportunityForContact(locationId, appointment.contactId);

@@ -1,6 +1,5 @@
 import "server-only";
 import { google, type drive_v3 } from "googleapis";
-import { GoogleAuth } from "google-auth-library";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
@@ -24,21 +23,25 @@ export type DriveFile = {
   parents?: string[];
 };
 
-async function getAuthClient() {
-  const auth = new GoogleAuth({
-    scopes: [SCOPE],
-  });
-  return auth.getClient();
-}
-
 /**
- * `google.drive()` types its `auth` option against googleapis-common's own
- * copy of the auth classes, which is a structurally identical but nominally
- * distinct type from the one google-auth-library returns here. That mismatch
- * is what the `as any` casts were papering over. Narrowed to the option's
- * declared type instead, so the cast no longer erases the rest of the call.
+ * Built from `google.auth`, not from a direct `google-auth-library` import.
+ *
+ * There are two copies of google-auth-library in this tree: the top-level one
+ * the lockfile pins at 11.x, and a 10.x nested under googleapis. `google.drive()`
+ * types its `auth` option against the nested copy, and both copies carry
+ * `#private` fields, so a client from one is never assignable to the other no
+ * matter how the target type is spelled. An earlier `as any` hid that; a later
+ * `as DriveAuth` narrowed the cast without removing the mismatch, and broke the
+ * moment the two versions actually diverged (11.x added `GdchClient` to
+ * `AnyAuthClient`).
+ *
+ * Taking the constructor off the `google` object makes the types identical by
+ * construction, so no assertion is needed at all. `GoogleAuth` is itself a
+ * valid `auth` value, so `getClient()` is not needed either.
  */
-type DriveAuth = drive_v3.Options["auth"];
+function getAuth() {
+  return new google.auth.GoogleAuth({ scopes: [SCOPE] });
+}
 
 /** Maps Drive's API shape onto ours, filling the optionals it leaves out. */
 function toDriveFile(file: drive_v3.Schema$File): DriveFile {
@@ -62,8 +65,7 @@ export async function listDriveFiles(folderId: string): Promise<ApiResult<DriveF
   if (!folderId) return { data: [], error: null };
 
   return withErrorHandling(`listDriveFiles(${folderId})`, async () => {
-    const auth = await getAuthClient();
-    const drive = google.drive({ version: "v3", auth: auth as DriveAuth });
+    const drive = google.drive({ version: "v3", auth: getAuth() });
 
     const result = await drive.files.list({
       q: `'${folderId}' in parents and trashed=false`,
@@ -82,8 +84,7 @@ export async function listDriveFiles(folderId: string): Promise<ApiResult<DriveF
  */
 export async function getDriveFile(fileId: string): Promise<ApiResult<DriveFile | null>> {
   return withErrorHandling(`getDriveFile(${fileId})`, async () => {
-    const auth = await getAuthClient();
-    const drive = google.drive({ version: "v3", auth: auth as DriveAuth });
+    const drive = google.drive({ version: "v3", auth: getAuth() });
 
     const file = await drive.files.get({
       fileId,

@@ -11,6 +11,8 @@ import { requireLocationAccess } from "@/lib/auth/session";
  */
 export async function refreshFreshness(
   locationId: string,
+  /** Route to invalidate instead of this location's layout. See the indicator. */
+  pathOverride?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     await requireLocationAccess(locationId);
@@ -18,6 +20,13 @@ export async function refreshFreshness(
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
 
-  revalidatePath(`/l/${locationId}`, "layout");
+  // Only a fixed set of paths, never the caller's string as given: this is a
+  // server action, so an arbitrary path argument would let any signed-in
+  // caller invalidate any route's cache.
+  if (pathOverride === "/dashboard") {
+    revalidatePath("/dashboard");
+  } else {
+    revalidatePath(`/l/${locationId}`, "layout");
+  }
   return { ok: true };
 }

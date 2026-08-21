@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import type { Role } from "@/lib/auth/roles";
+import { ROLE_LIST, type Role } from "@/lib/auth/role-labels";
 import {
   PipelineIcon,
   TodayIcon,
@@ -57,19 +57,19 @@ const ITEMS: {
     href: "/contacts",
     label: "Contacts",
     icon: ContactsIcon,
-    hats: ["tag_exec", "tag_sales", "tag_csm", "client_closer", "client_manager"],
+    hats: ["tag_exec", "tag_sales", "tag_csm", "tag_csd", "client_closer", "client_manager"],
   },
   {
     href: "/success",
     label: "Client success",
     icon: EscalationIcon,
-    hats: ["tag_exec", "tag_csm"],
+    hats: ["tag_exec", "tag_csm", "tag_csd"],
   },
   {
     href: "/portfolio",
     label: "Portfolio",
     icon: PortfolioIcon,
-    hats: ["tag_exec", "tag_csm", "tag_sales_manager"],
+    hats: ["tag_exec", "tag_csm", "tag_csd", "tag_sales_manager"],
   },
   {
     href: "/setter",
@@ -87,7 +87,7 @@ const ITEMS: {
     href: "/onboarding",
     label: "Onboarding",
     icon: OnboardingIcon,
-    hats: ["tag_exec", "tag_csm"],
+    hats: ["tag_exec", "tag_csm", "tag_csd"],
   },
   {
     href: "/courses",
@@ -96,6 +96,7 @@ const ITEMS: {
     hats: [
       "tag_exec",
       "tag_csm",
+      "tag_csd",
       "tag_sales",
       "tag_sales_manager",
       "client_owner",
@@ -107,7 +108,7 @@ const ITEMS: {
     href: "/dashboard",
     label: "Performance",
     icon: DashboardIcon,
-    hats: ["tag_exec", "tag_csm", "client_owner"],
+    hats: ["tag_exec", "tag_csm", "tag_csd", "client_owner"],
   },
   {
     href: "/admin/tenants",
@@ -128,6 +129,25 @@ const ITEMS: {
     hats: ["admin"],
   },
 ];
+
+/**
+ * No role may end up with an empty bar.
+ *
+ * `tag_csd` was on none of the items above — a real, documented role whose
+ * whole job is the CS department, and a CS Director signing in got a blank
+ * nav and had to type every URL by hand. Nothing caught it because the list
+ * is a filter, and filtering to nothing is not an error.
+ *
+ * This is a nav-completeness check, not an access check: the comment at the
+ * top of this file still holds, every page guards itself.
+ */
+const ROLES_WITH_NO_NAV = ROLE_LIST.filter((role) => !ITEMS.some((item) => item.hats.includes(role)));
+if (ROLES_WITH_NO_NAV.length > 0) {
+  throw new Error(
+    `Roles with an empty navigation bar: ${ROLES_WITH_NO_NAV.join(", ")}. ` +
+      "Add them to at least one entry in app/nav.tsx's ITEMS.",
+  );
+}
 
 /**
  * How many tabs sit directly on the bar before the rest fold into "More".

@@ -6,9 +6,10 @@ import { getSession, getImpersonation } from "@/lib/auth/session";
 import { updateOpportunityStage, closeOpportunity } from "@/lib/ghl/opportunities";
 import { getContact } from "@/lib/ghl/contacts";
 import { logAction } from "@/lib/audit/store";
-import { isFulfillmentStage, STAGE_TASKS } from "@/lib/onboarding/stage-tasks";
+import { parseFulfillmentStage, STAGE_TASKS } from "@/lib/onboarding/stage-tasks";
 import { completeStageTasks } from "@/lib/onboarding/store";
 import { dispatchClosedWon } from "@/lib/meta/conversions";
+import { withErrorHandling } from "@/lib/api/errorInterceptor";
 
 export async function moveOpportunityStagAction(
   locationId: string,
@@ -44,11 +45,12 @@ export async function moveOpportunityStagAction(
     // tasks (story 5.1, AC4) — stage names (PR1-AP5) are unique to that
     // pipeline, so matching against the fixed task map is enough to tell
     // this apart from a Sales-pipeline move without threading a pipeline id.
-    if (previousStageName && isFulfillmentStage(previousStageName)) {
+    const previousStage = parseFulfillmentStage(previousStageName);
+    if (previousStage) {
       await completeStageTasks(
         locationId,
         opportunityId,
-        STAGE_TASKS[previousStageName].map((task) => task.id),
+        STAGE_TASKS[previousStage].map((task) => task.id),
       );
     }
 
@@ -95,10 +97,27 @@ export async function closeOpportunityAction(
     // non-blocking contract as Story 6.2's dispatchShowed.
     if (status === "won" && contactId) {
       after(async () => {
-        const contact = await getContact(locationId, contactId);
-        if (contact) {
-          await dispatchClosedWon(locationId, opportunityId, contact, result.monetaryValue);
-        }
+        // `dispatchClosedWon` never throws by contract, but the contact fetch
+        // that feeds it does — and this runs after the response has gone out,
+        // so a throw here is an unhandled rejection nobody sees rather than a
+        // failure anyone can act on. Routed through the project's own error
+        // interceptor, which is imported two lines up.
+        const dispatched = await withErrorHandling(
+          `dispatchClosedWon(${locationId}, ${opportunityId})`,
+          async () => {
+            const contact = await getContact(locationId, contactId);
+            if (!contact) {
+              throw new Error(`Contact ${contactId} not found — closed_won not sent to Meta.`);
+            }
+            await dispatchClosedWon(locationId, opportunityId, contact, result.monetaryValue);
+            return true;
+          },
+        );
+
+        // The close itself already succeeded and the response is sent; there
+        // is nobody left to tell. `withErrorHandling` has logged it with full
+        // context, which is what the retry cron reads.
+        void dispatched;
       });
     }
 

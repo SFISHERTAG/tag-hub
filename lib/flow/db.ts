@@ -562,57 +562,110 @@ export async function getSuggestion(id: string): Promise<FlowScriptSuggestion | 
  * change the same way a direct admin edit would, with an admin_note
  * attributing it back to the suggestion and its author.
  */
+/**
+ * Approve or reject a pending suggestion.
+ *
+ * The read-check-write this replaces was a TOCTOU race with real
+ * consequences on approval: two reviewers hitting approve at the same moment
+ * both read "pending", both created a script version on the same card, and
+ * both wrote the status row, so the second silently overwrote the first's
+ * reviewer attribution. The audit log then showed one approval and the card
+ * carried two versions.
+ *
+ * Now the status row is claimed with a single conditional UPDATE inside a
+ * transaction. Exactly one caller can move a suggestion off "pending", so
+ * exactly one creates a script; the loser sees "already approved" and
+ * changes nothing. The script creation and the audit entry share that
+ * transaction, so a failure part-way leaves the suggestion pending rather
+ * than approved-with-no-script.
+ */
 export async function resolveSuggestion(
   id: string,
   action: "approve" | "reject",
   reviewedBy: string,
   reviewNote?: string | null,
 ): Promise<FlowScriptSuggestion> {
-  const suggestion = await getSuggestion(id);
-  if (!suggestion) {
-    throw new Error("Suggestion not found");
-  }
-  if (suggestion.status !== "pending") {
-    throw new Error(`Suggestion already ${suggestion.status}`);
-  }
+  const client = await pool.connect();
 
-  let resultingScriptId: string | null = null;
+  try {
+    await client.query("BEGIN");
 
-  if (action === "approve") {
-    const script = await createScript(suggestion.card_id, {
-      content: suggestion.suggested_content,
-      why: suggestion.suggested_why,
-      notes: suggestion.suggested_notes,
-      version_tag: null,
-      tags: [],
-      created_by: suggestion.suggested_by,
-      updated_by: reviewedBy,
-    });
-    resultingScriptId = script.id;
-
-    await logChange(
-      suggestion.org_id,
-      "flow_scripts",
-      script.id,
-      "create",
-      {
-        content: { old: null, new: suggestion.suggested_content },
-        why: { old: null, new: suggestion.suggested_why },
-        notes: { old: null, new: suggestion.suggested_notes },
-      },
-      reviewedBy,
-      `Approved suggestion ${id} from ${suggestion.suggested_by}${reviewNote ? `: ${reviewNote}` : ""}`,
+    // The claim and the check are the same statement, which is the point.
+    const claimed = await client.query(
+      `UPDATE flow_script_suggestions
+       SET status = $2, reviewed_by = $3, reviewed_at = NOW(), review_note = $4
+       WHERE id = $1 AND status = 'pending'
+       RETURNING *`,
+      [id, action === "approve" ? "approved" : "rejected", reviewedBy, reviewNote ?? null],
     );
-  }
 
-  const result = await pool.query(
-    `UPDATE flow_script_suggestions
-     SET status = $2, reviewed_by = $3, reviewed_at = NOW(), review_note = $4, resulting_script_id = $5
-     WHERE id = $1
-     RETURNING *`,
-    [id, action === "approve" ? "approved" : "rejected", reviewedBy, reviewNote ?? null, resultingScriptId],
-  );
-  return result.rows[0];
+    if (claimed.rowCount === 0) {
+      await client.query("ROLLBACK");
+      // Distinguish "does not exist" from "someone else already resolved it",
+      // since the route maps them to different status codes.
+      const existing = await getSuggestion(id);
+      if (!existing) throw new Error("Suggestion not found");
+      throw new Error(`Suggestion already ${existing.status}`);
+    }
+
+    const suggestion = claimed.rows[0] as FlowScriptSuggestion;
+
+    if (action !== "approve") {
+      await client.query("COMMIT");
+      return suggestion;
+    }
+
+    const inserted = await client.query(
+      `INSERT INTO flow_scripts
+      (card_id, content, why, notes, version_tag, tags, created_by, updated_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`,
+      [
+        suggestion.card_id,
+        suggestion.suggested_content,
+        suggestion.suggested_why,
+        suggestion.suggested_notes,
+        null,
+        [],
+        suggestion.suggested_by,
+        reviewedBy,
+      ],
+    );
+    const script = inserted.rows[0] as FlowScript;
+
+    await client.query(
+      `INSERT INTO flow_audit_log
+      (org_id, table_name, record_id, action, changes, changed_by, admin_note)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        suggestion.org_id,
+        "flow_scripts",
+        script.id,
+        "create",
+        JSON.stringify({
+          content: { old: null, new: suggestion.suggested_content },
+          why: { old: null, new: suggestion.suggested_why },
+          notes: { old: null, new: suggestion.suggested_notes },
+        }),
+        reviewedBy,
+        `Approved suggestion ${id} from ${suggestion.suggested_by}${reviewNote ? `: ${reviewNote}` : ""}`,
+      ],
+    );
+
+    const withScript = await client.query(
+      `UPDATE flow_script_suggestions SET resulting_script_id = $2 WHERE id = $1 RETURNING *`,
+      [id, script.id],
+    );
+
+    await client.query("COMMIT");
+    clearFrameworkCache();
+    return withScript.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 // ─── AUDIT LOG ──────────────────────────────────────────────────────────────
@@ -713,10 +766,19 @@ export async function revertChange(
     updates.push("updated_at = NOW()");
 
     const table = entry.table_name;
-    await client.query(
+    const reverted = await client.query(
       `UPDATE ${table} SET ${updates.join(", ")} WHERE id = $1`,
       values
     );
+
+    // A hard-deleted record updates zero rows. This used to commit anyway,
+    // write a revert entry into the audit log, and return true — so the UI
+    // said "reverted" while nothing had been restored and the log claimed a
+    // change that never happened.
+    if ((reverted.rowCount ?? 0) === 0) {
+      await client.query("ROLLBACK");
+      return false;
+    }
 
     // Log the revert. The field actually moved new -> old (that's what a
     // revert is), so this entry's own changes must record that direction —

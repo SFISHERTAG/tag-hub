@@ -21,6 +21,32 @@ export function isFulfillmentStage(value: string): value is FulfillmentStage {
   return (FULFILLMENT_STAGE_ORDER as readonly string[]).includes(value);
 }
 
+/**
+ * Pulls the stage code out of a real GHL stage name.
+ *
+ * `isFulfillmentStage` alone wanted an exact `"AP2"`, and GHL's stage names
+ * are not bare codes — this codebase's own `AP2_STAGE_NAME` constant spells
+ * one out as `"AP 2 - Ads Launched"`. So the exact match never matched, and
+ * every client past PR1 saw "Stage unrecognized" with no task list instead of
+ * their checklist.
+ *
+ * Matches a leading PR or AP, an optional separator, and a digit; whatever
+ * follows is the human-readable half and is ignored. Anchored at the start so
+ * an unrelated stage that merely mentions "AP2" in its description does not
+ * masquerade as one.
+ */
+const STAGE_CODE_PATTERN = /^\s*(PR|AP)\s*[-–—.]?\s*([1-9])\b/i;
+
+export function parseFulfillmentStage(stageName: string | null | undefined): FulfillmentStage | null {
+  if (!stageName) return null;
+
+  const match = STAGE_CODE_PATTERN.exec(stageName);
+  if (!match) return null;
+
+  const code = `${match[1].toUpperCase()}${match[2]}`;
+  return isFulfillmentStage(code) ? code : null;
+}
+
 export type OnboardingTask = {
   id: string;
   label: string;

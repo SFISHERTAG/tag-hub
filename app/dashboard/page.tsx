@@ -4,6 +4,7 @@ import { hasAnyRole } from "@/lib/auth/roles";
 import { getLocationForDashboard } from "@/lib/dashboard/location-selection";
 import { WIDGET_REGISTRY } from "@/lib/dashboard/widget-definitions";
 import { loadDashboardConfig } from "@/lib/dashboard/customization";
+import { getLastUpdated } from "@/lib/dashboard/freshness";
 import { getAssignedClients, getTeamClients, getDepartmentClients } from "@/lib/dashboard/csm-clients";
 import type { ClientData } from "@/lib/dashboard/csm-clients-types";
 import { summarizeByCsm, summarizeDepartment } from "@/lib/dashboard/team-rollup";
@@ -18,13 +19,28 @@ import { DashboardPageClient } from "./page-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/signin");
 
+  const { page: requestedPageId } = await searchParams;
+
   // Load dashboard config for current role
   const config = await loadDashboardConfig(session.uid, session.currentRole);
-  const currentPage = config.pages[config.currentPage];
+
+  // PageTabs links to /dashboard?page=<id>, and nothing read that parameter —
+  // every tab rendered the saved current page, so multi-page dashboards were
+  // a no-op. An unknown or absent id falls back to the saved page rather than
+  // erroring, so a stale bookmark degrades instead of breaking.
+  //
+  // Widget entitlement is enforced further down, per widget, at the point of
+  // fetch — see `canUseWidget` below.
+  const currentPage =
+    config.pages.find((p) => p.id === requestedPageId) ?? config.pages[config.currentPage];
 
   if (!currentPage) redirect("/");
 
@@ -101,6 +117,14 @@ export default async function DashboardPage() {
     roas = await getDashboardAdRoas(dashboardLocationId, 30);
   }
 
+  // PRD-required "as of" indicator. It existed as a component and a data
+  // source, wired only into the location-scoped layout — never into the
+  // dashboard people actually use. Freshness failing is not a reason to fail
+  // the page, so it degrades to "no timestamp" rather than throwing.
+  const lastUpdated = dashboardLocationId
+    ? await getLastUpdated(dashboardLocationId).catch(() => ({ timestamp: null, source: null }))
+    : { timestamp: null, source: null };
+
   return (
     <DarkScope>
       <div className="mx-auto max-w-6xl">
@@ -109,6 +133,8 @@ export default async function DashboardPage() {
           config={config}
           currentPageId={currentPage.id}
           userEmail={session.email || "Your Account"}
+          locationId={dashboardLocationId}
+          lastUpdated={lastUpdated.timestamp}
           teamHealthRollup={teamHealthRollup}
           departmentOverview={departmentOverview}
           portfolioClients={portfolioClients}

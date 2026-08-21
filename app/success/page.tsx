@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
+import { hasAnyRole } from "@/lib/auth/roles";
 import { listAllLocationIds, getTenant, type Tenant } from "@/lib/ghl/tenants";
 import { Panel, Fold, Stat, Badge, Donut, Pending, type Segment } from "../ui";
 import { EscalationIcon, OnboardingIcon } from "../icons";
@@ -51,7 +52,9 @@ export default async function ClientSuccessPage() {
   if (!session) redirect("/signin");
 
   // Gated on the current role
-  if (!["tag_exec", "tag_csm"].includes(session.currentRole)) {
+  // tag_csd covers the whole CS department, so every CSM-facing surface is
+  // theirs by definition. It was absent here and from the nav entirely.
+  if (!hasAnyRole(session.currentRole, ["tag_exec", "tag_csm", "tag_csd"])) {
     return (
       <Panel title="Access denied">
         <p className="text-sm text-ink-2">

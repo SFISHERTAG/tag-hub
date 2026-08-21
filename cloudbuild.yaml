@@ -163,7 +163,18 @@ steps:
       # Mounts the Cloud SQL Auth Proxy sidecar; DB_HOST below points at the
       # Unix socket it exposes, not a network address.
       - --add-cloudsql-instances=${_CLOUDSQL_CONNECTION_NAME}
-      - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest,SLACK_BOT_TOKEN=slack-bot-token:latest,DB_PASSWORD=tag-postgres-password:latest
+      # PHASE2/PHASE3_WEBHOOK_SECRET are used in both directions for their
+      # phase: the app requires them on inbound calls to
+      # /api/onboarding/intake-submit and /phase3-meta-setup from any caller
+      # without a TAG staff session, and sends them as a bearer token on the
+      # outbound call to the Cloud Function. Same names, same values, as
+      # functions/package.json's deploy scripts already mount.
+      #
+      # Not optional. `authorizeOnboardingTrigger` refuses with a 500 when
+      # there is no staff session and no configured secret — it fails closed
+      # rather than falling open, so deploying without these takes GHL's
+      # intake webhook offline instead of leaving it unauthenticated.
+      - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest,SLACK_BOT_TOKEN=slack-bot-token:latest,DB_PASSWORD=tag-postgres-password:latest,PHASE2_WEBHOOK_SECRET=phase2-webhook-secret:latest,PHASE3_WEBHOOK_SECRET=phase3-webhook-secret:latest
       # GHL_LOCATION_ID_TAG_GROWTH is the same sub-account as GHL_LOCATION_ID
       # above, under a second name: lib/dashboard/location-selection.ts reads
       # it separately to route internal roles (exec/CSM/sales) to TAG's own

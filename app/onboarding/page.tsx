@@ -7,7 +7,7 @@ import { getTenant } from "@/lib/ghl/tenants";
 import {
   STAGE_TASKS,
   FULFILLMENT_STAGE_ORDER,
-  isFulfillmentStage,
+  parseFulfillmentStage,
 } from "@/lib/onboarding/stage-tasks";
 import { loadCompletedTasks } from "@/lib/onboarding/store";
 import { Panel } from "../ui";
@@ -87,7 +87,10 @@ export default async function OnboardingPage() {
   }
 
   const { opportunity, stageName } = fulfillment;
-  const stage = stageName && isFulfillmentStage(stageName) ? stageName : null;
+  // Parsed rather than matched exactly: GHL's stage names carry a label
+  // after the code ("AP 2 - Ads Launched"), so an exact match never hit and
+  // every client past PR1 got "Stage unrecognized" and an empty checklist.
+  const stage = parseFulfillmentStage(stageName);
   const tasks = stage ? STAGE_TASKS[stage] : [];
   const completed = await loadCompletedTasks(locationId, opportunity.id);
   const days = daysSince(opportunity.lastStageChangeAt ?? opportunity.updatedAt);

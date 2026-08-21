@@ -10,6 +10,12 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { stores } = vi.hoisted(() => ({ stores: new Map<string, Map<string, unknown>>() }));
 
+/**
+ * Set to make the idempotency claim fail with something other than
+ * ALREADY_EXISTS, i.e. a real outage rather than a concurrent delivery.
+ */
+let createFailure: Error | null = null;
+
 vi.mock("@google-cloud/firestore", () => {
   class FakeDoc {
     constructor(
@@ -21,6 +27,7 @@ vi.mock("@google-cloud/firestore", () => {
       return { exists: this.store.has(this.key), data: () => data };
     }
     async create(data: unknown) {
+      if (createFailure) throw createFailure;
       if (this.store.has(this.key)) throw new Error("ALREADY_EXISTS");
       this.store.set(this.key, data);
     }
@@ -119,6 +126,7 @@ beforeEach(() => {
   stores.clear();
   process.env.TAG_SHARED_DRIVE_ID = "shared-drive-1";
   process.env.PHASE1_WEBHOOK_SECRET = WEBHOOK_SECRET;
+  createFailure = null;
 });
 
 describe("handlePhase1 idempotency", () => {
@@ -126,6 +134,21 @@ describe("handlePhase1 idempotency", () => {
     opportunity: { id: "opp-abc", name: "Acme Deal" },
     contact: { name: "Acme Inc", email: "client@acme.test" },
   };
+
+  it("fails loudly when the idempotency claim itself errors", async () => {
+    // A bare catch used to treat any claim failure as a concurrent delivery
+    // and answer `{ success: true, duplicate: true }`. On a Firestore outage
+    // that tells the sender its event was handled, so it stops retrying and
+    // nothing ever processes it.
+    createFailure = new Error("14 UNAVAILABLE: Firestore is down");
+
+    const { req, res, status, json } = fakeReqRes(payload);
+    await handlePhase1(req, res);
+
+    expect(status).toHaveBeenCalledWith(500);
+    expect(json).not.toHaveBeenCalledWith({ success: true, duplicate: true });
+    expect(cloneLocation).not.toHaveBeenCalled();
+  });
 
   it("processes a delivery once and short-circuits an identical retry", async () => {
     const first = fakeReqRes(payload);
