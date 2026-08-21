@@ -89,7 +89,12 @@ const eslintConfig = defineConfig([
               // fetch signature requires a ScopeFilter. A direct query bypasses
               // that and re-opens the "forgot to filter by user" leak the brand
               // exists to prevent. See docs/ROLE_SCOPE_MODEL.md.
-              target: ["lib/dashboard/**", "app/dashboard/**"],
+              // `app/api/**`, not `app/dashboard/**`: the Angular cutover deleted
+              // the Next dashboard pages and the data path moved under
+              // app/api/dashboard/**, which left this zone guarding a directory
+              // that no longer exists. Widened to the whole endpoint surface
+              // because that is now the only server-side caller.
+              target: ["lib/dashboard/**", "app/api/**"],
               from: ["lib/postgres.ts", "lib/firestore.ts"],
               message:
                 "Dashboard code must not query directly. Register a metric in lib/dashboard/metrics.ts — its fetch() takes a ScopeFilter, which is what keeps one user's rows out of another's dashboard.",
