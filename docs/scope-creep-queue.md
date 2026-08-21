@@ -173,6 +173,95 @@ economics are not close. The original pitch was wrong about the price and still
 understated the advantage, because it compared subscription to subscription
 instead of marginal cost to per-asset cost.
 
+### Production workflow, if promoted
+
+Raised 2026-08-20: have the client film their own source material, then rewrap
+it as an avatar of themselves or another presenter, with motion control.
+
+This is the strongest idea in the proposal and it is not only a cost measure.
+It answers the objection that sank the avatar approach for long-form: a
+skeptical high-net-worth viewer who detects a synthetic presenter mid-VSL
+leaves the page. Filming the actual accountant once means the trust-critical
+assets keep a real human on screen and only the words change. It also needs no
+new storage concept, since client-filmed footage already flows through the
+cubby creatives model this project uses for DIY and actor material.
+
+One filming session feeds two render paths, and the choice between them is made
+per asset type rather than by preference:
+
+```
+                          +-- trains twin, $1.00 once -->  [ Avatar V twin ]
+                          |                                $0.0667/sec        --> 9 ad hooks (30s)
+  [ Client films once ]---+                                synthetic delivery
+    about 30 min usable   |
+                          +-- re-voiced, not rebuilt --->  [ Lip sync ]
+                                                           $0.0333/sec        --> 1 VSL + 3 pre-call
+                                                           real body language
+
+  Voice cloned once from the same session drives both paths.
+  Both converge on assembly and export, which has no marginal cost.
+```
+
+**Sequence.**
+
+1. Film once, at least 30 minutes. The 30-minute floor is not arbitrary: it is
+   what ElevenLabs professional voice cloning wants, so the same session
+   doubles as voice training data and as lip sync source.
+2. Clone the voice once. Requires the ElevenLabs Creator tier at $22/mo, the
+   only recurring floor in the stack.
+3. Create the digital twin once, $1.00 against the HeyGen API wallet. Needed
+   only for the synthetic path.
+4. Per angle, write the script and generate the voice track. A 30-second hook
+   costs about five cents to voice.
+5. Route by asset type. Ad hooks render as the twin, where volume matters and
+   the viewer has three seconds of exposure. VSL and pre-call videos take lip
+   sync on real footage, where a detected fake costs the booking.
+6. Assemble, caption, export. No marginal cost.
+7. Hand off to the existing launch path: paused Meta creative variant, Slack
+   notification, GHL stage update. Stories 5.4 and 5.5 already do this. The
+   pipeline only supplies the missing input.
+
+**A full A/B suite for one offer.** The test variable is the hook, held against
+a constant audience, so trust assets are produced per audience rather than per
+hook.
+
+| Asset | Count | Length | Path | Cost |
+| --- | --- | --- | --- | --- |
+| Ad hooks | 9 | 30 sec | Avatar V twin | $18.01 |
+| Pre-call trust video | 3 | 2 min | Lip sync | $11.99 |
+| Long-form VSL | 1 | 10 min | Lip sync | $19.98 |
+| Voice, whole suite | | 20.5 min | ElevenLabs | $1.78 |
+| Digital twin | 1 | once | HeyGen | $1.00 |
+| B-roll | | 400 sec | Generated | $60.00 |
+| Assembly and export | 13 | | ChatCut | $0.00 |
+| **13 assets** | | | | **$112.76** |
+
+Excludes the filming session, which costs the accountant a morning rather than
+cash. The same suite through the current SOP, at $500 to $1,000 per
+spokesperson asset, is $6,500 to $13,000 and several weeks of turnaround.
+
+**Two things this costing changed.**
+
+*The rewrap path is cheaper than the avatar path, not only safer.* Lip sync on
+real footage is $0.0333/sec against $0.0667/sec for an Avatar V twin. Keeping
+the real accountant on screen for the trust assets costs half what fabricating
+them does. The trust argument and the cost argument point the same way.
+
+*B-roll is the dominant line, not avatar generation.* At $60.00 it is 53
+percent of the suite. The original proposal assumed avatar seconds would
+dominate. They do not, and it is not close. B-roll volume is the cost lever to
+watch.
+
+**The motion control caveat.** HeyGen rejects the `motion_prompt` field for
+video avatars on the default Avatar IV engine. Driving body motion and hand
+gestures on a digital twin requires Avatar V at $0.0667/sec, which forecloses
+the Avatar III path at $0.0167/sec. Motion control is a four-times cost
+decision, not a free toggle. At nine hooks it is a $13 difference and worth
+taking. At three hundred hooks it is not automatic.
+
+**This section describes how it would work, not a commitment to build it.**
+SC-001 stays Queued. Writing the workflow down does not promote it.
+
 ### Open questions not yet answered
 
 - What consent or verification HeyGen requires before building a digital twin
@@ -193,6 +282,8 @@ is the input that decides whether this becomes an epic of its own (Epic 10; 7 th
 
 - Two vendors only: ElevenLabs plus HeyGen. Both have real key-authenticated
   APIs and public per-unit pricing. Ship script-to-avatar-clip and stop there.
+- Have the client film 30 minutes of source once. It trains the voice, trains
+  the twin, and supplies lip sync footage for the trust-critical assets.
 - Drop Higgsfield entirely. No API key, no per-unit pricing, interactive auth.
   It buys generated B-roll that ChatCut also generates, at a worse integration
   cost.
