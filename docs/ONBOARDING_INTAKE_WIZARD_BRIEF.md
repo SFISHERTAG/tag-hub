@@ -369,7 +369,20 @@ lookups for `driveFolderId` and `name`. **The file makes no GHL call whatsoever.
 So the agency-level decision costs nothing. No snapshot automation breaks, because none was
 reading the fields to begin with.
 
-> **But this raises the stakes on field keys.** The Doc's body is built by iterating the
+> **RESOLVED — the keys are known and mapped.** Read from the live form: GHL keys
+> custom-field answers by a 20-character opaque id (`suPpj9zBTX4coNoB61Iv`), and **49 of the
+> form's 57 fields are custom fields**, so the predicted failure was real. The markup also
+> carries a readable `data-q` name (`offer_description`) beside each id; both spellings are now
+> mapped to the form's own labels in `INTAKE_LABELS` (`functions/src/intake-format.ts`), since
+> the webhook, the API and a direct POST do not agree on which they send. Two fields have no
+> readable name and sit in `UNIDENTIFIED_FIELD_IDS` rather than being guessed at.
+>
+> This also retires §1's "capture a real payload" task for *key discovery* — the keys came from
+> the form itself. A captured payload is still worth having to confirm which spelling arrives.
+>
+> The original warning, kept because it is what the mapping now prevents:
+>
+> **This raises the stakes on field keys.** The Doc's body is built by iterating the
 > payload verbatim — `Object.entries(intakeData).map(([key, value]) => \`${key}: ${value}\`)`
 > (`phase2-intake-submit.ts:88–90`). Whatever key names arrive are written into the document
 > **as-is**, and that document is shared with the client as `reader` (§3b). If GHL's webhook
