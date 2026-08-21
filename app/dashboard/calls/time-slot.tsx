@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '../../ui';
+import { Badge, type BadgeTone } from '../../ui';
 
 export interface TimeSlot {
   id: string;
@@ -19,12 +19,18 @@ export interface TimeSlotProps {
   onViewDetails?: (slot: TimeSlot) => void;
 }
 
-const callTypeColors = {
-  discovery: 'info',
-  strategy: 'accent',
-  optimization: 'ok',
-  'follow-up': 'warn',
-} as const;
+/**
+ * Badge tones only. `strategy` used to map to 'accent', which Badge does not
+ * accept — the `as any` at the call site meant it silently rendered with no
+ * colour classes, and gold is reserved for interactive and brand state
+ * anyway (see the note on Badge in app/ui.tsx).
+ */
+const callTypeColors: Record<NonNullable<TimeSlot["callType"]>, BadgeTone> = {
+  discovery: "info",
+  strategy: "neutral",
+  optimization: "ok",
+  "follow-up": "warn",
+};
 
 export function TimeSlotComponent({
   slot,
@@ -55,7 +61,7 @@ export function TimeSlotComponent({
           )}
           {slot.callType && (
             <div className="mt-2">
-              <Badge tone={callTypeColors[slot.callType] as any}>
+              <Badge tone={callTypeColors[slot.callType]}>
                 {slot.callType.replace('-', ' ').charAt(0).toUpperCase() + slot.callType.slice(1).replace('-', ' ')}
               </Badge>
             </div>

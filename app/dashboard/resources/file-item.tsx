@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '../../ui';
+import { Badge, type BadgeTone } from '../../ui';
 
 export interface FileResource {
   id: string;
@@ -29,13 +29,19 @@ const fileTypeIcons = {
   folder: '📁',
 };
 
-const categoryColors = {
-  guide: 'info',
-  template: 'accent',
-  report: 'ok',
-  asset: 'warn',
-  other: 'neutral',
-} as const;
+/**
+ * Badge tones only. `template` used to map to 'accent', which Badge does not
+ * accept — the cast at the call site meant it rendered with no colour
+ * classes, and gold is reserved for interactive and brand state anyway (see
+ * the note on Badge in app/ui.tsx).
+ */
+const categoryColors: Record<NonNullable<FileResource["category"]>, BadgeTone> = {
+  guide: "info",
+  template: "neutral",
+  report: "ok",
+  asset: "warn",
+  other: "neutral",
+};
 
 export function FileItem({
   file,
@@ -66,7 +72,7 @@ export function FileItem({
       {/* Category Badge */}
       {file.category && (
         <div className="mb-2">
-          <Badge tone={categoryColors[file.category] as any}>
+          <Badge tone={categoryColors[file.category]}>
             {file.category.charAt(0).toUpperCase() + file.category.slice(1)}
           </Badge>
         </div>

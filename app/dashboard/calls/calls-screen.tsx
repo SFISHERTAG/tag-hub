@@ -14,7 +14,7 @@ function mapCallToTimeSlot(call: CallForDisplay): TimeSlot {
     booked: call.booked,
     attendee: call.attendee,
     topic: call.topic,
-    callType: call.callType as any,
+    callType: call.callType as TimeSlot["callType"],
   };
 }
 

@@ -19,6 +19,20 @@ export interface MetaCreative {
   campaign_name?: string;
 }
 
+/**
+ * Graph API's shape for an ad, as opposed to `MetaCreative`, which is ours.
+ * Optional throughout because Meta omits fields rather than nulling them.
+ */
+interface RawAd {
+  id: string;
+  name?: string;
+  status?: MetaCreative["status"];
+  created_time?: string;
+  effective_status?: string;
+  adset_id?: string;
+  campaign_id?: string;
+}
+
 export interface CreativeCampaignLink {
   campaignId: string;
   campaignName: string;
@@ -39,7 +53,7 @@ export async function getCreativesForCampaign(campaignId: string): Promise<ApiRe
     const api = getMetaApi();
 
     const response = (
-      await api.call<{ data: any[] }>(
+      await api.call<{ data: RawAd[] }>(
         "GET",
         `/${campaignId}/ads`,
         {
@@ -62,9 +76,9 @@ export async function getCreativesForCampaign(campaignId: string): Promise<ApiRe
     for (const ad of response) {
       creatives.push({
         id: ad.id,
-        name: ad.name,
-        status: ad.status,
-        created_time: ad.created_time,
+        name: ad.name ?? "Untitled ad",
+        status: ad.status ?? "PAUSED",
+        created_time: ad.created_time ?? "",
         effective_status: ad.effective_status,
         adset_id: ad.adset_id,
         campaign_id: ad.campaign_id,
@@ -85,7 +99,7 @@ export async function getCreativeDetail(creativeId: string): Promise<ApiResult<M
   return withErrorHandling(`getCreativeDetail(${creativeId})`, async () => {
     const api = getMetaApi();
 
-    const response = await api.call<any>(
+    const response = await api.call<RawAd>(
       "GET",
       `/${creativeId}`,
       {
@@ -105,9 +119,9 @@ export async function getCreativeDetail(creativeId: string): Promise<ApiResult<M
 
     return {
       id: response.id,
-      name: response.name,
-      status: response.status,
-      created_time: response.created_time,
+      name: response.name ?? "Untitled ad",
+      status: response.status ?? "PAUSED",
+      created_time: response.created_time ?? "",
       effective_status: response.effective_status,
       adset_id: response.adset_id,
       campaign_id: response.campaign_id,

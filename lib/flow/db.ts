@@ -83,7 +83,7 @@ export async function updateFramework(
   data: Partial<FlowFramework>
 ): Promise<FlowFramework> {
   const updates: string[] = [];
-  const values: any[] = [id];
+  const values: unknown[] = [id];
   let paramCount = 2;
 
   if (data.name !== undefined) {
@@ -135,21 +135,21 @@ async function getFullFrameworkUncached(orgId: string): Promise<FullFramework | 
   );
 
   const fullTabs = await Promise.all(
-    tabs.rows.map(async (tab: Record<string, any>) => {
+    tabs.rows.map(async (tab: FlowTab) => {
       const sections = await pool.query(
         "SELECT * FROM flow_sections WHERE tab_id = $1 AND is_active = true ORDER BY display_order",
         [tab.id]
       );
 
       const fullSections = await Promise.all(
-        sections.rows.map(async (section: Record<string, any>) => {
+        sections.rows.map(async (section: FlowSection) => {
           const cards = await pool.query(
             "SELECT * FROM flow_cards WHERE section_id = $1 AND is_active = true ORDER BY display_order",
             [section.id]
           );
 
           const fullCards = await Promise.all(
-            cards.rows.map(async (card: Record<string, any>) => {
+            cards.rows.map(async (card: FlowCard) => {
               const scripts = await pool.query(
                 "SELECT * FROM flow_scripts WHERE card_id = $1 ORDER BY created_at DESC LIMIT 1",
                 [card.id]
@@ -219,7 +219,7 @@ export async function updateTab(
   data: Partial<FlowTab>
 ): Promise<FlowTab> {
   const updates: string[] = [];
-  const values: any[] = [id];
+  const values: unknown[] = [id];
   let paramCount = 2;
 
   if (data.label !== undefined) {
@@ -283,7 +283,7 @@ export async function updateSection(
   data: Partial<FlowSection>
 ): Promise<FlowSection> {
   const updates: string[] = [];
-  const values: any[] = [id];
+  const values: unknown[] = [id];
   let paramCount = 2;
 
   if (data.label !== undefined) {
@@ -350,7 +350,7 @@ export async function updateCard(
   data: Partial<FlowCard>
 ): Promise<FlowCard> {
   const updates: string[] = [];
-  const values: any[] = [id];
+  const values: unknown[] = [id];
   let paramCount = 2;
 
   if (data.key !== undefined) {
@@ -444,7 +444,7 @@ export async function updateScript(
   data: Partial<FlowScript>
 ): Promise<FlowScript> {
   const updates: string[] = [];
-  const values: any[] = [id];
+  const values: unknown[] = [id];
   let paramCount = 2;
 
   if (data.content !== undefined) {
@@ -622,7 +622,7 @@ export async function logChange(
   tableName: string,
   recordId: string,
   action: "create" | "update" | "delete",
-  changes: Record<string, { old: any; new: any }>,
+  changes: Record<string, { old: unknown; new: unknown }>,
   changedBy: string,
   adminNote?: string,
   parentChangeId?: string
@@ -659,7 +659,7 @@ export async function getAuditLog(
     [orgId, limit, offset]
   );
   return result.rows.map(
-    (row: Record<string, any>): FlowAuditLog => ({
+    (row: FlowAuditLog): FlowAuditLog => ({
       ...row,
       changes: typeof row.changes === "string" ? JSON.parse(row.changes) : row.changes,
     }) as FlowAuditLog,
@@ -703,12 +703,12 @@ export async function revertChange(
 
     // Revert each field
     const updates: string[] = [];
-    const values: any[] = [entry.record_id];
+    const values: unknown[] = [entry.record_id];
     let paramCount = 2;
 
     for (const [field, fieldChange] of Object.entries(changes)) {
       updates.push(`${field} = $${paramCount++}`);
-      values.push((fieldChange as any).old);
+      values.push((fieldChange as { old: unknown }).old);
     }
     updates.push("updated_at = NOW()");
 

@@ -50,7 +50,7 @@ export function CampaignsTab({ client }: CampaignsTabProps) {
     return (
       <div className="rounded-lg border border-line bg-sunken p-6 text-center">
         <p className="text-sm text-ink-3">No active campaigns found</p>
-        <p className="text-xs text-ink-3 mt-2">Campaigns will appear here once they're launched in Meta Ads Manager</p>
+        <p className="text-xs text-ink-3 mt-2">Campaigns will appear here once they&apos;re launched in Meta Ads Manager</p>
       </div>
     );
   }

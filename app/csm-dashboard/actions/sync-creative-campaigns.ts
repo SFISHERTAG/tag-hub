@@ -4,6 +4,7 @@ import { firestore } from "@/lib/firestore";
 import { getAdAccountCampaigns } from "@/lib/meta/campaigns";
 import { getCreativesForCampaign } from "@/lib/meta/creatives";
 import { requireCsmAccess } from "./access";
+import type { CampaignRef } from "./get-creatives-with-campaigns";
 
 /**
  * Sync creative-to-campaign mappings from Meta to Firestore.
@@ -62,9 +63,9 @@ export async function syncCreativeToCampaignMappings(clientId: string): Promise<
         const existing = existingDoc.data() || {};
 
         // Build campaigns_using array, avoiding duplicates
-        const campaigns_using = existing.campaigns_using || [];
+        const campaigns_using: CampaignRef[] = existing.campaigns_using || [];
         const campaignIndex = campaigns_using.findIndex(
-          (c: any) => c.campaignId === campaign.id,
+          (c) => c.campaignId === campaign.id,
         );
 
         if (campaignIndex >= 0) {
