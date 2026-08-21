@@ -124,7 +124,7 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.1 | Client success aggregate view | Shell built — `/success` |
 | 7.2 | Field catalog and per-role defaults | Draft |
 | 7.3 | Dashboard configuration UI | Draft |
-| 7.4 | Client-visibility allowlist at the query layer | Draft |
+| 7.4 | Client-visibility allowlist at the query layer | Allowlist + catalog built |
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
 | 7.6 | Data scope at the query layer — whose rows, per hat | Enforcement layer built |
 
