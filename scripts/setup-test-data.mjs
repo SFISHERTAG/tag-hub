@@ -8,8 +8,23 @@ import { Firestore } from "@google-cloud/firestore";
 const TEST_CLIENT_ID = "cMIc51hn6ziLwWtC8t0n";
 const TEST_CSM_EMAIL = "test@taxadvisorygrowth.net";
 
+// No fallback, on purpose — this script overwrites TEST_CLIENT_ID's document
+// wholesale with fabricated data. A silent default project id here means an
+// unset env var overwrites whatever real client happens to hold this exact
+// Firestore doc id in production. See CLAUDE.md "Secrets & environment".
+if (process.env.NODE_ENV === "production") {
+  console.error("NODE_ENV is production. Refusing to seed fabricated test data.");
+  process.exit(1);
+}
+const projectId = process.env.GOOGLE_CLOUD_PROJECT;
+if (!projectId) {
+  console.error("GOOGLE_CLOUD_PROJECT is not set. Refusing to run against an unknown/default project.");
+  process.exit(1);
+}
+console.log(`Seeding test data into Firestore project: ${projectId}`);
+
 const db = new Firestore({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub",
+  projectId,
   ignoreUndefinedProperties: true,
 });
 

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { hasAnyRole } from "@/lib/auth/roles";
+import { getLocationForDashboard } from "@/lib/dashboard/location-selection";
+import { WIDGET_REGISTRY } from "@/lib/dashboard/widget-definitions";
 import { loadDashboardConfig } from "@/lib/dashboard/customization";
 import { getAssignedClients, getTeamClients, getDepartmentClients } from "@/lib/dashboard/csm-clients";
 import type { ClientData } from "@/lib/dashboard/csm-clients-types";
@@ -61,24 +63,42 @@ export default async function DashboardPage() {
     }
   }
 
-  if (widgetIds.has("pipeline_board")) {
-    pipelineBoard = await getPipelineBoardSummary();
+  // GHL-backed widgets need the caller's own location, not a shared dev
+  // default — two different client tenants must never resolve to the same
+  // location just because they both added the same widget. Resolution can
+  // throw for a role/session shape it doesn't recognize; treated as "no
+  // location" rather than crashing the whole dashboard.
+  let dashboardLocationId: string | null = null;
+  try {
+    dashboardLocationId = getLocationForDashboard(session);
+  } catch {
+    dashboardLocationId = null;
   }
 
-  if (widgetIds.has("day_view")) {
-    dayView = await getTodayCalls();
+  // Each of these widgets declares its own availableFor role list in
+  // widget-definitions.ts — checked here, not just at the picker/save layer,
+  // since a saved config is what actually drives this fetch.
+  const canUseWidget = (widgetId: string) =>
+    hasAnyRole(session.currentRole, WIDGET_REGISTRY[widgetId]?.availableFor ?? []);
+
+  if (widgetIds.has("pipeline_board") && canUseWidget("pipeline_board") && dashboardLocationId) {
+    pipelineBoard = await getPipelineBoardSummary(dashboardLocationId);
   }
 
-  if (widgetIds.has("leads_funnel")) {
-    funnel = await getDashboardFunnelCounts(30);
+  if (widgetIds.has("day_view") && canUseWidget("day_view") && dashboardLocationId) {
+    dayView = await getTodayCalls(dashboardLocationId);
   }
 
-  if (widgetIds.has("owner_calendar")) {
-    ownerCalendar = await getOwnerCalendar();
+  if (widgetIds.has("leads_funnel") && canUseWidget("leads_funnel") && dashboardLocationId) {
+    funnel = await getDashboardFunnelCounts(dashboardLocationId, 30);
   }
 
-  if (widgetIds.has("spend_roas")) {
-    roas = await getDashboardAdRoas(30);
+  if (widgetIds.has("owner_calendar") && canUseWidget("owner_calendar") && dashboardLocationId) {
+    ownerCalendar = await getOwnerCalendar(dashboardLocationId);
+  }
+
+  if (widgetIds.has("spend_roas") && canUseWidget("spend_roas") && dashboardLocationId) {
+    roas = await getDashboardAdRoas(dashboardLocationId, 30);
   }
 
   return (

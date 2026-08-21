@@ -392,6 +392,27 @@ export async function deleteCard(id: string): Promise<boolean> {
   return (result.rowCount ?? 0) > 0;
 }
 
+/**
+ * Resolves a card's real org_id via section -> tab -> framework. For routes
+ * that receive a client-supplied org_id alongside a cardId (the suggestion
+ * flow) and need to verify they actually match before trusting either —
+ * without this, a caller could claim their own (valid) org_id while
+ * supplying a different org's cardId.
+ */
+export async function getCardOrgId(cardId: string): Promise<string | null> {
+  const result = await pool.query(
+    `SELECT f.org_id
+     FROM flow_cards c
+     JOIN flow_sections s ON s.id = c.section_id
+     JOIN flow_tabs t ON t.id = s.tab_id
+     JOIN flow_frameworks f ON f.id = t.framework_id
+     WHERE c.id = $1
+     LIMIT 1`,
+    [cardId],
+  );
+  return result.rows[0]?.org_id ?? null;
+}
+
 // ─── SCRIPTS ────────────────────────────────────────────────────────────────
 
 export async function createScript(

@@ -1,7 +1,8 @@
 "use server";
 
 import { getAssignedClients, type ClientData } from "@/lib/dashboard/csm-clients";
-import type { ApiResult } from "@/lib/api/errorInterceptor";
+import { requireCsmAccess } from "./access";
+import { fail, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Server action to fetch clients assigned to a CSM.
@@ -12,5 +13,10 @@ import type { ApiResult } from "@/lib/api/errorInterceptor";
  * of importing csm-clients.ts directly.
  */
 export async function getAssignedClientsForCSM(csmEmail: string): Promise<ApiResult<ClientData[]>> {
+  try {
+    await requireCsmAccess();
+  } catch (error) {
+    return fail(`getAssignedClientsForCSM(${csmEmail})`, error);
+  }
   return getAssignedClients(csmEmail);
 }

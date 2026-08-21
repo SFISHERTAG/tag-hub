@@ -3,7 +3,7 @@ import { searchContacts } from "@/lib/ghl/contacts";
 import { getAppointments } from "@/lib/ghl/appointments";
 import { getPipelines } from "@/lib/ghl/pipelines";
 import { getOpportunities } from "@/lib/ghl/opportunities";
-import { GhlConfigError, LocationNotAuthorizedError, devLocationId } from "@/lib/ghl/tokens";
+import { GhlConfigError, LocationNotAuthorizedError } from "@/lib/ghl/tokens";
 import { loadAppointmentOutcomes } from "@/lib/ghl/store";
 
 export type FunnelStageCount = {
@@ -120,9 +120,12 @@ export async function getFunnelCounts(
   }
 }
 
-/** Same single-tenant `devLocationId()` resolution as getPipelineBoardSummary / getTodayCalls. */
-export async function getDashboardFunnelCounts(days = 30): Promise<FunnelCountsResult> {
-  const locationId = devLocationId();
+/**
+ * locationId is the caller's responsibility to resolve and check against
+ * the caller's session — see
+ * lib/dashboard/location-selection.ts#getLocationForDashboard.
+ */
+export async function getDashboardFunnelCounts(locationId: string, days = 30): Promise<FunnelCountsResult> {
   if (!locationId) {
     return { ok: false, message: "No GHL location configured yet." };
   }

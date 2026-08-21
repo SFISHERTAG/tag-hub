@@ -1,3 +1,8 @@
+/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
+   Queries directly instead of going through a scoped metric fetch. Not a leak
+   today (nothing here is per-user), but it is the pattern the zone exists to
+   stop, so this comment is the migration marker: move the data path into
+   lib/dashboard/metrics.ts and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
 import "server-only";
 import { firestore } from "@/lib/firestore";
 import { searchContacts } from "@/lib/ghl/contacts";

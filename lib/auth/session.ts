@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminAuth, SESSION_COOKIE } from "./admin";
-import { isRole, ROLES, type Role } from "./roles";
+import { hasAnyRole, isRole, ROLES, type Role } from "./roles";
 import { listAllLocationIds } from "../ghl/tenants";
 
 /**
@@ -25,6 +25,14 @@ export const IMPERSONATION_COOKIE = "hub_impersonation";
 export type RoleGrant = {
   role: Role;
   locations: string[];
+  /**
+   * Whose rows this hat sees within its locations. Optional because every
+   * claim issued before this field existed omits it; `resolveScope` supplies a
+   * role-derived default (lib/dashboard/scope.ts) rather than guessing here.
+   */
+  scope?: "self" | "team" | "tenancy";
+  /** uids this hat may see, when `scope` is "team". */
+  team?: string[];
 };
 
 export type ImpersonationState = {
@@ -66,6 +74,10 @@ export type Session = {
   currentRole: Role;
   availableRoles: Role[];
   locations: string[];
+  /** Scope carried by the *current* grant only — hats scope independently. */
+  scope?: "self" | "team" | "tenancy";
+  /** Team uids on the current grant, when its scope is "team". */
+  team?: string[];
 };
 
 /** Returns the verified session, or null. Never throws for an absent session. */
@@ -109,6 +121,16 @@ export async function resolveSession(
         .map((r) => ({
           role: r.role as Role,
           locations: (r.locations as string[]).filter((l) => typeof l === "string"),
+          // Anything unrecognised is dropped rather than passed through, so a
+          // malformed claim cannot widen scope — resolveScope then falls back
+          // to the role default and, failing that, to "self".
+          scope:
+            r.scope === "self" || r.scope === "team" || r.scope === "tenancy"
+              ? r.scope
+              : undefined,
+          team: Array.isArray(r.team)
+            ? (r.team as unknown[]).filter((u): u is string => typeof u === "string")
+            : undefined,
         }));
     }
     // Old format: single role with locations. Migrate to new format.
@@ -149,6 +171,8 @@ export async function resolveSession(
       currentRole,
       availableRoles,
       locations,
+      scope: currentGrant?.scope,
+      team: currentGrant?.team,
     };
   } catch {
     // Expired, revoked, malformed, or forged — all mean "not signed in".
@@ -160,6 +184,22 @@ export async function resolveSession(
 export async function requireSession(): Promise<Session> {
   const session = await getSession();
   if (!session) redirect("/signin");
+  return session;
+}
+
+/**
+ * Returns the session if its current role is one of `allowed`, otherwise
+ * throws. Unlike `requireSession`, this never redirects — it's for server
+ * actions and API routes that are directly callable in their own right (not
+ * just reached through a component tree that already filtered the UI), where
+ * a thrown error becomes a normal failure result instead of a navigation.
+ */
+export async function requireRole(allowed: readonly Role[]): Promise<Session> {
+  const session = await getSession();
+  if (!session) throw new Error("Not signed in.");
+  if (!hasAnyRole(session.currentRole, allowed)) {
+    throw new Error(`Not authorized: role "${session.currentRole}" cannot perform this action.`);
+  }
   return session;
 }
 

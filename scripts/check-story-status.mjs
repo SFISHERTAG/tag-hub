@@ -6,6 +6,7 @@
 import { execSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { extractReferencedFiles } from "./lib/story-references.mjs";
 
 const STORIES_DIR = "docs/stories";
 const repoRoot = execSync("git rev-parse --show-toplevel").toString().trim();
@@ -29,8 +30,7 @@ function parseStory(file) {
   const tasks = [...text.matchAll(/^- \[( |x)\]/gim)];
   const checked = tasks.filter((t) => t[1].toLowerCase() === "x").length;
   const total = tasks.length;
-  // Files referenced in backticks anywhere in the doc (Tasks/Dev notes), e.g. `lib/foo/bar.ts`
-  const referenced = [...text.matchAll(/`([\w./-]+\.(?:ts|tsx))`/g)].map((m) => m[1]);
+  const referenced = extractReferencedFiles(text);
   return { file, status, checked, total, referenced };
 }
 
@@ -83,6 +83,14 @@ function checkArchitectureConstraints() {
     "lib/auth/roles.ts",
     "lib/auth/role-labels.ts",
     "web/src/app/core/models/role.model.ts",
+    // functions/src/auth.ts is exempt for a structural reason, not a convenience
+    // one: architecture isolation puts lib/auth/roles.ts out of the Cloud
+    // Functions runtime's reach (it is server-only, and functions/ builds from
+    // its own rootDir), so the rule as written is unsatisfiable there. The
+    // pairing is enforced instead by test/provision-client-owner.test.ts, which
+    // asserts every role it issues exists in ROLES — drift fails CI rather than
+    // passing silently.
+    "functions/src/auth.ts",
   ];
   // Sourced from lib/auth/role-labels.ts's ROLES array rather than hardcoded, so this check
   // can't silently drift out of sync with the actual role list again (it previously matched
@@ -110,6 +118,7 @@ function checkArchitectureConstraints() {
   const ROLE_STRING_PATTERN = buildRoleStringPattern();
   const ROLE_HELPER_PATTERN =
     /\bROLES\.|\bisRole\(|\bhasAnyRole\(|\beffectiveRole\(|from\s+["'][^"']*(auth\/roles|role\.model|role-labels)["']/;
+
 
   // Strip comments from a diff/file body before pattern-matching, so illustrative code in a
   // JSDoc example (e.g. a route-path string that happens to share text with a role name) isn't

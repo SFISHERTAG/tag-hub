@@ -8,6 +8,11 @@ boundary changes. Same commit as the code change.
 
 **Location:** Google Cloud Firestore (GCP project: `GOOGLE_CLOUD_PROJECT`)
 
+`GOOGLE_CLOUD_PROJECT` has no fallback (`lib/firestore.ts#firestore()` throws immediately if it's
+unset) — it used to default to the real production project id, so a missing env var silently
+connected local/dev/script runs to live production data instead of failing. `lib/auth/otp.ts` now
+uses this same shared client rather than constructing its own.
+
 ### Collections
 
 | Collection | Purpose | Primary key | Replicated to Postgres? |
@@ -21,10 +26,17 @@ boundary changes. Same commit as the code change.
 | `flow_scripts` | FLOW automation editor content | doc ID | No |
 | `creatives` | Campaign creative assets | doc ID | No |
 | `bug_reports` | Client-submitted bugs and feedback | doc ID | No |
+| `manual_pages` | Knowledge base (TAG CSM Operating Manual) content, viewable in-app | doc ID (`p0`–`p13`, matches `_archive/manual-content.json`) | No |
+| `manual_pages/{id}/versions` | Version history for one knowledge base page — full prior snapshot + author + timestamp, written before every admin edit | doc ID (auto) | No |
 
 **Why Firestore for these:** real-time sync, permission-based read/write rules,
 sub-millisecond lookups, immutable audit trail (`setOnServer()` guards). None of
 these are read from Postgres.
+
+**`manual_pages` versioning is not `audit_log`.** It follows the
+`flow_audit_log` revert-capable pattern instead (own sub-collection, full
+content snapshot per version) — see "Audit trail" below for why the two
+patterns differ.
 
 ---
 

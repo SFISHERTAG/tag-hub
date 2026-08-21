@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireLocationAccess } from "@/lib/auth/session";
 import { isClientUser } from "@/lib/dashboard/location-selection";
 import { setTaskComplete } from "@/lib/onboarding/store";
 import { logAction } from "@/lib/audit/store";
@@ -22,6 +22,7 @@ export async function markTaskComplete(
   }
 
   try {
+    await requireLocationAccess(locationId);
     await setTaskComplete(locationId, opportunityId, taskId, complete);
     await logAction(locationId, {
       actorId: session.uid,

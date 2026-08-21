@@ -157,6 +157,11 @@ Frontend: a phase is not done until `ng build --configuration production && ng l
 test --watch=false` all pass. Backend/`functions/`: unchanged — `npm run build && npm run
 test --watch=false && npm run lint` (run from `functions/`) must pass.
 
+The root `npm run build` is `next build`, which never compiles `functions/src`. A green root
+gate therefore proves nothing about functions-side code — Story 1.8 landed auth code that way,
+which is why this is called out rather than left implied. `npm run check:functions` runs the
+functions workspace's own `tsc` and `eslint` in one command.
+
 Do not report progress based on reading the code. Do not say "this should work." Only green
 output counts. If the build fails, the phase is not done. This prevents the audit's
 scenario where code is "ready to ship" but the closer's query waterfall and Postgres pool
@@ -167,10 +172,11 @@ bounds were never actually tested under load.
    (`npm run build` in `functions/`)
 2. Tests pass (`ng test --watch=false`; `npm run test --watch=false` in `functions/`)
 3. Linters pass (`ng lint`; `npm run lint` in `functions/`)
-4. Story Status and Tasks are updated in `docs/stories/*.md` (same commit)
-5. If a story touches a data model, `docs/data-model.md` is updated
-6. If a story adds a permission check, `lib/auth/roles.ts` is updated
-7. Pre-commit hooks pass (never `--no-verify`)
+4. If the story touches `functions/**`, `npm run check:functions` passes
+5. Story Status and Tasks are updated in `docs/stories/*.md` (same commit)
+6. If a story touches a data model, `docs/data-model.md` is updated
+7. If a story adds a permission check, `lib/auth/roles.ts` is updated
+8. Pre-commit hooks pass (never `--no-verify`)
 
 ## Carry over from global instructions
 - No em dashes.

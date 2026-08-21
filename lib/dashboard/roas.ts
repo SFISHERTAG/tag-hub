@@ -4,7 +4,7 @@ import { getTenant } from "@/lib/ghl/tenants";
 import { getPipelines } from "@/lib/ghl/pipelines";
 import { getOpportunities, type Opportunity } from "@/lib/ghl/opportunities";
 import { getContact } from "@/lib/ghl/contacts";
-import { GhlConfigError, LocationNotAuthorizedError, devLocationId } from "@/lib/ghl/tokens";
+import { GhlConfigError, LocationNotAuthorizedError } from "@/lib/ghl/tokens";
 
 export type RoasRow = {
   adId: string;
@@ -135,9 +135,12 @@ export async function getAdRoas(locationId: string, days = 30): Promise<RoasTabl
   }
 }
 
-/** Same single-tenant `devLocationId()` resolution as getPipelineBoardSummary / getDashboardFunnelCounts. */
-export async function getDashboardAdRoas(days = 30): Promise<RoasTableResult> {
-  const locationId = devLocationId();
+/**
+ * locationId is the caller's responsibility to resolve and check against
+ * the caller's session — see
+ * lib/dashboard/location-selection.ts#getLocationForDashboard.
+ */
+export async function getDashboardAdRoas(locationId: string, days = 30): Promise<RoasTableResult> {
   if (!locationId) {
     return { ok: false, message: "No GHL location configured yet." };
   }

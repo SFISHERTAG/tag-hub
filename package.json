@@ -14,7 +14,8 @@
     "web:build": "npm --prefix web run build -- --configuration production",
     "web:lint": "npm --prefix web run lint",
     "web:test": "npm --prefix web run test -- --watch=false",
-    "web:gate": "npm run web:build && npm run web:lint && npm run web:test"
+    "web:gate": "npm run web:build && npm run web:lint && npm run web:test",
+    "check:functions": "npm --prefix functions run build && npm --prefix functions run lint"
   },
   "dependencies": {
     "@google-cloud/firestore": "^8.7.1",

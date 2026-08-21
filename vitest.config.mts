@@ -4,16 +4,34 @@ import path from "node:path";
 export default defineConfig({
   test: {
     /**
-     * Scoped to the Next app's own tests. Without this, the default glob sweeps
-     * the whole repo and collects two suites that cannot run under this config:
-     * `functions/**`, whose dependencies (express, firebase-functions) are
-     * installed in functions/node_modules and not here, and `web/**`, whose
-     * specs need Angular's TestBed environment and globals. Both have their own
-     * runners — `npm test` inside functions/, and `npm run web:test` from the
-     * repo root — so collecting them here only produced three permanently red
-     * files that everyone learned to scroll past.
+     * Two separate reasons to exclude, both load-bearing.
+     *
+     * From main: scoped to the Next app's own tests, because the default glob
+     * sweeps the whole repo and collects two suites that cannot run under this
+     * config — `functions/**`, whose dependencies live in functions/node_modules,
+     * and `web/**`, whose specs need Angular's TestBed. Both have their own
+     * runners, so collecting them here only produced permanently red files
+     * everyone learned to scroll past.
+     *
+     * From the onboarding branch: `.claude/worktrees/**`, where isolated agent
+     * worktrees live nested under this repo root, each with their own
+     * mid-edit test files. Without it, `npm run test` reports failures that
+     * have nothing to do with this checkout, indistinguishable from real ones.
+     *
+     * Vitest's defaults are replaced wholesale by this key, so the default
+     * entries are restated here rather than assumed.
      */
-    exclude: ["**/node_modules/**", "**/dist/**", "functions/**", "web/**", "_archive/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/cypress/**",
+      "**/.{idea,git,cache,output,temp}/**",
+      "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*",
+      "functions/**",
+      "web/**",
+      "_archive/**",
+      "**/.claude/worktrees/**",
+    ],
     /**
      * lib/config.ts validates at import and throws on a missing required key,
      * which is the whole point of it — but that also means a test importing

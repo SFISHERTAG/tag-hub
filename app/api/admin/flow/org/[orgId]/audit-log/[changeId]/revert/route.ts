@@ -19,11 +19,15 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { changeId } = await params;
+    const { orgId, changeId } = await params;
 
-    // Verify the change exists
+    // Verify the change exists, and belongs to the org named in the URL —
+    // tag_exec/admin have universal location access so this isn't a tenant
+    // isolation gap today, but the URL implies a specific org scope and
+    // nothing enforced that a changeId from a different org couldn't be
+    // reverted through it.
     const change = await getAuditEntry(changeId);
-    if (!change) {
+    if (!change || change.org_id !== orgId) {
       return NextResponse.json(
         { error: "Change not found" },
         { status: 404 }

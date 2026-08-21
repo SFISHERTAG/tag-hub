@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSuggestion } from "@/lib/flow/db";
-import { getSession } from "@/lib/auth/session";
+import { createSuggestion, getCardOrgId } from "@/lib/flow/db";
+import { getSession, requireLocationAccess } from "@/lib/auth/session";
 import { hasAnyRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +42,20 @@ export async function POST(
       );
     }
 
+    // Two checks, not one: the caller must have access to the org they
+    // claim, AND the card must actually belong to that org — otherwise a
+    // caller could pass their own (valid) org_id alongside a different
+    // org's cardId and plant a suggestion on a tenant they were never
+    // checked against.
+    await requireLocationAccess(body.org_id);
+    const cardOrgId = await getCardOrgId(cardId);
+    if (cardOrgId !== body.org_id) {
+      return NextResponse.json(
+        { error: "cardId does not belong to org_id" },
+        { status: 400 },
+      );
+    }
+
     const suggestion = await createSuggestion(cardId, {
       org_id: body.org_id,
       suggested_content: body.suggested_content,
@@ -53,6 +67,9 @@ export async function POST(
 
     return NextResponse.json(suggestion, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith("403 Forbidden")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     console.error("Error creating script suggestion:", error);
     return NextResponse.json({ error: "Failed to create suggestion" }, { status: 500 });
   }

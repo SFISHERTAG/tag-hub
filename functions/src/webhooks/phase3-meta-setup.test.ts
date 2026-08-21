@@ -42,27 +42,27 @@ vi.mock("@google-cloud/firestore", () => {
   return { Firestore };
 });
 
-const saveTenantResources = vi.fn(async () => undefined);
-const logProvisioningEvent = vi.fn(async () => undefined);
+const saveTenantResources = vi.fn(async (..._args: unknown[]) => undefined);
+const logProvisioningEvent = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../firestore", () => ({
   saveTenantResources: (...args: unknown[]) => saveTenantResources(...args),
   logProvisioningEvent: (...args: unknown[]) => logProvisioningEvent(...args),
 }));
 
-const sendMetaAccessRequest = vi.fn(async () => undefined);
-const sendMetaSetupGuide = vi.fn(async () => undefined);
+const sendMetaAccessRequest = vi.fn(async (..._args: unknown[]) => undefined);
+const sendMetaSetupGuide = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../email", () => ({
   sendMetaAccessRequest: (...args: unknown[]) => sendMetaAccessRequest(...args),
   sendMetaSetupGuide: (...args: unknown[]) => sendMetaSetupGuide(...args),
 }));
 
-const postMessage = vi.fn(async () => undefined);
+const postMessage = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../slack", () => ({
   postMessage: (...args: unknown[]) => postMessage(...args),
 }));
 
-const logAutomationEvent = vi.fn(async () => undefined);
-const logMetaSetup = vi.fn(async () => undefined);
+const logAutomationEvent = vi.fn(async (..._args: unknown[]) => undefined);
+const logMetaSetup = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../postgres", () => ({
   logAutomationEvent: (...args: unknown[]) => logAutomationEvent(...args),
   logMetaSetup: (...args: unknown[]) => logMetaSetup(...args),

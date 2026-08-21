@@ -42,25 +42,25 @@ vi.mock("@google-cloud/firestore", () => {
   return { Firestore };
 });
 
-const createGoogleDoc = vi.fn(async () => "doc-1");
-const shareGoogleDoc = vi.fn(async () => undefined);
-const addDocTab = vi.fn(async () => undefined);
+const createGoogleDoc = vi.fn(async (..._args: unknown[]) => "doc-1");
+const shareGoogleDoc = vi.fn(async (..._args: unknown[]) => undefined);
+const addDocTab = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../google", () => ({
   createGoogleDoc: (...args: unknown[]) => createGoogleDoc(...args),
   shareGoogleDoc: (...args: unknown[]) => shareGoogleDoc(...args),
   addDocTab: (...args: unknown[]) => addDocTab(...args),
 }));
 
-const saveIntakeSubmission = vi.fn(async () => undefined);
-const logProvisioningEvent = vi.fn(async () => undefined);
-const saveTenantResources = vi.fn(async () => undefined);
+const saveIntakeSubmission = vi.fn(async (..._args: unknown[]) => undefined);
+const logProvisioningEvent = vi.fn(async (..._args: unknown[]) => undefined);
+const saveTenantResources = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../firestore", () => ({
   saveIntakeSubmission: (...args: unknown[]) => saveIntakeSubmission(...args),
   logProvisioningEvent: (...args: unknown[]) => logProvisioningEvent(...args),
   saveTenantResources: (...args: unknown[]) => saveTenantResources(...args),
 }));
 
-const generateAllContent = vi.fn(async () => ({
+const generateAllContent = vi.fn(async (..._args: unknown[]) => ({
   uvp: "uvp",
   adCopy: "ad copy",
   preCallScript: "script",
@@ -70,7 +70,7 @@ vi.mock("../gemini", () => ({
   generateAllContent: (...args: unknown[]) => generateAllContent(...args),
 }));
 
-const logAutomationEvent = vi.fn(async () => undefined);
+const logAutomationEvent = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("../postgres", () => ({
   logAutomationEvent: (...args: unknown[]) => logAutomationEvent(...args),
 }));
@@ -93,7 +93,7 @@ beforeEach(() => {
   stores.set("locations", new Map([["loc-abc", { driveFolderId: "folder-1", name: "Acme Inc", slackChannelId: "ch-1" }]]));
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => ({ ok: true, json: async () => ({ status: "ok" }) })),
+    vi.fn(async (..._args: unknown[]) => ({ ok: true, json: async () => ({ status: "ok" }) })),
   );
   process.env.PHASE3_WEBHOOK_URL = "https://example.test/webhook/phase3";
 });

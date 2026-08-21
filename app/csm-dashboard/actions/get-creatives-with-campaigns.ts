@@ -2,7 +2,8 @@
 
 import { firestore } from "@/lib/firestore";
 import { fetchCreatives, type CreativeForDisplay } from "@/lib/dashboard/data-fetchers";
-import { type ApiResult } from "@/lib/api/errorInterceptor";
+import { requireCsmAccess } from "./access";
+import { fail, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
  * Campaign reference for a creative.
@@ -28,6 +29,12 @@ export async function getCreativesWithCampaigns(
   clientId: string,
   locationId: string,
 ): Promise<ApiResult<CreativeWithCampaigns[]>> {
+  try {
+    await requireCsmAccess();
+  } catch (error) {
+    return fail(`getCreativesWithCampaigns(${clientId})`, error);
+  }
+
   // Fetch creatives from Google Drive — a real failure here (not "no files")
   // fails the whole result rather than rendering an empty/misleading list.
   const creativesResult = await fetchCreatives(locationId);

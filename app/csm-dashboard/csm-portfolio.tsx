@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Panel } from "../ui";
+import { SampleDataBanner } from "../dashboard/widgets/sample-data-banner";
 import { filterClients, type ClientData } from "@/lib/dashboard/csm-clients-types";
 import { getAssignedClientsForCSM } from "./actions/get-assigned-clients";
 import { GridView } from "./views/grid-view";
@@ -81,6 +82,8 @@ export function CSMPortfolio({
           <h1 className="text-2xl font-semibold text-ink">CSM Dashboard</h1>
           <p className="text-sm text-ink-2">Manage {clients.length} assigned clients</p>
         </div>
+
+        <SampleDataBanner message="Sample data — every client's health score, ROAS, spend, and escalation status below is a placeholder shaped like the real thing, not a live reading. Live numbers ship with the Meta integration." />
 
         {error && (
           <div className="rounded-lg border border-danger/30 bg-danger-tint px-3 py-2 text-sm text-danger">

@@ -1,6 +1,6 @@
 import "server-only";
-import { requireSession } from "@/lib/auth/session";
-import { unpauseCampaign } from "@/lib/meta/campaigns";
+import { requireSession, requireLocationAccess } from "@/lib/auth/session";
+import { getAdAccountCampaigns, unpauseCampaign } from "@/lib/meta/campaigns";
 import { updateOpportunityStage } from "@/lib/ghl/opportunities";
 import { findStageId } from "@/lib/ghl/pipelines";
 import { getMetaApi, isMetaConfigured, MetaApiError, MetaNotConfiguredError } from "@/lib/meta/client";
@@ -315,6 +315,26 @@ export async function activateCampaign(
   opportunityId: string,
 ): Promise<ActivationResult> {
   const session = await requireSession();
+  await requireLocationAccess(locationId);
+
+  // campaignId is caller-supplied and otherwise unchecked — without this, a
+  // CSM with legitimate access to one location could pass a different
+  // location's campaignId (seen in a URL, screenshot, or ticket) and start
+  // that other client's real ad spend, misattributed in the audit log below
+  // to this locationId. Verified against Meta's own account listing, not an
+  // internal record, since that's the actual ground truth for what the
+  // campaign belongs to.
+  const tenant = await getTenant(locationId);
+  if (!tenant.metaAdAccountId) {
+    throw new Error(`Location ${locationId} has no Meta ad account configured.`);
+  }
+  const accountCampaigns = await getAdAccountCampaigns(tenant.metaAdAccountId);
+  if (accountCampaigns.error) {
+    throw new Error(`Could not verify campaign ownership: ${accountCampaigns.error.message}`);
+  }
+  if (!accountCampaigns.data.some((c) => c.id === campaignId)) {
+    throw new Error(`Campaign ${campaignId} does not belong to location ${locationId}'s ad account.`);
+  }
 
   await unpauseCampaign(campaignId);
 

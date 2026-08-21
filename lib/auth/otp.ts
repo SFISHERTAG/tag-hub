@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
-import { Firestore, Timestamp } from "@google-cloud/firestore";
+import { Timestamp } from "@google-cloud/firestore";
+import { firestore } from "@/lib/firestore";
 
 /**
  * Six-digit email one-time passcodes.
@@ -17,17 +18,6 @@ import { Firestore, Timestamp } from "@google-cloud/firestore";
 const CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_ATTEMPTS = 5;
 const RESEND_COOLDOWN_MS = 60 * 1000;
-
-let db: Firestore | null = null;
-function firestore(): Firestore {
-  if (!db) {
-    db = new Firestore({
-      projectId: process.env.GOOGLE_CLOUD_PROJECT || "tag-success-hub",
-      ignoreUndefinedProperties: true,
-    });
-  }
-  return db;
-}
 
 /** Email is the document id, so normalise it the same way every time. */
 function key(email: string): string {

@@ -25,6 +25,7 @@ epic gates the rest.
 | 1.5 | Location-scoped routing | Ready |
 | 1.6 | Tenant registry and entitlements | Scaffolded |
 | 1.7 | Deploy to Cloud Run | Ready |
+| 1.8 | Provision the client's Hub user at Phase 1 | Done |
 
 ## Epic 2 — Closer workspace
 
@@ -124,11 +125,12 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.1 | Client success aggregate view | Shell built — `/success` |
 | 7.2 | Field catalog and per-role defaults | Draft |
 | 7.3 | Dashboard configuration UI | Draft |
-| 7.4 | Client-visibility allowlist at the query layer | Draft |
+| 7.4 | Client-visibility allowlist at the query layer | Allowlist + catalog built |
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
+| 7.6 | Data scope at the query layer — whose rows, per hat | Enforcement layer built |
 
-Field definitions live in `docs/client-fields.md` (68 fields, 41 shipping
-without Meta).
+Field definitions live in `docs/client-fields.md` (100 fields, 63 of them
+live before Meta setup).
 
 Story 7.4 is not optional and must not be deferred behind 7.3. Client
 visibility has to be an allowlist enforced where the data is fetched, not a

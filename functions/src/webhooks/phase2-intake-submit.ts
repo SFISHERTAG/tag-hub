@@ -1,10 +1,15 @@
 import { Request, Response } from "express";
 import { createGoogleDoc, shareGoogleDoc, addDocTab } from "../google";
+import { formatIntakeForDoc, unmappedKeys } from "../intake-format";
 import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore";
 import { generateAllContent } from "../gemini";
 import { logAutomationEvent } from "../postgres";
 import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
 import { checkWebhookSecret } from "../lib/webhooks/secret";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
 /**
  * Phase 2: Intake form submission.
@@ -82,10 +87,17 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
     console.log("[Phase 2] Creating Google Doc...");
     const docTitle = `${clientName} - Onboarding Doc`;
 
-    // Format intake data for the doc
-    const intakeFormatted = Object.entries(intakeData)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join("\n");
+    // Format intake data for the doc.
+    // Never `key: value` straight from the payload — this document is shared
+    // with the client as reader, so a GHL slug key would be the first thing
+    // they read. formatIntakeForDoc keeps every answer and shows no raw keys.
+    const intakeFormatted = formatIntakeForDoc(intakeData);
+    const unmapped = unmappedKeys(intakeData);
+    if (unmapped.length > 0) {
+      // Loud here, graceful in the document: these are the keys to add to
+      // INTAKE_LABELS once the real payload shape is known.
+      console.warn(`[Phase 2] Intake keys with no readable label: ${unmapped.join(", ")}`);
+    }
 
     const initialContent = `${docTitle}\n\nSubmission Date: ${new Date().toISOString()}\n\nIntake Data:\n${intakeFormatted}`;
 
@@ -198,7 +210,8 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
         }),
       });
 
-      const phase3Result = await phase3Response.json();
+      const phase3Result: unknown = await phase3Response.json();
+      const phase3ResultRecord = isRecord(phase3Result) ? phase3Result : undefined;
 
       if (!phase3Response.ok) {
         console.error("[Phase 2] Phase 3 trigger failed:", phase3Result);
@@ -208,7 +221,7 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
           phase: "phase2",
           event: "phase3_trigger_failed",
           status: "error",
-          error: phase3Result.error,
+          error: typeof phase3ResultRecord?.error === "string" ? phase3ResultRecord.error : undefined,
         });
       } else {
         console.log(`[Phase 2] Phase 3 triggered successfully:`, phase3Result);
@@ -217,7 +230,7 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
           phase: "phase2",
           event: "phase3_triggered",
           status: "completed",
-          details: phase3Result,
+          details: phase3ResultRecord,
         });
       }
     } catch (phase3Error) {

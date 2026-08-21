@@ -138,25 +138,22 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
 
       // Notify TAG team
       if (slackChannelId) {
-        await postMessage(slackChannelId, {
-          text: `📱 Meta Account Setup - Access Requested`,
-          blocks: [
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: `*Meta Account Setup*\n✅ Client has Meta ad account\n\n*Account ID:* ${metaAdAccountId}\n*Status:* Awaiting access grant from client\n\n_System user access request sent to: ${email}_`,
-              },
+        await postMessage(slackChannelId, `📱 Meta Account Setup - Access Requested`, [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Meta Account Setup*\n✅ Client has Meta ad account\n\n*Account ID:* ${metaAdAccountId}\n*Status:* Awaiting access grant from client\n\n_System user access request sent to: ${email}_`,
             },
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: `*Next step:* Client grants system user (${systemUserId}) access to their Meta ad account`,
-              },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Next step:* Client grants system user (${systemUserId}) access to their Meta ad account`,
             },
-          ],
-        });
+          },
+        ]);
       }
 
       // Log completion
@@ -205,25 +202,22 @@ export async function handlePhase3(req: Request, res: Response): Promise<void> {
 
       // Notify TAG team via Slack
       if (slackChannelId) {
-        await postMessage(slackChannelId, {
-          text: `📱 Meta Account Setup - Creating New Account`,
-          blocks: [
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: `*Meta Account Setup*\n⚠️ Client does not have Meta ad account yet\n\n*Status:* Setup guide sent to client\n*Email:* ${email}`,
-              },
+        await postMessage(slackChannelId, `📱 Meta Account Setup - Creating New Account`, [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Meta Account Setup*\n⚠️ Client does not have Meta ad account yet\n\n*Status:* Setup guide sent to client\n*Email:* ${email}`,
             },
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: `*Next step:* Client creates Meta ad account and provides account ID\n*Support:* ${process.env.TAG_TEAM_EMAIL}`,
-              },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Next step:* Client creates Meta ad account and provides account ID\n*Support:* ${process.env.TAG_TEAM_EMAIL}`,
             },
-          ],
-        });
+          },
+        ]);
       }
 
       // Log completion

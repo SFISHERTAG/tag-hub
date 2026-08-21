@@ -7,22 +7,24 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "test": "vitest run",
+    "lint": "eslint src",
     "deploy": "npm run deploy:phase1 && npm run deploy:phase2",
     "deploy:phase1": "gcloud functions deploy phase1-provisioning --gen2 --region=us-central1 --runtime=nodejs22 --trigger-http --allow-unauthenticated --entry-point=phase1Provisioning",
     "deploy:phase2": "gcloud functions deploy phase2-intake-submit --gen2 --region=us-central1 --runtime=nodejs22 --trigger-http --allow-unauthenticated --entry-point=phase2IntakeSubmit"
   },
   "dependencies": {
     "@google-cloud/firestore": "^7.11.0",
-    "@google/generative-ai": "^0.11.0",
+    "@google/genai": "^2.18.0",
     "@types/express": "^4.17.21",
-    "@types/nodemailer": "^6.4.14",
     "@types/node": "^20.14.0",
+    "@types/nodemailer": "^6.4.14",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.0",
+    "firebase-admin": "^14.3.0",
     "google-auth-library": "^9.14.0",
     "googleapis": "^140.0.0",
     "nodemailer": "^6.9.14",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.0",
     "typescript": "^5.5.2"
-  },
-  "devDependencies": {}
+  }
 }
