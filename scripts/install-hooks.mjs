@@ -23,7 +23,12 @@ import { execSync } from "node:child_process";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-const MARKER = "tag-agent-hooks v1";
+// Version-agnostic on purpose. The check below only asks "did this script
+// write the hook that is already there", and pinning the marker to one
+// version answers "no" the moment the hook is revised — which would make
+// every install after a bump skip with a warning about a hand-written hook
+// that does not exist.
+const MARKER = "tag-agent-hooks";
 
 function commonGitDir() {
   const top = execSync("git rev-parse --show-toplevel").toString().trim();
@@ -32,8 +37,15 @@ function commonGitDir() {
 }
 
 function main() {
-  const repoRoot = resolve(commonGitDir(), "..");
-  const source = join(repoRoot, ".githooks");
+  // Source from the working tree this ran in, not from the main checkout.
+  // `resolve(commonGitDir(), "..")` is the main checkout's root, and that
+  // checkout is frequently parked on some other branch — one that may not
+  // have .githooks/ at all. When that happened, this script reported
+  // "nothing to install" and exited 0 from a worktree whose .githooks/ was
+  // sitting right there, so the installed hooks silently stayed at whatever
+  // version they were. The destination below is still the common hook dir,
+  // shared by every worktree, which is the part that should not be per-tree.
+  const source = join(execSync("git rev-parse --show-toplevel").toString().trim(), ".githooks");
   const dest = join(commonGitDir(), "hooks");
 
   if (!existsSync(source)) {
