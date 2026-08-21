@@ -181,6 +181,34 @@ export async function resolveSession(
 }
 
 /** Returns the session or redirects to sign-in. Use in protected pages. */
+/**
+ * TAG-side roles — the ones that may act on the product itself rather than
+ * inside one tenancy.
+ *
+ * An allowlist, deliberately, and not the inverse of `isClientUser`
+ * (lib/dashboard/location-selection.ts). That helper names only three of the
+ * five client roles — `client_setter` and `client_setter_manager` are absent —
+ * so `!isClientUser(role)` would report those two as internal and hand a
+ * client's setter the staff path through `authorizeOnboardingTrigger`.
+ *
+ * Written positively so the failure direction is safe: a role added to ROLES
+ * later is not internal until someone adds it here on purpose.
+ */
+const INTERNAL_ROLES: readonly Role[] = [
+  ROLES.ADMIN,
+  ROLES.TAG_EXEC,
+  ROLES.TAG_CSD,
+  ROLES.TAG_CSM,
+  ROLES.TAG_SALES_MANAGER,
+  ROLES.TAG_SALES,
+  ROLES.TAG_SETTER_MANAGER,
+  ROLES.TAG_SETTER,
+];
+
+export function isInternalRole(role: Role): boolean {
+  return INTERNAL_ROLES.includes(role);
+}
+
 export async function requireSession(): Promise<Session> {
   const session = await getSession();
   if (!session) redirect("/signin");
