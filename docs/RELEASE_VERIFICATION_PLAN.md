@@ -24,6 +24,35 @@ each step's output is what makes the next one safe.
   separate `test@` account for this flow; if that account still works it is the
   better choice, because it keeps a verification walk out of the real staff
   audit trail.
+- **The walking account carries every hat.** Sam's statement, 2026-08-21, to be
+  confirmed before the walk rather than discovered during it. See below, because
+  hats are only half of what the walk needs.
+
+### Hats are not enough on their own, and this will bite the walk
+
+`lib/auth/roles.ts` is explicit that a **role** is the permission ceiling, set
+by TAG on custom claims, and a **hat** is the view currently worn, chosen by the
+user and stored in a cookie. They are deliberately separate: "a hat changes which
+interface renders; it never changes which data is reachable."
+
+So two independent things must be true before the smoke list can be walked, and
+only the first is what people mean by "every hat installed":
+
+1. **A role that permits wearing every hat.** `tag_exec` is the one written for
+   this: all three founders hold it and may wear anything. Without it the hat
+   switcher offers a subset and routes gated on the others are unreachable.
+2. **A `locations` claim that covers the tenant being walked.** Tenant access is
+   governed by that claim and checked before every GHL call.
+   `listAllLocationIds()` is granted only to exec, CSD and admin
+   (`lib/auth/session.ts`); everyone else carries an explicit grant.
+
+If item 2 does not include Casey Williams Co, then `/clients/:id` and every
+`/l/:locationId/*` route refuses **no matter how many hats are installed**, and
+the refusal is correct behaviour. Confirm both before starting, because a
+missing-claim 403 and a broken route look identical from the browser, and
+mistaking the first for the second would send someone debugging working code.
+That is the same trap as today's outage, where a build fault presented as
+"that code is not right".
 
 ## Phase 0: get it off the laptop
 
