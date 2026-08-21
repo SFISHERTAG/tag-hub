@@ -245,11 +245,19 @@ free to fix while `web/src/app/` holds twelve files, and expensive after fifteen
 features land on top of it. Enabling `strict` cost zero code churn on the day it
 was done.
 
-**10.2 is the highest-risk story here.** `MockRbacService` is currently provided
-unconditionally with a hardcoded `tag_exec` session whose `availableRoles`
-includes `admin`, so both route guards fail open in a production bundle. It also
-carries the one piece of genuinely net-new work in the migration: the Google
-Identity Services rendered button, which has no Next implementation to port.
+**10.2 is the highest-risk story here** — it carries the one piece of genuinely
+net-new work in the migration: the Google Identity Services rendered button,
+which has no Next implementation to port. Porting is predictable; building is
+not, which is why this runs early.
+
+*Corrected 2026-08-20.* This paragraph previously said `MockRbacService` is
+provided unconditionally and both route guards therefore fail open in a
+production bundle. That was true when written and is not true now:
+`app.config.ts` provides `isDevMode() ? MockRbacService : HttpRbacService`,
+`authGuard` denies on a null session, and `permissionGuard` is default-deny and
+refuses a route declaring no permission list. The stale text was read as current
+and repeated as a live vulnerability. `web/src/app/app.config.spec.ts` now pins
+the provider so the property is enforced rather than described.
 
 **Hat switching is not a client-side concern.** Switching hats changes
 `locations` server-side (`tag_exec`, `tag_csd` and `admin` swap to
