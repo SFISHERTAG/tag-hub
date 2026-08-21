@@ -50,6 +50,16 @@ const eslintConfig = defineConfig([
               from: ["app/**"],
               message: "Cloud Functions cannot import from app. Shared logic goes to lib/.",
             },
+            {
+              // Dashboard data access goes through the metric registry, whose
+              // fetch signature requires a ScopeFilter. A direct query bypasses
+              // that and re-opens the "forgot to filter by user" leak the brand
+              // exists to prevent. See docs/ROLE_SCOPE_MODEL.md.
+              target: ["lib/dashboard/**", "app/dashboard/**"],
+              from: ["lib/postgres.ts", "lib/firestore.ts"],
+              message:
+                "Dashboard code must not query directly. Register a metric in lib/dashboard/metrics.ts — its fetch() takes a ScopeFilter, which is what keeps one user's rows out of another's dashboard.",
+            },
           ],
         },
       ],

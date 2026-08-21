@@ -126,6 +126,7 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.3 | Dashboard configuration UI | Draft |
 | 7.4 | Client-visibility allowlist at the query layer | Draft |
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
+| 7.6 | Data scope at the query layer — whose rows, per hat | Enforcement layer built |
 
 Field definitions live in `docs/client-fields.md` (68 fields, 41 shipping
 without Meta).

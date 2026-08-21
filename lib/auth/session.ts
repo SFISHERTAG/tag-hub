@@ -25,6 +25,14 @@ export const IMPERSONATION_COOKIE = "hub_impersonation";
 export type RoleGrant = {
   role: Role;
   locations: string[];
+  /**
+   * Whose rows this hat sees within its locations. Optional because every
+   * claim issued before this field existed omits it; `resolveScope` supplies a
+   * role-derived default (lib/dashboard/scope.ts) rather than guessing here.
+   */
+  scope?: "self" | "team" | "tenancy";
+  /** uids this hat may see, when `scope` is "team". */
+  team?: string[];
 };
 
 export type ImpersonationState = {
@@ -66,6 +74,10 @@ export type Session = {
   currentRole: Role;
   availableRoles: Role[];
   locations: string[];
+  /** Scope carried by the *current* grant only — hats scope independently. */
+  scope?: "self" | "team" | "tenancy";
+  /** Team uids on the current grant, when its scope is "team". */
+  team?: string[];
 };
 
 /** Returns the verified session, or null. Never throws for an absent session. */
@@ -90,6 +102,16 @@ export async function getSession(): Promise<Session | null> {
         .map((r) => ({
           role: r.role as Role,
           locations: (r.locations as string[]).filter((l) => typeof l === "string"),
+          // Anything unrecognised is dropped rather than passed through, so a
+          // malformed claim cannot widen scope — resolveScope then falls back
+          // to the role default and, failing that, to "self".
+          scope:
+            r.scope === "self" || r.scope === "team" || r.scope === "tenancy"
+              ? r.scope
+              : undefined,
+          team: Array.isArray(r.team)
+            ? (r.team as unknown[]).filter((u): u is string => typeof u === "string")
+            : undefined,
         }));
     }
     // Old format: single role with locations. Migrate to new format.
@@ -127,6 +149,8 @@ export async function getSession(): Promise<Session | null> {
       currentRole,
       availableRoles,
       locations,
+      scope: currentGrant?.scope,
+      team: currentGrant?.team,
     };
   } catch {
     // Expired, revoked, malformed, or forged — all mean "not signed in".
