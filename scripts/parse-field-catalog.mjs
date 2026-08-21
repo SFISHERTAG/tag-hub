@@ -25,6 +25,8 @@ import { readFileSync } from "node:fs";
  *   label: string,
  *   src: string,
  *   section: string | null,
+ *   sectionNumber: string | null,
+ *   now: "live" | "blocked",
  *   visibility: Record<string, FieldVisibility>,
  * }} ParsedField
  */
@@ -44,6 +46,9 @@ export const ROLE_BY_COLUMN = {
 
 /** @type {Record<string, FieldVisibility>} */
 const MARK = { "●": "on", "○": "available", "—": "never", "-": "never" };
+
+/** The NOW column: does this field have a live integration behind it today? */
+const NOW_MARK = { "●": "live", "○": "blocked" };
 
 /** Cells of a markdown table row, including the first. Null if not a table row. */
 function rowCells(line) {
@@ -74,6 +79,8 @@ function roleIndexFrom(headerCells) {
   }
   index.Field = headerCells.indexOf("Field");
   index.SRC = headerCells.indexOf("SRC");
+  index.NOW = headerCells.indexOf("NOW");
+  if (index.Field === -1 || index.SRC === -1 || index.NOW === -1) return null;
   return index;
 }
 
@@ -135,20 +142,98 @@ export function assertSectionCounts(fields, path = "docs/client-fields.md") {
   }
 }
 
+/**
+ * Throws if the prose totals at the top of the doc disagree with the tables
+ * underneath them. The section headings are checked by assertSectionCounts;
+ * these four sentences are the last field counts a human maintains, and they
+ * were wrong for months ("68 fields across 13 categories" against 100 across
+ * 14) because nothing read them.
+ *
+ * Prose is matched against the file with whitespace collapsed, so re-wrapping
+ * a paragraph does not break the check. A claim that has been reworded past
+ * recognition throws rather than passing quietly: an unfindable claim and a
+ * satisfied one are not the same result.
+ *
+ * @param {ParsedField[]} fields
+ */
+export function assertHeaderTotals(fields, path = "docs/client-fields.md") {
+  const prose = readFileSync(path, "utf8").replace(/\s+/g, " ");
+  const problems = [];
+
+  /** Pulls one claim's numbers, or records that the claim itself has gone missing. */
+  const claim = (label, re) => {
+    const m = prose.match(re);
+    if (!m) {
+      problems.push(
+        `  the "${label}" claim is no longer in the doc, or has been reworded ` +
+          `past what this check recognises (${re.source})`,
+      );
+      return null;
+    }
+    return m.slice(1).map(Number);
+  };
+
+  const check = (what, expected, got) => {
+    if (expected !== got) problems.push(`  ${what}: doc says ${expected}, tables give ${got}`);
+  };
+
+  const sections = new Set(fields.map((f) => f.section));
+  const live = fields.filter((f) => f.now === "live").length;
+  const blocked = fields.filter((f) => f.now === "blocked");
+  const slackBlocked = blocked.filter((f) => f.sectionNumber === "7b").length;
+
+  const totals = claim("N fields across M categories", /(\d+) fields across (\d+) categories\./);
+  if (totals) {
+    check("total fields", totals[0], fields.length);
+    check("categories", totals[1], sections.size);
+  }
+
+  const ships = claim(
+    "X of Y ship against live integrations",
+    /\*\*(\d+) of (\d+) ship against live integrations today\.\*\*/,
+  );
+  if (ships) {
+    check("fields shipping today", ships[0], live);
+    check("total fields (in the shipping claim)", ships[1], fields.length);
+  }
+
+  const split = claim(
+    "the split of blocked fields",
+    /Of the (\d+) marked ○, (\d+) wait on Story 4\.1 \(Meta setup\) and (\d+) are the §7b Slack fields\./,
+  );
+  if (split) {
+    check("fields blocked on an integration", split[0], blocked.length);
+    check("fields waiting on Story 4.1", split[1], blocked.length - slackBlocked);
+    check("§7b Slack fields waiting", split[2], slackBlocked);
+  }
+
+  if (problems.length > 0) {
+    throw new Error(
+      `${path}'s summary totals disagree with its own tables:\n` +
+        problems.join("\n") +
+        `\n\nThe tables are the source of truth. Update the prose, not the tables.`,
+    );
+  }
+}
+
 /** @returns {ParsedField[]} */
 export function parseFieldCatalog(path = "docs/client-fields.md") {
   const lines = readFileSync(path, "utf8").split("\n");
   /** @type {ParsedField[]} */
   const fields = [];
   let section = null;
+  let sectionNumber = null;
   /** @type {Record<string, number> | null} */
   let roleIndex = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    const heading = line.match(/^##\s+(?:\d+b?\.\s+)?(.+?)\s*(?:\(\d+\))?\s*$/);
-    if (heading && /^##\s+\d/.test(line)) section = heading[1].trim();
+    const heading = line.match(/^##\s+(?:(\d+b?)\.\s+)?(.+?)\s*(?:\(\d+\))?\s*$/);
+    if (heading && /^##\s+\d/.test(line)) {
+      section = heading[2].trim();
+      sectionNumber = heading[1] ?? null;
+    }
 
     const cells = rowCells(line);
     if (!cells) continue;
@@ -180,11 +265,23 @@ export function parseFieldCatalog(path = "docs/client-fields.md") {
       visibility[ROLE_BY_COLUMN[col]] = mark;
     }
 
+    const nowRaw = cells[roleIndex.NOW];
+    const now = NOW_MARK[nowRaw];
+    if (!now) {
+      throw new Error(
+        `docs/client-fields.md:${i + 1}: field \`${id[1]}\` has no readable NOW ` +
+          `mark (found ${JSON.stringify(nowRaw)}). Expected one of ` +
+          `${Object.keys(NOW_MARK).join(" ")}.`,
+      );
+    }
+
     fields.push({
       id: id[1],
       label: cells[roleIndex.Field],
       src: cells[roleIndex.SRC],
       section,
+      sectionNumber,
+      now,
       visibility,
     });
   }
@@ -195,6 +292,7 @@ export function parseFieldCatalog(path = "docs/client-fields.md") {
 if (process.argv[1]?.endsWith("parse-field-catalog.mjs")) {
   const fields = parseFieldCatalog();
   assertSectionCounts(fields);
+  assertHeaderTotals(fields);
   console.log(`parsed ${fields.length} fields`);
   const never = fields.filter((f) =>
     ["client_owner", "client_manager", "client_closer"].every(

@@ -74,10 +74,11 @@ Roles: `EX` exec · `CS` csm · `SM` sales mgr · `SL` sales · `OW` client owne
 **63 of 100 ship against live integrations today.** Of the 37 marked ○, 32 wait on
 Story 4.1 (Meta setup) and 5 are the §7b Slack fields.
 
-The per-section count in each `##` heading is checked against the parser on every build and
-CI run (`scripts/parse-field-catalog.mjs`, `assertSectionCounts`), so a table that loses a
-row fails loudly. The totals on this line are hand-written and unchecked: if they ever
-disagree with the sections, the sections are right.
+Every count on this page is checked against the tables on every build and CI run
+(`scripts/parse-field-catalog.mjs`): `assertSectionCounts` for the per-section count in each
+`##` heading, `assertHeaderTotals` for the four totals in the two paragraphs above. Edit a
+table and the stale number fails the build. The tables are the source of truth; when the
+prose disagrees, the prose is what changes.
 
 ---
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FIELD_CATALOG } from "@/lib/dashboard/field-catalog.generated";
 import {
+  assertHeaderTotals,
   assertSectionCounts,
   parseFieldCatalog,
   ROLE_BY_COLUMN,
@@ -33,6 +34,15 @@ describe("generated field catalog matches docs/client-fields.md", () => {
    */
   it("parses as many fields as the doc's own section headings declare", () => {
     expect(() => assertSectionCounts(parsed)).not.toThrow();
+  });
+
+  /**
+   * The doc opens with prose totals: how many fields, how many categories, how
+   * many ship before Story 4.1. They are the last counts a human maintains, and
+   * they were wrong for months because nothing read them.
+   */
+  it("matches the totals the doc's own summary claims", () => {
+    expect(() => assertHeaderTotals(parsed)).not.toThrow();
   });
 
   it("has no field in the doc that is missing from the catalog", () => {

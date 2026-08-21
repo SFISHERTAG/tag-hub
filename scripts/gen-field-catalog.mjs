@@ -1,5 +1,6 @@
 import { writeFileSync } from "node:fs";
 import {
+  assertHeaderTotals,
   assertSectionCounts,
   parseFieldCatalog,
   ROLE_BY_COLUMN,
@@ -11,6 +12,10 @@ const fields = parseFieldCatalog();
 // quietly short does not fail — it just stops permitting things, which reads
 // downstream as an empty widget rather than as a broken build.
 assertSectionCounts(fields);
+
+// And never let the doc's own summary describe a catalog other than this one.
+// The "68 fields" header outlived the truth by 32 fields because no build read it.
+assertHeaderTotals(fields);
 
 const roles = Object.values(ROLE_BY_COLUMN);
 
