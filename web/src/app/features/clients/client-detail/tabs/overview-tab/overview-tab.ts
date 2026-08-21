@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { EmptyState, ErrorState, LoadingState } from '../../../../../shared/ui';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import { EmptyState, ErrorState, HudGauge, LoadingState } from '../../../../../shared/ui';
 import { ClientsService } from '../../../services/clients.service';
 import type { ClientAlert, ClientData } from '../../../services/client.model';
 
@@ -19,13 +27,25 @@ interface ScoreRow {
  * itself as "target achievement %", so there is one reading of it here and it
  * is the documented one.
  *
+ * The four components are dials rather than figures because each is a 0-100
+ * score against its own target, which is what a dial reads well: the arc is
+ * proportion-of-target and needs no axis to be understood. Counts get no dial
+ * anywhere in this app — a count has no full scale, so any max is invented and
+ * the arc becomes decoration that implies a ceiling nobody set.
+ *
+ * Worth stating plainly: these four numbers are currently fabricated, and a
+ * dial reads as more authoritative than the bare figure it replaced. The
+ * disclosure that makes that safe is `SampleDataNotice` in client-detail.html,
+ * directly above this tab group. If that notice is ever moved or made
+ * conditional, these dials become the most confident lie on the screen.
+ *
  * Resolved alerts are filtered out rather than shown greyed: the count in the
  * heading is the number of things to do, and a resolved alert is not one.
  */
 @Component({
   selector: 'app-overview-tab',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EmptyState, ErrorState, LoadingState],
+  imports: [EmptyState, ErrorState, HudGauge, LoadingState],
   templateUrl: './overview-tab.html',
   styleUrl: './overview-tab.scss',
 })
@@ -63,15 +83,33 @@ export class OverviewTab {
     return Number.isNaN(parsed) ? null : new Date(parsed).toLocaleString();
   });
 
+  /**
+   * Keyed on the client id, and an effect rather than a constructor call.
+   *
+   * `void this.load()` in the constructor read `client()` synchronously, before
+   * Angular had bound the input. That threw NG0950 inside an async function, so
+   * the rejection went to `void` and vanished: `getAlerts` was never called,
+   * `loading` was never cleared, and the alerts panel showed its skeleton
+   * forever. It looked like a slow request rather than a dead one, which is why
+   * it survived — proven by a template-binding test that counted zero calls.
+   *
+   * Reading the id inside the effect also makes this reload when the tab is
+   * pointed at a different client, which the constructor version could not do:
+   * the tab is reused across clients rather than recreated, so the previous
+   * client's alerts would have stayed on screen.
+   */
   constructor() {
-    void this.load();
+    effect(() => {
+      void this.load(this.client().id);
+    });
   }
 
-  protected async load(): Promise<void> {
+  /** Defaults to the current client so the template's retry button stays argument-free. */
+  protected async load(clientId: string = this.client().id): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
 
-    const result = await this.clientsApi.getAlerts(this.client().id);
+    const result = await this.clientsApi.getAlerts(clientId);
 
     if (result.error) {
       this.alerts.set([]);

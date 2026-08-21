@@ -1,14 +1,13 @@
 <section class="overview__section">
   <h2 class="overview__heading">Health components</h2>
-  <dl class="overview__scores">
+  <ul class="overview__scores">
     @for (row of scores(); track row.label) {
-      <div class="overview__score">
-        <dt>{{ row.label }}</dt>
-        <dd class="overview__score-value">{{ row.score }}</dd>
-        <dd class="overview__score-meta">{{ row.attainment }}</dd>
-      </div>
+      <li class="overview__score">
+        <app-hud-gauge [value]="row.score" [label]="row.label" />
+        <p class="overview__score-meta">{{ row.attainment }}</p>
+      </li>
     }
-  </dl>
+  </ul>
   @if (lastUpdated(); as timestamp) {
     <p class="overview__meta">Scored {{ timestamp }}</p>
   }

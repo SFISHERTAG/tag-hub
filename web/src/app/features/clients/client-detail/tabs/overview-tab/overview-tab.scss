@@ -14,6 +14,8 @@
 }
 
 .overview__scores {
+  list-style: none;
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 0.75rem;
@@ -21,25 +23,16 @@
 }
 
 .overview__score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.75rem;
+  // Elevation rides on this border, not on the fill behind it — the theme's
+  // container tiers are near-black by design. Removing it hides the tile.
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--mat-sys-corner-medium);
   background: var(--mat-sys-surface-container-low);
-
-  dt {
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
-  }
-
-  dd {
-    margin: 0;
-  }
-}
-
-.overview__score-value {
-  font: var(--mat-sys-headline-small);
-  font-variant-numeric: tabular-nums;
-  color: var(--mat-sys-on-surface);
 }
 
 .overview__score-meta,

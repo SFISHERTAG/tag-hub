@@ -7,6 +7,12 @@
 
   <p class="department__csms">{{ csmLabel() }}</p>
 
+  <app-hud-gauge
+    class="department__dial"
+    [value]="summary.avgHealthScore"
+    label="Avg health score"
+  />
+
   <dl class="department__tiles">
     @for (tile of tiles(); track tile.label) {
       <div [class]="'department__tile department__tile--' + tile.tone">
