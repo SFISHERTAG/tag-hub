@@ -1,0 +1,25 @@
+<div class="hud-gauge" role="img" [attr.aria-label]="readout()">
+  <svg class="hud-gauge__dial" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <circle
+      class="hud-gauge__track"
+      [attr.cx]="centre"
+      [attr.cy]="centre"
+      [attr.r]="radius"
+      [attr.stroke-dasharray]="trackDash"
+      [attr.transform]="rotation"
+    />
+    <circle
+      class="hud-gauge__value"
+      [attr.cx]="centre"
+      [attr.cy]="centre"
+      [attr.r]="radius"
+      [attr.stroke-dasharray]="valueDash()"
+      [attr.transform]="rotation"
+    />
+  </svg>
+
+  <div class="hud-gauge__readout" aria-hidden="true">
+    <span class="hud-gauge__number">{{ value() }}<span class="hud-gauge__unit">{{ unit() }}</span></span>
+    <span class="hud-gauge__label">{{ label() }}</span>
+  </div>
+</div>

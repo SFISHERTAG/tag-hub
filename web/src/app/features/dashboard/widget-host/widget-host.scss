@@ -5,10 +5,63 @@
 :host {
   display: block;
   block-size: 100%;
+  // Brackets below are drawn on THIS element, not on .widget. mat-card's
+  // outlined appearance draws its own outline with `.mat-mdc-card::after`, so
+  // a ::after rule on the card replaces that outline instead of decorating it:
+  // the card lost the edge that carries its elevation and the leftover 12px
+  // radius rendered as an arc. Hosting the brackets one level out leaves every
+  // Material pseudo-element alone, which is also the only way to do this
+  // without the deep selectors CLAUDE.md bans.
+  position: relative;
 }
 
+// Elevation is carried by this border, not by the fill behind it. The theme's
+// surface-container tiers sit at 1.06:1 to 1.26:1 against the black canvas and
+// are not discernible alone; `outline-variant` at 3.46:1 is what makes the
+// panel an object. mat-card appearance="outlined" already draws that edge, so
+// nothing here needs to restate it — but nothing here may remove it either.
 .widget {
+  position: relative;
   block-size: 100%;
+}
+
+// Corner brackets, the HUD frame motif. Two opposed corners rather than four:
+// four reads as a decorative box, two reads as an instrument bezel, and it
+// costs two pseudo-elements instead of extra DOM.
+//
+// Sharp corners, inset from the card edge rather than sitting on it. Drawn on
+// the corner with the card's own radius, a partially-bordered box renders the
+// radius as an arc across the whole bracket: at 12px it came out a curl, and
+// enlarging the box only turned it into a loop. Insetting sidesteps the radius
+// entirely and reads as an instrument bezel inside the frame.
+//
+// pointer-events: none matters — these sit over the card's content box, and
+// without it the top-left bracket would eat clicks on whatever is under it.
+:host::before,
+:host::after {
+  content: '';
+  position: absolute;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  pointer-events: none;
+  z-index: 1;
+  border-color: var(--mat-sys-primary);
+  border-style: solid;
+  border-width: 0;
+}
+
+:host::before {
+  inset-block-start: 0.5rem;
+  inset-inline-start: 0.5rem;
+  border-block-start-width: 2px;
+  border-inline-start-width: 2px;
+}
+
+:host::after {
+  inset-block-end: 0.5rem;
+  inset-inline-end: 0.5rem;
+  border-block-end-width: 2px;
+  border-inline-end-width: 2px;
 }
 
 .widget__content {
@@ -18,10 +71,16 @@
   block-size: 100%;
 }
 
+// Instrument label rather than card heading: small, tracked out, in the accent,
+// with a hairline under it separating chrome from reading.
 .widget__title {
   margin: 0;
-  font: var(--mat-sys-title-small);
-  color: var(--mat-sys-on-surface);
+  padding-block-end: 0.5rem;
+  border-block-end: 1px solid var(--mat-sys-outline-variant);
+  font: var(--mat-sys-label-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mat-sys-primary);
 }
 
 .widget__note {

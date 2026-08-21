@@ -15,8 +15,7 @@
   @include mat.theme(
     (
       color: (
-        primary: mat.$violet-palette,
-        // placeholder seed hue — swap for the TAG brand primary, one-line edit.
+        primary: mat.$yellow-palette,
         theme-type: dark,
       ),
       typography: '-apple-system, BlinkMacSystemFont, Roboto, sans-serif',
@@ -31,33 +30,56 @@
       background: #000000,
       surface-dim: #000000,
 
-      // Elevation ladder — each tier solved independently against #000000
-      // (not derived from `surface`) so cards stay visible in daylight
-      // instead of inheriting M3's default near-black-on-near-black spacing.
-      surface-container-lowest: #2b2330,
-      // 1.39:1 vs black — least emphasis only
-      surface-container-low: #403845,
-      // 1.87:1 vs black — bottom-sheet class
-      surface-container: #514956,
-      // 2.44:1 vs black — default widget/panel fill
-      surface-container-high: #5d5562,
-      // 2.94:1 vs black — datepicker/overlay
-      surface-container-highest: #675f6c,
-      // 3.43:1 vs black — filled cards (ceiling tier)
+      // ELEVATION IS CARRIED BY BORDERS, NOT FILL.
+      //
+      // This is a deliberate inversion of what this file used to do, and the
+      // reason is worth stating because the old approach was solving a real
+      // problem. Previously each tier was a violet-tinted grey solved to
+      // 1.39-3.43:1 against black, so a panel was findable by its fill alone.
+      // That reads as a stack of grey boxes, which is the thing the HUD
+      // direction is moving away from.
+      //
+      // These fills are near-black on purpose (1.06:1 to 1.26:1 against the
+      // canvas) and are NOT sufficient on their own. What makes a panel
+      // discernible is `outline-variant` below, at 3.46:1, above the 3:1 WCAG
+      // non-text floor. Any surface using these tiers must therefore draw a
+      // border. A borderless panel on these fills is invisible in daylight —
+      // that is the failure CLAUDE.md's theme contract warns about, and it is
+      // now a property of how a component is built rather than of the palette.
+      //
+      // The tint is warm (a trace of the brand gold) rather than violet, so
+      // the neutrals sit under the accent instead of fighting it.
+      surface-container-lowest: #0a0a09,
+      // 1.06:1 — least emphasis, border required
+      surface-container-low: #0f0e0c,
+      // 1.09:1 — bottom-sheet class, border required
+      surface-container: #141310,
+      // 1.13:1 — default widget/panel fill, border required
+      surface-container-high: #1a1814,
+      // 1.18:1 — datepicker/overlay, border required
+      surface-container-highest: #211e19,
+      // 1.26:1 — filled cards (ceiling tier), border required
 
-      // Text. on-surface clears >=4.5:1 on every surface tier above; route
-      // body-weight text through on-surface (not on-surface-variant) when it
-      // sits on surface-container-high/-highest.
-      on-surface: #e7e5ea,
-      on-surface-variant: #c9c6d1,
+      // Text. Both clear 4.5:1 on every tier above and on the black canvas;
+      // the busiest case (on-surface-variant on surface-container) is 8.70:1.
+      on-surface: #f2efe6,
+      // 18.26:1 on black
+      on-surface-variant: #b8b1a0,
+      // 9.83:1 on black
 
-      // Borders
-      outline: #948f9c,
-      outline-variant: #48454e,
+      // Borders. These do the structural work now, which is why both clear the
+      // 3:1 non-text floor rather than being decorative hairlines.
+      outline: #b09a5e,
+      // 7.63:1 — emphasis, focus, active edges
+      outline-variant: #6f6140,
+      // 3.46:1 — the default panel edge
 
-      // Primary accent (placeholder hue, swap when brand primary is finalized)
-      primary: #9ec1ff,
-      on-primary: #06305c,
+      // Brand accent. #e0a324 is the TAG gold already defined in the repo root
+      // design-tokens.json (colors.primary.gold); this is not a new colour.
+      primary: #e0a324,
+      // 9.43:1 on black, 8.35:1 on surface-container
+      on-primary: #1f1500,
+      // 8.09:1 against the gold fill
 
       // Error
       error: #ffb4ab,
