@@ -31,6 +31,11 @@ records the correction, and the enforcement (`requireWebhookSecret` on Phase 1) 
 `/Users/home/projects/hotpath/context.md` — the findings it says stay on TAG's own timeline,
 separate from the Hot Path extraction. Read it before acting on any resweep claim.
 
+**"Hub ALB Cutover" now has an in-repo counterpart:** `docs/ALB_CUTOVER_RUNBOOK.md`. The
+artifact is the prettier read; the markdown is the one that survives and can be diffed. Prefer
+the markdown, and re-verify either against current Google docs before running anything — both
+are a 2026-08-20 snapshot of a `gcloud` surface that drifts.
+
 **Also outside git, but in-repo as files:** `Success_Portal.dc.html` and
 `TAG_Design_System.dc.html` at the repo root are Claude Design canvases, not published
 artifacts. Different thing, same lineage — worth a look for design language before building
