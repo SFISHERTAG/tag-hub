@@ -1,0 +1,46 @@
+#!/bin/sh
+# tag-agent-hooks v1 — installed into .git/hooks by scripts/install-hooks.mjs.
+# Edit this file, not the installed copy, then run: npm run hooks:install
+#
+# Supersedes scripts/hooks/pre-commit, which was installed via core.hooksPath —
+# an approach this repo's worktree config silently defeats (see the header of
+# scripts/install-hooks.mjs). This file is the union of both: the isolation
+# check the new hook introduced, plus every check the old hook already ran.
+# Dropping role-parity or the Angular gate here would remove a gate nobody
+# would notice was gone, which is the failure mode both hooks exist to prevent.
+#
+# Each check is skipped when its script is absent, so checking out a branch
+# that predates the check does not break committing on it.
+
+if [ -f scripts/check-agent-isolation.mjs ]; then
+  node scripts/check-agent-isolation.mjs || exit 1
+fi
+
+if [ -f scripts/check-story-status.mjs ]; then
+  node scripts/check-story-status.mjs || exit 1
+fi
+
+if [ -f scripts/check-role-parity.mjs ]; then
+  node scripts/check-role-parity.mjs || exit 1
+fi
+
+# The Angular gate only runs when the commit actually touches web/. It is the
+# slowest check here and irrelevant to a backend-only commit.
+if git diff --cached --name-only | grep -q '^web/'; then
+  if [ ! -d web/node_modules ]; then
+    echo "pre-commit: web/node_modules missing — run 'npm ci --prefix web' first." >&2
+    exit 1
+  fi
+
+  echo "pre-commit: web/ touched, running the Angular gate"
+  # The Angular CLI has a Node floor (web/package.json engines, .nvmrc) that
+  # common default versions fall below, and older CLI versions abort with no
+  # output at all rather than a version error — not a discoverable failure.
+  if ! npm --prefix web run build -- --configuration production >/dev/null 2>&1; then
+    echo "pre-commit: ng build failed. Run 'npm run web:build' to see why." >&2
+    echo "pre-commit: if it exits silently, check your Node version against .nvmrc." >&2
+    exit 1
+  fi
+  npm --prefix web run lint || exit 1
+  npm --prefix web run test -- --watch=false || exit 1
+fi
