@@ -58,6 +58,7 @@ run_check() {
 
 run_check "check:agent-isolation" scripts/check-agent-isolation.mjs
 run_check "check:branch-freshness"  scripts/check-branch-freshness.mjs
+run_check "check:secret-scan"      scripts/check-secret-scan.mjs
 run_check "check:story-status"    scripts/check-story-status.mjs
 run_check "check:role-parity"     scripts/check-role-parity.mjs
 
