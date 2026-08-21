@@ -1,0 +1,7 @@
+#!/bin/sh
+# tag-agent-hooks v1 — installed into .git/hooks by scripts/install-hooks.mjs.
+# Edit this file, not the installed copy, then run: npm run hooks:install
+
+if [ -f scripts/stamp-agent-trailer.mjs ]; then
+  node scripts/stamp-agent-trailer.mjs "$@" || exit 1
+fi
