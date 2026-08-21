@@ -7,6 +7,8 @@ Fetch any of them with WebFetch, or open in a browser. Listed newest first, as o
 
 | Artifact | URL | Updated |
 |---|---|---|
+| TAG Hub Sweep 3 | https://claude.ai/code/artifact/1cd41882-1b81-4ee6-8fe0-7f7041ecde7d | 2026-08-20 |
+| Hub ALB Cutover | https://claude.ai/code/artifact/ea6ac2a3-a91b-4396-9c19-b3c84dd5cd9a | 2026-08-20 |
 | TAG Hub Full Resweep | https://claude.ai/code/artifact/94faf3a5-6112-43fb-a81f-c60789ad716c | 2026-08-20 |
 | Hub Domain Cutover | https://claude.ai/code/artifact/9aee95fb-1845-4a59-a534-8fbb789f447e | 2026-08-20 |
 | Angular Phase 3 Readiness | https://claude.ai/code/artifact/7145c1c1-52d2-40e8-be44-5cbc937c587a | 2026-08-20 |
@@ -14,7 +16,16 @@ Fetch any of them with WebFetch, or open in a browser. Listed newest first, as o
 | Hotpath Studio logo | https://claude.ai/code/artifact/fa6948d1-0573-4bc6-88c0-a3bebc79612e | 2026-08-15 |
 | (untitled — "Shared artifact link") | https://claude.ai/code/artifact/2fbf949e-f0e0-4172-b7b5-5ea2616c0284 | 2026-08-06 |
 
-All six are owned by Sam; none are shared-in from others.
+All eight are owned by Sam; none are shared-in from others.
+
+**Read Sweep 3's addendum before quoting its Critical section.** The report's blast-radius
+paragraph says an unauthenticated Phase 1 call is "not a sign-in bypass". That was true of the
+tree it reviewed (`a030707`) and is false now: `0a1c3b7` ("Story 1.8: provision the client's Hub
+user at Phase 1") landed afterwards and wired in `provisionClientOwner`, which creates a real
+Firebase Auth user and grants `client_owner` plus four roles for a caller-supplied email — and
+sign-in gates on Firebase user existence. The "Design calls" section added after the criticals
+records the correction, and the enforcement (`requireWebhookSecret` on Phase 1) is on main as of
+`8765776`. Note `auth/otpWhitelist` is a red herring in both directions: nothing has ever read it.
 
 **Note:** "TAG Hub Full Resweep" is very likely the resweep referenced in
 `/Users/home/projects/hotpath/context.md` — the findings it says stay on TAG's own timeline,
