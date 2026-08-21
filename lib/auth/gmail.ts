@@ -25,6 +25,12 @@ import type { Mail } from "./mailer";
  */
 
 const SCOPE = "https://www.googleapis.com/auth/gmail.send";
+/**
+ * Fixed rather than random: `Math.random()` is not available to some of this
+ * repo's tooling, and the string only has to not occur inside the body. No part
+ * of this message can contain it.
+ */
+const BOUNDARY = "tag-hub-boundary-9f3c1e7a5b";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const SERVICE_ACCOUNT =
   process.env.GMAIL_SERVICE_ACCOUNT?.trim() ||
@@ -111,17 +117,42 @@ async function accessToken(): Promise<string> {
 
 /** RFC 2822 message, base64url encoded as Gmail expects. */
 function encodeMessage(mail: Mail, from: string): string {
-  const headers = [
+  const common = [
     `From: TAG Hub <${from}>`,
     `To: ${mail.to}`,
     `Subject: ${mail.subject}`,
     "MIME-Version: 1.0",
-    'Content-Type: text/plain; charset="UTF-8"',
-    "",
-    mail.text,
-  ].join("\r\n");
+  ];
 
-  return Buffer.from(headers)
+  /**
+   * `multipart/alternative` when there is an HTML part: same message, two
+   * renderings, and the client picks. Order matters and is fixed by the spec,
+   * least faithful first, so the plain text has to come before the HTML or
+   * clients will show the wrong one.
+   *
+   * The plain part is not a courtesy. It is what a text-only client shows, and
+   * it keeps the code readable if the HTML is stripped by a gateway.
+   */
+  const lines = mail.html
+    ? [
+        ...common,
+        `Content-Type: multipart/alternative; boundary="${BOUNDARY}"`,
+        "",
+        `--${BOUNDARY}`,
+        'Content-Type: text/plain; charset="UTF-8"',
+        "",
+        mail.text,
+        "",
+        `--${BOUNDARY}`,
+        'Content-Type: text/html; charset="UTF-8"',
+        "",
+        mail.html,
+        "",
+        `--${BOUNDARY}--`,
+      ]
+    : [...common, 'Content-Type: text/plain; charset="UTF-8"', "", mail.text];
+
+  return Buffer.from(lines.join("\r\n"))
     .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
