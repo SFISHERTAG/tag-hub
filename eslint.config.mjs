@@ -36,6 +36,18 @@ const eslintConfig = defineConfig([
     "functions/dist/**",
     "coverage/**",
 
+    // Retired Next surfaces. Moved wholesale out of app/ when the Angular
+    // cutover began: out of the build via tsconfig.json, kept on disk because
+    // they are the reference implementation every feature story ports from.
+    // Linting them would report on code that no longer runs and invite someone
+    // to fix a screen that is being replaced.
+    "legacy/**",
+
+    // Build output, not source. scripts/stage-angular-bundle.mjs copies the
+    // compiled Angular bundle in here at build time; linting minified chunks
+    // produced 1485 warnings and 3 errors from code nobody wrote.
+    "public/**",
+
     // Dead tree, kept for reference and already excluded from typecheck in
     // tsconfig.json for the same reason: zero call sites anywhere in app/,
     // lib/, test/ or functions/. Queued for deletion in the cleanup pass;

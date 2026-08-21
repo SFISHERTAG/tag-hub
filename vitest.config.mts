@@ -30,6 +30,8 @@ export default defineConfig({
       "functions/**",
       "web/**",
       "_archive/**",
+      // Retired Next surfaces — see the eslint config.
+      "legacy/**",
       "**/.claude/worktrees/**",
     ],
     /**

@@ -35,6 +35,7 @@
     "functions",
     "src",
     "_archive",
-    "web"
+    "web",
+    "legacy"
   ]
 }

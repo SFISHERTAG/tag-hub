@@ -48,3 +48,12 @@ ui-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Angular bundle staged into public/ by scripts/stage-angular-bundle.mjs at
+# build time. Build output, not source — the source is web/.
+/public/index.html
+/public/*.js
+/public/*.css
+/public/media/
+/public/icons/
+/public/3rdpartylicenses.txt

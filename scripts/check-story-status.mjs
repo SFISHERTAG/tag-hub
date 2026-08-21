@@ -157,6 +157,13 @@ function checkArchitectureConstraints() {
       }
       continue;
     }
+    // legacy/ is retired Next code: out of tsconfig, out of lint, out of
+    // vitest, and awaiting deletion by Story 10.7. It is exempt for the same
+    // reason it is not linted — the rule exists to stop a new inline role
+    // string reaching live code, and nothing under legacy/ runs. Without this,
+    // the cutover commit that merely *moved* 32 screens was blocked by role
+    // strings it did not author.
+    if (file.startsWith("legacy/")) continue;
     if (!/\.(ts|tsx)$/.test(file) || ROLE_DEFINITION_FILES.includes(file)) continue;
     let fileDiff;
     try {

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run web:build && node scripts/stage-angular-bundle.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
@@ -22,7 +22,8 @@
     "web:test": "npm --prefix web run test -- --watch=false",
     "web:gate": "npm run web:build && npm run web:lint && npm run web:test",
     "check:functions": "npm --prefix functions run build && npm --prefix functions run lint",
-    "prepare": "node scripts/install-hooks.mjs"
+    "prepare": "node scripts/install-hooks.mjs",
+    "build:next-only": "next build"
   },
   "dependencies": {
     "@google-cloud/firestore": "^8.7.1",

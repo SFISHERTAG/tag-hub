@@ -9,10 +9,24 @@ COPY package.json package-lock.json ./
 # Cloud Build runs.
 RUN npm ci
 
+# ---------- web deps ----------
+# The Angular workspace has its own lockfile and its own node_modules. Since
+# the cutover, `npm run build` builds the Angular bundle before `next build`,
+# so these are build-time requirements rather than an optional extra.
+#
+# A separate stage on purpose: web/ dependencies change on a different cadence
+# from the host's, and keeping them apart means editing one lockfile does not
+# invalidate the other's cached layer.
+FROM node:24-alpine AS web-deps
+WORKDIR /app/web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+
 # ---------- build ----------
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=web-deps /app/web/node_modules ./web/node_modules
 COPY . .
 
 # NEXT_PUBLIC_* are inlined into the client bundle at build time, so they must
