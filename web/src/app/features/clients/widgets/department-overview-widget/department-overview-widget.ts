@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ErrorState, LoadingState } from '../../../../shared/ui';
+import { ErrorState, HudGauge, LoadingState } from '../../../../shared/ui';
 import { ClientWidgetsService } from '../../services/client-widgets.service';
-import { scoreTone } from '../../services/client-status';
 import { SampleDataNotice } from '../../shared/sample-data-notice/sample-data-notice';
 import type { DepartmentSummary, SampleDataDisclosure } from '../../services/client.model';
 
@@ -23,10 +22,24 @@ const TOP_BOOKS = 5;
  * rule protects is between "no data" and "data that says none", and a failed
  * load takes the error branch rather than rendering zeroes.
  */
+/**
+ * Why one dial and three tiles.
+ *
+ * `avgHealthScore` is a 0-100 score, so an arc is a true proportion of full
+ * scale and reads without an axis. The other three are counts — total clients,
+ * needing attention, ascension ready — and a count has no full scale. Putting
+ * one on a dial means inventing a maximum, and the arc then implies a ceiling
+ * nobody set: eleven clients out of a fabricated "100" reads as a near-empty
+ * department. They stay as figures.
+ *
+ * The dial is also the most authoritative-looking thing on this widget while
+ * the number behind it is still fabricated, which is why `SampleDataNotice`
+ * renders above it rather than below.
+ */
 @Component({
   selector: 'app-department-overview-widget',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ErrorState, LoadingState, SampleDataNotice],
+  imports: [ErrorState, HudGauge, LoadingState, SampleDataNotice],
   templateUrl: './department-overview-widget.html',
   styleUrl: './department-overview-widget.scss',
 })
@@ -43,11 +56,6 @@ export class DepartmentOverviewWidget {
     if (!summary) return [];
     return [
       { label: 'Total clients', value: summary.totalClients, tone: 'neutral' },
-      {
-        label: 'Avg health score',
-        value: summary.avgHealthScore,
-        tone: scoreTone(summary.avgHealthScore),
-      },
       {
         label: 'Need attention',
         value: summary.needsAttentionCount,
