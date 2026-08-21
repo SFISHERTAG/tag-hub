@@ -14,6 +14,16 @@ each step's output is what makes the next one safe.
   2026-08-21, on the argument in Phase 1b below.
 - **Production holds on `4687084` until 1a and 1b both pass.** Traffic shifts
   only after the artefact itself has been walked.
+- **The tenant to enter is Casey Williams Co.** Sam's call, 2026-08-21. It is
+  already the designated test client throughout the Phase 3 docs, so entering it
+  does not distort a real client's `daysSinceLastAction`. Enter that tenant and
+  no other. Its `locationId` is not recorded here because it lives in Firestore;
+  read it from the clients list at walk time.
+- **Sam supplies the sign-in code.** The OTP goes to his own inbox, so step 1 of
+  the smoke list is his to perform or to relay. Note that the Phase 3 docs use a
+  separate `test@` account for this flow; if that account still works it is the
+  better choice, because it keeps a verification walk out of the real staff
+  audit trail.
 
 ## Phase 0: get it off the laptop
 
@@ -45,7 +55,8 @@ tenant appends to `locations/{id}/auditLog`, and `daysSinceLastAction` reads tha
 as a CSM check-in for the 30-day escalation rule. Walking three client tenants to
 look at screens resets three clients' staleness clocks and can hide a genuinely
 neglected client from the escalation view. Treat entering a tenant as a
-deliberate act on one chosen tenant, not as navigation.
+deliberate act on one chosen tenant, not as navigation. That tenant is Casey
+Williams Co, per the decision above.
 
 Do not touch during a walk: appointment status, opportunity close, opportunity
 stage, follow-up config, dashboard config, onboarding checklist task. Those write
