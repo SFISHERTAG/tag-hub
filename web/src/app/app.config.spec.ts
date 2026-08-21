@@ -27,18 +27,30 @@ describe('appConfig RBAC provider', () => {
       );
   }
 
+  /**
+   * Narrowing rather than asserting: a non-null assertion here would turn a
+   * missing provider — the most alarming outcome this file can have — into a
+   * confusing runtime error instead of a clear failure. It is also banned by
+   * the lint config.
+   */
+  function requireRbacProvider(): { provide: unknown; useClass: unknown } {
+    const provider = rbacProvider();
+    if (!provider) throw new Error('No RBAC_SERVICE provider found in appConfig.');
+    return provider;
+  }
+
   it('provides an RBAC implementation at all', () => {
     expect(rbacProvider()).toBeDefined();
   });
 
   it('never provides the mock outside development', () => {
-    const provider = rbacProvider();
+    const provider = requireRbacProvider();
     if (isDevMode()) {
       // Under `ng test` this is the dev path; assert the intent rather than skip.
-      expect([MockRbacService, HttpRbacService]).toContain(provider!.useClass);
+      expect([MockRbacService, HttpRbacService]).toContain(provider.useClass);
     } else {
-      expect(provider!.useClass).toBe(HttpRbacService);
-      expect(provider!.useClass).not.toBe(MockRbacService);
+      expect(provider.useClass).toBe(HttpRbacService);
+      expect(provider.useClass).not.toBe(MockRbacService);
     }
   });
 
@@ -46,6 +58,6 @@ describe('appConfig RBAC provider', () => {
     // The guarantee is the ternary itself: whichever branch this environment
     // takes, the class chosen must be the one isDevMode() selects.
     const expected = isDevMode() ? MockRbacService : HttpRbacService;
-    expect(rbacProvider()!.useClass).toBe(expected);
+    expect(requireRbacProvider().useClass).toBe(expected);
   });
 });

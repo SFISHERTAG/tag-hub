@@ -118,14 +118,18 @@ pinning the production provider. Where a doc asserts a security property, add th
 
 ## 5. Immediate next actions
 
-0. **Fix Node on the dev machines — this blocks the gate.** Angular CLI requires Node
-   `v22.22.3` / `v24.15.0` / `v26.0.0` or newer; this machine runs `v24.14.0`, one patch
-   short. `ng build`, `ng test` and `ng lint` all refuse to start. Steps 5 of the runbook and
-   items 1–3 of the definition of done are therefore unrunnable here today, which means
-   `web/**` changes are currently landing without their own gate ever executing. The
-   `app.config.spec.ts` added alongside this plan compiles under `tsconfig.spec.json` and
-   follows the project's vitest conventions, but **has not been executed** for this reason.
-   Nothing else in this plan is safe to start until this is fixed.
+0. ~~**Fix Node on the dev machines.**~~ **Done 2026-08-20 (Story 11.1).** Angular CLI
+   requires Node `v22.22.3` / `v24.15.0` / `v26.0.0`; the machine ran `v24.14.0`, one patch
+   short, so `ng build`, `ng test` and `ng lint` all refused to start and `web/**` changes
+   were landing with their own gate never executing. Now on `24.19.0`, pinned in `.nvmrc`
+   with both `package.json` files declaring the supported range.
+
+   **What running the gate immediately found:** four lint errors
+   (`no-non-null-assertion`) in `app.config.spec.ts` — code committed the previous hour as
+   verified, because the only verification available at the time was a typecheck. The gate
+   caught them on its first execution. Full gate now green: production build clean, lint
+   clean, 118 tests across 13 files, and the provider-pinning spec confirmed to genuinely
+   execute by injecting a failure and watching exactly one file go red.
 1. **Correct Epic 10's 10.2 paragraph** — it describes a fixed fail-open as current.
 2. **Add a spec pinning the production RBAC provider**, so the property is enforced rather than
    described. Nothing in `web/src` currently tests it.

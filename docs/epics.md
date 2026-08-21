@@ -268,3 +268,67 @@ tenant access from the hat.
 **Epic 3 is the clients book, and it is not legacy.** All six of its stories are
 Ready, and `/csm-dashboard` is 1,562 LOC of working views. Its absence from
 `nav.tsx` is a bug that 10.3 fixes, not evidence of abandonment.
+
+## Epic 11 — Migration readiness
+
+**Goal:** Epic 10 is executable and estimable. Every gate it depends on actually
+runs, every constraint it assumes is enforced by a check rather than a sentence,
+and the work produces the numbers that let someone give a date.
+
+This epic is deliberately feature-free, for the same reason 10.1 is. Each item
+below is cheap now and expensive after fifteen feature stories have landed on
+top of it. None of it moves a screen; all of it decides whether moving screens
+is measurable or guesswork.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 11.1 | Runnable Angular gate — Node floor pinned and enforced | Done |
+| 11.2 | Story isolation and merge discipline | Draft |
+| 11.3 | Verified doc claims — checks over prose | In Progress |
+| 11.4 | Calibration instrumentation on 10.4 | Draft |
+| 11.5 | Endpoint inventory ahead of each feature story | Draft |
+
+**11.1 was the one already failing silently.** Angular CLI requires Node
+`v22.22.3` / `v24.15.0` / `v26.0.0`; the dev machine ran `v24.14.0`, one patch
+short, so `ng build`, `ng test` and `ng lint` all refused to start. Items 1–3 of
+the definition of done were unrunnable, which means `web/**` changes were landing
+with their own gate never executing — and nothing said so, because a gate that
+cannot start does not report failure. `.nvmrc` pins `24.19.0` and both
+`package.json` files declare the supported range so npm rejects a wrong runtime
+rather than letting it discover the problem later. **Fixing this immediately
+surfaced four lint errors in code that had been committed as verified.** That is
+the whole argument for this epic in one data point.
+
+**11.2 exists because the failure already happened here.** `hotpath/context.md`
+records ten parallel sessions on one working tree, several building the same
+feature twice. On 2026-08-20 a smaller version of it produced a 110-conflict
+merge: two agents on `onboarding-intake-wizard-scaffold` while main moved 18
+commits underneath. Two agents is survivable and fifteen feature stories is not.
+Any story touching a shared module (auth, session, a shared type) runs in its own
+worktree with a deliberate merge step, or runs serialised — and every story
+rebases on main before it starts and before it merges.
+
+**11.3 is a rule with a receipt.** Epic 10 stated that `MockRbacService` was
+provided unconditionally and both route guards failed open in production. It had
+been fixed; the text had not. The stale claim was read as current and repeated as
+a live vulnerability, and no test would have caught it because nothing tested it
+— the property existed only as prose. Where a doc asserts a security property,
+the assertion goes in a spec. Where it asserts current behaviour and cannot be
+tested, it is dated. `app.config.spec.ts` is the first of these.
+
+**11.4 is what makes a date possible.** No feature has gone end to end, so there
+is no per-feature cost, so any estimate is arithmetic on a guess — including a
+confident-sounding one. 10.4 is the calibration story: it records endpoint hours,
+screen hours, one-time primitive cost, and post-gate defects. Subtract the
+one-time cost and the remainder multiplies across 10.5–10.7. **No completion date
+is committed before those four numbers exist.**
+
+**11.5 is the estimate's largest unknown.** Epic 10's count — 39 Server Actions
+with no HTTP equivalent, 24 of 25 data-reading pages importing `lib/` inside a
+React Server Component — is the figure that makes the unit of work "an endpoint
+that does not exist plus the screen consuming it". If that number grows as each
+feature is actually inventoried, the estimate moves with it. Each story's first
+step is that inventory, and its real count gets recorded rather than assumed.
+
+Detail, sequencing and the per-feature runbook live in
+`docs/ANGULAR_MIGRATION_PLAN.md`.
