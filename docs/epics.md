@@ -225,7 +225,20 @@ pages import `lib/` directly inside a React Server Component.
 Those counts were 39 across 21, and 24 of 25, when this epic was written. They
 grew while the migration was being planned around them, which is why Story 11.5
 makes the inventory a per-story script rather than a number written down once.
-Re-measure before starting a story; do not trust this paragraph. So each story below ships
+Do not trust this paragraph; run the script:
+
+    node scripts/inventory-endpoints.mjs              # whole app
+    node scripts/inventory-endpoints.mjs --area=l     # one feature area
+    node scripts/inventory-endpoints.mjs --json       # machine-readable
+
+It reports the commit it measured at, so a pasted result can be dated. Each of
+10.5, 10.6 and 10.7 carries its own inventory, taken at `40e9aa6`.
+
+**One finding from the first run worth surfacing here.** `admin` holds 20 Server
+Actions across 4 files — nearly half the app's remaining surface, and more than
+10.5 and 10.6 combined. It sits in 10.7, which was scoped as the small
+leftovers. That story now flags splitting `admin` out as a decision to take
+before it starts. So each story below ships
 its endpoints and its screens together. Endpoints go in `app/api/**`, keeping the
 Next deployment as an API-only host serving the Angular bundle same-origin —
 `hub_session` is httpOnly SameSite=lax and only survives that topology, and
