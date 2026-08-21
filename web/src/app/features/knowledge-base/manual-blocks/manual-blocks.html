@@ -1,0 +1,125 @@
+<div class="blocks">
+  @for (block of blocks(); track $index) {
+    @switch (block.type) {
+      @case ('paragraph') {
+        <section class="blocks__block">
+          @if (text(block, 'title'); as title) {
+            <h3 class="blocks__title">{{ title }}</h3>
+          }
+          @if (text(block, 'content'); as content) {
+            <p class="blocks__body">{{ content }}</p>
+          }
+          @if (text(block, 'caveat'); as caveat) {
+            <aside class="blocks__caveat">
+              @if (text(block, 'caveatLabel'); as label) {
+                <p class="blocks__caveat-label">{{ label }}</p>
+              }
+              <p class="blocks__body">{{ caveat }}</p>
+            </aside>
+          }
+        </section>
+      }
+
+      @case ('heading') {
+        <section class="blocks__block">
+          @if (text(block, 'title'); as title) {
+            <h3 class="blocks__title">{{ title }}</h3>
+          }
+          @if (text(block, 'content'); as content) {
+            <p class="blocks__body">{{ content }}</p>
+          }
+        </section>
+      }
+
+      @case ('note') {
+        <aside
+          class="blocks__note"
+          [class.blocks__note--hard]="severity(block) === 'hard'"
+          [class.blocks__note--good]="severity(block) === 'good'"
+        >
+          @if (text(block, 'title'); as title) {
+            <p class="blocks__note-title">{{ title }}</p>
+          }
+          @if (text(block, 'content'); as content) {
+            <p class="blocks__body">{{ content }}</p>
+          }
+        </aside>
+      }
+
+      @case ('table') {
+        <section class="blocks__block">
+          @if (text(block, 'title'); as title) {
+            <h3 class="blocks__title">{{ title }}</h3>
+          }
+          <div class="blocks__table-scroll">
+            <table class="blocks__table">
+              @if (headers(block).length > 0) {
+                <thead>
+                  <tr>
+                    @for (header of headers(block); track $index) {
+                      <th scope="col">{{ header }}</th>
+                    }
+                  </tr>
+                </thead>
+              }
+              <tbody>
+                @for (row of rows(block); track $index) {
+                  <tr>
+                    @for (cell of row; track $index) {
+                      <td>{{ cell }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      @case ('procedure') {
+        <section class="blocks__block">
+          @if (procedureTitle(block); as title) {
+            <h3 class="blocks__title">{{ title }}</h3>
+          }
+          <ol class="blocks__steps">
+            @for (step of steps(block); track $index) {
+              <li>{{ step }}</li>
+            }
+          </ol>
+          @if (text(block, 'warning'); as warning) {
+            <p class="blocks__warning" role="note">{{ warning }}</p>
+          }
+          @if (text(block, 'note'); as note) {
+            <p class="blocks__footnote">{{ note }}</p>
+          }
+        </section>
+      }
+
+      @case ('instrument') {
+        <section class="blocks__instrument">
+          @if (text(block, 'title'); as title) {
+            <h3 class="blocks__title">{{ title }}</h3>
+          }
+          <p class="blocks__footnote">
+            Reference values. The interactive calculator from the original manual is not ported.
+          </p>
+          <ul class="blocks__fields">
+            @for (field of fields(block); track $index) {
+              <li>{{ field.label }}@if (field.defaultValue) { — {{ field.defaultValue }} }</li>
+            }
+          </ul>
+          @if (outputs(block).length > 0) {
+            <p class="blocks__footnote">Outputs: {{ outputs(block).join(', ') }}</p>
+          }
+        </section>
+      }
+
+      @default {
+        <!-- Unknown block type. Shown rather than skipped: content that
+             disappears quietly is how a procedure loses a step and nobody
+             finds out. -->
+        <pre class="blocks__raw">{{ json(block) }}</pre>
+      }
+    }
+  }
+</div>

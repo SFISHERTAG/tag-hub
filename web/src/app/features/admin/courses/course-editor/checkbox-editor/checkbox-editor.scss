@@ -1,0 +1,28 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.checkbox-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-editor__field {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+.checkbox-editor__danger {
+  color: var(--mat-sys-error);
+}
+
+.checkbox-editor__error {
+  flex-basis: 100%;
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-error);
+}

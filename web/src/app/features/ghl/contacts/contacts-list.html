@@ -1,0 +1,43 @@
+<app-page-shell title="Contacts" [subtitle]="subtitle()">
+  <form class="contacts__search" (ngSubmit)="search()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="contacts__field">
+      <mat-label>Search</mat-label>
+      <input
+        matInput
+        type="search"
+        name="q"
+        placeholder="Name, email, or phone"
+        [ngModel]="term()"
+        (ngModelChange)="setTerm($event)"
+      />
+    </mat-form-field>
+    <button matButton="filled" type="submit">Search</button>
+  </form>
+
+  @if (failure(); as problem) {
+    <app-error-state
+      [message]="problem.title"
+      [detail]="problem.detail"
+      [retryable]="problem.retryable"
+      (retry)="reload()"
+    />
+  } @else {
+    @if (truncated() && !loading()) {
+      <p class="contacts__notice" role="status">
+        This is the first page of results. Narrow the search to see the rest.
+      </p>
+    }
+
+    <app-data-table
+      [columns]="columns"
+      [rows]="rows()"
+      [loading]="loading()"
+      [caption]="caption()"
+      emptyIcon="person_search"
+      [emptyMessage]="emptyMessage()"
+      emptyHint="Contacts come from GoHighLevel. Try a different name, email, or phone."
+      [rowKey]="rowKey"
+      (retry)="reload()"
+    />
+  }
+</app-page-shell>

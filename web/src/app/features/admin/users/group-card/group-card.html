@@ -1,0 +1,94 @@
+<mat-card appearance="outlined" class="group-card">
+  <mat-card-header class="group-card__header">
+    <mat-card-title class="group-card__title">{{ group().name }}</mat-card-title>
+    <button
+      matButton
+      type="button"
+      class="group-card__delete"
+      [disabled]="pending()"
+      (click)="remove()"
+    >
+      Delete group
+    </button>
+  </mat-card-header>
+
+  <mat-card-content class="group-card__content">
+    <form class="group-card__form" [formGroup]="form" (ngSubmit)="save()">
+      <mat-form-field appearance="outline">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          @for (role of roles; track role) {
+            <mat-option [value]="role">{{ roleLabels[role] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Locations</mat-label>
+        <input matInput formControlName="locationsRaw" placeholder="loc_…, loc_…" />
+        <mat-hint>Comma or newline separated. Blank means unrestricted.</mat-hint>
+      </mat-form-field>
+
+      <div class="group-card__actions">
+        <button matButton="filled" type="submit" [disabled]="pending()">
+          Save — applies to every member now
+        </button>
+        @if (saved()) {
+          <span class="group-card__saved">Saved.</span>
+        }
+      </div>
+    </form>
+
+    @if (error(); as message) {
+      <p class="group-card__error" role="alert">{{ message }}</p>
+    }
+
+    <section class="group-card__members" aria-label="Group members">
+      <p class="group-card__members-count">
+        {{ members().length }} {{ members().length === 1 ? 'member' : 'members' }}
+      </p>
+
+      @if (members().length === 0) {
+        <p class="group-card__hint">No members yet.</p>
+      } @else {
+        <ul class="group-card__member-list">
+          @for (member of members(); track member.uid) {
+            <li class="group-card__member">
+              <span class="group-card__member-name">{{ memberLabel(member) }}</span>
+              <button
+                matIconButton
+                type="button"
+                [disabled]="pending()"
+                [attr.aria-label]="'Remove ' + memberLabel(member) + ' from ' + group().name"
+                (click)="removeMember(member.uid)"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (ungrouped().length > 0) {
+        <div class="group-card__add">
+          <mat-form-field appearance="outline" class="group-card__add-field">
+            <mat-label>Add a user</mat-label>
+            <mat-select [formControl]="addUid">
+              @for (candidate of ungrouped(); track candidate.uid) {
+                <mat-option [value]="candidate.uid">{{ memberLabel(candidate) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button
+            matButton="outlined"
+            type="button"
+            [disabled]="pending() || !addUid.value"
+            (click)="addMember()"
+          >
+            Add
+          </button>
+        </div>
+      }
+    </section>
+  </mat-card-content>
+</mat-card>

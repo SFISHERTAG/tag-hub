@@ -1,0 +1,34 @@
+<mat-card appearance="outlined" class="client-card">
+  <mat-card-content class="client-card__content">
+    <div class="client-card__head">
+      <div class="client-card__identity">
+        <a class="client-card__name" [routerLink]="link()">{{ client().name }}</a>
+        <p class="client-card__location">{{ client().ghl_location_id }}</p>
+      </div>
+      @if (client().alert_count > 0) {
+        <span class="client-card__alerts" [attr.aria-label]="alertLabel()">
+          {{ client().alert_count }}
+        </span>
+      }
+    </div>
+
+    <app-health-badge [health]="client().health" />
+
+    @if (metrics(); as rows) {
+      <dl class="client-card__metrics">
+        @for (row of rows; track row.label) {
+          <div class="client-card__metric">
+            <dt>{{ row.label }}</dt>
+            <dd>{{ row.value }}</dd>
+          </div>
+        }
+      </dl>
+    } @else {
+      <p class="client-card__no-metrics">No metrics on record.</p>
+    }
+
+    @if (client().escalation.reason; as reason) {
+      <p class="client-card__reason">{{ reason }}</p>
+    }
+  </mat-card-content>
+</mat-card>

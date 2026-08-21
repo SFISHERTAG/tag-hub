@@ -1,0 +1,170 @@
+<app-page-shell title="FLOW" subtitle="Sales coaching scripts for live calls.">
+  @if (orgId(); as org) {
+    <span pageActions class="flow__org">Org {{ org }}</span>
+  }
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading the FLOW framework" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else if (!orgId()) {
+    <app-empty-state
+      icon="business"
+      message="No client account is linked to this login."
+      hint="FLOW scripts are stored per client account. Enter a client from Portfolio, or ask an admin to assign you a location."
+    />
+  } @else if (!framework()) {
+    <app-empty-state
+      icon="record_voice_over"
+      message="No active FLOW framework for this account."
+      hint="A sales manager publishes one before it appears here."
+    />
+  } @else {
+    @if (canReview()) {
+      <mat-expansion-panel class="flow__queue" expanded>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Pending script suggestions</mat-panel-title>
+          <mat-panel-description>{{ suggestions().length }} waiting</mat-panel-description>
+        </mat-expansion-panel-header>
+
+        @if (suggestionsError(); as message) {
+          <app-error-state
+            [message]="message"
+            detail="The scripts below are current. Only the review queue failed to load."
+            (retry)="loadSuggestions()"
+          />
+        } @else if (suggestions().length === 0) {
+          <p class="flow__muted">No pending suggestions.</p>
+        } @else {
+          <ul class="flow__suggestions">
+            @for (suggestion of suggestions(); track suggestion.id) {
+              <li class="flow__suggestion">
+                <div class="flow__suggestion-head">
+                  <span class="flow__suggestion-card">{{ cardLabel(suggestion.card_id) }}</span>
+                  <span class="flow__muted">from {{ suggestion.suggested_by }}</span>
+                </div>
+                <p class="flow__script">{{ suggestion.suggested_content }}</p>
+                @if (suggestion.suggestion_note; as note) {
+                  <div class="flow__aside">
+                    <p class="flow__aside-label">Why</p>
+                    <p class="flow__muted">{{ note }}</p>
+                  </div>
+                }
+                <div class="flow__suggestion-actions">
+                  <button
+                    matButton="filled"
+                    type="button"
+                    [disabled]="resolvingId() !== null"
+                    (click)="resolve(suggestion, 'approve')"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    matButton="outlined"
+                    type="button"
+                    [disabled]="resolvingId() !== null"
+                    (click)="resolve(suggestion, 'reject')"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </mat-expansion-panel>
+    }
+
+    <mat-tab-group class="flow__tabs" [preserveContent]="false">
+      @for (tab of tabs(); track tab.id) {
+        <mat-tab [label]="tab.label">
+          @if (tab.sections.length === 0) {
+            <p class="flow__muted">No sections in this tab yet.</p>
+          }
+
+          @for (section of tab.sections; track section.id) {
+            <section class="flow__section">
+              <h2 class="flow__section-title">{{ section.label }}</h2>
+              @if (section.description; as description) {
+                <p class="flow__muted">{{ description }}</p>
+              }
+
+              @for (card of section.cards; track card.id) {
+                <mat-expansion-panel class="flow__card">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>{{ card.label }}</mat-panel-title>
+                    @if (card.sub_label; as sub) {
+                      <mat-panel-description>{{ sub }}</mat-panel-description>
+                    }
+                  </mat-expansion-panel-header>
+
+                  @if (card.script; as script) {
+                    <p class="flow__script">{{ script.content }}</p>
+                    @if (script.why; as why) {
+                      <div class="flow__aside flow__aside--why">
+                        <p class="flow__aside-label">Why</p>
+                        <p class="flow__muted">{{ why }}</p>
+                      </div>
+                    }
+                    @if (script.notes; as notes) {
+                      <div class="flow__aside">
+                        <p class="flow__aside-label">Notes</p>
+                        <p class="flow__muted">{{ notes }}</p>
+                      </div>
+                    }
+                  } @else {
+                    <p class="flow__muted">No script written for this card yet.</p>
+                  }
+
+                  @if (canSuggest()) {
+                    @if (suggestingCardId() === card.id) {
+                      <form class="flow__suggest-form" [formGroup]="suggestForm" (ngSubmit)="submitSuggestion()">
+                        <mat-form-field appearance="outline">
+                          <mat-label>Suggested script</mat-label>
+                          <textarea matInput formControlName="content" rows="5"></textarea>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Why (optional)</mat-label>
+                          <textarea matInput formControlName="note" rows="2"></textarea>
+                          <mat-hint>What happened on the call that made you change it.</mat-hint>
+                        </mat-form-field>
+
+                        @if (suggestError(); as message) {
+                          <p class="flow__error" role="alert">{{ message }}</p>
+                        }
+
+                        <div class="flow__suggestion-actions">
+                          <button matButton="filled" type="submit" [disabled]="suggestBusy()">
+                            {{ suggestBusy() ? 'Sending…' : 'Send suggestion' }}
+                          </button>
+                          <button
+                            matButton
+                            type="button"
+                            [disabled]="suggestBusy()"
+                            (click)="cancelSuggestion()"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    } @else if (suggestSentFor() === card.id) {
+                      <p class="flow__sent" role="status">
+                        Suggestion sent for review. What other closers see is unchanged until a
+                        sales manager approves it.
+                      </p>
+                    } @else {
+                      <button matButton type="button" (click)="openSuggestion(card)">
+                        Suggest an edit
+                      </button>
+                    }
+                  }
+                </mat-expansion-panel>
+              }
+            </section>
+          }
+        </mat-tab>
+      }
+    </mat-tab-group>
+  }
+</app-page-shell>

@@ -1,0 +1,29 @@
+<app-page-shell
+  title="Report a bug"
+  subtitle="Tell us what went wrong and we will pick it up from here."
+>
+  <mat-card appearance="outlined" class="bug-reports__panel">
+    <mat-card-header>
+      <mat-card-title>Tell us what happened</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <app-bug-report-form [pageAreas]="pageAreas()" (submitted)="onSubmitted()" />
+    </mat-card-content>
+  </mat-card>
+
+  <section class="bug-reports__filed">
+    <h2 class="bug-reports__heading">Your reports</h2>
+    <app-data-table
+      caption="Bug reports you have filed"
+      [columns]="columns"
+      [rows]="filed()"
+      [loading]="loading()"
+      [error]="error()"
+      [rowKey]="rowKey"
+      emptyIcon="bug_report"
+      emptyMessage="You have not reported anything yet."
+      emptyHint="Anything you file above shows up here with its status."
+      (retry)="load()"
+    />
+  </section>
+</app-page-shell>

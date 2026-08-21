@@ -1,0 +1,61 @@
+<app-page-shell title="My clients" [subtitle]="loading() ? null : countLabel()">
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="3" label="Loading your clients" />
+  } @else if (error(); as message) {
+    <app-error-state
+      [message]="message"
+      detail="Your client list could not be loaded, so none of it is shown."
+      (retry)="load()"
+    />
+  } @else {
+    @if (unavailableCount() > 0) {
+      <p class="portfolio__notice" role="status">{{ unavailableLabel() }}</p>
+    }
+
+    @if (enterError(); as message) {
+      <p class="portfolio__error" role="alert">{{ message }}</p>
+    }
+
+    @if (tenants().length === 0) {
+      <app-empty-state
+        icon="business"
+        message="No clients assigned"
+        hint="You do not have access to any clients yet."
+      />
+    } @else {
+      <ul class="portfolio__grid">
+        @for (tenant of tenants(); track tenant.locationId) {
+          <li class="portfolio__item">
+            <mat-card appearance="outlined" class="portfolio__card">
+              <mat-card-content>
+                <p class="portfolio__name">{{ tenant.name }}</p>
+                <p class="portfolio__id">{{ tenant.locationId }}</p>
+              </mat-card-content>
+
+              @if (canEnter()) {
+                <mat-card-actions class="portfolio__actions">
+                  @if (isCurrent(tenant)) {
+                    <span class="portfolio__current">You are in this client</span>
+                  } @else {
+                    <button
+                      matButton="filled"
+                      type="button"
+                      [disabled]="entering() !== null"
+                      (click)="enter(tenant)"
+                    >
+                      @if (entering() === tenant.locationId) {
+                        Entering…
+                      } @else {
+                        Enter
+                      }
+                    </button>
+                  }
+                </mat-card-actions>
+              }
+            </mat-card>
+          </li>
+        }
+      </ul>
+    }
+  }
+</app-page-shell>

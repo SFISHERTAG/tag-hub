@@ -1,0 +1,157 @@
+<app-page-shell
+  title="Launch campaign"
+  subtitle="Creates the campaign paused in Meta. Spend starts only at the last step."
+>
+  <a pageActions matButton routerLink="/onboarding">Back to onboarding</a>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading campaign templates" />
+  } @else if (loadError(); as message) {
+    <app-error-state [message]="message" (retry)="loadTemplates()" />
+  } @else {
+    @if (actionError(); as message) {
+      <p class="launch__error" role="alert">{{ message }}</p>
+    }
+
+    @switch (step()) {
+      @case ('form') {
+        <mat-card appearance="outlined">
+          <mat-card-content>
+            <form class="launch__form" [formGroup]="form" (ngSubmit)="review()">
+              <mat-form-field appearance="outline">
+                <mat-label>Client name</mat-label>
+                <input matInput formControlName="client" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Offer</mat-label>
+                <mat-select formControlName="offer">
+                  @for (template of templates(); track template.id) {
+                    <mat-option [value]="template.id">{{ template.offerLabel }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <div class="launch__pair">
+                <mat-form-field appearance="outline">
+                  <mat-label>Monthly budget</mat-label>
+                  <input matInput type="number" min="100" formControlName="budget" />
+                  <span matTextPrefix>$&nbsp;</span>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Daily cap</mat-label>
+                  <input matInput type="number" min="0" formControlName="cap" />
+                  <span matTextPrefix>$&nbsp;</span>
+                  <mat-hint>At most the monthly budget divided by 30.</mat-hint>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>GHL conversion pixel id</mat-label>
+                <input matInput formControlName="pixel" />
+                <mat-hint>Not verified against Meta.</mat-hint>
+              </mat-form-field>
+
+              <div class="launch__actions">
+                <button matButton="filled" type="submit" [disabled]="!canReview()">
+                  {{ busy() ? 'Checking…' : 'Review campaign' }}
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      @case ('review') {
+        @if (preview(); as reviewed) {
+          <mat-card appearance="outlined">
+            <mat-card-content>
+              <h2 class="launch__heading">Review</h2>
+              <p class="launch__note">Nothing has been created yet.</p>
+
+              <dl class="launch__summary">
+                <dt>Campaign name</dt>
+                <dd>{{ campaignName() }}</dd>
+
+                <dt>Ad set name</dt>
+                <dd>{{ adSetName() }}</dd>
+
+                <dt>Targeting</dt>
+                <dd>{{ reviewed.template.adSetTargeting }}</dd>
+
+                <dt>Monthly budget</dt>
+                <dd>{{ reviewed.campaign.monthlyBudget | currency: 'USD' : 'symbol' : '1.0-0' }}</dd>
+
+                <dt>Daily cap</dt>
+                <dd>{{ reviewed.campaign.dailyCap | currency: 'USD' : 'symbol' : '1.0-0' }}</dd>
+
+                <dt>Pixel id</dt>
+                <dd>{{ reviewed.campaign.pixelId }}</dd>
+
+                <dt>Creatives</dt>
+                <dd>
+                  {{ reviewed.template.creatives.length }} in template
+                  @if (reviewed.template.creatives.length === 0) {
+                    <span class="launch__muted"> — none on file for this offer yet.</span>
+                  }
+                </dd>
+              </dl>
+
+              <div class="launch__actions">
+                <button matButton="filled" type="button" [disabled]="busy()" (click)="create()">
+                  {{ busy() ? 'Creating…' : 'Create paused campaign' }}
+                </button>
+                <button matButton type="button" [disabled]="busy()" (click)="edit()">Edit</button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+      }
+
+      @case ('created') {
+        @if (created(); as campaign) {
+          <mat-card appearance="outlined">
+            <mat-card-content>
+              <h2 class="launch__heading">Campaign created — paused</h2>
+              <p class="launch__note">
+                Campaign id <span class="launch__mono">{{ campaign.campaignId }}</span>. Ad set
+                <span class="launch__mono">{{ campaign.adSetId }}</span>,
+                {{ campaign.adIds.length }}
+                {{ campaign.adIds.length === 1 ? 'ad' : 'ads' }}.
+              </p>
+
+              @if (activated(); as live) {
+                <div class="launch__live" role="status">
+                  <mat-icon aria-hidden="true">campaign</mat-icon>
+                  <span>
+                    This campaign is live on Meta and spending. Fulfillment moved to
+                    <strong>{{ live.stageName }}</strong
+                    >.
+                  </span>
+                </div>
+              } @else {
+                <div class="launch__spend-warning">
+                  <mat-icon aria-hidden="true">warning</mat-icon>
+                  <p class="launch__spend-text">{{ activationWarning() }}</p>
+                </div>
+
+                <div class="launch__actions">
+                  <button
+                    matButton="filled"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="activate()"
+                  >
+                    {{ busy() ? 'Activating…' : 'Activate campaign (starts spend)' }}
+                  </button>
+                  <a matButton routerLink="/onboarding">Leave it paused</a>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
+      }
+    }
+  }
+</app-page-shell>

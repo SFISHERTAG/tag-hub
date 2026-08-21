@@ -1,235 +1,85 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { createScript, getCardOrgId, logChange } from "@/lib/flow/db";
+import { ROLES } from "@/lib/auth/roles";
 import {
-  createScript,
-  updateScript,
-  deleteScript,
-  getScript,
-  logChange,
-} from "@/lib/flow/db";
-import { getSession } from "@/lib/auth/session";
-import { hasAnyRole } from "@/lib/auth/roles";
-
-const FLOW_ADMIN_ROLES = ["tag_exec", "admin"] as const;
+  handle,
+  notFound,
+  optionalStringArray,
+  nullableString,
+  readJson,
+  requiredString,
+  requireApiRole,
+} from "../../../../_lib/http";
 
 export const dynamic = "force-dynamic";
 
-interface ScriptPayload {
-  content: string;
-  why?: string;
-  notes?: string;
-  version_tag?: string;
-  tags?: string[];
-  org_id: string; // Required for audit logging
-}
+const FLOW_ADMIN_ROLES = [ROLES.TAG_EXEC, ROLES.ADMIN] as const;
 
 /**
  * POST /api/admin/flow/card/[cardId]/scripts
- * Create a new script for a card (hotpath)
+ * Body: { content: string, why?: string | null, notes?: string | null,
+ *         version_tag?: string | null, tags?: string[] }
+ * 201:  FlowScript
+ * 404:  the card does not exist
+ *
+ * Creates a script on a card. Scripts are append-only per card, so this is
+ * also how a new version of an existing script is added.
+ *
+ * `org_id` used to be read from the request body and passed straight to the
+ * audit log, defaulting to the string "unknown". It is now resolved from the
+ * card itself via `getCardOrgId` — the same helper the suggestion flow uses
+ * for the same reason. An audit entry whose org is chosen by the caller is
+ * worse than no audit entry: it looks authoritative and points at the wrong
+ * tenant.
+ *
+ * PATCH and DELETE used to be declared on this route and recovered a script id
+ * from the URL's last path segment, which on this path is the literal string
+ * "scripts" — so both were unreachable. They now live at
+ * `.../scripts/[scriptId]/route.ts`, where the id is a real route parameter.
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ cardId: string }> }
+  { params }: { params: Promise<{ cardId: string }> },
 ) {
-  try {
-    const session = await getSession();
-    if (!session || !hasAnyRole(session.currentRole, FLOW_ADMIN_ROLES)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+  const { cardId } = await params;
+  const context = `POST /api/admin/flow/card/${cardId}/scripts`;
 
-    const { cardId } = await params;
-    const body: ScriptPayload = await request.json();
+  return handle(context, async () => {
+    const gate = await requireApiRole(FLOW_ADMIN_ROLES, context);
+    if (!gate.ok) return gate.response;
 
-    if (!body.content) {
-      return NextResponse.json(
-        { error: "Content is required" },
-        { status: 400 }
-      );
-    }
+    const orgId = await getCardOrgId(cardId);
+    if (!orgId) throw notFound("Card not found.");
+
+    const body = await readJson(request);
+    const content = requiredString(body, "content");
+    const why = nullableString(body, "why");
+    const notes = nullableString(body, "notes");
+    const actor = gate.session.email ?? gate.session.uid;
 
     const script = await createScript(cardId, {
-      content: body.content,
-      why: body.why ?? null,
-      notes: body.notes ?? null,
-      version_tag: body.version_tag ?? null,
-      tags: body.tags || [],
-      created_by: session.email || "unknown",
-      updated_by: session.email || "unknown",
+      content,
+      why,
+      notes,
+      version_tag: nullableString(body, "version_tag"),
+      tags: optionalStringArray(body, "tags") ?? [],
+      created_by: actor,
+      updated_by: actor,
     });
 
-    // Log the change
     await logChange(
-      body.org_id,
+      orgId,
       "flow_scripts",
       script.id,
       "create",
       {
-        content: { old: null, new: body.content },
-        why: { old: null, new: body.why || null },
-        notes: { old: null, new: body.notes || null },
+        content: { old: null, new: content },
+        why: { old: null, new: why },
+        notes: { old: null, new: notes },
       },
-      session.email || "unknown"
+      actor,
     );
 
     return NextResponse.json(script, { status: 201 });
-  } catch (error) {
-    console.error("Error creating script:", error);
-    return NextResponse.json(
-      { error: "Failed to create script" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PATCH /api/admin/flow/card/[cardId]/scripts/[scriptId]
- * Update a script (hotpath)
- */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ cardId: string }> }
-) {
-  try {
-    const session = await getSession();
-    if (!session || !hasAnyRole(session.currentRole, FLOW_ADMIN_ROLES)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    const url = new URL(request.url);
-    const scriptId = url.pathname.split("/").pop();
-
-    if (!scriptId) {
-      return NextResponse.json(
-        { error: "Script ID is required" },
-        { status: 400 }
-      );
-    }
-
-    const body: Partial<ScriptPayload> = await request.json();
-    const existingScript = await getScript(scriptId);
-
-    if (!existingScript) {
-      return NextResponse.json(
-        { error: "Script not found" },
-        { status: 404 }
-      );
-    }
-
-    // Track changes for audit
-    // Values are whatever column changed, so `unknown` is the honest type —
-    // this is written straight to the audit log, never read back here.
-    const changes: Record<string, { old: unknown; new: unknown }> = {};
-
-    if (body.content !== undefined && body.content !== existingScript.content) {
-      changes["content"] = {
-        old: existingScript.content,
-        new: body.content,
-      };
-    }
-    if (body.why !== undefined && body.why !== existingScript.why) {
-      changes["why"] = { old: existingScript.why, new: body.why };
-    }
-    if (body.notes !== undefined && body.notes !== existingScript.notes) {
-      changes["notes"] = { old: existingScript.notes, new: body.notes };
-    }
-
-    /*
-     * Pass the body's fields through untouched.
-     *
-     * These used to be `body.why ?? null`, which turned "the caller did not
-     * mention this field" into "set this field to NULL" — `updateScript`
-     * skips `undefined` but writes an explicit `null`. So a partial edit that
-     * sent only `content` silently wiped why, notes and version_tag. Worse,
-     * the audit `changes` block above only records fields the body actually
-     * carried, so the wipe left no trace: the log said one field changed
-     * while three were destroyed.
-     *
-     * Undefined now means "leave alone" and an explicit null still clears the
-     * field, which is what a partial update should mean.
-     */
-    const updated = await updateScript(scriptId, {
-      content: body.content,
-      why: body.why,
-      notes: body.notes,
-      version_tag: body.version_tag,
-      tags: body.tags,
-      updated_by: session.email || "unknown",
-    });
-
-    // Log if there were changes
-    if (Object.keys(changes).length > 0) {
-      await logChange(
-        body.org_id || "unknown",
-        "flow_scripts",
-        scriptId,
-        "update",
-        changes,
-        session.email || "unknown"
-      );
-    }
-
-    return NextResponse.json(updated);
-  } catch (error) {
-    console.error("Error updating script:", error);
-    return NextResponse.json(
-      { error: "Failed to update script" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * DELETE /api/admin/flow/card/[cardId]/scripts/[scriptId]
- * Delete a script
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ cardId: string }> }
-) {
-  try {
-    const session = await getSession();
-    if (!session || !hasAnyRole(session.currentRole, FLOW_ADMIN_ROLES)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    const url = new URL(request.url);
-    const scriptId = url.pathname.split("/").pop();
-    const orgId = url.searchParams.get("org_id") || "unknown";
-
-    if (!scriptId) {
-      return NextResponse.json(
-        { error: "Script ID is required" },
-        { status: 400 }
-      );
-    }
-
-    const existingScript = await getScript(scriptId);
-    if (!existingScript) {
-      return NextResponse.json(
-        { error: "Script not found" },
-        { status: 404 }
-      );
-    }
-
-    await deleteScript(scriptId);
-
-    // Log the deletion
-    await logChange(
-      orgId,
-      "flow_scripts",
-      scriptId,
-      "delete",
-      {
-        content: { old: existingScript.content, new: null },
-      },
-      session.email || "unknown"
-    );
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting script:", error);
-    return NextResponse.json(
-      { error: "Failed to delete script" },
-      { status: 500 }
-    );
-  }
+  });
 }

@@ -1,0 +1,51 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md's theme
+// contract.
+
+:host {
+  display: block;
+}
+
+.page-shell__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block-end: 1rem;
+  border-block-end: 1px solid var(--mat-sys-outline-variant);
+}
+
+.page-shell__heading {
+  min-inline-size: 0;
+}
+
+.page-shell__title {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.page-shell__subtitle {
+  margin-block: 0.25rem 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.page-shell__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+
+  // Best-effort tidy, not a layout dependency: an action wrapped in @if or
+  // *hasPermission leaves its comment anchor behind, and :empty then does not
+  // match. The header is correct either way — an empty box has no size, and
+  // space-between keeps the heading against the start edge.
+  &:empty {
+    display: none;
+  }
+}
+
+.page-shell__content {
+  padding-block-start: 1rem;
+}

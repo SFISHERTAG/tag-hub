@@ -1,0 +1,17 @@
+// Colour comes from M3 tokens only, per CLAUDE.md's theme contract. The
+// destructive variant overrides Material's own component tokens on the button
+// host — the sanctioned M3 way — rather than reaching into the button's
+// internals with ::ng-deep or forcing a colour with !important.
+
+.confirm-dialog__message {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.confirm-dialog__confirm--destructive {
+  --mat-button-filled-container-color: var(--mat-sys-error);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+  --mat-button-filled-state-layer-color: var(--mat-sys-on-error);
+  --mat-button-filled-ripple-color: var(--mat-sys-on-error);
+}

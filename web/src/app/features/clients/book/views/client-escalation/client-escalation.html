@@ -1,0 +1,61 @@
+<div class="escalation__controls">
+  <span id="escalation-sort-label" class="escalation__sort-label">Sort by</span>
+  <mat-button-toggle-group
+    aria-labelledby="escalation-sort-label"
+    [value]="sortKey()"
+    (change)="setSort($event.value)"
+  >
+    <mat-button-toggle value="checkin">Days since check-in</mat-button-toggle>
+    <mat-button-toggle value="health">Health</mat-button-toggle>
+  </mat-button-toggle-group>
+</div>
+
+@if (enterError(); as message) {
+  <p class="escalation__error" role="alert">{{ message }}</p>
+}
+
+<div class="escalation__buckets">
+  @for (bucket of buckets(); track bucket.bucket) {
+    <section class="escalation__bucket" [attr.aria-label]="bucket.title">
+      <header [class]="'escalation__header escalation__header--' + bucket.tone">
+        <h3 class="escalation__title">{{ bucket.title }}</h3>
+        <span class="escalation__count">{{ bucket.clients.length }}</span>
+      </header>
+
+      @if (bucket.clients.length === 0) {
+        <p class="escalation__empty">None right now.</p>
+      } @else {
+        <ul class="escalation__list">
+          @for (client of bucket.clients; track client.id) {
+            <li class="escalation__item">
+              <a class="escalation__name" [routerLink]="['/clients', client.id]">
+                {{ client.name }}
+              </a>
+              @if (client.escalation.reason; as reason) {
+                <p class="escalation__reason">{{ reason }}</p>
+              }
+              <p class="escalation__checkin">{{ checkIn(client) }}</p>
+
+              @if (isCurrent(client)) {
+                <p class="escalation__current">You are in this client</p>
+              } @else {
+                <button
+                  matButton="outlined"
+                  type="button"
+                  [disabled]="entering() !== null"
+                  (click)="enter(client)"
+                >
+                  @if (entering() === client.ghl_location_id) {
+                    Entering…
+                  } @else {
+                    Enter tenant
+                  }
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>

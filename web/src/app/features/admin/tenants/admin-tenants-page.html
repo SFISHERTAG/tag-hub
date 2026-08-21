@@ -1,0 +1,27 @@
+<app-page-shell title="Tenants" [subtitle]="countLabel()">
+  <form pageActions class="tenants__add" (ngSubmit)="add()">
+    <mat-form-field appearance="outline" class="tenants__add-field" subscriptSizing="dynamic">
+      <mat-label>GHL location id</mat-label>
+      <input matInput [formControl]="newLocationId" placeholder="loc_…" />
+    </mat-form-field>
+    <button matButton="filled" type="submit" [disabled]="!newLocationId.value.trim()">
+      Add tenant
+    </button>
+  </form>
+
+  @if (addError(); as message) {
+    <p class="tenants__error" role="alert">{{ message }}</p>
+  }
+
+  <app-data-table
+    caption="Every configured client account"
+    [columns]="columns"
+    [rows]="tenants()"
+    [loading]="loading()"
+    [error]="error()"
+    emptyIcon="business"
+    emptyMessage="No tenants configured yet."
+    emptyHint="Add one by GHL location id above."
+    (retry)="load()"
+  />
+</app-page-shell>

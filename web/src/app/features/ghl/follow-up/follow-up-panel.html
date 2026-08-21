@@ -1,0 +1,114 @@
+<section class="follow-up">
+  <header class="follow-up__header">
+    <div class="follow-up__heading">
+      <h2 class="follow-up__title">{{ heading() }}</h2>
+      @if (!loading() && failure() === null) {
+        <span class="follow-up__count">{{ countLabel() }}</span>
+      }
+    </div>
+
+    @if (data(); as queue) {
+      @if (queue.canConfigure) {
+        <form class="follow-up__config" (ngSubmit)="save()">
+          <span class="follow-up__config-label">Ages out after</span>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="follow-up__number">
+            <mat-label>Threshold</mat-label>
+            <input
+              matInput
+              type="number"
+              min="1"
+              [max]="maxThreshold"
+              inputmode="numeric"
+              [ngModel]="threshold()"
+              (ngModelChange)="setThreshold($event)"
+              [disabled]="saving()"
+              name="threshold"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="follow-up__mode">
+            <mat-label>Counted in</mat-label>
+            <mat-select
+              [ngModel]="mode()"
+              (ngModelChange)="onModeChange($event)"
+              [disabled]="saving()"
+              name="mode"
+            >
+              <mat-option value="days">days</mat-option>
+              <mat-option value="attempts">attempts</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button matButton="outlined" type="submit" [disabled]="saving()">
+            @if (saving()) {
+              Saving…
+            } @else {
+              Save
+            }
+          </button>
+
+          @if (saved()) {
+            <span class="follow-up__saved" role="status">Saved</span>
+          }
+          @if (saveError(); as message) {
+            <span class="follow-up__error" role="alert">{{ message }}</span>
+          }
+        </form>
+      }
+    }
+  </header>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="3" label="Loading the follow-up queue" />
+  } @else if (failure(); as problem) {
+    <app-error-state
+      [message]="problem.title"
+      [detail]="problem.detail"
+      [retryable]="problem.retryable"
+      (retry)="reload()"
+    />
+  } @else if (data(); as queue) {
+    <!-- The saved threshold could not be read, so the default decided who is
+         on this list. That changes the list, so it is said out loud. -->
+    @if (queue.configFallback) {
+      <p class="follow-up__notice" role="status">
+        The saved ageing-out threshold could not be read, so the default was used. This queue may
+        be longer or shorter than usual.
+      </p>
+    }
+
+    @if (truncatedLabel(); as notice) {
+      <p class="follow-up__notice" role="status">{{ notice }}</p>
+    }
+
+    @if (candidates().length === 0) {
+      <app-empty-state
+        icon="task_alt"
+        message="Nothing waiting on a follow-up"
+        hint="Contacts appear here after a no-show or a DQ, and clear when they book again."
+      />
+    } @else {
+      <ul class="follow-up__list">
+        @for (entry of candidates(); track entry.appointmentId) {
+          <li class="follow-up__item">
+            <div class="follow-up__who">
+              <p class="follow-up__name">{{ nameOf(entry) }}</p>
+              @if (entry.contact?.companyName; as company) {
+                <p class="follow-up__company">{{ company }}</p>
+              }
+              <p class="follow-up__detail">
+                {{ appointmentLabel(entry) }} · {{ statusLabel(entry) }} ({{ entry.timing }}) ·
+                {{ attemptsLabel(entry) }}
+              </p>
+              @if (entry.opportunity; as deal) {
+                <p class="follow-up__detail">Deal: {{ deal.name }} · {{ deal.status }}</p>
+              }
+            </div>
+            <span class="follow-up__marked">{{ markedLabel(entry) }}</span>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

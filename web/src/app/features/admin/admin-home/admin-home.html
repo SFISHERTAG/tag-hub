@@ -1,0 +1,15 @@
+<app-page-shell title="Admin" subtitle="Roles, tenants and the content everyone else reads.">
+  <nav class="admin-home__grid" aria-label="Administration sections">
+    @for (section of sections; track section.path) {
+      <a class="admin-home__link" [routerLink]="section.path">
+        <mat-card class="admin-home__card" appearance="outlined">
+          <mat-card-content class="admin-home__content">
+            <mat-icon class="admin-home__icon" aria-hidden="true">{{ section.icon }}</mat-icon>
+            <span class="admin-home__label">{{ section.label }}</span>
+            <span class="admin-home__description">{{ section.description }}</span>
+          </mat-card-content>
+        </mat-card>
+      </a>
+    }
+  </nav>
+</app-page-shell>

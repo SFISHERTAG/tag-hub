@@ -1,0 +1,49 @@
+// Tone -> M3 token, in one place. `client-status.ts` returns a semantic tone and
+// never a colour, so this is the only file in the feature that decides what
+// "negative" looks like. No raw hex, no !important, no deep selectors.
+:host {
+  display: inline-flex;
+}
+
+.health-badge {
+  display: inline-flex;
+  gap: 0.375rem;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-full);
+  font: var(--mat-sys-label-small);
+  white-space: nowrap;
+}
+
+.health-badge--positive {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.health-badge--caution {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.health-badge--negative {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.health-badge__score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+// Deliberately not subtle. This is the marker that says the number beside it is
+// fabricated; a badge that reads as a real score is the defect.
+.health-badge__sample {
+  padding-inline: 0.25rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface);
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

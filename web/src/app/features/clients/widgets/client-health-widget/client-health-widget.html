@@ -1,0 +1,35 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading client health" />
+} @else if (error(); as message) {
+  <app-error-state [message]="message" (retry)="load()" />
+} @else {
+  <app-sample-data-notice [disclosure]="sampleData()" [compact]="true" />
+
+  @if (flagged().length === 0) {
+    <app-empty-state
+      icon="check_circle"
+      message="No clients need attention right now"
+      [hint]="clients().length === 0 ? 'There are no clients in your book yet.' : null"
+    />
+  } @else {
+    <ol class="health-widget__list">
+      @for (client of visible(); track client.id) {
+        <li class="health-widget__item">
+          <div class="health-widget__body">
+            <a class="health-widget__name" [routerLink]="['/clients', client.id]">
+              {{ client.name }}
+            </a>
+            @if (client.escalation.reason; as reason) {
+              <p class="health-widget__reason">{{ reason }}</p>
+            }
+          </div>
+          <app-health-badge [health]="client.health" />
+        </li>
+      }
+    </ol>
+
+    @if (overflow() > 0) {
+      <a class="health-widget__more" routerLink="/clients">+{{ overflow() }} more need attention</a>
+    }
+  }
+}

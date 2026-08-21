@@ -1,0 +1,39 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md's theme
+// contract.
+
+:host {
+  display: block;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+.empty-state__icon {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.empty-state__message {
+  margin: 0;
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface);
+}
+
+.empty-state__hint {
+  margin: 0;
+  max-inline-size: 32rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.empty-state__action {
+  margin-block-start: 0.5rem;
+}

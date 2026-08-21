@@ -1,0 +1,105 @@
+<app-page-shell title="Clients" [subtitle]="loading() ? null : countLabel()">
+  <div pageActions>
+    <a matButton="outlined" routerLink="/dashboard">
+      <mat-icon>dashboard</mat-icon>
+      Dashboard
+    </a>
+  </div>
+
+  <app-sample-data-notice [disclosure]="sampleData()" />
+
+  <div class="book__controls">
+    <mat-form-field appearance="outline" class="book__search" subscriptSizing="dynamic">
+      <mat-label>Search clients</mat-label>
+      <input matInput type="search" [formControl]="searchControl" autocomplete="off" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="book__filter" subscriptSizing="dynamic">
+      <mat-label>Status</mat-label>
+      <mat-select [value]="status()" (valueChange)="setStatus($event)">
+        @for (option of statusFilters; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="book__filter" subscriptSizing="dynamic">
+      <mat-label>Sort by</mat-label>
+      <mat-select [value]="sortBy()" (valueChange)="setSortBy($event)">
+        @for (option of sortKeys; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      matIconButton
+      type="button"
+      [attr.aria-label]="
+        sortOrder() === 'asc' ? 'Sorted ascending. Sort descending' : 'Sorted descending. Sort ascending'
+      "
+      (click)="toggleSortOrder()"
+    >
+      <mat-icon>{{ sortOrder() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+    </button>
+  </div>
+
+  <div class="book__views">
+    <mat-button-toggle-group
+      aria-label="Client book view"
+      [value]="view()"
+      (change)="setView($event.value)"
+    >
+      <mat-button-toggle value="grid">Grid</mat-button-toggle>
+      <mat-button-toggle value="list">List</mat-button-toggle>
+      <mat-button-toggle value="kanban">Kanban</mat-button-toggle>
+      <mat-button-toggle value="escalations">Escalations</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading your clients" />
+  } @else if (error(); as message) {
+    <app-error-state
+      [message]="message"
+      detail="Your client list could not be loaded, so none of it is shown. This is not the same as having no clients."
+      (retry)="load()"
+    />
+  } @else if (clients().length === 0) {
+    @if (hasFilters()) {
+      <app-empty-state
+        icon="filter_alt_off"
+        message="No clients match your filters"
+        hint="Clear the search and status filter to see the whole book."
+        actionLabel="Clear filters"
+        (action)="clearFilters()"
+      />
+    } @else {
+      <app-empty-state
+        icon="groups"
+        message="No clients assigned yet"
+        hint="Clients appear here once they are assigned to your book."
+      />
+    }
+  } @else {
+    @switch (view()) {
+      @case ('list') {
+        <app-client-list
+          [clients]="clients()"
+          [sort]="tableSort()"
+          (sortChange)="onTableSort($event)"
+        />
+      }
+      @case ('kanban') {
+        <app-client-kanban [clients]="clients()" />
+      }
+      @case ('escalations') {
+        <app-client-escalation [clients]="clients()" />
+      }
+      @default {
+        <app-client-grid [clients]="clients()" />
+      }
+    }
+  }
+</app-page-shell>

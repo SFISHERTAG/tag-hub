@@ -1,0 +1,118 @@
+// Colour comes from M3 system tokens only. No raw hex, no !important, no deep
+// selectors — the theme contract in CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.follow-up__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-block-end: 0.75rem;
+}
+
+.follow-up__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.follow-up__title {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.follow-up__count {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.follow-up__config {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.follow-up__config-label {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.follow-up__number {
+  inline-size: 7rem;
+}
+
+.follow-up__mode {
+  inline-size: 9rem;
+}
+
+.follow-up__saved {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-primary);
+}
+
+.follow-up__error {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-error);
+}
+
+.follow-up__notice {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-small);
+}
+
+.follow-up__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.follow-up__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container);
+}
+
+.follow-up__who {
+  min-inline-size: 0;
+}
+
+.follow-up__name {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.follow-up__company,
+.follow-up__detail {
+  margin: 0.125rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.follow-up__marked {
+  flex-shrink: 0;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}

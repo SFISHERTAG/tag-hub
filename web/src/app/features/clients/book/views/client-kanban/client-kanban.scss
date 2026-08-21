@@ -1,0 +1,72 @@
+// M3 tokens only. The horizontal scroll is contained here rather than on the
+// page body — CLAUDE.md's responsive rule, and a page that scrolls sideways on
+// a phone is unusable in a way a scrolling strip is not.
+:host {
+  display: block;
+}
+
+.kanban {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-block-end: 0.5rem;
+}
+
+.kanban__column {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  inline-size: 18rem;
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.kanban__header {
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--mat-sys-corner-small);
+}
+
+.kanban__header--positive {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.kanban__header--caution {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.kanban__header--negative {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.kanban__title {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+}
+
+.kanban__count {
+  margin: 0.125rem 0 0;
+  font: var(--mat-sys-label-small);
+}
+
+.kanban__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kanban__empty {
+  margin: 0;
+  padding: 1.5rem 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+  text-align: center;
+}

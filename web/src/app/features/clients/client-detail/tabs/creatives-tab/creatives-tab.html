@@ -1,0 +1,63 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading creatives" />
+} @else if (error(); as message) {
+  <app-error-state
+    [message]="message"
+    detail="Creatives could not be loaded. This is not the same as having none."
+    (retry)="load()"
+  />
+} @else if (locationId() === null) {
+  <app-empty-state
+    icon="link_off"
+    message="No GHL location on this client"
+    hint="Creatives are stored per location, so there is nowhere to read them from yet."
+  />
+} @else if (creatives().length === 0) {
+  <app-empty-state
+    icon="collections"
+    message="No creatives uploaded yet"
+    hint="Creatives added to this client's Drive folder appear here."
+  />
+} @else {
+  @if (!campaignLinksIncluded()) {
+    <p class="creatives__warning" role="status">
+      Campaign links are unavailable right now, so no creative below shows the campaigns using it.
+      An empty list here means "not known", not "not used".
+    </p>
+  }
+
+  @for (group of groups(); track group.status) {
+    <section class="creatives__group">
+      <h2 class="creatives__heading">{{ group.label }} ({{ group.creatives.length }})</h2>
+
+      <ul class="creatives__list">
+        @for (creative of group.creatives; track creative.id) {
+          <li class="creatives__item">
+            <div class="creatives__thumb" aria-hidden="true">
+              <mat-icon>{{ icon(creative) }}</mat-icon>
+            </div>
+
+            <div class="creatives__body">
+              @if (creative.webViewLink; as link) {
+                <a class="creatives__title" [href]="link" target="_blank" rel="noopener noreferrer">
+                  {{ creative.title }}
+                </a>
+              } @else {
+                <p class="creatives__title">{{ creative.title }}</p>
+              }
+
+              <p class="creatives__meta">
+                {{ creative.platform }} · {{ creative.format }} ·
+                submitted {{ submitted(creative.submittedAt) }}
+              </p>
+
+              @if (campaignLinksIncluded() && creative.campaigns_using.length > 0) {
+                <p class="creatives__campaigns">Used in: {{ campaignNames(creative) }}</p>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

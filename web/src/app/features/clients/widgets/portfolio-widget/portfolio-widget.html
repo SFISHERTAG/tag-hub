@@ -1,0 +1,28 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading your portfolio" />
+} @else if (error(); as message) {
+  <app-error-state [message]="message" (retry)="load()" />
+} @else {
+  <app-sample-data-notice [disclosure]="sampleData()" [compact]="true" />
+
+  @if (clients().length === 0) {
+    <app-empty-state icon="groups" message="No clients in view yet" />
+  } @else {
+    <ol class="portfolio-widget__list">
+      @for (client of visible(); track client.id) {
+        <li class="portfolio-widget__item">
+          <a class="portfolio-widget__name" [routerLink]="['/clients', client.id]">
+            {{ client.name }}
+          </a>
+          <app-health-badge [health]="client.health" [showScore]="false" />
+        </li>
+      }
+    </ol>
+
+    @if (overflow() > 0) {
+      <a class="portfolio-widget__more" routerLink="/clients">
+        +{{ overflow() }} more in the full book
+      </a>
+    }
+  }
+}

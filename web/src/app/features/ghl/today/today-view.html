@@ -1,0 +1,62 @@
+<app-page-shell [title]="dayLabel(day())" [subtitle]="subtitle()">
+  <nav pageActions class="today__days" aria-label="Choose a day">
+    @for (key of dayKeys; track key) {
+      <a
+        [matButton]="key === day() ? 'filled' : 'outlined'"
+        [routerLink]="[]"
+        [queryParams]="{ day: key }"
+        [attr.aria-current]="key === day() ? 'page' : null"
+      >
+        {{ dayLabel(key) }}
+      </a>
+    }
+  </nav>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading the day" />
+  } @else if (failure(); as problem) {
+    <app-error-state
+      [message]="problem.title"
+      [detail]="problem.detail"
+      [retryable]="problem.retryable"
+      (retry)="reload()"
+    />
+  } @else if (data(); as loaded) {
+    <div class="today__summary">
+      <span class="today__stat">{{ showRateLabel() }}</span>
+      @if (dqLabel(); as dq) {
+        <span class="today__stat">{{ dq }}</span>
+      }
+    </div>
+
+    <!-- GHL has the statuses either way. What is missing is the Firestore
+         record of WHEN each mark happened, which is what the show rate and the
+         pre-call/on-call DQ split are derived from. -->
+    @if (loaded.summary.outcomesUnavailable) {
+      <p class="today__notice" role="status">
+        Outcome records could not be read, so the show rate and DQ split are missing for this day.
+        The appointments themselves are unaffected.
+      </p>
+    }
+
+    @if (appointments().length === 0) {
+      <app-empty-state icon="event_available" [message]="emptyMessage()" />
+    } @else {
+      <div class="today__list">
+        @for (appointment of appointments(); track appointment.id) {
+          <app-appointment-row
+            [locationId]="locationId()"
+            [appointment]="appointment"
+            (marked)="refreshQuietly()"
+          />
+        }
+      </div>
+    }
+  }
+
+  <div class="today__follow-up">
+    <!-- enrich=false: the queue renders from the denormalized outcome records
+         alone, so opening the day costs no per-row GHL call (Story 2.8 AC5). -->
+    <app-follow-up-panel [locationId]="locationId()" [enrich]="false" />
+  </div>
+</app-page-shell>

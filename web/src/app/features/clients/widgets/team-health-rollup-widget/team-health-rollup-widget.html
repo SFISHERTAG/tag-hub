@@ -1,0 +1,25 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading team health" />
+} @else if (error(); as message) {
+  <app-error-state [message]="message" (retry)="load()" />
+} @else {
+  <app-sample-data-notice [disclosure]="sampleData()" [compact]="true" />
+
+  @if (books().length === 0) {
+    <app-empty-state icon="supervisor_account" message="No CSMs report to you yet" />
+  } @else {
+    <ol class="rollup__list">
+      @for (book of books(); track book.csmEmail) {
+        <li class="rollup__item">
+          <div class="rollup__body">
+            <p class="rollup__csm">{{ book.csmEmail }}</p>
+            <p class="rollup__meta">{{ bookLine(book) }}</p>
+          </div>
+          <span [class]="'rollup__flag rollup__flag--' + tone(book)">
+            {{ attentionLabel(book) }}
+          </span>
+        </li>
+      }
+    </ol>
+  }
+}

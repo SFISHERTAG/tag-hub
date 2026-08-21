@@ -1,0 +1,68 @@
+<app-page-shell [title]="heading()" subtitle="Sections, lessons and the checklist learners tick off.">
+  <a pageActions matButton routerLink="/admin/courses">Back to courses</a>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="5" label="Loading this course" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else {
+    @if (writeError(); as message) {
+      <p class="course-editor__error" role="alert">{{ message }}</p>
+    }
+
+    <mat-card appearance="outlined" class="course-editor__meta">
+      <mat-card-content>
+        <form class="course-editor__meta-form" [formGroup]="meta" (ngSubmit)="saveMeta()">
+          <mat-form-field appearance="outline">
+            <mat-label>Title</mat-label>
+            <input matInput formControlName="title" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Description</mat-label>
+            <input matInput formControlName="description" />
+          </mat-form-field>
+          <div class="course-editor__meta-actions">
+            <button matButton="filled" type="submit" [disabled]="pending()">Save</button>
+            @if (metaSaved()) {
+              <span class="course-editor__saved">Saved.</span>
+            }
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <h2 class="course-editor__heading">Sections</h2>
+
+    @if (sections().length === 0) {
+      <app-empty-state
+        icon="list_alt"
+        message="This course has no sections yet."
+        hint="Add the first one below."
+      />
+    } @else {
+      <div class="course-editor__sections">
+        @for (section of sections(); track section.id) {
+          <app-section-editor
+            [courseId]="courseId()"
+            [section]="section"
+            (changed)="refresh()"
+          />
+        }
+      </div>
+    }
+
+    <form class="course-editor__add" (ngSubmit)="addSection()">
+      <mat-form-field appearance="outline" class="course-editor__add-field" subscriptSizing="dynamic">
+        <mat-label>New section title</mat-label>
+        <input matInput [formControl]="newSectionTitle" />
+      </mat-form-field>
+      <button
+        matButton="outlined"
+        type="submit"
+        [disabled]="pending() || !newSectionTitle.value.trim()"
+      >
+        Add section
+      </button>
+    </form>
+  }
+</app-page-shell>

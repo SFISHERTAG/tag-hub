@@ -1,0 +1,36 @@
+// M3 tokens only. No raw hex, no !important, no deep selectors.
+//
+// The card fills its grid cell rather than sizing to its content, so a row of
+// tiles has one baseline instead of a ragged edge.
+:host {
+  display: block;
+  block-size: 100%;
+}
+
+.widget {
+  block-size: 100%;
+}
+
+.widget__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  block-size: 100%;
+}
+
+.widget__title {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.widget__note {
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.widget__detail {
+  display: block;
+  margin-block-start: 0.25rem;
+}

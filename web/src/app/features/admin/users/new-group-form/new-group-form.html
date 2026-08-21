@@ -1,0 +1,34 @@
+<mat-card appearance="outlined" class="new-group">
+  <mat-card-content>
+    <h3 class="new-group__title">New group</h3>
+
+    <form class="new-group__form" [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline">
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name" placeholder="Sales team" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          @for (role of roles; track role) {
+            <mat-option [value]="role">{{ roleLabels[role] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Locations (optional)</mat-label>
+        <input matInput formControlName="locationsRaw" placeholder="loc_…, loc_…" />
+      </mat-form-field>
+
+      <button matButton="filled" type="submit" [disabled]="!canSubmit()">
+        {{ pending() ? 'Creating…' : 'Create group' }}
+      </button>
+    </form>
+
+    @if (error(); as message) {
+      <p class="new-group__error" role="alert">{{ message }}</p>
+    }
+  </mat-card-content>
+</mat-card>

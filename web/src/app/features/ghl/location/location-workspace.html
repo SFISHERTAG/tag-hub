@@ -1,0 +1,17 @@
+<nav mat-tab-nav-bar [tabPanel]="workspacePanel" aria-label="Client workspace">
+  @for (tab of tabs; track tab.path) {
+    <a
+      mat-tab-link
+      [routerLink]="[tab.path]"
+      routerLinkActive
+      #link="routerLinkActive"
+      [active]="link.isActive"
+    >
+      {{ tab.label }}
+    </a>
+  }
+</nav>
+
+<mat-tab-nav-panel #workspacePanel class="workspace__panel">
+  <router-outlet />
+</mat-tab-nav-panel>

@@ -1,0 +1,75 @@
+<h2 mat-dialog-title>{{ data.contactLabel }}</h2>
+
+<mat-dialog-content class="prep__content">
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="3" label="Loading call prep" />
+  } @else if (failure(); as problem) {
+    <app-error-state
+      [message]="problem.title"
+      [detail]="problem.detail"
+      [retryable]="problem.retryable"
+      (retry)="load()"
+    />
+  } @else if (prep(); as prepared) {
+    <section class="prep__section">
+      <h3 class="prep__heading">Attribution</h3>
+      @if (firstTouchLabel(); as first) {
+        <p class="prep__line"><span class="prep__label">First touch:</span> {{ first }}</p>
+      }
+      @if (lastTouchLabel(); as last) {
+        <p class="prep__line"><span class="prep__label">Last touch:</span> {{ last }}</p>
+      }
+      @if (firstTouchLabel() === null && lastTouchLabel() === null) {
+        <p class="prep__line">No attribution on file.</p>
+      }
+    </section>
+
+    <section class="prep__section">
+      <h3 class="prep__heading">Pipeline</h3>
+      @if (prepared.opportunity; as deal) {
+        <p class="prep__line"><span class="prep__label">Deal:</span> {{ deal.name || 'Unnamed deal' }}</p>
+        @if (deal.monetaryValue > 0) {
+          <p class="prep__line"><span class="prep__label">Value:</span> {{ money(deal.monetaryValue) }}</p>
+        }
+        <p class="prep__line"><span class="prep__label">Status:</span> {{ deal.status }}</p>
+      } @else {
+        <p class="prep__line">No pipeline record for this contact.</p>
+      }
+    </section>
+
+    <section class="prep__section">
+      <h3 class="prep__heading">Notes ({{ notes().length }})</h3>
+      @if (latestNote(); as note) {
+        <article class="prep__note">
+          <p class="prep__note-date">{{ noteDate(note) }}</p>
+          <p class="prep__note-body">{{ note.body }}</p>
+        </article>
+
+        @if (olderNotes().length > 0) {
+          <button matButton type="button" (click)="toggleNotes()">
+            @if (expanded()) {
+              Show less
+            } @else {
+              Show {{ olderNotes().length }} more
+            }
+          </button>
+
+          @if (expanded()) {
+            @for (older of olderNotes(); track older.id) {
+              <article class="prep__note">
+                <p class="prep__note-date">{{ noteDate(older) }}</p>
+                <p class="prep__note-body">{{ older.body }}</p>
+              </article>
+            }
+          }
+        }
+      } @else {
+        <p class="prep__line">No notes yet.</p>
+      }
+    </section>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton mat-dialog-close type="button">Close</button>
+</mat-dialog-actions>

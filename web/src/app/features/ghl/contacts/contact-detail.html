@@ -1,0 +1,122 @@
+<app-page-shell [title]="title()" [subtitle]="detail()?.contact?.companyName ?? null">
+  <a pageActions matButton="outlined" [routerLink]="['..']">All contacts</a>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading the contact" />
+  } @else if (failure(); as problem) {
+    <app-error-state
+      [message]="problem.title"
+      [detail]="problem.detail"
+      [retryable]="problem.retryable"
+      (retry)="reload()"
+    />
+  } @else if (detail(); as loaded) {
+    <div class="contact__panels">
+      <mat-card appearance="outlined" class="contact__panel">
+        <mat-card-content>
+          <h2 class="contact__panel-title">Details</h2>
+          <dl class="contact__rows">
+            @for (row of detailRows(); track row.label) {
+              <dt class="contact__row-label">{{ row.label }}</dt>
+              <dd class="contact__row-value">{{ row.value }}</dd>
+            }
+          </dl>
+
+          @if (loaded.contact.tags; as tags) {
+            @if (tags.length > 0) {
+              <ul class="contact__tags">
+                @for (tag of tags; track tag) {
+                  <li class="contact__tag">{{ tag }}</li>
+                }
+              </ul>
+            }
+          }
+        </mat-card-content>
+      </mat-card>
+
+      @if (firstTouchRows().length > 0) {
+        <mat-card appearance="outlined" class="contact__panel">
+          <mat-card-content>
+            <div class="contact__panel-head">
+              <h2 class="contact__panel-title">First touch</h2>
+              @if (loaded.metaTrackable.firstTouch) {
+                <span class="contact__badge">Meta trackable</span>
+              }
+            </div>
+            <dl class="contact__rows">
+              @for (row of firstTouchRows(); track row.label) {
+                <dt class="contact__row-label">{{ row.label }}</dt>
+                <dd class="contact__row-value">{{ row.value }}</dd>
+              }
+            </dl>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      @if (lastTouchRows().length > 0) {
+        <mat-card appearance="outlined" class="contact__panel">
+          <mat-card-content>
+            <div class="contact__panel-head">
+              <h2 class="contact__panel-title">Last touch</h2>
+              @if (loaded.metaTrackable.lastTouch) {
+                <span class="contact__badge">Meta trackable</span>
+              }
+            </div>
+            <dl class="contact__rows">
+              @for (row of lastTouchRows(); track row.label) {
+                <dt class="contact__row-label">{{ row.label }}</dt>
+                <dd class="contact__row-value">{{ row.value }}</dd>
+              }
+            </dl>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+
+    <section class="contact__notes">
+      <h2 class="contact__panel-title">Notes ({{ notes().length }})</h2>
+
+      <form class="contact__note-form" (ngSubmit)="addNote()">
+        <mat-form-field appearance="outline" class="contact__note-field">
+          <mat-label>Add a note</mat-label>
+          <textarea
+            matInput
+            name="body"
+            rows="3"
+            [attr.maxlength]="maxNote"
+            placeholder="What was said, what happens next"
+            [ngModel]="noteBody()"
+            (ngModelChange)="setNoteBody($event)"
+            [disabled]="saving()"
+          ></textarea>
+        </mat-form-field>
+
+        <div class="contact__note-actions">
+          <button matButton="filled" type="submit" [disabled]="!canSubmitNote()">
+            @if (saving()) {
+              Saving…
+            } @else {
+              Add note
+            }
+          </button>
+          @if (noteError(); as message) {
+            <p class="contact__error" role="alert">{{ message }}</p>
+          }
+        </div>
+      </form>
+
+      @if (notes().length === 0) {
+        <p class="contact__empty">No notes yet.</p>
+      } @else {
+        <ul class="contact__note-list">
+          @for (note of notes(); track note.id) {
+            <li class="contact__note">
+              <p class="contact__note-body">{{ note.body }}</p>
+              <p class="contact__note-date">{{ noteDate(note) }}</p>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</app-page-shell>

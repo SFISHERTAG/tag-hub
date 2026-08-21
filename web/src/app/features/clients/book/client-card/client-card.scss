@@ -1,0 +1,92 @@
+// M3 tokens only. No raw hex, no !important, no deep selectors.
+:host {
+  display: block;
+  block-size: 100%;
+}
+
+.client-card {
+  block-size: 100%;
+}
+
+.client-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.client-card__head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  inline-size: 100%;
+}
+
+.client-card__identity {
+  min-inline-size: 0;
+}
+
+.client-card__name {
+  display: inline-block;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+.client-card__location {
+  margin: 0.125rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.client-card__alerts {
+  flex: none;
+  min-inline-size: 1.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--mat-sys-corner-full);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-label-medium);
+  text-align: center;
+}
+
+.client-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  inline-size: 100%;
+  margin: 0;
+}
+
+.client-card__metric {
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-low);
+
+  dt {
+    font: var(--mat-sys-label-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  dd {
+    margin: 0.125rem 0 0;
+    font: var(--mat-sys-title-small);
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.client-card__no-metrics,
+.client-card__reason {
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}

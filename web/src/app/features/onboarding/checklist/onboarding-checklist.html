@@ -1,0 +1,70 @@
+<app-page-shell [title]="heading()" [subtitle]="progressLabel()">
+  <a pageActions matButton="filled" routerLink="/onboarding/launch">Launch campaign</a>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading the onboarding checklist" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else if (state() === 'no-client') {
+    <app-empty-state
+      icon="business"
+      message="No client selected."
+      hint="Enter a client from Portfolio to see their onboarding checklist."
+    />
+  } @else if (state() === 'no-opportunity') {
+    <app-empty-state
+      icon="assignment_late"
+      message="No Fulfillment opportunity for this client yet."
+      hint="The checklist appears once one exists in GHL."
+    />
+  } @else if (ready(); as checklist) {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <div class="checklist__header">
+          <h2 class="checklist__stage">{{ stageLabel() }}</h2>
+          <span class="checklist__days">{{ daysLabel() }}</span>
+        </div>
+
+        @if (unparsedStage(); as raw) {
+          <p class="checklist__note">
+            The current stage “{{ raw }}” does not match a known Fulfillment stage (PR1–AP5), so
+            there are no fixed tasks to show.
+          </p>
+        }
+
+        @if (saveError(); as message) {
+          <p class="checklist__error" role="alert">{{ message }}</p>
+        }
+
+        @if (checklist.tasks.length === 0) {
+          <p class="checklist__note">No tasks are defined for this stage.</p>
+        } @else if (checklist.readOnly) {
+          <ul class="checklist__readonly">
+            @for (task of checklist.tasks; track task.id) {
+              <li [class.checklist__task--done]="isComplete(task.id)">{{ task.label }}</li>
+            }
+          </ul>
+          <p class="checklist__note">This checklist is read-only for your role.</p>
+        } @else {
+          <ul class="checklist__tasks">
+            @for (task of checklist.tasks; track task.id) {
+              <li>
+                <mat-checkbox
+                  [checked]="isComplete(task.id)"
+                  [disabled]="saving()"
+                  (change)="toggle(task.id, $event.checked)"
+                >
+                  <span [class.checklist__task--done]="isComplete(task.id)">{{ task.label }}</span>
+                </mat-checkbox>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    @if (stageOrder().length > 0) {
+      <p class="checklist__pipeline">Pipeline: {{ stageOrder().join(' → ') }}</p>
+    }
+  }
+</app-page-shell>

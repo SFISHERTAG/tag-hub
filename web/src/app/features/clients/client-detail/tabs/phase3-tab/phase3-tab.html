@@ -1,0 +1,51 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="2" label="Loading Meta setup status" />
+} @else if (error(); as message) {
+  <app-error-state
+    [message]="message"
+    detail="Meta setup status could not be loaded. This is not the same as Phase 3 not having started."
+    (retry)="load()"
+  />
+} @else if (locationId() === null) {
+  <app-empty-state
+    icon="link_off"
+    message="No GHL location on this client"
+    hint="Phase 3 progress is recorded against a location, so there is nothing to read yet."
+  />
+} @else if (phase3(); as phase3) {
+  <section class="phase3">
+    <header class="phase3__head">
+      <div>
+        <h2 class="phase3__title">Meta account setup</h2>
+        <p class="phase3__account">{{ accountLine() }}</p>
+      </div>
+      @if (meta(); as meta) {
+        <span [class]="'phase3__status phase3__status--' + meta.tone">{{ meta.label }}</span>
+      }
+    </header>
+
+    @if (meta()?.waitingOn; as waiting) {
+      <p class="phase3__waiting" role="status">
+        <strong>Awaiting client action.</strong>
+        {{ waiting }}
+      </p>
+    }
+
+    @if (phase3.status === 'error' && phase3.errorMessage) {
+      <p class="phase3__error" role="alert">{{ phase3.errorMessage }}</p>
+    }
+
+    @if (phase3.lastEvent; as event) {
+      <p class="phase3__meta">Last event: {{ event }}</p>
+    }
+    @if (lastUpdate(); as timestamp) {
+      <p class="phase3__meta">Last update: {{ timestamp }}</p>
+    }
+  </section>
+} @else {
+  <app-empty-state
+    icon="hourglass_empty"
+    message="Phase 3 has not started"
+    hint="Phase 3 begins once the Phase 2 intake form is complete."
+  />
+}

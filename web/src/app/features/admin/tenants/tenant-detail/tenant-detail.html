@@ -1,0 +1,81 @@
+<app-page-shell [title]="heading()" [subtitle]="subtitle()">
+  <a pageActions matButton routerLink="/admin/tenants">Back to tenants</a>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading this tenant" />
+  } @else if (loadError(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else {
+    <form class="tenant__form" [formGroup]="form" (ngSubmit)="save()">
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <h2 class="tenant__section-title">Services</h2>
+          <p class="tenant__note">
+            Controls what this tenant sees. A service off here should hide the corresponding nav
+            route and refuse the request if typed directly.
+          </p>
+          <div class="tenant__services">
+            @for (service of serviceIds; track service) {
+              <mat-checkbox [formControl]="serviceControl(service)">
+                {{ serviceLabels[service] }}
+              </mat-checkbox>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <h2 class="tenant__section-title">Owner model</h2>
+          <p class="tenant__note">
+            Who this tenant is run by. Affects offboarding and Meta asset ownership.
+          </p>
+          <mat-form-field appearance="outline" class="tenant__owner">
+            <mat-label>Owner</mat-label>
+            <mat-select formControlName="ownerModel">
+              <mat-option value="client">Client</mat-option>
+              <mat-option value="tag">TAG</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <h2 class="tenant__section-title">Meta ids</h2>
+          <p class="tenant__note">
+            Leave blank until Meta setup for this tenant is complete. Clearing a field here clears
+            it on the record.
+          </p>
+          <div class="tenant__meta">
+            <mat-form-field appearance="outline">
+              <mat-label>Ad account id</mat-label>
+              <input matInput formControlName="metaAdAccountId" placeholder="act_…" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Business id</mat-label>
+              <input matInput formControlName="metaBusinessId" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Pixel id</mat-label>
+              <input matInput formControlName="metaPixelId" />
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="tenant__actions">
+        <button matButton="filled" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : 'Save' }}
+        </button>
+        @if (saved()) {
+          <span class="tenant__saved">Saved.</span>
+        }
+      </div>
+
+      @if (saveError(); as message) {
+        <p class="tenant__error" role="alert">{{ message }}</p>
+      }
+    </form>
+  }
+</app-page-shell>

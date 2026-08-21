@@ -1,0 +1,25 @@
+// Colour comes from M3 system tokens only. No raw hex, no !important, no deep
+// selectors — the theme contract in CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.contacts__search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 1rem;
+}
+
+.contacts__field {
+  flex: 1 1 18rem;
+  max-inline-size: 26rem;
+}
+
+.contacts__notice {
+  margin: 0 0 0.75rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}

@@ -1,0 +1,76 @@
+<form class="bug-form" (ngSubmit)="submit()">
+  <mat-form-field appearance="outline" class="bug-form__field">
+    <mat-label>Title</mat-label>
+    <input
+      matInput
+      type="text"
+      name="title"
+      required
+      [attr.maxlength]="limits.title"
+      placeholder="Short summary of what went wrong"
+      [ngModel]="title()"
+      (ngModelChange)="title.set($event)"
+      [disabled]="pending()"
+    />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="bug-form__field">
+    <mat-label>Where</mat-label>
+    <mat-select
+      name="pageArea"
+      [ngModel]="pageArea()"
+      (ngModelChange)="pageArea.set($event)"
+      [disabled]="pending()"
+    >
+      <mat-option value="">Not sure, or it does not apply</mat-option>
+      @for (area of pageAreas(); track area) {
+        <mat-option [value]="area">{{ area }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="bug-form__field">
+    <mat-label>What happened</mat-label>
+    <textarea
+      matInput
+      name="description"
+      required
+      rows="4"
+      [attr.maxlength]="limits.description"
+      placeholder="What did you expect, and what happened instead?"
+      [ngModel]="description()"
+      (ngModelChange)="description.set($event)"
+      [disabled]="pending()"
+    ></textarea>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="bug-form__field">
+    <mat-label>Steps to reproduce (optional)</mat-label>
+    <textarea
+      matInput
+      name="stepsToReproduce"
+      rows="3"
+      [attr.maxlength]="limits.steps"
+      placeholder="1. Went to... 2. Clicked..."
+      [ngModel]="steps()"
+      (ngModelChange)="steps.set($event)"
+      [disabled]="pending()"
+    ></textarea>
+  </mat-form-field>
+
+  @if (error(); as message) {
+    <p class="bug-form__error" role="alert">{{ message }}</p>
+  }
+
+  @if (sent() && !pending()) {
+    <p class="bug-form__sent" role="status">Thanks, that has been logged.</p>
+  }
+
+  <button matButton="filled" type="submit" [disabled]="!canSubmit()">
+    @if (pending()) {
+      Sending…
+    } @else {
+      Submit report
+    }
+  </button>
+</form>

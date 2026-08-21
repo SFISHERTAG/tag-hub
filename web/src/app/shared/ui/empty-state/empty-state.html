@@ -1,0 +1,15 @@
+<div class="empty-state">
+  <mat-icon class="empty-state__icon" aria-hidden="true">{{ icon() }}</mat-icon>
+
+  <p class="empty-state__message">{{ message() }}</p>
+
+  @if (hint(); as text) {
+    <p class="empty-state__hint">{{ text }}</p>
+  }
+
+  @if (actionLabel(); as label) {
+    <button matButton="filled" type="button" class="empty-state__action" (click)="action.emit()">
+      {{ label }}
+    </button>
+  }
+</div>

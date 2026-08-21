@@ -1,0 +1,30 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading the department overview" />
+} @else if (error(); as message) {
+  <app-error-state [message]="message" (retry)="load()" />
+} @else if (summary(); as summary) {
+  <app-sample-data-notice [disclosure]="sampleData()" [compact]="true" />
+
+  <p class="department__csms">{{ csmLabel() }}</p>
+
+  <dl class="department__tiles">
+    @for (tile of tiles(); track tile.label) {
+      <div [class]="'department__tile department__tile--' + tile.tone">
+        <dt>{{ tile.label }}</dt>
+        <dd>{{ tile.value }}</dd>
+      </div>
+    }
+  </dl>
+
+  @if (topBooks().length > 0) {
+    <h3 class="department__heading">Books needing attention first</h3>
+    <ol class="department__books">
+      @for (book of topBooks(); track book.csmEmail) {
+        <li class="department__book">
+          <span class="department__book-name">{{ book.csmEmail }}</span>
+          <span class="department__book-score">{{ book.avgHealthScore }}</span>
+        </li>
+      }
+    </ol>
+  }
+}

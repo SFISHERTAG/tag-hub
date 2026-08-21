@@ -1,0 +1,148 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.blocks__block,
+.blocks__instrument {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.blocks__instrument {
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.blocks__title {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.blocks__body {
+  margin: 0;
+  white-space: pre-line;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.blocks__caveat {
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+.blocks__caveat-label {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+// Severity is carried by the border and the label colour rather than a fill,
+// so the body text keeps its on-surface contrast on every tier.
+.blocks__note {
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline);
+  border-inline-start-width: 4px;
+  border-radius: var(--mat-sys-corner-medium);
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+.blocks__note--hard {
+  border-inline-start-color: var(--mat-sys-error);
+}
+
+.blocks__note--good {
+  border-inline-start-color: var(--mat-sys-primary);
+}
+
+.blocks__note-title {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface);
+}
+
+.blocks__table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.blocks__table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+    text-align: start;
+    vertical-align: top;
+  }
+
+  th {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface);
+    background-color: var(--mat-sys-surface-container-low);
+  }
+
+  tbody tr + tr {
+    border-block-start: 1px solid var(--mat-sys-outline-variant);
+  }
+}
+
+.blocks__steps {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+
+  li + li {
+    margin-block-start: 0.25rem;
+  }
+}
+
+.blocks__warning {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mat-sys-error);
+  border-radius: var(--mat-sys-corner-medium);
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-error);
+}
+
+.blocks__footnote {
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.blocks__fields {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.blocks__raw {
+  overflow-x: auto;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background-color: var(--mat-sys-surface-container-low);
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}

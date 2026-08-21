@@ -1,0 +1,35 @@
+<mat-card appearance="outlined" class="widget" role="region" [attr.aria-label]="title()">
+  <mat-card-content class="widget__content">
+    <h3 class="widget__title">{{ title() }}</h3>
+
+    @switch (state()) {
+      @case ('ready') {
+        @if (component(); as widget) {
+          <ng-container *ngComponentOutlet="widget" />
+        }
+      }
+      @case ('loading') {
+        <p class="widget__note" role="status">Loading…</p>
+      }
+      @case ('unbuilt') {
+        <p class="widget__note">
+          Not built yet.
+          @if (description(); as detail) {
+            <span class="widget__detail">{{ detail }}</span>
+          }
+        </p>
+      }
+      @case ('forbidden') {
+        <p class="widget__note">
+          This widget is not available for the hat you are wearing. Switch hats or remove it from
+          this page.
+        </p>
+      }
+      @default {
+        <p class="widget__note">
+          This widget no longer exists. Remove it from this page in Customize.
+        </p>
+      }
+    }
+  </mat-card-content>
+</mat-card>

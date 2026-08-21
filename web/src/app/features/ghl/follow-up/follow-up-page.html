@@ -1,0 +1,15 @@
+<app-page-shell
+  title="Follow-up"
+  subtitle="Contacts who no-showed or DQ'd and have nothing newer booked"
+>
+  <app-follow-up-panel
+    [locationId]="locationId()"
+    [enrich]="true"
+    heading="Still owed a call"
+  />
+
+  <p class="follow-up-page__footnote">
+    A contact clears this queue when a new appointment is booked for them. A cancelled booking is
+    not a rebooking, so it does not clear anyone.
+  </p>
+</app-page-shell>

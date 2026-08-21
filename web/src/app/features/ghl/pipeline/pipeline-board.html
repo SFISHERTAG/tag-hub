@@ -1,0 +1,96 @@
+<app-page-shell title="Pipeline" [subtitle]="subtitle()">
+  <nav pageActions class="pipeline__filters" aria-label="Filter deals by status">
+    @for (option of statuses; track option) {
+      <a
+        [matButton]="option === status() ? 'filled' : 'outlined'"
+        [routerLink]="[]"
+        [queryParams]="{ status: option }"
+        [attr.aria-current]="option === status() ? 'page' : null"
+      >
+        {{ statusLabel(option) }}
+      </a>
+    }
+  </nav>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading the pipeline" />
+  } @else if (failure(); as problem) {
+    <app-error-state
+      [message]="problem.title"
+      [detail]="problem.detail"
+      [retryable]="problem.retryable"
+      (retry)="reload()"
+    />
+  } @else if (boards().length === 0) {
+    <app-empty-state
+      icon="view_kanban"
+      message="No pipelines for this client"
+      hint="Pipelines are created in GoHighLevel. Once one exists it appears here."
+    />
+  } @else {
+    @for (board of boards(); track board.pipeline.id) {
+      <section class="pipeline__board">
+        <header class="pipeline__board-header">
+          <h2 class="pipeline__board-name">{{ board.pipeline.name }}</h2>
+          <span class="pipeline__board-count">{{ dealsLabel(board.count) }}</span>
+          @if (board.value > 0) {
+            <span class="pipeline__board-value">{{ money(board.value) }}</span>
+          }
+        </header>
+
+        <div class="pipeline__columns">
+          @for (column of board.columns; track column.stage.id) {
+            <section class="pipeline__column">
+              <header class="pipeline__column-header">
+                <h3 class="pipeline__column-name">{{ column.stage.name }}</h3>
+                <span class="pipeline__column-count">{{ column.count }}</span>
+                @if (column.value > 0) {
+                  <p class="pipeline__column-value">{{ money(column.value) }}</p>
+                }
+              </header>
+
+              <div class="pipeline__cards">
+                @for (card of column.cards; track card.id) {
+                  <app-deal-card
+                    [locationId]="locationId()"
+                    [card]="card"
+                    [stages]="stagesFor(board.pipeline.id)"
+                    (changed)="reload()"
+                  />
+                } @empty {
+                  <p class="pipeline__column-empty">Empty</p>
+                }
+              </div>
+            </section>
+          }
+
+          <!-- Deals whose stage is not one of this pipeline's own. The legacy
+               board dropped them silently; a deal nobody can see is a deal
+               nobody works. -->
+          @if (board.unstaged.length > 0) {
+            <section class="pipeline__column">
+              <header class="pipeline__column-header">
+                <h3 class="pipeline__column-name">Unknown stage</h3>
+                <span class="pipeline__column-count">{{ board.unstaged.length }}</span>
+                <p class="pipeline__column-value">
+                  Their stage is not part of this pipeline. Move them to a real one.
+                </p>
+              </header>
+
+              <div class="pipeline__cards">
+                @for (card of board.unstaged; track card.id) {
+                  <app-deal-card
+                    [locationId]="locationId()"
+                    [card]="card"
+                    [stages]="stagesFor(board.pipeline.id)"
+                    (changed)="reload()"
+                  />
+                }
+              </div>
+            </section>
+          }
+        </div>
+      </section>
+    }
+  }
+</app-page-shell>

@@ -1,0 +1,87 @@
+<mat-card appearance="outlined" class="deal">
+  <mat-card-content class="deal__body">
+    <div class="deal__head">
+      <span class="deal__title">{{ title() }}</span>
+      @if (card().monetaryValue > 0) {
+        <span class="deal__value">{{ valueLabel() }}</span>
+      }
+    </div>
+
+    @if (card().contact?.companyName; as company) {
+      <p class="deal__company">{{ company }}</p>
+    }
+
+    <div class="deal__meta">
+      @if (card().source; as source) {
+        <span class="deal__source">{{ source }}</span>
+      }
+      @if (ageLabel(); as age) {
+        <span class="deal__age" [class.deal__age--stale]="card().stale">{{ age }}</span>
+      }
+    </div>
+
+    <div class="deal__controls">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="deal__field">
+        <mat-label>Stage</mat-label>
+        <mat-select [formControl]="stageControl" [attr.aria-label]="'Stage for ' + title()">
+          @for (stage of stages(); track stage.id) {
+            <mat-option [value]="stage.id">{{ stage.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (moveError(); as message) {
+        <p class="deal__error" role="alert">{{ message }}</p>
+      }
+
+      <div class="deal__close">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="deal__field">
+          <mat-label>Mark as</mat-label>
+          <mat-select
+            [ngModel]="closeAction()"
+            (ngModelChange)="onCloseActionChange($event)"
+            [disabled]="closing() || isClosed()"
+            [attr.aria-label]="'Close ' + title()"
+          >
+            <mat-option value="none">Not yet</mat-option>
+            <mat-option value="won">Won</mat-option>
+            <mat-option value="lost">Lost</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        @if (closeAction() === 'won') {
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="deal__field">
+            <mat-label>Value</mat-label>
+            <input
+              matInput
+              type="number"
+              min="0"
+              inputmode="decimal"
+              [ngModel]="closeValue()"
+              (ngModelChange)="setCloseValue($event)"
+              [disabled]="closing()"
+            />
+          </mat-form-field>
+        }
+
+        @if (closeAction() !== 'none') {
+          <button matButton="filled" type="button" [disabled]="closing()" (click)="close()">
+            @if (closing()) {
+              Saving…
+            } @else {
+              Confirm
+            }
+          </button>
+        }
+      </div>
+
+      @if (isClosed()) {
+        <p class="deal__closed">Closed as {{ card().status }}.</p>
+      }
+
+      @if (closeError(); as message) {
+        <p class="deal__error" role="alert">{{ message }}</p>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>

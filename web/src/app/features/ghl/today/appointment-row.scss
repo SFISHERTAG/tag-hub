@@ -1,0 +1,72 @@
+// Colour comes from M3 system tokens only. No raw hex, no !important, no deep
+// selectors — the theme contract in CLAUDE.md.
+
+:host {
+  display: block;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container);
+}
+
+.appointment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.appointment__when {
+  min-inline-size: 0;
+  flex: 1 1 14rem;
+}
+
+.appointment__line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.appointment__time {
+  font: var(--mat-sys-title-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface);
+}
+
+.appointment__title {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.appointment__calendar {
+  margin: 0.125rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.appointment__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.appointment__outcomes {
+  flex-wrap: wrap;
+}
+
+.appointment__error {
+  margin: 0.5rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-error);
+}
+
+.appointment__degraded {
+  margin: 0.5rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}

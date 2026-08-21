@@ -1,0 +1,43 @@
+<section class="overview__section">
+  <h2 class="overview__heading">Health components</h2>
+  <dl class="overview__scores">
+    @for (row of scores(); track row.label) {
+      <div class="overview__score">
+        <dt>{{ row.label }}</dt>
+        <dd class="overview__score-value">{{ row.score }}</dd>
+        <dd class="overview__score-meta">{{ row.attainment }}</dd>
+      </div>
+    }
+  </dl>
+  @if (lastUpdated(); as timestamp) {
+    <p class="overview__meta">Scored {{ timestamp }}</p>
+  }
+</section>
+
+<section class="overview__section">
+  <h2 class="overview__heading">{{ alertsHeading() }}</h2>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="2" label="Loading alerts" />
+  } @else if (error(); as message) {
+    <app-error-state
+      [message]="message"
+      detail="Alerts could not be loaded. This is not the same as having none."
+      (retry)="load()"
+    />
+  } @else if (activeAlerts().length === 0) {
+    <app-empty-state icon="check_circle" message="No open alerts" />
+  } @else {
+    <ul class="overview__alerts">
+      @for (alert of activeAlerts(); track alert.id) {
+        <li [class]="'overview__alert overview__alert--' + alert.type">
+          <div class="overview__alert-body">
+            <p class="overview__alert-title">{{ alert.title }}</p>
+            <p class="overview__alert-message">{{ alert.message }}</p>
+          </div>
+          <span class="overview__alert-type">{{ alert.type }}</span>
+        </li>
+      }
+    </ul>
+  }
+</section>

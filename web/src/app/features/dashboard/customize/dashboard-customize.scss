@@ -1,0 +1,159 @@
+// M3 tokens only. No raw hex, no !important, no deep selectors.
+:host {
+  display: block;
+}
+
+.customize__error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-body-medium);
+}
+
+.customize__section {
+  margin-block-end: 2rem;
+}
+
+.customize__heading {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.customize__hint {
+  margin: 0 0 0.75rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.customize__empty {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+  text-align: center;
+}
+
+.customize__active {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.customize__row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.customize__row-body {
+  min-inline-size: 0;
+}
+
+.customize__row-title {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.customize__row-size {
+  margin: 0.125rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.customize__row-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.customize__divider {
+  inline-size: 1px;
+  block-size: 1.25rem;
+  margin-inline: 0.375rem;
+  background: var(--mat-sys-outline-variant);
+}
+
+.customize__picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.customize__option {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  inline-size: 100%;
+  padding: 0.875rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--mat-sys-surface-container);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.customize__option--active {
+  border-color: var(--mat-sys-primary);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.customize__option-body {
+  min-inline-size: 0;
+}
+
+.customize__option-title {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  font: var(--mat-sys-title-small);
+}
+
+// The picker is where a widget is chosen, so it is where "these numbers are
+// fabricated" is cheapest to learn — before the tile is on the page.
+.customize__option-sample {
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-small);
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.customize__option-description {
+  display: block;
+  margin-block-start: 0.25rem;
+  font: var(--mat-sys-body-small);
+}

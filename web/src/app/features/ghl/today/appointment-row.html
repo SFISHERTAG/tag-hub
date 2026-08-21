@@ -1,0 +1,45 @@
+<div class="appointment">
+  <div class="appointment__when">
+    <div class="appointment__line">
+      <span class="appointment__time">{{ time() }}</span>
+      <span class="appointment__title">{{ title() }}</span>
+    </div>
+    <p class="appointment__calendar">
+      {{ appointment().calendarName }}@if (cancelled()) { · cancelled }
+    </p>
+  </div>
+
+  <div class="appointment__actions">
+    @if (appointment().contactId) {
+      <button matButton="outlined" type="button" (click)="openPrep()">Call prep</button>
+    }
+
+    <div class="appointment__outcomes" role="group" [attr.aria-label]="'Outcome for ' + title()">
+      @for (outcome of outcomes; track outcome.value) {
+        <button
+          type="button"
+          [matButton]="isChosen(outcome.value) ? 'filled' : 'outlined'"
+          [disabled]="pending()"
+          [attr.aria-pressed]="isChosen(outcome.value)"
+          (click)="choose(outcome.value)"
+        >
+          {{ outcome.label }}
+        </button>
+      }
+    </div>
+  </div>
+</div>
+
+@if (error(); as message) {
+  <p class="appointment__error" role="alert">{{ message }}</p>
+}
+
+<!-- The outcome saved. The timing record did not, so this appointment counts
+     differently toward show rate than the others do. Said out loud rather than
+     presented as a clean success. -->
+@if (timingDegraded()) {
+  <p class="appointment__degraded" role="status">
+    Outcome saved, but the timing record was not written. Show rate for this appointment is
+    incomplete.
+  </p>
+}

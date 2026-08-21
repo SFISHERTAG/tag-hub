@@ -1,0 +1,65 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md's theme
+// contract — the elevation ladder in styles/_theme.scss is what makes these
+// bars visible on true black.
+
+:host {
+  display: block;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 1.5rem;
+}
+
+.loading-state__label {
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.loading-state__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  inline-size: 100%;
+}
+
+.loading-state__bar {
+  block-size: 1.25rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background-color: var(--mat-sys-surface-container-high);
+  background-image: linear-gradient(
+    90deg,
+    var(--mat-sys-surface-container-high) 0%,
+    var(--mat-sys-surface-container-highest) 50%,
+    var(--mat-sys-surface-container-high) 100%
+  );
+  background-size: 200% 100%;
+  animation: loading-state-shimmer 1.4s linear infinite;
+}
+
+// Last bar short, so a skeleton reads as text rather than as a broken table.
+.loading-state__bar:last-child {
+  inline-size: 60%;
+}
+
+@keyframes loading-state-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+// The CSS half of the reduced-motion contract; the component handles the
+// spinner half, which no stylesheet can reach without ::ng-deep.
+@media (prefers-reduced-motion: reduce) {
+  .loading-state__bar {
+    animation: none;
+  }
+}

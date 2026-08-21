@@ -1,0 +1,6 @@
+@if (visible()) {
+  <p class="sample-notice" [class.sample-notice--compact]="compact()" role="note">
+    <mat-icon class="sample-notice__icon" aria-hidden="true">science</mat-icon>
+    <span>{{ text() }}</span>
+  </p>
+}

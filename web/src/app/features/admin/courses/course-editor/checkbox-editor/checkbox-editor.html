@@ -1,0 +1,23 @@
+<form class="checkbox-editor" (ngSubmit)="save()">
+  <mat-form-field appearance="outline" class="checkbox-editor__field" subscriptSizing="dynamic">
+    <mat-label>Item label</mat-label>
+    <input matInput [formControl]="label" />
+  </mat-form-field>
+
+  <button matButton type="submit" [disabled]="pending()">Save</button>
+
+  <button
+    matIconButton
+    type="button"
+    class="checkbox-editor__danger"
+    [disabled]="pending()"
+    [attr.aria-label]="'Delete checklist item ' + checkbox().label"
+    (click)="remove()"
+  >
+    <mat-icon>delete_outline</mat-icon>
+  </button>
+
+  @if (error(); as message) {
+    <p class="checkbox-editor__error" role="alert">{{ message }}</p>
+  }
+</form>

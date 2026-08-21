@@ -1,0 +1,32 @@
+<app-page-shell
+  title="Training"
+  subtitle="Complete your onboarding, or learn how to sell tax advisory services."
+>
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="3" label="Loading courses" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else if (courses().length === 0) {
+    <app-empty-state
+      icon="school"
+      message="No courses are available to you yet."
+      hint="Courses appear here once they have been published."
+    />
+  } @else {
+    <div class="course-list">
+      @for (course of courses(); track course.id) {
+        <a class="course-list__link" [routerLink]="['/courses', course.id]">
+          <mat-card class="course-list__card" appearance="outlined">
+            <mat-card-content class="course-list__content">
+              <span class="course-list__title">{{ course.title }}</span>
+              <span class="course-list__meta">{{ lessonLabel(course) }}</span>
+              @if (course.description) {
+                <span class="course-list__description">{{ course.description }}</span>
+              }
+            </mat-card-content>
+          </mat-card>
+        </a>
+      }
+    </div>
+  }
+</app-page-shell>

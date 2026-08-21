@@ -1,0 +1,59 @@
+<app-page-shell [title]="client()?.name ?? 'Client'" [subtitle]="client()?.ghl_location_id ?? null">
+  <div pageActions>
+    <a matButton="outlined" routerLink="/clients">
+      <mat-icon>arrow_back</mat-icon>
+      All clients
+    </a>
+  </div>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading this client" />
+  } @else if (error(); as message) {
+    <app-error-state
+      [message]="message"
+      detail="This client could not be loaded, so nothing about it is shown."
+      (retry)="load()"
+    />
+  } @else if (client(); as client) {
+    <div class="detail__header">
+      <app-health-badge [health]="client.health" />
+      <span class="detail__csm">CSM: {{ client.csm_assigned || 'unassigned' }}</span>
+    </div>
+
+    <app-sample-data-notice [disclosure]="sampleData()" />
+
+    <mat-tab-group mat-stretch-tabs="false" animationDuration="0ms">
+      <mat-tab label="Overview">
+        <ng-template matTabContent>
+          <div class="detail__panel">
+            <app-overview-tab [client]="client" />
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <mat-tab label="Campaigns">
+        <ng-template matTabContent>
+          <div class="detail__panel">
+            <app-campaigns-tab [clientId]="client.id" />
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <mat-tab label="Creatives">
+        <ng-template matTabContent>
+          <div class="detail__panel">
+            <app-creatives-tab [clientId]="client.id" />
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <mat-tab label="Meta setup">
+        <ng-template matTabContent>
+          <div class="detail__panel">
+            <app-phase3-tab [clientId]="client.id" />
+          </div>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
+  }
+</app-page-shell>

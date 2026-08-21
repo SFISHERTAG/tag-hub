@@ -1,0 +1,73 @@
+<mat-expansion-panel class="lesson-editor">
+  <mat-expansion-panel-header>
+    <mat-panel-title>{{ subsection().title }}</mat-panel-title>
+    <mat-panel-description>
+      {{ subsection().checkboxes.length }}
+      {{ subsection().checkboxes.length === 1 ? 'item' : 'items' }}
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <div class="lesson-editor__body">
+    <form class="lesson-editor__form" [formGroup]="form" (ngSubmit)="save()">
+      <mat-form-field appearance="outline">
+        <mat-label>Title</mat-label>
+        <input matInput formControlName="title" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Loom video id</mat-label>
+        <input matInput formControlName="loomId" placeholder="fdba6345d0cb4175baa850e81066216f" />
+        <mat-hint>The id from the share URL, not the whole URL.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Content</mat-label>
+        <textarea matInput formControlName="content" rows="8"></textarea>
+      </mat-form-field>
+
+      <div class="lesson-editor__actions">
+        <button matButton="filled" type="submit" [disabled]="pending()">Save</button>
+        <button
+          matButton
+          type="button"
+          class="lesson-editor__danger"
+          [disabled]="pending()"
+          (click)="remove()"
+        >
+          Delete lesson
+        </button>
+      </div>
+    </form>
+
+    @if (error(); as message) {
+      <p class="lesson-editor__error" role="alert">{{ message }}</p>
+    }
+
+    <section class="lesson-editor__checkboxes" aria-label="Checklist items">
+      <h4 class="lesson-editor__subheading">Checklist</h4>
+      @for (checkbox of subsection().checkboxes; track checkbox.id) {
+        <app-checkbox-editor
+          [courseId]="courseId()"
+          [checkbox]="checkbox"
+          (changed)="changed.emit()"
+        />
+      } @empty {
+        <p class="lesson-editor__hint">No checklist items yet.</p>
+      }
+
+      <form class="lesson-editor__add" (ngSubmit)="addCheckbox()">
+        <mat-form-field appearance="outline" class="lesson-editor__add-field" subscriptSizing="dynamic">
+          <mat-label>New checklist item</mat-label>
+          <input matInput [formControl]="newCheckboxLabel" />
+        </mat-form-field>
+        <button
+          matButton="outlined"
+          type="submit"
+          [disabled]="pending() || !newCheckboxLabel.value.trim()"
+        >
+          Add
+        </button>
+      </form>
+    </section>
+  </div>
+</mat-expansion-panel>

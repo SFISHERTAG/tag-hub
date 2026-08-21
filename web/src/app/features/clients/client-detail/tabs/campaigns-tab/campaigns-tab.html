@@ -1,0 +1,66 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading campaigns" />
+} @else if (error(); as message) {
+  <app-error-state
+    [message]="message"
+    detail="Campaigns could not be loaded. This is not the same as having none."
+    (retry)="load()"
+  />
+} @else if (adAccountId() === null) {
+  <app-empty-state
+    icon="link_off"
+    message="No Meta ad account linked"
+    hint="Link this client's Meta ad account to see campaign delivery here."
+  />
+} @else if (campaigns().length === 0) {
+  <app-empty-state
+    icon="campaign"
+    message="No campaigns yet"
+    hint="Campaigns appear here once they are launched in Meta Ads Manager."
+  />
+} @else {
+  <ul class="campaigns">
+    @for (campaign of campaigns(); track campaign.id) {
+      <li class="campaigns__item">
+        <div class="campaigns__head">
+          <div class="campaigns__identity">
+            <p class="campaigns__name">{{ campaign.name }}</p>
+            <p class="campaigns__id">{{ campaign.id }}</p>
+          </div>
+          <span [class]="'campaigns__status campaigns__status--' + campaign.status">
+            {{ campaign.status }}
+          </span>
+        </div>
+
+        <dl class="campaigns__metrics">
+          <div class="campaigns__metric">
+            <dt>Spend (24h)</dt>
+            <dd>{{ money(campaign.spend_24h) }}</dd>
+          </div>
+          <div class="campaigns__metric">
+            <dt>Impressions (24h)</dt>
+            <dd>{{ count(campaign.impressions_24h) }}</dd>
+          </div>
+          <div class="campaigns__metric">
+            <dt>Clicks (24h)</dt>
+            <dd>{{ count(campaign.clicks_24h) }}</dd>
+          </div>
+          <div class="campaigns__metric">
+            <dt>Leads (24h)</dt>
+            <dd>{{ count(campaign.leads_24h) }}</dd>
+          </div>
+        </dl>
+
+        <p class="campaigns__foot">
+          @if (campaign.costPerConversion24h !== undefined) {
+            <span>Cost per conversion (24h): {{ money(campaign.costPerConversion24h) }}</span>
+          }
+          @if (creativeCountsIncluded() && campaign.creative_count > 0) {
+            <span>{{ creativeLabel(campaign) }}</span>
+          }
+          <span>Created {{ created(campaign.created_time) }}</span>
+        </p>
+      </li>
+    }
+  </ul>
+}

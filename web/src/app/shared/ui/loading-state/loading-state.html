@@ -1,0 +1,12 @@
+<div class="loading-state" role="status" [attr.aria-label]="label()">
+  @if (showSpinner()) {
+    <mat-spinner [diameter]="36" />
+    <p class="loading-state__label">{{ label() }}</p>
+  } @else {
+    <div class="loading-state__skeleton" aria-hidden="true">
+      @for (row of skeletonRows(); track row) {
+        <span class="loading-state__bar"></span>
+      }
+    </div>
+  }
+</div>

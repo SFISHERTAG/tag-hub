@@ -1,0 +1,21 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.manual {
+  max-inline-size: 48rem;
+}
+
+.manual__lede {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface);
+}
+
+.manual__status {
+  margin: 0 0 1.5rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}

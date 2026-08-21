@@ -1,0 +1,118 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.flow__org {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.flow__queue {
+  margin-block-end: 1rem;
+}
+
+.flow__tabs {
+  display: block;
+}
+
+.flow__section {
+  padding-block: 1rem;
+}
+
+.flow__section-title {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.flow__card {
+  margin-block-start: 0.5rem;
+}
+
+.flow__script {
+  margin: 0 0 0.75rem;
+  white-space: pre-wrap;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.flow__muted {
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.flow__aside {
+  padding: 0.625rem 0.75rem;
+  margin-block-end: 0.75rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+.flow__aside--why {
+  border-inline-start: 3px solid var(--mat-sys-primary);
+}
+
+.flow__aside-label {
+  margin: 0 0 0.125rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.flow__suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flow__suggestion {
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.flow__suggestion-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-block-end: 0.5rem;
+}
+
+.flow__suggestion-card {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface);
+}
+
+.flow__suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.flow__suggest-form {
+  display: flex;
+  flex-direction: column;
+  margin-block-start: 0.5rem;
+}
+
+.flow__error {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-error);
+}
+
+.flow__sent {
+  margin: 0;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--mat-sys-primary);
+  border-radius: var(--mat-sys-corner-medium);
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface);
+}

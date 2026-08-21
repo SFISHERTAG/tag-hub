@@ -1,0 +1,60 @@
+<app-page-shell title="Users" [subtitle]="countLabel()">
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="5" label="Loading the user directory" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else {
+    <section class="admin-users__section" aria-labelledby="admin-users-groups">
+      <h2 id="admin-users-groups" class="admin-users__heading">Groups</h2>
+      <p class="admin-users__note">
+        A group writes its role and locations to every member. Saving one applies to all of them
+        immediately.
+      </p>
+
+      @if (groups().length === 0) {
+        <app-empty-state
+          icon="groups"
+          message="No groups yet."
+          hint="Create one below to assign a role to several people at once."
+        />
+      } @else {
+        <div class="admin-users__groups">
+          @for (group of groups(); track group.id) {
+            <app-group-card
+              [group]="group"
+              [members]="membersOf(group)"
+              [ungrouped]="ungrouped()"
+              (changed)="load()"
+            />
+          }
+        </div>
+      }
+
+      <app-new-group-form (created)="load()" />
+    </section>
+
+    <mat-divider class="admin-users__divider" />
+
+    <section class="admin-users__section" aria-labelledby="admin-users-all">
+      <h2 id="admin-users-all" class="admin-users__heading">All users</h2>
+
+      @if (users().length === 0) {
+        <app-empty-state
+          icon="person_off"
+          message="No users in this project yet."
+          hint="A user appears here after their first sign-in."
+        />
+      } @else {
+        <div class="admin-users__list">
+          @for (user of users(); track user.uid) {
+            <app-user-row
+              [user]="user"
+              [managerEmail]="managerEmailFor(user)"
+              (changed)="load()"
+            />
+          }
+        </div>
+      }
+    </section>
+  }
+</app-page-shell>

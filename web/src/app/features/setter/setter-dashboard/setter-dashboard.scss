@@ -1,0 +1,158 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.setter__refreshed {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// The staleness banner. Error-toned and full width on purpose: it is the one
+// thing on this screen that must not be mistaken for decoration.
+.setter__stale {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.875rem 1rem;
+  margin-block-end: 1rem;
+  border: 1px solid var(--mat-sys-error);
+  border-radius: var(--mat-sys-corner-medium);
+  color: var(--mat-sys-error);
+}
+
+.setter__stale-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.setter__stale-text {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+}
+
+.setter__stale-reason {
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.setter__metrics {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  margin-block-end: 1rem;
+}
+
+.setter__metric-label {
+  display: block;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.setter__metric-value {
+  display: block;
+  font: var(--mat-sys-headline-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.setter__metric-value--alert {
+  color: var(--mat-sys-error);
+}
+
+.setter__metric-hint {
+  display: block;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.setter__alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-block-end: 1rem;
+  border: 1px solid var(--mat-sys-error);
+  border-inline-start-width: 4px;
+  border-radius: var(--mat-sys-corner-medium);
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.setter__queue-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-block-end: 0.75rem;
+}
+
+.setter__queue-title {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.setter__leads {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-block-size: 30rem;
+  overflow-y: auto;
+}
+
+.setter__lead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+.setter__lead--fresh {
+  border-color: var(--mat-sys-error);
+}
+
+.setter__lead-main {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.setter__lead-name {
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface);
+}
+
+.setter__lead-contact,
+.setter__lead-age {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.setter__lead-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+}
+
+.setter__lead-minutes {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.setter__lead-status {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}

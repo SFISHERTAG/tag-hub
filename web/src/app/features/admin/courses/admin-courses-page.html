@@ -1,0 +1,13 @@
+<app-page-shell title="Courses" [subtitle]="countLabel()">
+  <app-data-table
+    caption="Training courses you can edit"
+    [columns]="columns"
+    [rows]="courses()"
+    [loading]="loading()"
+    [error]="error()"
+    emptyIcon="school"
+    emptyMessage="No courses yet."
+    emptyHint="Courses are seeded from lib/course/seed.ts, not created here."
+    (retry)="load()"
+  />
+</app-page-shell>

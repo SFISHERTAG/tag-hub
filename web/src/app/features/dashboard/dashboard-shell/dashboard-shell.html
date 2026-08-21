@@ -1,0 +1,68 @@
+<app-page-shell title="Dashboard" [subtitle]="freshnessLabel()">
+  <div pageActions>
+    <a matButton="outlined" routerLink="/dashboard/customize">
+      <mat-icon>tune</mat-icon>
+      Customize
+    </a>
+  </div>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading your dashboard" />
+  } @else if (error(); as message) {
+    <app-error-state
+      [message]="message"
+      detail="Your dashboard layout could not be loaded, so no widgets are shown."
+      (retry)="load()"
+    />
+  } @else {
+    @if (removedLabel(); as notice) {
+      <p class="dashboard__removed" role="status">{{ notice }}</p>
+    }
+
+    @if (showsSampleData()) {
+      <p class="dashboard__sample" role="note">
+        Some widgets on this page show sample data, not live readings. Each one says which.
+      </p>
+    }
+
+    @if (hasTabs()) {
+      <nav class="dashboard__tabs" aria-label="Dashboard pages">
+        @for (page of pages(); track page.id) {
+          <button
+            class="dashboard__tab"
+            type="button"
+            [class.dashboard__tab--active]="page.id === currentPageId()"
+            [attr.aria-current]="page.id === currentPageId() ? 'page' : null"
+            (click)="selectPage(page.id)"
+          >
+            {{ page.title }}
+          </button>
+        }
+      </nav>
+    }
+
+    @if (currentPage(); as page) {
+      <h2 class="dashboard__page-title">{{ page.title }}</h2>
+
+      @if (widgets().length === 0) {
+        <p class="dashboard__empty">
+          No widgets on this page yet.
+          <a routerLink="/dashboard/customize">Customize your dashboard</a> to add some.
+        </p>
+      } @else {
+        <div class="dashboard__grid">
+          @for (placement of widgets(); track placement.id) {
+            <div [class]="cellClass(placement)">
+              <app-widget-host [widgetId]="placement.widgetId" />
+            </div>
+          }
+        </div>
+      }
+    } @else {
+      <p class="dashboard__empty">
+        This dashboard has no pages yet.
+        <a routerLink="/dashboard/customize">Customize your dashboard</a> to build one.
+      </p>
+    }
+  }
+</app-page-shell>

@@ -1,0 +1,101 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.launch__form {
+  display: flex;
+  flex-direction: column;
+  max-inline-size: 32rem;
+}
+
+.launch__pair {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.launch__heading {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.launch__note {
+  margin: 0 0 1rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.launch__summary {
+  display: grid;
+  gap: 0.5rem 1rem;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  margin: 0 0 1rem;
+
+  dt {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  dd {
+    margin: 0;
+    font: var(--mat-sys-body-medium);
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.launch__muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.launch__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.launch__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.launch__error {
+  margin: 0 0 1rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--mat-sys-error);
+  border-radius: var(--mat-sys-corner-medium);
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-error);
+}
+
+// The spend warning is the loudest thing on the step by design: it is the last
+// screen before a client's money starts moving.
+.launch__spend-warning {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.875rem 1rem;
+  margin-block-end: 1rem;
+  border: 1px solid var(--mat-sys-error);
+  border-inline-start-width: 4px;
+  border-radius: var(--mat-sys-corner-medium);
+  color: var(--mat-sys-error);
+}
+
+.launch__spend-text {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+}
+
+.launch__live {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--mat-sys-primary);
+  border-radius: var(--mat-sys-corner-medium);
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+}

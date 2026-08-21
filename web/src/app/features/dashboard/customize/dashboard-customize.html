@@ -1,0 +1,148 @@
+<app-page-shell
+  title="Customize dashboard"
+  subtitle="Arrange the widgets on this page. Every change saves as you make it."
+>
+  <div pageActions>
+    <a matButton="filled" routerLink="/dashboard">Done</a>
+  </div>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading your layout" />
+  } @else if (error(); as message) {
+    <app-error-state
+      [message]="message"
+      detail="Your layout could not be loaded, so it cannot be edited right now."
+      (retry)="load()"
+    />
+  } @else if (currentPage(); as page) {
+    @if (saveError(); as message) {
+      <p class="customize__error" role="alert">
+        {{ message }} Your last change was not saved and has been undone.
+      </p>
+    }
+
+    <section class="customize__section">
+      <h2 class="customize__heading">On this page ({{ placements().length }})</h2>
+
+      @if (placements().length === 0) {
+        <p class="customize__empty">
+          Nothing on this page yet. Pick a widget from the list below to add it.
+        </p>
+      } @else {
+        <ol class="customize__active">
+          @for (placement of placements(); track placement.id; let i = $index) {
+            <li class="customize__row">
+              <div class="customize__row-body">
+                <p class="customize__row-title">{{ titleOf(placement) }}</p>
+                <p class="customize__row-size">{{ sizeLabel(placement) }}</p>
+              </div>
+
+              <div class="customize__row-actions">
+                <button
+                  matIconButton
+                  type="button"
+                  [disabled]="saving() || !canShrink(placement, 'cols')"
+                  [attr.aria-label]="'Make ' + titleOf(placement) + ' narrower'"
+                  (click)="resize(i, 'cols', -1)"
+                >
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+                <button
+                  matIconButton
+                  type="button"
+                  [disabled]="saving() || !canGrow(placement, 'cols')"
+                  [attr.aria-label]="'Make ' + titleOf(placement) + ' wider'"
+                  (click)="resize(i, 'cols', 1)"
+                >
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <button
+                  matIconButton
+                  type="button"
+                  [disabled]="saving() || !canShrink(placement, 'rows')"
+                  [attr.aria-label]="'Make ' + titleOf(placement) + ' shorter'"
+                  (click)="resize(i, 'rows', -1)"
+                >
+                  <mat-icon>expand_less</mat-icon>
+                </button>
+                <button
+                  matIconButton
+                  type="button"
+                  [disabled]="saving() || !canGrow(placement, 'rows')"
+                  [attr.aria-label]="'Make ' + titleOf(placement) + ' taller'"
+                  (click)="resize(i, 'rows', 1)"
+                >
+                  <mat-icon>expand_more</mat-icon>
+                </button>
+
+                <span class="customize__divider" aria-hidden="true"></span>
+
+                <button
+                  matIconButton
+                  type="button"
+                  [disabled]="saving() || i === 0"
+                  [attr.aria-label]="'Move ' + titleOf(placement) + ' up'"
+                  (click)="move(i, -1)"
+                >
+                  <mat-icon>arrow_upward</mat-icon>
+                </button>
+                <button
+                  matIconButton
+                  type="button"
+                  [disabled]="saving() || i === placements().length - 1"
+                  [attr.aria-label]="'Move ' + titleOf(placement) + ' down'"
+                  (click)="move(i, 1)"
+                >
+                  <mat-icon>arrow_downward</mat-icon>
+                </button>
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+
+    <section class="customize__section">
+      <h2 class="customize__heading">Available widgets</h2>
+      <p class="customize__hint">
+        This list is what your current hat can use. Adding or removing a widget saves straight away.
+      </p>
+
+      @if (availableWidgets().length === 0) {
+        <p class="customize__empty">No widgets are available for the hat you are wearing.</p>
+      } @else {
+        <ul class="customize__picker">
+          @for (widget of availableWidgets(); track widget.id) {
+            <li>
+              <button
+                class="customize__option"
+                type="button"
+                [class.customize__option--active]="isActive(widget)"
+                [attr.aria-pressed]="isActive(widget)"
+                [disabled]="saving()"
+                (click)="toggle(widget)"
+              >
+                <mat-icon aria-hidden="true">
+                  {{ isActive(widget) ? 'check_box' : 'check_box_outline_blank' }}
+                </mat-icon>
+                <span class="customize__option-body">
+                  <span class="customize__option-title">
+                    {{ widget.title }}
+                    @if (isSample(widget.id)) {
+                      <span class="customize__option-sample">sample data</span>
+                    }
+                  </span>
+                  @if (widget.description; as description) {
+                    <span class="customize__option-description">{{ description }}</span>
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  } @else {
+    <p class="customize__empty">This dashboard has no pages to customize.</p>
+  }
+</app-page-shell>

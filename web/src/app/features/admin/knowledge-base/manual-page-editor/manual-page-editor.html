@@ -1,0 +1,106 @@
+<app-page-shell [title]="heading()" subtitle="Manual page content and version history.">
+  <a pageActions matButton routerLink="/admin/knowledge-base">Back to knowledge base</a>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="6" label="Loading this manual page" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <form class="kb-editor__form" [formGroup]="form" (ngSubmit)="save()">
+          <div class="kb-editor__row">
+            <mat-form-field appearance="outline">
+              <mat-label>Number</mat-label>
+              <input matInput formControlName="num" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Section</mat-label>
+              <input matInput formControlName="eyebrow" />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Title</mat-label>
+            <input matInput formControlName="title" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Lede</mat-label>
+            <textarea matInput formControlName="lede" rows="2"></textarea>
+          </mat-form-field>
+
+          <div class="kb-editor__row">
+            <mat-form-field appearance="outline">
+              <mat-label>Status</mat-label>
+              <input matInput formControlName="status" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Level</mat-label>
+              <input matInput formControlName="level" />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Blocks (JSON)</mat-label>
+            <textarea matInput formControlName="blocksJson" rows="18" spellcheck="false"></textarea>
+            <mat-hint>
+              An array of objects, each with a string "type". Unknown types render as raw JSON in
+              the reader rather than disappearing.
+            </mat-hint>
+          </mat-form-field>
+
+          <div class="kb-editor__actions">
+            <button matButton="filled" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save' }}
+            </button>
+            @if (saved()) {
+              <span class="kb-editor__saved">Saved.</span>
+            }
+          </div>
+
+          @if (saveError(); as message) {
+            <p class="kb-editor__error" role="alert">{{ message }}</p>
+          }
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <section class="kb-editor__history" aria-label="Version history">
+      <button matButton type="button" (click)="toggleHistory()">
+        {{ historyOpen() ? 'Hide version history' : 'Show version history' }}
+      </button>
+
+      @if (historyOpen()) {
+        @if (historyLoading()) {
+          <app-loading-state variant="skeleton" [rows]="3" label="Loading version history" />
+        } @else if (historyError(); as message) {
+          <app-error-state [message]="message" (retry)="loadHistory()" />
+        } @else if (versions(); as list) {
+          @if (list.length === 0) {
+            <p class="kb-editor__hint">No prior versions — this page has not been edited yet.</p>
+          } @else {
+            <ul class="kb-editor__versions">
+              @for (version of list; track version.id) {
+                <li class="kb-editor__version">
+                  <span class="kb-editor__version-detail">
+                    <span class="kb-editor__version-title">{{ version.page.title }}</span>
+                    <span class="kb-editor__version-meta">{{ versionLabel(version) }}</span>
+                  </span>
+                  <button
+                    matButton="outlined"
+                    type="button"
+                    [disabled]="saving()"
+                    (click)="revert(version)"
+                  >
+                    Revert to this
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        }
+      }
+    </section>
+  }
+</app-page-shell>

@@ -1,0 +1,48 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.course-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+.course-list__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--mat-sys-corner-medium);
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.course-list__card {
+  block-size: 100%;
+}
+
+.course-list__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.course-list__title {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.course-list__meta {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.course-list__description {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}

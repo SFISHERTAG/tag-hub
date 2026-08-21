@@ -1,0 +1,53 @@
+<mat-expansion-panel class="section-editor">
+  <mat-expansion-panel-header>
+    <mat-panel-title>{{ section().title }}</mat-panel-title>
+    <mat-panel-description>{{ lessonCount() }}</mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <div class="section-editor__body">
+    <form class="section-editor__row" (ngSubmit)="save()">
+      <mat-form-field appearance="outline" class="section-editor__field" subscriptSizing="dynamic">
+        <mat-label>Section title</mat-label>
+        <input matInput [formControl]="title" />
+      </mat-form-field>
+      <button matButton="filled" type="submit" [disabled]="pending()">Save</button>
+      <button
+        matButton
+        type="button"
+        class="section-editor__danger"
+        [disabled]="pending()"
+        (click)="remove()"
+      >
+        Delete section
+      </button>
+    </form>
+
+    @if (error(); as message) {
+      <p class="section-editor__error" role="alert">{{ message }}</p>
+    }
+
+    <div class="section-editor__lessons">
+      @for (subsection of section().subsections; track subsection.id) {
+        <app-subsection-editor
+          [courseId]="courseId()"
+          [subsection]="subsection"
+          (changed)="changed.emit()"
+        />
+      }
+    </div>
+
+    <form class="section-editor__row" (ngSubmit)="addSubsection()">
+      <mat-form-field appearance="outline" class="section-editor__field" subscriptSizing="dynamic">
+        <mat-label>New lesson title</mat-label>
+        <input matInput [formControl]="newSubsectionTitle" />
+      </mat-form-field>
+      <button
+        matButton="outlined"
+        type="submit"
+        [disabled]="pending() || !newSubsectionTitle.value.trim()"
+      >
+        Add lesson
+      </button>
+    </form>
+  </div>
+</mat-expansion-panel>

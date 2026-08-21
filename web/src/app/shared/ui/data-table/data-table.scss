@@ -1,0 +1,44 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md's theme
+// contract.
+
+:host {
+  display: block;
+}
+
+// Wide tables scroll inside their own box. Without this the page itself
+// scrolls sideways, which on a phone hides the nav rather than the columns.
+.data-table__scroll {
+  inline-size: 100%;
+  overflow-x: auto;
+}
+
+.data-table__table {
+  inline-size: 100%;
+}
+
+// Announced by screen readers, not drawn. `display: none` would remove it from
+// the accessibility tree too, which defeats the point of having it.
+.data-table__caption {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.data-table__cell--end {
+  text-align: end;
+}
+
+.data-table__link {
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}

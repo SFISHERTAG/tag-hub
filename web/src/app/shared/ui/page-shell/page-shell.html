@@ -1,0 +1,17 @@
+<header class="page-shell__header">
+  <div class="page-shell__heading">
+    <h1 class="page-shell__title">{{ title() }}</h1>
+    @if (subtitle(); as text) {
+      <p class="page-shell__subtitle">{{ text }}</p>
+    }
+  </div>
+
+  <!-- Tidied away by :empty when a page projects nothing at all. -->
+  <div class="page-shell__actions">
+    <ng-content select="[pageActions]" />
+  </div>
+</header>
+
+<div class="page-shell__content">
+  <ng-content />
+</div>

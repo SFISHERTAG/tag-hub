@@ -1,0 +1,54 @@
+<mat-expansion-panel class="user-row" (opened)="reset()">
+  <mat-expansion-panel-header>
+    <mat-panel-title class="user-row__title">{{ label() }}</mat-panel-title>
+    <mat-panel-description class="user-row__description">
+      <span>{{ roleLabel() }}</span>
+      <span class="user-row__group">{{ groupLabel() }}</span>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <form class="user-row__form" [formGroup]="form" (ngSubmit)="save()">
+    <p class="user-row__note">
+      An individual grant replaces this user's group membership. It takes effect on their next
+      token refresh.
+    </p>
+
+    <div class="user-row__fields">
+      <mat-form-field appearance="outline">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          @for (role of roles; track role) {
+            <mat-option [value]="role">{{ roleLabels[role] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Locations</mat-label>
+        <input matInput formControlName="locationsRaw" placeholder="loc_…, loc_…" />
+        <mat-hint>Blank means unrestricted.</mat-hint>
+      </mat-form-field>
+
+      @if (reportsToCsd()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Reports to (CSD email)</mat-label>
+          <input matInput formControlName="managerEmail" placeholder="director@example.com" />
+          <mat-hint>Blank means no reporting line.</mat-hint>
+        </mat-form-field>
+      }
+    </div>
+
+    <div class="user-row__actions">
+      <button matButton="filled" type="submit" [disabled]="pending()">
+        {{ pending() ? 'Saving…' : 'Assign individually' }}
+      </button>
+      @if (saved()) {
+        <span class="user-row__saved">Saved.</span>
+      }
+    </div>
+
+    @if (error(); as message) {
+      <p class="user-row__error" role="alert">{{ message }}</p>
+    }
+  </form>
+</mat-expansion-panel>

@@ -1,0 +1,74 @@
+<app-page-shell [title]="title()" [subtitle]="loading() ? null : progressLabel()">
+  <a pageActions matButton routerLink="/courses">All courses</a>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="5" label="Loading this course" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else if (sections().length === 0) {
+    <app-empty-state
+      icon="school"
+      message="This course has no lessons yet."
+      hint="Check back once it has been published."
+    />
+  } @else {
+    <mat-progress-bar
+      class="player__bar"
+      mode="determinate"
+      [value]="stats().percent"
+      [attr.aria-label]="progressLabel()"
+    />
+
+    @if (saveError(); as message) {
+      <p class="player__error" role="alert">{{ message }}</p>
+    }
+
+    @for (section of sections(); track section.id) {
+      <section class="player__section">
+        <h2 class="player__section-title">{{ section.title }}</h2>
+
+        @for (subsection of section.subsections; track subsection.id) {
+          <mat-expansion-panel class="player__lesson">
+            <mat-expansion-panel-header>
+              <mat-panel-title>{{ subsection.title }}</mat-panel-title>
+              <mat-panel-description>
+                {{ subsectionLabel(section, subsection) }}
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            @if (subsection.loomId; as loomId) {
+              <div class="player__video">
+                <iframe
+                  class="player__iframe"
+                  [src]="loomUrl(loomId)"
+                  [title]="subsection.title + ' video'"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+            }
+
+            @if (subsection.checkboxes.length > 0) {
+              <ul class="player__checklist">
+                @for (checkbox of subsection.checkboxes; track checkbox.id) {
+                  <li>
+                    <mat-checkbox
+                      [checked]="isChecked(section.id, subsection.id, checkbox.id)"
+                      (change)="toggle(section, subsection, checkbox, $event.checked)"
+                    >
+                      {{ checkbox.label }}
+                    </mat-checkbox>
+                  </li>
+                }
+              </ul>
+            }
+
+            @for (paragraph of paragraphs(subsection); track $index) {
+              <p class="player__paragraph">{{ paragraph }}</p>
+            }
+          </mat-expansion-panel>
+        }
+      </section>
+    }
+  }
+</app-page-shell>

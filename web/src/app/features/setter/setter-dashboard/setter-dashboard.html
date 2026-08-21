@@ -1,0 +1,111 @@
+<app-page-shell
+  title="Setter board"
+  subtitle="Call fresh leads within two minutes. Work the aged queue between hot calls."
+>
+  @if (refreshedLabel(); as label) {
+    <span pageActions class="setter__refreshed">{{ label }}</span>
+  }
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="4" label="Loading the setter board" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else {
+    @if (staleLabel(); as warning) {
+      <div class="setter__stale" role="alert">
+        <mat-icon aria-hidden="true">sync_problem</mat-icon>
+        <div class="setter__stale-body">
+          <p class="setter__stale-text">{{ warning }}</p>
+          @if (staleReason(); as reason) {
+            <p class="setter__stale-reason">{{ reason }}</p>
+          }
+          <button matButton="outlined" type="button" (click)="refresh()">Retry now</button>
+        </div>
+      </div>
+    }
+
+    <div class="setter__metrics">
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <span class="setter__metric-label">Urgent (fresh)</span>
+          <span class="setter__metric-value setter__metric-value--alert">
+            {{ freshLeads().length }}
+          </span>
+          <span class="setter__metric-hint">Under 2 minutes old</span>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <span class="setter__metric-label">Contacted today</span>
+          <span class="setter__metric-value">{{ metrics().contactedToday }}</span>
+          <span class="setter__metric-hint">{{ metrics().contactRate }}% contact rate</span>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <span class="setter__metric-label">Average speed</span>
+          <span class="setter__metric-value">{{ speed(metrics().averageSpeedMinutes) }}</span>
+          <span class="setter__metric-hint">Target: under 2m</span>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <span class="setter__metric-label">Aged queue</span>
+          <span class="setter__metric-value">{{ agedCount() }}</span>
+          <span class="setter__metric-hint">Callback list</span>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    @if (freshLeads().length > 0) {
+      <div class="setter__alert" role="status">
+        <mat-icon aria-hidden="true">bolt</mat-icon>
+        <span>
+          {{ freshLeads().length }}
+          {{ freshLeads().length === 1 ? 'fresh lead is' : 'fresh leads are' }} waiting. Call within
+          two minutes.
+        </span>
+      </div>
+    }
+
+    <section class="setter__queue" aria-label="Lead queue">
+      <div class="setter__queue-header">
+        <h2 class="setter__queue-title">Lead queue</h2>
+        <mat-button-toggle-group
+          class="setter__filter"
+          aria-label="Filter leads by priority"
+          [value]="filter()"
+        >
+          @for (priority of priorities; track priority) {
+            <mat-button-toggle [value]="priority" (click)="setFilter(priority)">
+              {{ priorityLabels[priority] }}
+            </mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      </div>
+
+      @if (visibleLeads().length === 0) {
+        <app-empty-state icon="done_all" [message]="emptyMessage()" hint="All caught up here." />
+      } @else {
+        <ul class="setter__leads">
+          @for (lead of visibleLeads(); track lead.id) {
+            <li class="setter__lead" [class.setter__lead--fresh]="isFresh(lead)">
+              <div class="setter__lead-main">
+                <span class="setter__lead-name">{{ lead.name }}</span>
+                <span class="setter__lead-contact">{{ contact(lead) }}</span>
+                <span class="setter__lead-age">{{ age(lead) }}</span>
+              </div>
+              <div class="setter__lead-side">
+                <span class="setter__lead-minutes">{{ lead.ageMinutes }}m</span>
+                <span class="setter__lead-status">{{ lead.status }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</app-page-shell>

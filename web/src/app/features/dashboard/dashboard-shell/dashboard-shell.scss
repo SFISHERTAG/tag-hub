@@ -1,0 +1,102 @@
+// M3 tokens only. No raw hex, no !important, no deep selectors.
+:host {
+  display: block;
+}
+
+.dashboard__removed {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-small);
+}
+
+.dashboard__sample {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-body-small);
+}
+
+.dashboard__tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  margin-block-end: 1rem;
+  border-block-end: 1px solid var(--mat-sys-outline-variant);
+}
+
+.dashboard__tab {
+  padding: 0.625rem 1rem;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  background: none;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.dashboard__tab--active {
+  border-block-end-color: var(--mat-sys-primary);
+  color: var(--mat-sys-primary);
+}
+
+.dashboard__page-title {
+  margin: 0 0 0.75rem;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+// Four columns is the layout the saved `cols` values are expressed in, so the
+// grid has to be four wide for a `cols: 2` placement to mean half. Below the
+// breakpoint the same placements collapse to a single column rather than being
+// squeezed into quarters of a phone.
+.dashboard__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: minmax(8rem, max-content);
+  gap: 0.75rem;
+}
+
+// Below the breakpoint every cell is one column wide, whatever it was saved
+// as. The span classes carry no rules down here, which is the point: a tile
+// saved four wide is full width on a phone rather than overflowing it.
+.dashboard__cell {
+  min-inline-size: 0;
+}
+
+@media (min-width: 840px) {
+  .dashboard__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  @for $span from 1 through 4 {
+    .dashboard__cell--c#{$span} {
+      grid-column: span #{$span};
+    }
+
+    .dashboard__cell--r#{$span} {
+      grid-row: span #{$span};
+    }
+  }
+}
+
+.dashboard__empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+  text-align: center;
+}

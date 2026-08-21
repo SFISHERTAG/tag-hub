@@ -1,0 +1,99 @@
+// Colour comes from M3 system tokens only. No raw hex, no !important, no deep
+// selectors — the theme contract in CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.pipeline__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pipeline__board {
+  margin-block-end: 2.5rem;
+}
+
+.pipeline__board-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-block-end: 1rem;
+}
+
+.pipeline__board-name {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.pipeline__board-count,
+.pipeline__column-count {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.pipeline__board-value {
+  font: var(--mat-sys-title-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface);
+}
+
+// The board scrolls sideways inside itself. The page never does.
+.pipeline__columns {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-block-end: 0.5rem;
+}
+
+.pipeline__column {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 17rem;
+  inline-size: 17rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.pipeline__column-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-block-end: 1px solid var(--mat-sys-outline-variant);
+}
+
+.pipeline__column-name {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.pipeline__column-value {
+  flex-basis: 100%;
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.pipeline__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.pipeline__column-empty {
+  margin: 0;
+  padding: 0.75rem 0.25rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}

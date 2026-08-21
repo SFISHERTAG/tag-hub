@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+
+@if (data.message; as message) {
+  <mat-dialog-content>
+    <p class="confirm-dialog__message">{{ message }}</p>
+  </mat-dialog-content>
+}
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancel()">{{ cancelLabel }}</button>
+  <button
+    matButton="filled"
+    type="button"
+    [class.confirm-dialog__confirm--destructive]="destructive"
+    (click)="confirm()"
+  >
+    {{ confirmLabel }}
+  </button>
+</mat-dialog-actions>

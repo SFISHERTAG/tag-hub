@@ -1,0 +1,20 @@
+<div class="kanban">
+  @for (column of columns(); track column.status) {
+    <section class="kanban__column" [attr.aria-label]="column.title">
+      <header [class]="'kanban__header kanban__header--' + column.tone">
+        <h3 class="kanban__title">{{ column.title }}</h3>
+        <p class="kanban__count">{{ countLabel(column.clients.length) }}</p>
+      </header>
+
+      @if (column.clients.length === 0) {
+        <p class="kanban__empty">None right now.</p>
+      } @else {
+        <ul class="kanban__list">
+          @for (client of column.clients; track client.id) {
+            <li><app-client-card [client]="client" /></li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>

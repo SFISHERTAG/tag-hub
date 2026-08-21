@@ -1,0 +1,20 @@
+<app-page-shell [title]="title()" [subtitle]="subtitle()">
+  <a pageActions matButton routerLink="/knowledge-base">Back to knowledge base</a>
+
+  @if (loading()) {
+    <app-loading-state variant="skeleton" [rows]="6" label="Loading this manual page" />
+  } @else if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else if (page(); as manual) {
+    <article class="manual">
+      @if (manual.lede) {
+        <p class="manual__lede">{{ manual.lede }}</p>
+      }
+      @if (manual.status) {
+        <p class="manual__status">{{ manual.status }}</p>
+      }
+
+      <app-manual-blocks [blocks]="manual.blocks" />
+    </article>
+  }
+</app-page-shell>

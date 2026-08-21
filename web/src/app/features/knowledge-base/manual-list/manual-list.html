@@ -1,0 +1,12 @@
+<app-page-shell title="Knowledge base" [subtitle]="countLabel()">
+  <app-data-table
+    caption="Pages of the CSM operating manual"
+    [columns]="columns"
+    [rows]="pages()"
+    [loading]="loading()"
+    [error]="error()"
+    emptyIcon="menu_book"
+    emptyMessage="The manual has no pages yet."
+    (retry)="load()"
+  />
+</app-page-shell>

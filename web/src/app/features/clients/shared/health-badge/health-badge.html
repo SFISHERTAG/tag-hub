@@ -1,0 +1,9 @@
+<span [class]="'health-badge health-badge--' + display().tone" [attr.aria-label]="label()">
+  <span class="health-badge__status" aria-hidden="true">{{ display().label }}</span>
+  @if (showScore()) {
+    <span class="health-badge__score" aria-hidden="true">{{ health().score }}</span>
+  }
+  @if (health().is_sample) {
+    <span class="health-badge__sample" aria-hidden="true">sample</span>
+  }
+</span>
