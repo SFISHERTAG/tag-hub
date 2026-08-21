@@ -128,8 +128,8 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
 | 7.6 | Data scope at the query layer — whose rows, per hat | Enforcement layer built |
 
-Field definitions live in `docs/client-fields.md` (68 fields, 41 shipping
-without Meta).
+Field definitions live in `docs/client-fields.md` (100 fields, 63 of them
+live before Meta setup).
 
 Story 7.4 is not optional and must not be deferred behind 7.3. Client
 visibility has to be an allowlist enforced where the data is fetched, not a

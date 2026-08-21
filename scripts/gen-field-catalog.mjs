@@ -1,7 +1,17 @@
 import { writeFileSync } from "node:fs";
-import { parseFieldCatalog, ROLE_BY_COLUMN } from "./parse-field-catalog.mjs";
+import {
+  assertSectionCounts,
+  parseFieldCatalog,
+  ROLE_BY_COLUMN,
+} from "./parse-field-catalog.mjs";
 
 const fields = parseFieldCatalog();
+
+// Never write a catalog the doc does not vouch for. An allowlist that is
+// quietly short does not fail — it just stops permitting things, which reads
+// downstream as an empty widget rather than as a broken build.
+assertSectionCounts(fields);
+
 const roles = Object.values(ROLE_BY_COLUMN);
 
 const header = `// GENERATED FILE — do not edit by hand.

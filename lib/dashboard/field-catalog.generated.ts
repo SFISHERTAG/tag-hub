@@ -1,7 +1,7 @@
 // GENERATED FILE — do not edit by hand.
 // Source: docs/client-fields.md · Regenerate: node scripts/gen-field-catalog.mjs
 //
-// Hand-transcribing 91 fields x 7 roles is precisely where one
+// Hand-transcribing 100 fields x 7 roles is precisely where one
 // mistyped dash puts TAG's management fee on a client's screen, so the visibility
 // table is parsed from the doc rather than retyped. test/field-catalog-drift.test.ts
 // re-parses the doc and fails if this file and the doc disagree.
@@ -858,6 +858,132 @@ export const FIELD_CATALOG: Record<string, FieldDefinition> = {
       client_owner: "never",
       client_manager: "never",
       client_closer: "never",
+    },
+  },
+  "sales.speedToLead": {
+    id: "sales.speedToLead",
+    label: "Median lead → first contact",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "on",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "available",
+      client_owner: "on",
+      client_manager: "on",
+      client_closer: "on",
+    },
+  },
+  "sales.callsTaken": {
+    id: "sales.callsTaken",
+    label: "Calls held",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "available",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "available",
+      client_owner: "on",
+      client_manager: "on",
+      client_closer: "on",
+    },
+  },
+  "sales.showRate": {
+    id: "sales.showRate",
+    label: "Show rate",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "on",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "available",
+      client_owner: "on",
+      client_manager: "on",
+      client_closer: "on",
+    },
+  },
+  "sales.noShowRate": {
+    id: "sales.noShowRate",
+    label: "No-show rate",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "available",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "never",
+      client_owner: "available",
+      client_manager: "on",
+      client_closer: "on",
+    },
+  },
+  "sales.closeRate": {
+    id: "sales.closeRate",
+    label: "Close rate",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "on",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "available",
+      client_owner: "on",
+      client_manager: "on",
+      client_closer: "on",
+    },
+  },
+  "sales.closes": {
+    id: "sales.closes",
+    label: "Deals closed",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "on",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "on",
+      client_owner: "on",
+      client_manager: "on",
+      client_closer: "on",
+    },
+  },
+  "sales.avgDealSize": {
+    id: "sales.avgDealSize",
+    label: "Avg advisory package",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "on",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "on",
+      client_owner: "on",
+      client_manager: "on",
+      client_closer: "available",
+    },
+  },
+  "sales.revenueClosed": {
+    id: "sales.revenueClosed",
+    label: "Client revenue closed",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "on",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "on",
+      client_owner: "on",
+      client_manager: "on",
+      client_closer: "available",
+    },
+  },
+  "sales.pipelineOpen": {
+    id: "sales.pipelineOpen",
+    label: "Open opportunity value",
+    section: "Sales execution — the fractional team",
+    visibility: {
+      tag_exec: "on",
+      tag_csm: "on",
+      tag_sales_manager: "on",
+      tag_sales: "available",
+      client_owner: "on",
+      client_manager: "on",
+      client_closer: "on",
     },
   },
   "econ.roas": {

@@ -1,6 +1,6 @@
 # TAG Client Record — Field Specification
 
-68 fields across 13 categories. Synced against Epics 3–6 and the code already in
+100 fields across 14 categories. Synced against Epics 3–6 and the code already in
 `lib/rules`, `lib/ghl/portfolio.ts`, and `lib/audit`.
 
 ---
@@ -49,8 +49,8 @@ and the draft was not:
 saved config silently shifts. IDs are stable strings, never reused after retirement.
 
 **2. Period is a dimension, not a field.** No `spend.mtd` *and* `spend.ytd`. One
-`spend.actual` with declared windows and a global period selector. Otherwise 68
-fields becomes 340.
+`spend.actual` with declared windows and a global period selector. Otherwise 100
+fields becomes 500.
 
 **3. Channel is a dimension.** Ad metrics are blended by default, expandable to
 Meta / Google inline. Otherwise every spend and funnel field triples.
@@ -65,12 +65,19 @@ catch. Don't manufacture it on purpose.
 ## Legend
 
 `SRC` — **M** Meta · **G** Google · **H** GHL · **S** Slack · **T** TAG internal · **C** computed
-`NOW` — ● ships against live integrations · ○ blocked on Story 4.1 (Meta setup)
+`NOW` — ● ships against live integrations · ○ blocked on a pending integration story:
+Story 4.1 (Meta setup) for all but §7b, which waits on the Slack channel work
 
 Roles: `EX` exec · `CS` csm · `SM` sales mgr · `SL` sales · `OW` client owner · `CM` closing mgr · `CL` closer
 ● default on · ○ available, off by default · — never visible
 
-**41 of 68 ship without Story 4.1.**
+**63 of 100 ship against live integrations today.** Of the 37 marked ○, 32 wait on
+Story 4.1 (Meta setup) and 5 are the §7b Slack fields.
+
+The per-section count in each `##` heading is checked against the parser on every build and
+CI run (`scripts/parse-field-catalog.mjs`, `assertSectionCounts`), so a table that loses a
+row fails loudly. The totals on this line are hand-written and unchecked: if they ever
+disagree with the sections, the sections are right.
 
 ---
 
