@@ -99,6 +99,25 @@ than rolled back. What it costs is a directory that has to be swept, three build
 a two-step rule where one step does the job. Revisit only if a feature story ever ships to live
 users before the migration finishes.
 
+**Overtaken on different grounds, same day: `legacy/` exists.** The big-bang cutover (`c5d1b75`)
+moved everything under `app/` except `app/api/**` into `legacy/` in one commit. Read the two
+records together before concluding either is wrong, because they are not in conflict and neither
+is stale.
+
+The rejection above weighed exactly one benefit, fast rollback of a single route during a soak,
+and rejected it. That reasoning still holds and its revisit condition never fired: no feature
+story has shipped to live users. The cutover claims a different benefit the rejection never
+considered, `legacy/` as the reference implementation that 10.5 through 10.7 port from, 41 server
+actions and 32 screens of behaviour Angular has to reproduce. A decision made on new grounds is
+not a re-litigation of one made on old grounds.
+
+What did carry over unchanged is the cost, exactly as forecast. Three build exclusions now exist
+(`tsconfig.json:39`, `eslint.config.mjs:44`, `vitest.config.mts:34`), and a directory has to be
+swept. That sweep is now Story 10.8, its own story rather than a clause inside 10.7, because it
+grew from a few replaced pages into 142 files spanning the whole app. The rejection's warning was
+correct about what this costs; the cutover accepted that cost with its eyes open, and 10.8 is
+where it gets paid back.
+
 ---
 
 ## 4. Rules that exist because these failures already happened

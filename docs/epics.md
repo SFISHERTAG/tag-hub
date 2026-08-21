@@ -272,8 +272,9 @@ Angular, so a screen exists in exactly one place and no defect gets fixed twice.
 | 10.4 | Shared M3 primitives, portfolio and bug reports | Draft | `10.4-shared-m3-primitives-portfolio-and-bug-reports.md` |
 | 10.5 | GHL integration module | Draft | `10.5-ghl-integration-module.md` |
 | 10.6 | Widget dashboard and the clients book | Draft | `10.6-widget-dashboard-and-clients-book.md` |
-| 10.7 | Remaining feature modules and legacy removal | Draft | `10.7-remaining-modules-and-legacy-removal.md` |
-| 10.8 | Production hardening and release | Draft | `10.8-production-hardening-and-release.md` |
+| 10.7 | Remaining feature modules | Draft | `10.7-remaining-feature-modules.md` |
+| 10.8 | Legacy removal | Draft | `10.8-legacy-removal.md` |
+| 10.9 | Production hardening and release | Draft | `10.9-production-hardening-and-release.md` |
 
 **Statuses above are taken from the story files, which are authoritative.** This
 table previously had 10.1 as In Progress while its story said Done, and 10.2 as
@@ -286,10 +287,21 @@ story to ship a real feature end to end, while the story file of that number was
 a deploy-and-soak story. Both were real work with different prerequisites.
 
 10.4 is now the feature story, which is also what Story 11.4 calibrates its
-estimates against. The release story moved to **10.8**, after 10.7's legacy
-removal, because a release belongs at the end of the work it releases. Its
-premise had also gone stale: it was written when the work was 22 unmerged
-commits, and those are merged.
+estimates against. The release story moved to the end of the work it releases,
+first to 10.8 and then to **10.9** when legacy removal took 10.8. Its premise
+had also gone stale: it was written when the work was 22 unmerged commits, and
+those are merged.
+
+**10.8 exists because the legacy sweep was owned by nobody.** Story 10.7 was
+titled "Remaining feature modules and legacy removal" and its body contained no
+acceptance criterion and no task for the removal. Meanwhile `c5d1b75` moved the
+whole pre-Angular app into `legacy/`: 142 files, invisible to tsc, to eslint and
+to vitest by explicit exclusion, plus a fourth exemption carved into the
+role-string pre-commit check. `docs/ANGULAR_MIGRATION_PLAN.md` predicted exactly
+this cost when it rejected the retire-then-delete pattern, and the cutover
+accepted it on different grounds. 10.8 is where it is paid back, and it removes
+the four exemptions in the same commit as the directory, because an exemption
+whose subject is gone reads as a rule with a hole in it.
 
 **10.1 is deliberately feature-free.** Every constraint it makes enforceable is
 free to fix while `web/src/app/` holds twelve files, and expensive after fifteen
