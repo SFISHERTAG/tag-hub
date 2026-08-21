@@ -359,11 +359,27 @@ clone and concludes the data was lost.
 `{ locationId, email, intakeData }`, so the payload carries both the tenancy and the identity
 that links the two records. No new contract needed.
 
-**3. Still worth one check:** does anything in the snapshot's own workflows, automations, or
-merge fields read these intake fields? If yes, those are broken in every clone under this
-decision and need either the fields present in the template or a rewrite to pull from
-elsewhere. If nothing reads them — which is likely, since Phase 2 works entirely from the
-webhook payload — this decision is complete and costs nothing.
+**3. The one outstanding check is now answered: nothing in the snapshot reads these fields.**
+The only consumer is the Google Doc that seeds offer and copy creation — and that reads the
+**webhook payload**, not GHL. Verified in `functions/src/webhooks/phase2-intake-submit.ts`:
+`saveIntakeSubmission(locationId, intakeData)`, `generateAllContent(intakeData)` and the Doc's
+own body all take `intakeData` straight from the request. Its only other reads are Firestore
+lookups for `driveFolderId` and `name`. **The file makes no GHL call whatsoever.**
+
+So the agency-level decision costs nothing. No snapshot automation breaks, because none was
+reading the fields to begin with.
+
+> **But this raises the stakes on field keys.** The Doc's body is built by iterating the
+> payload verbatim — `Object.entries(intakeData).map(([key, value]) => \`${key}: ${value}\`)`
+> (`phase2-intake-submit.ts:88–90`). Whatever key names arrive are written into the document
+> **as-is**, and that document is shared with the client as `reader` (§3b). If GHL's webhook
+> sends internal slugs rather than readable labels, the client opens their onboarding document
+> and reads something like `contact.custom_field_9f3a: ...` line after line.
+>
+> This is the same field-key risk §1 flags for the Gemini prompts, but with a sharper edge:
+> prompt quality degrades invisibly, whereas this is visible to the client on day one. When
+> the real payload is captured, check the key names as *copy*, not just as identifiers — and
+> if they are slugs, map them to labels before the Doc is written.
 
 ## 3f. The chosen flow — gate hosts the agency form, then hands off to the tenancy
 
