@@ -60,22 +60,27 @@ const eslintConfig = defineConfig([
       // Architecture isolation: prevent cross-integration imports.
       // Each integration (ghl, meta, drive, slack) is isolated.
       // Only lib/* may be shared.
+      //
+      // Paths are under app/api/ because the Angular cutover deleted the Next
+      // page surfaces (app/ghl/, app/meta/, app/dashboard/) and left every
+      // integration as endpoints only. The zones kept the old targets and so
+      // matched nothing; repointed with no violations found in the move.
       "import/no-restricted-paths": [
         "error",
         {
           zones: [
             {
-              target: "app/ghl/**",
-              from: ["app/meta/**", "app/dashboard/**"],
+              target: "app/api/ghl/**",
+              from: ["app/api/meta/**", "app/api/dashboard/**"],
               message: "GHL module cannot import from other integrations. Use API endpoints instead.",
             },
             {
-              target: "app/meta/**",
-              from: ["app/ghl/**", "app/dashboard/**"],
+              target: "app/api/meta/**",
+              from: ["app/api/ghl/**", "app/api/dashboard/**"],
               message: "Meta module cannot import from other integrations. Use API endpoints instead.",
             },
             {
-              target: "app/dashboard/**",
+              target: "app/api/dashboard/**",
               from: ["functions/**"],
               message: "Dashboard cannot import from Cloud Functions. Use HTTP endpoints.",
             },

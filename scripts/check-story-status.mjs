@@ -196,9 +196,13 @@ function checkArchitectureConstraints() {
   // anywhere in the diff, not just after `from "..."`, which false-positives on any
   // staged file that merely mentions one of the `to` paths in a comment, string, or route.
   const crossIntegrationPatterns = [
-    { from: "app/ghl/", to: ["app/meta/", "app/dashboard/"] },
-    { from: "app/meta/", to: ["app/ghl/", "app/dashboard/"] },
-    { from: "app/dashboard/", to: ["functions/"] },
+    // Same paths as the import/no-restricted-paths zones in eslint.config.mjs,
+    // and they move together. Under app/api/ since the Angular cutover: the
+    // Next page surfaces these named are gone, so the old prefixes matched no
+    // staged file and this check silently passed everything.
+    { from: "app/api/ghl/", to: ["app/api/meta/", "app/api/dashboard/"] },
+    { from: "app/api/meta/", to: ["app/api/ghl/", "app/api/dashboard/"] },
+    { from: "app/api/dashboard/", to: ["functions/"] },
   ];
   for (const pattern of crossIntegrationPatterns) {
     const sourceFiles = staged.filter((f) => f.startsWith(pattern.from) && /\.(ts|tsx)$/.test(f));
