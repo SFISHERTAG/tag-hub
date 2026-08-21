@@ -365,6 +365,67 @@ decision and need either the fields present in the template or a rewrite to pull
 elsewhere. If nothing reads them — which is likely, since Phase 2 works entirely from the
 webhook payload — this decision is complete and costs nothing.
 
+## 3f. The chosen flow — gate hosts the agency form, then hands off to the tenancy
+
+```
+client signs in  →  onboarding gate (in-app)
+                        └─ embeds the AGENCY form, prefilled from session
+                             └─ submit → answers land in agency custom fields
+                                  └─ redirect → /onboarding/complete (same-origin)
+                                       └─ mark gate cleared, start welcome tour
+                                            └─ their own tenancy dashboard
+```
+
+This works, and it is §3d's embed with a redirect making the seam invisible. Everything
+downstream is unchanged: the agency form writes agency fields, Phase 2 fires from the webhook
+payload, the Doc and Gemini content generate as they do today.
+
+### Sequencing consequence — provisioning must come first
+
+The gate lives *inside* the app, which means the client is already signed in when they reach
+it. So the Firebase user must exist, with claims carrying their `locationId`, **before** intake
+— not after it. Phase 1's missing user-creation step (§3f above) is therefore not parallel work
+or a follow-up; it is directly upstream of this flow and blocks it entirely. Nothing about the
+gate, the form, or the tour is reachable until a client can sign in.
+
+There is no second account. "Sent to their provisioned tenancy" is a redirect to their own
+dashboard using the session they already hold — the tenancy scoping comes from their claims,
+not from a new login.
+
+### Build the embed URL server-side, never from a query parameter
+
+Phase 1's emailed link is `${GHL_FORM_URL}?email=...&locationId=...`
+(`phase1-provisioning.ts:138`). Reusing that shape in the app is right, but the values must
+come from `getSession()` on the server, **not** from the request's own query string.
+
+A client-supplied `locationId` would let someone attribute their intake to another tenancy by
+editing a URL. The session already knows both values authoritatively, so there is no reason to
+accept them from the browser. Prefilling `email` from the session also protects the join key —
+§3e makes email the link between the agency contact and the Hub user, and a typo there
+silently orphans the record.
+
+### Knowing they finished — two signals, one authoritative
+
+**Fast path:** GHL forms support a post-submit redirect. Point it at a same-origin app route
+(`/onboarding/complete`), so the iframe navigates to your own page, which can then message the
+parent and advance the UI immediately. *Verify the redirect setting exists on this form type
+before relying on it.*
+
+**Authoritative path:** the existing webhook already fires on submission and reaches Phase 2.
+That is the record of truth — a redirect can be lost to a closed tab, a flaky network, or a
+client who submits and immediately navigates away.
+
+Use both: the redirect for responsiveness, the webhook for correctness. Decision C already
+makes a missed signal survivable — the gate fails open and re-shows the tour rather than
+locking anyone out — so the two paths disagreeing costs a repeated tour, not an incident.
+
+### What the embed still cannot do
+
+Unchanged from §3d, and worth restating because this flow makes it concrete: the app cannot see
+inside the iframe. No per-step autosave, no resume-where-you-stopped, no staff picking up a
+half-finished form, no editor identity in the audit trail. If any of those turn out to matter,
+the custom wizard in §2 is the fallback and nothing specified here is wasted.
+
 ## 4. Repo rules that will bite (from CLAUDE.md)
 
 1. **Data model as contract.** Code may not declare a new Firestore collection without
