@@ -71,6 +71,7 @@ account.
 | Table | Purpose | Sync source | Backfill done? | Notes |
 |---|---|---|---|---|
 | `clients` | Denormalized client summary (FLOW health, metrics) | Firestore `locations` | Partial | See backfill note below |
+| `csm` | CS org reporting lines (CSM to CSD to exec rollup) | Firestore `csm/{email}` | No | Keyed by email to match `clients.csm_assigned`'s free-text-email convention. Built twice under two names; `sql/006` reconciles `csm_directory` into this table |
 | `appointments` | Show/DQ/booked appointments from GHL | GHL API → Cloud Functions → this table | Yes | Includes timing (pre-call vs. on-call DQ) |
 | `courses` | Course catalog and structure | Migrating from Firestore | **NO — BLOCKED** | See migration status |
 | `course_progress` | Per-user completion tracking | Migrating from Firestore | No | Depends on `courses` table |
@@ -90,6 +91,15 @@ requirement on these reads.
 **Clients table:** `locations` snapshot was loaded once. New locations are sync'd
 via Cloud Functions on onboarding. Updates to location names/metadata are NOT
 sync'd from Firestore—check schema for stale data policy.
+
+**csm table naming split (resolved in `sql/006`):** `003` and `004` each
+created this table independently, as `csm` and `csm_directory`. `006` is the
+reconciler and is idempotent: it renames when only `csm_directory` exists, folds
+rows into `csm` and drops the duplicate when both exist, and no-ops once only
+`csm` remains. `004` is intentionally left in place rather than neutered, since
+it has already run against production. Verified against a live Postgres 18 on
+three replays of `001` through `007` from empty, plus the legacy-rename and
+both-tables-populated shapes. Do not reintroduce `csm_directory`.
 
 **Courses table:** Firestore source is authoritative. Backfill to Postgres was
 started in `functions/sql/003` but code still reads from Firestore. **This is
