@@ -13,6 +13,10 @@
 
 set -e
 
+# Isolation first: it is the cheapest check, and a commit made from the wrong
+# working tree is not worth validating the contents of.
+node scripts/check-agent-isolation.mjs
+
 echo "pre-commit: story status, role parity, architecture constraints"
 node scripts/check-story-status.mjs
 node scripts/check-role-parity.mjs

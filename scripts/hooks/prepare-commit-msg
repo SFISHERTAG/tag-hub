@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# Tracked prepare-commit-msg hook. Stamps the worktree a commit came from.
+#
+# Eight commits landed on one branch in 28 minutes, every one authored
+# "Leverage Architect", from several different agent sessions. Nothing in
+# `git log` could say which session made which, so a collision could not be
+# diagnosed even after the fact. check-agent-isolation stops the collisions;
+# this makes the ones that still happen traceable.
+#
+# Install with: npm run hooks:install
+# See scripts/hooks/pre-commit for why hooks live here and not in .git/hooks.
+
+set -e
+
+# Skipped rather than required, so checking out a branch that predates this
+# hook does not break committing on it.
+if [ -f scripts/stamp-agent-trailer.mjs ]; then
+  node scripts/stamp-agent-trailer.mjs "$@"
+fi
