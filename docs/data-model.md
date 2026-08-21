@@ -80,6 +80,15 @@ account.
 | `flow_scripts` | FLOW card script content (versioned) | App writes directly | N/A | Also see `flow_scripts` in Firestore table above — same name, different store; Postgres is the live editor content, Firestore's is not currently synced from it |
 | `flow_audit_log` | FLOW change history, revert-capable | App writes directly | N/A | Written by `lib/flow/db.ts#logChange` |
 | `flow_script_suggestions` | Closer-submitted script edit suggestions, pending sales-manager review | App writes directly | N/A | Added Phase 2 item 2.5 fast-follow; approving one calls `updateScript` (which writes `flow_audit_log`) |
+| `csm` | CS org reporting lines (who a CSM reports to) | Firestore `csm/{email}` | N/A | Keyed by email to match `clients.csm_assigned`. Migration 004 briefly created the same table as `csm_directory`; 006 consolidates the two |
+
+**Migration order.** `functions/sql/*.sql` run in file-number order, and each
+one has to be safe both on a fresh database and on one that has already seen
+its predecessors. 006 originally assumed the opposite order and failed on
+every clean deploy with `relation "csm" already exists`, because 003 creates
+that table first. It is written as idempotent `DO` blocks now. Any migration
+that renames or drops something an earlier file may also create needs the
+same treatment.
 
 **Why Postgres:** structured schema for analytics queries, SQL joins across entities,
 time-series aggregation (sum spend by day), efficient pagination, no real-time
