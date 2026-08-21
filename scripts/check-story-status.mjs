@@ -224,11 +224,16 @@ function checkArchitectureConstraints() {
   }
 
   // Check 3: data model changes without docs update
+  // Matched with String.includes, so "sql/" covers both schema roots: the
+  // repo has sql/ (flow-schema.sql, 7 tables) as well as functions/sql/, and
+  // only the latter was listed — a table added at the repo root did not trip
+  // this check. "app/actions.ts" is dropped: the Angular cutover removed every
+  // Server Action (scripts/inventory-endpoints.mjs reports 0 across 0 files),
+  // so that entry could no longer match anything.
   const dataModelFilePatterns = [
     "lib/firestore.ts",
     "lib/postgres.ts",
-    "functions/sql/",
-    "app/actions.ts",
+    "sql/",
   ];
   const touchesDataModel = staged.some((file) =>
     dataModelFilePatterns.some((pattern) => file.includes(pattern))
