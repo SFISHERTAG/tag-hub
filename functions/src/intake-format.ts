@@ -17,14 +17,145 @@
  */
 
 /**
- * Exact key -> label overrides.
+ * Exact key -> label overrides, read from the live intake form.
  *
- * Empty until a real payload is captured — the same reasoning as METRIC_REGISTRY:
- * the safe machinery lands first, and exact mappings are added when the actual
- * keys are known rather than guessed. `humanizeKey` handles anything absent here,
- * so an empty map degrades to "readable" rather than to "broken".
+ * GHL sends custom-field answers keyed by a 20-character opaque id
+ * (`suPpj9zBTX4coNoB61Iv`), not by anything readable — so without this map the
+ * client's onboarding Doc renders those ids and the Gemini prompts spend tokens
+ * on them. 49 of the form's 57 fields are custom fields with such ids.
+ *
+ * **Both spellings are mapped for every field**, because which one arrives
+ * depends on the delivery path: the form markup carries a readable `data-q`
+ * name (`offer_description`) alongside the opaque `name`/`id`, and GHL's
+ * webhook, its API, and a direct form POST do not all agree on which they send.
+ * Mapping both costs nothing and removes the guess.
+ *
+ * Labels are the form's own field labels, so the Doc reads back to the client
+ * in the words they answered under.
+ *
+ * Two fields on the form carry no readable name and are omitted deliberately —
+ * see UNIDENTIFIED_FIELD_IDS below.
  */
-export const INTAKE_LABELS: Record<string, string> = {};
+export const INTAKE_LABELS: Record<string, string> = {
+  "first_name": "First name",
+  "last_name": "Last name",
+  "phone": "Phone",
+  "email": "Email",
+  "city": "City",
+  "state": "State",
+  "postal_code": "Postal code",
+  "website": "Website",
+  "XN93DBmh427VgUhALOJk": "Years in business",
+  "years_in_business": "Years in business",
+  "4a60D0w4suKN7UqDujYk": "Primary service offering",
+  "primary_service_offering": "Primary service offering",
+  "YwIkumDMRObTbJJWNg3l": "Agreed to terms of service",
+  "agreed_to_terms_of_service": "Agreed to terms of service",
+  "e6ylG6fRingwdCADqK72": "Committed to full term",
+  "committed_to_full_term": "Committed to full term",
+  "HsqyevaXyJe7U2Zc8eBU": "Has run Facebook ads before",
+  "has_run_facebook_ads_before": "Has run Facebook ads before",
+  "Vr5PypcukBF8x3BJxWG2": "Has Facebook Business Manager",
+  "has_facebook_business_manager": "Has Facebook Business Manager",
+  "Tc8SrGRaaI5r3XWHY45v": "Has existing creative assets",
+  "has_existing_creative_assets": "Has existing creative assets",
+  "qa3lNr1dg5fISj17k2ge": "Comfortable on camera",
+  "comfortable_on_camera": "Comfortable on camera",
+  "sNXkbFBWHhompKF9Tojr": "Acknowledged responsibilities",
+  "acknowledged_responsibilities": "Acknowledged responsibilities",
+  "qjySqcfW9o5vAFjBrCT4": "Understands refund terms",
+  "understands_refund_terms": "Understands refund terms",
+  "k8iUwJUpdcwemolpus8T": "Initial payment submitted",
+  "initial_payment_submitted": "Initial payment submitted",
+  "suPpj9zBTX4coNoB61Iv": "Offer description",
+  "offer_description": "Offer description",
+  "CTsen0tJJkLapYgPCY6E": "Client outcomes",
+  "client_outcomes": "Client outcomes",
+  "Od3nlG970c1PAOhJhshe": "Advisory process",
+  "advisory_process": "Advisory process",
+  "IqGwy4ZQDC7AJEGRYIsA": "Offer differentiation",
+  "offer_differentiation": "Offer differentiation",
+  "ly0wwVKoc4gNFWwKlpXU": "Risk reversal or guarantee",
+  "risk_reversal_or_guarantee": "Risk reversal or guarantee",
+  "GBsibM4DVqZsnAw1Hp20": "Assessment / audit fee",
+  "fee_assessment": "Assessment / audit fee",
+  "4jWbjU1QAP3xGdnZb9SI": "Tax plan fee",
+  "fee_tax_plan": "Tax plan fee",
+  "khzBagfjsIzghRCDIOLy": "Implementation fee",
+  "fee_implementation": "Implementation fee",
+  "x94POJL7k66JfFRIw6TG": "Ongoing advisory / CFO fee",
+  "fee_ongoing_advisory": "Ongoing advisory / CFO fee",
+  "a1WlyuqhnaCpas1CT0gR": "Fee structure notes",
+  "fee_structure_notes": "Fee structure notes",
+  "bRreulCkcl7NGrXMoled": "Ideal client description",
+  "ideal_client_description": "Ideal client description",
+  "PHU4zOyP9vReSf2iKxUJ": "Best fit industries",
+  "best_fit_industries": "Best fit industries",
+  "v0NFmfGdMssImiIu9rnN": "Qualification threshold",
+  "qualification_threshold": "Qualification threshold",
+  "LwXHnYttEwCjj99l5nPn": "Best client traits",
+  "best_client_traits": "Best client traits",
+  "ddx6M3pxWsLGIGjPnvpq": "Biggest client problem",
+  "biggest_client_problem": "Biggest client problem",
+  "KhqE9KHw39auMbxH0zyv": "Client anxieties",
+  "client_anxieties": "Client anxieties",
+  "JM0hI4cdDQhPAsJEDCvx": "Buying trigger",
+  "buying_trigger": "Buying trigger",
+  "ZIoPC00xKM0CpztLMi9T": "Common prospect mistakes",
+  "common_prospect_mistakes": "Common prospect mistakes",
+  "a2sZrGhj02NgoaPivNcp": "Story 1 \u2014 client type",
+  "story_1_client_type": "Story 1 \u2014 client type",
+  "rZ7S36LTiRk3WqgQymMs": "Story 1 \u2014 original problem",
+  "story_1_original_problem": "Story 1 \u2014 original problem",
+  "jOLlxphQDnP63MlZAk4e": "Story 1 \u2014 strategies implemented",
+  "story_1_strategies_implemented": "Story 1 \u2014 strategies implemented",
+  "OnJrqdx1mpLGNpdUz5lH": "Story 1 \u2014 tax savings achieved",
+  "story_1_tax_savings_achieved": "Story 1 \u2014 tax savings achieved",
+  "r1ikJolKNOrJ202uuApX": "Story 1 \u2014 final outcome",
+  "story_1_final_outcome": "Story 1 \u2014 final outcome",
+  "cwqnllN7lyw9Mzlu2IBe": "Story 2 \u2014 client type",
+  "story_2_client_type": "Story 2 \u2014 client type",
+  "MYFvUF5HWzpEU4LA0wTf": "Story 2 \u2014 original problem",
+  "story_2_original_problem": "Story 2 \u2014 original problem",
+  "aqamIAtjYojvSZgOWBqX": "Story 2 \u2014 strategies implemented",
+  "story_2_strategies_implemented": "Story 2 \u2014 strategies implemented",
+  "ULN9ByCcQdQiWjvARbAF": "Story 2 \u2014 tax savings achieved",
+  "story_2_tax_savings_achieved": "Story 2 \u2014 tax savings achieved",
+  "3q3pCLAwVCPS9lpFqQmJ": "Story 2 \u2014 final outcome",
+  "story_2_final_outcome": "Story 2 \u2014 final outcome",
+  "1fMvXlz5mqibV0dtUJCa": "Story 3 \u2014 client type",
+  "story_3_client_type": "Story 3 \u2014 client type",
+  "v9legdaVXcFfhKER38LX": "Story 3 \u2014 original problem",
+  "story_3_original_problem": "Story 3 \u2014 original problem",
+  "2bIsYOTanT5VzhDQA1kL": "Story 3 \u2014 strategies implemented",
+  "story_3_strategies_implemented": "Story 3 \u2014 strategies implemented",
+  "xEHV5jim7MfmoR3HzX7W": "Story 3 \u2014 tax savings achieved",
+  "story_3_tax_savings_achieved": "Story 3 \u2014 tax savings achieved",
+  "n37eKxBRCwgaNkju84FE": "Story 3 \u2014 final outcome",
+  "story_3_final_outcome": "Story 3 \u2014 final outcome",
+  "m7AwxC6ufj4DcCmhCXbK": "Existing proof assets",
+  "existing_proof_assets": "Existing proof assets",
+  "8rXh1Vd005GpPAlXhVD9": "Largest savings result",
+  "largest_savings_result": "Largest savings result",
+  "NtTZgDgIImFyPVRtDVDL": "Named competitors",
+  "named_competitors": "Named competitors",
+  "EuRH8XJAz1ctOfWqXydq": "Competitive advantage",
+  "competitive_advantage": "Competitive advantage",
+  "cfTgz0NdB8qiHSttf11i": "Additional context",
+  "additional_context": "Additional context",
+};
+
+/**
+ * Custom fields present on the form with no `data-q` name and no visible label.
+ *
+ * Not guessed at. If either shows up in a payload it falls through to the
+ * unmapped path — the answer is kept, shown under "Additional responses", and
+ * logged by id so it can be identified in GHL and given a label here.
+ */
+export const UNIDENTIFIED_FIELD_IDS = [
+  "G3cR0ftsmKBokGAbE9Sr",
+  "5nIQL9guM2z62FZqF4hh",
+] as const;
 
 /** Prefixes GHL and form tools commonly bolt on. Stripped before humanizing. */
 const NOISE_PREFIXES = ["contact.", "custom_field_", "customfield_", "cf_", "field_"];
@@ -39,8 +170,21 @@ export function looksLikeSlug(key: string): boolean {
   if (/^[0-9a-f]{8,}$/i.test(bare)) return true;                    // hex blob
   if (/^[0-9a-f-]{32,}$/i.test(bare)) return true;                  // uuid-ish
   if (/^\d+$/.test(bare)) return true;                              // bare number
-  if (bare.length > 24 && !/[\s_-]/.test(bare)) return true;        // long unbroken token
   if (!/[aeiou]/i.test(bare) && bare.length > 6) return true;       // no vowels, not a word
+
+  // GHL's own ids: 20 characters, mixed case, no separators — e.g.
+  // `suPpj9zBTX4coNoB61Iv`, `NtTZgDgIImFyPVRtDVDL`. Length alone cannot
+  // separate these from a genuine camelCase key like `taxAdvisoryOffer`, which
+  // is itself 16 characters, so two signals do it: an embedded digit, or a
+  // capital density no word sequence reaches. `taxAdvisoryOffer` is 12.5%
+  // capitals; `NtTZgDgIImFyPVRtDVDL` is 60%.
+  if (bare.length >= 16 && !/[\s_-]/.test(bare)) {
+    if (/\d/.test(bare)) return true;
+    const capitals = (bare.match(/[A-Z]/g) ?? []).length;
+    if (capitals / bare.length > 0.35) return true;
+  }
+
+  if (bare.length > 24 && !/[\s_-]/.test(bare)) return true;        // long unbroken token
   return false;
 }
 

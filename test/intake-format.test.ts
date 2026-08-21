@@ -5,6 +5,8 @@ import {
   humanizeKey,
   looksLikeSlug,
   unmappedKeys,
+  INTAKE_LABELS,
+  UNIDENTIFIED_FIELD_IDS,
 } from "../functions/src/intake-format";
 
 /**
@@ -99,5 +101,63 @@ describe("prompt formatting", () => {
 describe("unmappedKeys", () => {
   it("reports exactly the keys needing a label, for the log line", () => {
     expect(unmappedKeys({ ideal_client: "x", "cf_9f3a2b1c": "y" })).toEqual(["cf_9f3a2b1c"]);
+  });
+});
+
+
+/**
+ * Keys taken from the live intake form. These are the real GHL custom-field ids
+ * and their `data-q` counterparts — the exact strings a payload will carry.
+ */
+describe("real intake form keys", () => {
+  const REAL = [
+    ["suPpj9zBTX4coNoB61Iv", "offer_description", "Offer description"],
+    ["CTsen0tJJkLapYgPCY6E", "client_outcomes", "Client outcomes"],
+    ["ddx6M3pxWsLGIGjPnvpq", "biggest_client_problem", "Biggest client problem"],
+    ["8rXh1Vd005GpPAlXhVD9", "largest_savings_result", "Largest savings result"],
+    ["k8iUwJUpdcwemolpus8T", "initial_payment_submitted", "Initial payment submitted"],
+  ] as const;
+
+  for (const [id, name, label] of REAL) {
+    it(`${label} resolves from the opaque id`, () => {
+      expect(formatIntakeForDoc({ [id]: "answer" })).toBe(`${label}: answer`);
+    });
+    it(`${label} resolves from the readable name`, () => {
+      expect(formatIntakeForDoc({ [name]: "answer" })).toBe(`${label}: answer`);
+    });
+  }
+
+  it("every opaque id would otherwise have been unreadable", () => {
+    for (const [id] of REAL) {
+      expect(looksLikeSlug(id)).toBe(true); // i.e. the map is doing real work
+    }
+  });
+
+  it("maps both spellings for every custom field", () => {
+    // 57 fields, 49 of them custom and therefore carrying two keys.
+    expect(Object.keys(INTAKE_LABELS).length).toBe(57 + 49);
+  });
+
+  it("renders a realistic multi-field payload with no ids visible", () => {
+    const doc = formatIntakeForDoc({
+      suPpj9zBTX4coNoB61Iv: "We cut effective tax rate for CPAs.",
+      bRreulCkcl7NGrXMoled: "Firms billing $1M+",
+      x94POJL7k66JfFRIw6TG: "$2,500/mo",
+    });
+    expect(doc).toContain("Offer description: We cut effective tax rate for CPAs.");
+    expect(doc).toContain("Ideal client description: Firms billing $1M+");
+    expect(doc).toContain("Ongoing advisory / CFO fee: $2,500/mo");
+    expect(doc).not.toMatch(/[A-Za-z0-9]{20}/);
+    expect(doc).not.toContain("Additional responses");
+  });
+
+  it("the two unidentified fields fall through rather than being guessed at", () => {
+    for (const id of UNIDENTIFIED_FIELD_IDS) {
+      expect(INTAKE_LABELS[id]).toBeUndefined();
+      const doc = formatIntakeForDoc({ [id]: "some answer" });
+      expect(doc).not.toContain(id);
+      expect(doc).toContain("some answer");
+      expect(unmappedKeys({ [id]: "some answer" })).toEqual([id]);
+    }
   });
 });
