@@ -56,3 +56,14 @@ BEGIN
   END IF;
 END
 $$;
+
+-- Belt and braces, and idempotent.
+--
+-- Both paths above already leave the grant in place: a rename carries the
+-- object's existing grants with it (they attach to the OID, not the name, and
+-- 004 granted on csm_directory), and on the both-exist path 003's
+-- `GRANT ... ON ALL TABLES` already covered the csm it created. Stating it
+-- here anyway makes this file self-sufficient rather than correct only because
+-- of the order a GRANT happens to appear in two other files — which is the
+-- same class of assumption that made the original rename fail.
+GRANT SELECT, INSERT, UPDATE, DELETE ON csm TO tag_app_user;

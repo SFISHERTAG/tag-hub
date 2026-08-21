@@ -218,9 +218,14 @@ a big-bang cutover.
 
 The backend is not migrating. `functions/` and `lib/` keep their contracts. What
 changes is that the browser can no longer reach `lib/` by importing it: an
-Angular SPA talks HTTP, and today 39 exported Server Actions across 21
-`use server` files have no HTTP equivalent, while 24 of 25 data-reading pages
-import `lib/` directly inside a React Server Component. So each story below ships
+Angular SPA talks HTTP, and as of `331e6ce` there are 41 exported Server Actions
+across 22 `use server` files with no HTTP equivalent, while all 33 data-reading
+pages import `lib/` directly inside a React Server Component.
+
+Those counts were 39 across 21, and 24 of 25, when this epic was written. They
+grew while the migration was being planned around them, which is why Story 11.5
+makes the inventory a per-story script rather than a number written down once.
+Re-measure before starting a story; do not trust this paragraph. So each story below ships
 its endpoints and its screens together. Endpoints go in `app/api/**`, keeping the
 Next deployment as an API-only host serving the Angular bundle same-origin —
 `hub_session` is httpOnly SameSite=lax and only survives that topology, and
@@ -230,15 +235,34 @@ Screens move one feature at a time. When an Angular feature passes its gate, the
 matching Next pages are deleted in the same commit and the route points at
 Angular, so a screen exists in exactly one place and no defect gets fixed twice.
 
-| ID | Story | Status |
-| --- | --- | --- |
-| 10.1 | Contract hardening and boundary enforcement | In Progress |
-| 10.2 | Real session wiring and the auth surface | Draft |
-| 10.3 | Responsive shell and navigation | In Progress |
-| 10.4 | Shared M3 primitives, portfolio and bug reports | Draft |
-| 10.5 | GHL integration module | Draft |
-| 10.6 | Widget dashboard and the clients book | Draft |
-| 10.7 | Remaining feature modules and legacy removal | Draft |
+| ID | Story | Status | Doc |
+| --- | --- | --- | --- |
+| 10.1 | Contract hardening and boundary enforcement | Done | `10.1-angular-contract-hardening.md` |
+| 10.2 | Real session wiring and the auth surface | In Progress | `10.2-real-session-wiring-and-the-auth-surface.md` |
+| 10.3 | Responsive shell and navigation | In Progress | `10.3-responsive-shell-and-navigation.md` |
+| 10.4 | **Unresolved — see below** | Draft | `10.4-production-hardening-release.md` |
+| 10.5 | GHL integration module | Draft | `10.5-ghl-integration-module.md` |
+| 10.6 | Widget dashboard and the clients book | Draft | `10.6-widget-dashboard-and-clients-book.md` |
+| 10.7 | Remaining feature modules and legacy removal | Draft | `10.7-remaining-modules-and-legacy-removal.md` |
+
+**Statuses above are taken from the story files, which are authoritative.** This
+table previously had 10.1 as In Progress while its story said Done, and 10.2 as
+Draft while its story said In Progress. Per Story 11.3, where a table and a
+story disagree, the story wins and the table is the thing that was stale.
+
+**10.4 is two different stories under one number, and needs a decision.** This
+table has described it as "Shared M3 primitives, portfolio and bug reports" — the
+first story to ship a real feature end to end. The story file of that number,
+`10.4-production-hardening-release.md`, is instead a deploy-and-soak story:
+getting the unmerged 10.1/10.2 body of work into production before any Angular
+route is flipped.
+
+Both are real work and neither is wrong. They are not the same story and they
+have different prerequisites. Note that Story 11.4 calibrates estimates off "the
+first story that ships a real feature end to end", so it currently points at the
+feature reading of 10.4 rather than at the file. Resolve by renumbering one of
+them; do not leave the number ambiguous, because two stories sharing an id is
+exactly the condition under which one of them silently never gets built.
 
 **10.1 is deliberately feature-free.** Every constraint it makes enforceable is
 free to fix while `web/src/app/` holds twelve files, and expensive after fifteen
@@ -280,13 +304,13 @@ below is cheap now and expensive after fifteen feature stories have landed on
 top of it. None of it moves a screen; all of it decides whether moving screens
 is measurable or guesswork.
 
-| ID | Story | Status |
-| --- | --- | --- |
-| 11.1 | Runnable Angular gate — Node floor pinned and enforced | Done |
-| 11.2 | Story isolation and merge discipline | Draft |
-| 11.3 | Verified doc claims — checks over prose | In Progress |
-| 11.4 | Calibration instrumentation on 10.4 | Draft |
-| 11.5 | Endpoint inventory ahead of each feature story | Draft |
+| ID | Story | Status | Doc |
+| --- | --- | --- | --- |
+| 11.1 | Runnable Angular gate — Node floor pinned and enforced | Done | `11.1-runnable-angular-gate.md` |
+| 11.2 | Story isolation and merge discipline | Draft | `11.2-story-isolation-and-merge-discipline.md` |
+| 11.3 | Verified doc claims — checks over prose | In Progress | `11.3-verified-doc-claims.md` |
+| 11.4 | Calibration instrumentation on 10.4 | Draft | `11.4-calibration-instrumentation-on-10.4.md` |
+| 11.5 | Endpoint inventory ahead of each feature story | Draft | `11.5-endpoint-inventory-ahead-of-each-feature-story.md` |
 
 **11.1 was the one already failing silently.** Angular CLI requires Node
 `v22.22.3` / `v24.15.0` / `v26.0.0`; the dev machine ran `v24.14.0`, one patch
@@ -323,9 +347,9 @@ screen hours, one-time primitive cost, and post-gate defects. Subtract the
 one-time cost and the remainder multiplies across 10.5–10.7. **No completion date
 is committed before those four numbers exist.**
 
-**11.5 is the estimate's largest unknown.** Epic 10's count — 39 Server Actions
-with no HTTP equivalent, 24 of 25 data-reading pages importing `lib/` inside a
-React Server Component — is the figure that makes the unit of work "an endpoint
+**11.5 is the estimate's largest unknown.** Epic 10's count — 41 Server Actions
+with no HTTP equivalent, all 33 data-reading pages importing `lib/` inside a
+React Server Component, measured at `331e6ce` — is the figure that makes the unit of work "an endpoint
 that does not exist plus the screen consuming it". If that number grows as each
 feature is actually inventoried, the estimate moves with it. Each story's first
 step is that inventory, and its real count gets recorded rather than assumed.
