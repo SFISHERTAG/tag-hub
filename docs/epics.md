@@ -25,6 +25,7 @@ epic gates the rest.
 | 1.5 | Location-scoped routing | Ready |
 | 1.6 | Tenant registry and entitlements | Scaffolded |
 | 1.7 | Deploy to Cloud Run | Ready |
+| 1.8 | Provision the client's Hub user at Phase 1 | Done |
 
 ## Epic 2 — Closer workspace
 

@@ -78,7 +78,17 @@ function checkArchitectureConstraints() {
   // Scoped per staged file (not the whole commit's diff text) so an exemption in one file can't
   // paper over a violation in an unrelated one, and the canonical definition files are excluded
   // since role strings are expected to live there.
-  const ROLE_DEFINITION_FILES = ["lib/auth/roles.ts", "lib/auth/role-labels.ts"];
+  // functions/src/auth.ts is exempt for a structural reason, not a convenience one:
+  // architecture isolation puts lib/auth/roles.ts out of the Cloud Functions runtime's
+  // reach (it is server-only, and functions/ builds from its own rootDir), so the rule
+  // as written is unsatisfiable there. The pairing is enforced instead by
+  // test/provision-client-owner.test.ts, which asserts every role it issues exists in
+  // lib's ROLES — drift fails CI rather than passing silently.
+  const ROLE_DEFINITION_FILES = [
+    "lib/auth/roles.ts",
+    "lib/auth/role-labels.ts",
+    "functions/src/auth.ts",
+  ];
   const ROLE_STRING_PATTERN = /["'](tag_admin|tag_exec|tag_csd|admin|cse|cso|client_owner|closer|csm|executive|onboarding|tag_ops)["']/g;
   const ROLE_HELPER_PATTERN = /\bROLES\.|\bisRole\(|\bhasAnyRole\(|\beffectiveRole\(|from\s+["'][^"']*auth\/roles["']/;
 

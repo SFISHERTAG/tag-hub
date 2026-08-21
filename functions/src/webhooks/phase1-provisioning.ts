@@ -3,6 +3,7 @@ import { cloneLocation, findLocationByName, createOpportunity, getPipelines } fr
 import { createSlackChannel, inviteSlackGuest } from "../slack";
 import { createDriveFolder } from "../google";
 import { addToOtpWhitelist, saveTenantResources, logProvisioningEvent } from "../firestore";
+import { provisionClientOwner } from "../auth";
 import { sendIntakeFormEmail, sendProvisioningConfirmation } from "../email";
 import { hasBeenProcessed, markProcessed, clearProcessed, contentEventId } from "../lib/webhooks/idempotency";
 import { checkWebhookSecret } from "../lib/webhooks/secret";
@@ -103,9 +104,25 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
     const driveFolderId = await createDriveFolder(sharedDriveId, clientName);
     console.log(`[Phase 1] Created Drive folder: ${driveFolderId}`);
 
-    // Step 5: Add client email to OTP whitelist
+    // Step 5: Create the Hub user and let them in
+    //
+    // Two halves, and both are required. The whitelist decides who may request
+    // an OTP; the Firebase Auth user is who that code signs in *as*. Without
+    // the user, `getUserByEmail` in app/api/auth/otp/verify throws and the
+    // client sees "Could not verify that code" with a valid code in hand.
+    // Without the claims, they authenticate and then `getSession()` returns
+    // null, because no valid roles means unauthenticated — a blank product
+    // rather than an error.
+    //
+    // This has to happen here rather than at first sign-in: the gate, the
+    // intake form and the tour all live inside the app, so the client must be
+    // able to sign in before any of it is reachable.
     console.log("[Phase 1] Adding to OTP whitelist...");
     await addToOtpWhitelist(clientEmail);
+
+    console.log("[Phase 1] Creating Hub user and granting roles...");
+    const ownerUid = await provisionClientOwner(clientEmail, newLocationId, clientName);
+    console.log(`[Phase 1] Provisioned Hub user ${ownerUid} for ${newLocationId}`);
 
     // Step 6: Create Fulfillment opportunity
     console.log("[Phase 1] Creating Fulfillment opportunity...");
@@ -156,6 +173,7 @@ export async function handlePhase1(req: Request, res: Response): Promise<void> {
         slackChannelId,
         driveFolderId,
         fulfillmentOpportunityId,
+        ownerUid,
       },
     });
 

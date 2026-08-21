@@ -78,6 +78,13 @@ vi.mock("../firestore", () => ({
 
 const sendIntakeFormEmail = vi.fn(async (..._args: unknown[]) => undefined);
 const sendProvisioningConfirmation = vi.fn(async (..._args: unknown[]) => undefined);
+// Provisioning the Hub user is mocked out here: it reaches firebase-admin,
+// which would try to fetch real credentials. The grant shape it produces is
+// covered directly in test/provision-client-owner.test.ts.
+vi.mock("../auth", () => ({
+  provisionClientOwner: vi.fn(async () => "uid-provisioned"),
+}));
+
 vi.mock("../email", () => ({
   sendIntakeFormEmail: (...args: unknown[]) => sendIntakeFormEmail(...args),
   sendProvisioningConfirmation: (...args: unknown[]) => sendProvisioningConfirmation(...args),

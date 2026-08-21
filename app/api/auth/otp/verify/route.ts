@@ -50,7 +50,26 @@ export async function POST(request: NextRequest) {
     // Re-resolve the user rather than trusting the posted email: the code was
     // bound to this address at issue time, and this is the only place a uid is
     // chosen.
-    const user = await adminAuth().getUserByEmail(email);
+    //
+    // A correct code with no Firebase user behind it means provisioning is
+    // incomplete — the email reached the OTP whitelist but Phase 1 never
+    // created the account (see functions/src/auth.ts, added later than the
+    // whitelist step). Reported distinctly because the generic failure sends
+    // people hunting for a bad code when the code was fine.
+    let user;
+    try {
+      user = await adminAuth().getUserByEmail(email);
+    } catch (lookupError) {
+      if ((lookupError as { code?: string })?.code === "auth/user-not-found") {
+        console.error(`OTP verify: no account for ${email} — provisioning incomplete`);
+        return NextResponse.json(
+          { error: "That code is valid, but your account is not finished setting up. Contact your TAG representative." },
+          { status: 409 },
+        );
+      }
+      throw lookupError;
+    }
+
     const customToken = await adminAuth().createCustomToken(user.uid);
 
     return NextResponse.json({ ok: true, customToken });
