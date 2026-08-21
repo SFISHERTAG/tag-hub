@@ -31,17 +31,43 @@ import { readFileSync } from "node:fs";
  * }} ParsedField
  */
 
-export const ROLE_COLUMNS = ["EX", "CS", "SM", "SL", "OW", "CM", "CL"];
+/**
+ * Every role in lib/auth/roles.ts needs a column here. A role with no column
+ * gets an empty allowlist, not a permissive one, because a field absent from a
+ * role's map is `never` (Story 7.4 AC3) — so a missing column is a blank
+ * dashboard for that hat, which is how `tag_csd` and the four setter roles were
+ * found. `admin` is deliberately absent: it is Hub administration, not a
+ * client-data hat, and it reads through the hat it is wearing.
+ */
+export const ROLE_COLUMNS = [
+  "EX",
+  "CS",
+  "TCD",
+  "SM",
+  "SL",
+  "TSM",
+  "TST",
+  "OW",
+  "CM",
+  "CL",
+  "CSM",
+  "CST",
+];
 
 /** @type {Record<string, Role>} */
 export const ROLE_BY_COLUMN = {
   EX: "tag_exec",
   CS: "tag_csm",
+  TCD: "tag_csd",
   SM: "tag_sales_manager",
   SL: "tag_sales",
   OW: "client_owner",
   CM: "client_manager",
   CL: "client_closer",
+  TSM: "tag_setter_manager",
+  TST: "tag_setter",
+  CSM: "client_setter_manager",
+  CST: "client_setter",
 };
 
 /** @type {Record<string, FieldVisibility>} */
@@ -295,7 +321,7 @@ if (process.argv[1]?.endsWith("parse-field-catalog.mjs")) {
   assertHeaderTotals(fields);
   console.log(`parsed ${fields.length} fields`);
   const never = fields.filter((f) =>
-    ["client_owner", "client_manager", "client_closer"].every(
+    ["client_owner", "client_manager", "client_closer", "client_setter_manager", "client_setter"].every(
       (r) => f.visibility[r] === "never",
     ),
   );

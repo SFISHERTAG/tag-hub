@@ -68,7 +68,9 @@ catch. Don't manufacture it on purpose.
 `NOW` — ● ships against live integrations · ○ blocked on a pending integration story:
 Story 4.1 (Meta setup) for all but §7b, which waits on the Slack channel work
 
-Roles: `EX` exec · `CS` csm · `SM` sales mgr · `SL` sales · `OW` client owner · `CM` closing mgr · `CL` closer
+Roles, TAG: `EX` exec · `CS` csm · `TCD` cs director · `SM` sales mgr · `SL` sales ·
+`TSM` setter mgr · `TST` setter
+Roles, client: `OW` owner · `CM` closing mgr · `CL` closer · `CSM` setter mgr · `CST` setter
 ● default on · ○ available, off by default · — never visible
 
 **63 of 100 ship against live integrations today.** Of the 37 marked ○, 32 wait on
@@ -84,19 +86,19 @@ prose disagrees, the prose is what changes.
 
 ## 1. Identity & commercial (11)
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `client.name` | Client name | H | ● | ● | ● | ● | ● | ● | ● | ● |
-| `client.company` | Firm name | H | ● | ● | ● | ● | ● | ● | ● | ● |
-| `client.locationId` | GHL location — the tenant key | H | ● | ● | ● | ○ | ○ | — | ○ | — |
-| `client.industry` | Tax prep · CPA · EA · bookkeeping | T | ● | ● | ● | ○ | ○ | — | — | — |
-| `client.region` | Territory | T | ● | ○ | ○ | ● | ● | — | — | — |
-| `client.size` | Solo · 2–10 · 11–50 · 50+ | T | ● | ● | ● | ○ | ○ | — | — | — |
-| `client.tier` | Service package | T | ● | ● | ● | ● | ● | ● | — | — |
-| `contract.startDate` | Engagement start | T | ● | ● | ● | ○ | ● | ● | — | — |
-| `contract.renewalDate` | Next renewal | T | ● | ● | ● | ● | ● | ● | — | — |
-| `contract.monthsActive` | Tenure | C | ● | ● | ● | ○ | ○ | ○ | — | — |
-| `contract.paymentStatus` | current · late · failed | T | ● | ● | ● | ○ | — | — | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `client.name` | Client name | H | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| `client.company` | Firm name | H | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| `client.locationId` | GHL location — the tenant key | H | ● | ● | ● | ● | ○ | ○ | ○ | ○ | — | ○ | — | ○ | — |
+| `client.industry` | Tax prep · CPA · EA · bookkeeping | T | ● | ● | ● | ● | ○ | ○ | ○ | ○ | — | — | — | — | — |
+| `client.region` | Territory | T | ● | ○ | ○ | ○ | ● | ● | ● | ● | — | — | — | — | — |
+| `client.size` | Solo · 2–10 · 11–50 · 50+ | T | ● | ● | ● | ● | ○ | ○ | ○ | ○ | — | — | — | — | — |
+| `client.tier` | Service package | T | ● | ● | ● | ● | ● | ● | ● | ● | ● | — | — | — | — |
+| `contract.startDate` | Engagement start | T | ● | ● | ● | ● | ○ | ● | ○ | ● | ● | — | — | — | — |
+| `contract.renewalDate` | Next renewal | T | ● | ● | ● | ● | ● | ● | ● | ● | ● | — | — | — | — |
+| `contract.monthsActive` | Tenure | C | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ○ | — | — | — | — |
+| `contract.paymentStatus` | current · late · failed | T | ● | ● | ● | ● | ○ | — | ○ | — | — | — | — | — | — |
 
 > There is no separate `client.status`. Lifecycle **is** the Fulfillment stage
 > (`onboard.stage`, PR1–AP5). A second status field would drift from the pipeline
@@ -109,36 +111,36 @@ prose disagrees, the prose is what changes.
 > on a client's screen. Enforce at the query layer — a component that forgets a
 > conditional is a bug; a query that cannot return the column is not.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `contract.mrr` | Management fee / retainer | T | ● | ● | ○ | ● | ○ | — | — | — |
-| `econ.feeToSpendRatio` | Fee ÷ ad spend | C | ● | ● | — | ● | — | — | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `contract.mrr` | Management fee / retainer | T | ● | ● | ○ | ○ | ● | ○ | ● | ○ | — | — | — | — | — |
+| `econ.feeToSpendRatio` | Fee ÷ ad spend | C | ● | ● | — | — | ● | — | ● | — | — | — | — | — | — |
 
 ## 3. People & assignment (7)
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `contact.name` | Primary contact | H | ● | ● | ● | ○ | ● | — | ● | ● |
-| `contact.email` | Email | H | ● | ○ | ● | ○ | ● | — | ● | ● |
-| `contact.phone` | Direct line | H | ● | ○ | ● | ○ | ● | — | ● | ● |
-| `assign.csm` | Assigned CSM | T | ● | ● | ● | ○ | ○ | ● | ○ | — |
-| `assign.salesRep` | Who sold TAG | T | ● | ● | ○ | ● | ● | — | — | — |
-| `assign.closers` | Fractional closers on account | T | ● | ● | ● | ● | ○ | ● | ● | ● |
-| `assign.execSponsor` | Founder sponsor | T | ● | ● | ○ | ○ | — | — | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `contact.name` | Primary contact | H | ● | ● | ● | ● | ○ | ● | ○ | ● | — | ● | ● | ● | ● |
+| `contact.email` | Email | H | ● | ○ | ● | ● | ○ | ● | ○ | ● | — | ● | ● | ● | ● |
+| `contact.phone` | Direct line | H | ● | ○ | ● | ● | ○ | ● | ○ | ● | — | ● | ● | ● | ● |
+| `assign.csm` | Assigned CSM | T | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | ○ | — | ○ | — |
+| `assign.salesRep` | Who sold TAG | T | ● | ● | ○ | ○ | ● | ● | ● | ● | — | — | — | — | — |
+| `assign.closers` | Fractional closers on account | T | ● | ● | ● | ● | ● | ○ | ● | ○ | ● | ● | ● | ● | ● |
+| `assign.execSponsor` | Founder sponsor | T | ● | ● | ○ | ○ | ○ | — | ○ | — | — | — | — | — | — |
 
 ## 4. System deep links (6)
 
 > The cockpit promise is one click from any number to the system that produced it.
 > Not decoration — the difference between a report and a console.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `link.ghlLocation` | GHL sub-account | H | ● | ● | ● | ○ | ○ | — | ● | ○ |
-| `link.metaAdAccount` | Meta ad account | M | ○ | ● | ● | — | — | — | — | — |
-| `link.googleAdsCustomer` | Google Ads customer | G | ○ | ● | ● | — | — | — | — | — |
-| `link.slackChannel` | Shared Slack channel | S | ● | ● | ● | ○ | ○ | ● | ○ | — |
-| `link.vsl` | Live VSL URL | T | ● | ● | ● | ○ | ● | ● | ○ | ○ |
-| `link.calendar` | Booking calendar | H | ● | ○ | ● | — | — | ● | ● | ● |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `link.ghlLocation` | GHL sub-account | H | ● | ● | ● | ● | ○ | ○ | ○ | ○ | — | ● | ○ | ● | ○ |
+| `link.metaAdAccount` | Meta ad account | M | ○ | ● | ● | ● | — | — | — | — | — | — | — | — | — |
+| `link.googleAdsCustomer` | Google Ads customer | G | ○ | ● | ● | ● | — | — | — | — | — | — | — | — | — |
+| `link.slackChannel` | Shared Slack channel | S | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | ○ | — | ○ | — |
+| `link.vsl` | Live VSL URL | T | ● | ● | ● | ● | ○ | ● | ○ | ● | ● | ○ | ○ | ○ | ○ |
+| `link.calendar` | Booking calendar | H | ● | ○ | ● | ● | — | — | — | — | ● | ● | ● | ● | ● |
 
 ## 5. Spend & pacing (8)
 
@@ -148,16 +150,16 @@ prose disagrees, the prose is what changes.
 > under-pacing under-delivers leads and the client notices on the invoice.
 > `spend.capStatus` is where Story 5.6's budget ceilings surface.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `spend.actual` | Ad spend · *channel split* | M G | ○ | ● | ● | ● | ● | ● | — | — |
-| `spend.budget` | Approved budget | T | ● | ● | ● | ● | ○ | ● | — | — |
-| `spend.remaining` | Budget − actual | C | ○ | ● | ● | ○ | ○ | ● | — | — |
-| `spend.pacePct` | Actual ÷ expected-to-date | C | ○ | ● | ● | ○ | — | ○ | — | — |
-| `spend.projectedEom` | Run-rate projection | C | ○ | ● | ● | ○ | — | ○ | — | — |
-| `spend.dailyAvg` | Avg daily spend | C | ○ | ○ | ● | — | — | ○ | — | — |
-| `spend.capStatus` | under · on_pace · over · capped_out | C | ○ | ● | ● | ○ | ○ | ● | — | — |
-| `spend.channelMix` | Meta ÷ Google share | C | ○ | ● | ● | ○ | — | ○ | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `spend.actual` | Ad spend · *channel split* | M G | ○ | ● | ● | ● | ● | ● | ● | ● | ● | — | — | — | — |
+| `spend.budget` | Approved budget | T | ● | ● | ● | ● | ● | ○ | ● | ○ | ● | — | — | — | — |
+| `spend.remaining` | Budget − actual | C | ○ | ● | ● | ● | ○ | ○ | ○ | ○ | ● | — | — | — | — |
+| `spend.pacePct` | Actual ÷ expected-to-date | C | ○ | ● | ● | ● | ○ | — | ○ | — | ○ | — | — | — | — |
+| `spend.projectedEom` | Run-rate projection | C | ○ | ● | ● | ● | ○ | — | ○ | — | ○ | — | — | — | — |
+| `spend.dailyAvg` | Avg daily spend | C | ○ | ○ | ● | ● | — | — | — | — | ○ | — | — | — | — |
+| `spend.capStatus` | under · on_pace · over · capped_out | C | ○ | ● | ● | ● | ○ | ○ | ○ | ○ | ● | — | — | — | — |
+| `spend.channelMix` | Meta ÷ Google share | C | ○ | ● | ● | ● | ○ | — | ○ | — | ○ | — | — | — | — |
 
 ## 6. Traffic & creative (8)
 
@@ -166,16 +168,16 @@ prose disagrees, the prose is what changes.
 > doubled. Frequency climbing past ~3 against a stale creative set is the leading
 > indicator. For a DFY agency the creative refresh *is* the work product — measure it.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `traffic.impressions` | Impressions · *split* | M G | ○ | ○ | ● | — | — | ● | — | — |
-| `traffic.clicks` | Clicks · *split* | M G | ○ | ○ | ● | — | — | ● | — | — |
-| `traffic.ctr` | Click-through rate | C | ○ | ○ | ● | — | — | ● | — | — |
-| `traffic.cpm` | Cost per 1k impressions | C | ○ | ○ | ● | — | — | ○ | — | — |
-| `traffic.cpc` | Cost per click | C | ○ | ○ | ● | — | — | ○ | — | — |
-| `creative.activeCount` | Live ads | M G | ○ | ○ | ● | — | — | ○ | — | — |
-| `creative.frequency` | Avg frequency — fatigue signal | M | ○ | ○ | ● | — | — | — | — | — |
-| `creative.daysSinceRefresh` | Days since new creative | C | ○ | ● | ● | — | — | — | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `traffic.impressions` | Impressions · *split* | M G | ○ | ○ | ● | ● | — | — | — | — | ● | — | — | — | — |
+| `traffic.clicks` | Clicks · *split* | M G | ○ | ○ | ● | ● | — | — | — | — | ● | — | — | — | — |
+| `traffic.ctr` | Click-through rate | C | ○ | ○ | ● | ● | — | — | — | — | ● | — | — | — | — |
+| `traffic.cpm` | Cost per 1k impressions | C | ○ | ○ | ● | ● | — | — | — | — | ○ | — | — | — | — |
+| `traffic.cpc` | Cost per click | C | ○ | ○ | ● | ● | — | — | — | — | ○ | — | — | — | — |
+| `creative.activeCount` | Live ads | M G | ○ | ○ | ● | ● | — | — | — | — | ○ | — | — | — | — |
+| `creative.frequency` | Avg frequency — fatigue signal | M | ○ | ○ | ● | ● | — | — | — | — | — | — | — | — | — |
+| `creative.daysSinceRefresh` | Days since new creative | C | ○ | ● | ● | ● | — | — | — | — | — | — | — | — | — |
 
 ## 7. Funnel (13)
 
@@ -183,21 +185,21 @@ prose disagrees, the prose is what changes.
 > Collapsing them hides the distinction between a targeting failure and a
 > qualification failure — which are different teams, different fixes.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `funnel.vslViews` | VSL views | M G | ○ | ○ | ● | — | — | ● | — | — |
-| `funnel.vslCompletion` | Watched to end % | M | ○ | ○ | ● | — | — | ● | — | — |
-| `funnel.lpVisits` | Landing page visits | M G | ○ | — | ● | — | — | ● | — | — |
-| `funnel.lpConversion` | Visit → form % | C | ○ | ○ | ● | — | — | ● | — | — |
-| `funnel.formSubmissions` | Raw form fills | H | ● | ○ | ● | ○ | ○ | ● | ● | ● |
-| `funnel.leads` | Qualified leads · *split* | H | ● | ● | ● | ● | ● | ● | ● | ● |
-| `funnel.leadQuality` | Quality score 1–10 | C | ● | ● | ● | ○ | ○ | ○ | ● | ● |
-| `funnel.cpl` | Cost per lead · *split* | C | ○ | ● | ● | ● | ● | ● | — | — |
-| `funnel.bookedCalls` | Consults booked | H | ● | ● | ● | ● | ● | ● | ● | ● |
-| `funnel.bookingRate` | Lead → booked % | C | ● | ● | ● | ○ | ○ | ● | ● | ● |
-| `funnel.dqPreCall` | DQ'd before the call — *targeting* | H | ● | ● | ● | ● | ○ | ○ | ● | ● |
-| `funnel.dqOnCall` | DQ'd on the call — *qualification* | H | ● | ● | ● | ● | ○ | ○ | ● | ● |
-| `funnel.costPerBooked` | Cost per booked call | C | ○ | ● | ● | ● | ○ | ● | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `funnel.vslViews` | VSL views | M G | ○ | ○ | ● | ● | — | — | — | — | ● | — | — | — | — |
+| `funnel.vslCompletion` | Watched to end % | M | ○ | ○ | ● | ● | — | — | — | — | ● | — | — | — | — |
+| `funnel.lpVisits` | Landing page visits | M G | ○ | — | ● | ● | — | — | — | — | ● | — | — | — | — |
+| `funnel.lpConversion` | Visit → form % | C | ○ | ○ | ● | ● | — | — | — | — | ● | — | — | — | — |
+| `funnel.formSubmissions` | Raw form fills | H | ● | ○ | ● | ● | ○ | ○ | ○ | ○ | ● | ● | ● | ● | ● |
+| `funnel.leads` | Qualified leads · *split* | H | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| `funnel.leadQuality` | Quality score 1–10 | C | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ○ | ● | ● | ● | ● |
+| `funnel.cpl` | Cost per lead · *split* | C | ○ | ● | ● | ● | ● | ● | ● | ● | ● | — | — | — | — |
+| `funnel.bookedCalls` | Consults booked | H | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| `funnel.bookingRate` | Lead → booked % | C | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | ● | ● | ● | ● |
+| `funnel.dqPreCall` | DQ'd before the call — *targeting* | H | ● | ● | ● | ● | ● | ○ | ● | ○ | ○ | ● | ● | ● | ● |
+| `funnel.dqOnCall` | DQ'd on the call — *qualification* | H | ● | ● | ● | ● | ● | ○ | ● | ○ | ○ | ● | ● | ● | ● |
+| `funnel.costPerBooked` | Cost per booked call | C | ○ | ● | ● | ● | ● | ○ | ● | ○ | ● | — | — | — | — |
 
 ## 7b. Client channel — Slack (5)
 
@@ -212,13 +214,13 @@ prose disagrees, the prose is what changes.
 > store needing its own retention, access and deletion story for no extra
 > signal.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `slack.awaitingReply` | Newest message is the client's, unanswered | S | ○ | ● | ● | ○ | — | — | ○ | — |
-| `slack.awaitingHours` | How long they have waited | C | ○ | ● | ● | ○ | — | — | ○ | — |
-| `slack.medianResponseHours` | Median TAG reply time | C | ○ | ● | ● | ○ | — | ○ | ○ | — |
-| `slack.lastActivityAt` | Last message either way | S | ○ | ○ | ● | ○ | — | ○ | ○ | — |
-| `slack.botPresent` | Bot is a member of the channel | S | ○ | ● | ● | — | — | — | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `slack.awaitingReply` | Newest message is the client's, unanswered | S | ○ | ● | ● | ● | ○ | — | ○ | — | — | ○ | — | ○ | — |
+| `slack.awaitingHours` | How long they have waited | C | ○ | ● | ● | ● | ○ | — | ○ | — | — | ○ | — | ○ | — |
+| `slack.medianResponseHours` | Median TAG reply time | C | ○ | ● | ● | ● | ○ | — | ○ | — | ○ | ○ | — | ○ | — |
+| `slack.lastActivityAt` | Last message either way | S | ○ | ○ | ● | ● | ○ | — | ○ | — | ○ | ○ | — | ○ | — |
+| `slack.botPresent` | Bot is a member of the channel | S | ○ | ● | ● | ● | — | — | — | — | — | — | — | — | — |
 
 > `slack.botPresent` is not housekeeping. `conversations.history` returns
 > nothing for a channel the bot has not joined, so a missing invite makes a busy
@@ -236,28 +238,28 @@ prose disagrees, the prose is what changes.
 > `speedToLead` belongs here too: strongest single predictor of show rate in a
 > booked-call funnel, entirely within TAG's control, and absent from the draft.
 
-| ID | Field | SRC | NOW | Definition | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| `sales.speedToLead` | Median lead → first contact | C | ● | | ● | ● | ● | ○ | ● | ● | ● |
-| `sales.callsTaken` | Calls held | H | ● | | ○ | ● | ● | ○ | ● | ● | ● |
-| `sales.showRate` | Show rate | C | ● | `showed ÷ (booked − dqPreCall)` | ● | ● | ● | ○ | ● | ● | ● |
-| `sales.noShowRate` | No-show rate | C | ● | same denominator | ○ | ● | ● | — | ○ | ● | ● |
-| `sales.closeRate` | Close rate | C | ● | `closed ÷ showed` — on-call DQ counts as showed | ● | ● | ● | ○ | ● | ● | ● |
-| `sales.closes` | Deals closed | H | ● | | ● | ● | ● | ● | ● | ● | ● |
-| `sales.avgDealSize` | Avg advisory package | H | ● | | ● | ● | ● | ● | ● | ● | ○ |
-| `sales.revenueClosed` | Client revenue closed | H | ● | | ● | ● | ● | ● | ● | ● | ○ |
-| `sales.pipelineOpen` | Open opportunity value | H | ● | | ● | ● | ● | ○ | ● | ● | ● |
+| ID | Field | SRC | NOW | Definition | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `sales.speedToLead` | Median lead → first contact | C | ● |  | ● | ● | ● | ● | ○ | ● | ○ | ● | ● | ● | ● | ● |
+| `sales.callsTaken` | Calls held | H | ● |  | ○ | ● | ● | ● | ○ | ● | ○ | ● | ● | ● | ● | ● |
+| `sales.showRate` | Show rate | C | ● | `showed ÷ (booked − dqPreCall)` | ● | ● | ● | ● | ○ | ● | ○ | ● | ● | ● | ● | ● |
+| `sales.noShowRate` | No-show rate | C | ● | same denominator | ○ | ● | ● | ● | — | ● | — | ○ | ● | ● | ● | ● |
+| `sales.closeRate` | Close rate | C | ● | `closed ÷ showed` — on-call DQ counts as showed | ● | ● | ● | ● | ○ | ● | ○ | ● | ● | ● | ● | ● |
+| `sales.closes` | Deals closed | H | ● |  | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| `sales.avgDealSize` | Avg advisory package | H | ● |  | ● | ● | ● | ● | ● | ● | ● | ● | ● | ○ | ● | ○ |
+| `sales.revenueClosed` | Client revenue closed | H | ● |  | ● | ● | ● | ● | ● | ● | ● | ● | ● | ○ | ● | ○ |
+| `sales.pipelineOpen` | Open opportunity value | H | ● |  | ● | ● | ● | ● | ○ | ● | ○ | ● | ● | ● | ● | ● |
 
 ## 9. Unit economics (6)
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `econ.roas` | Revenue ÷ ad spend — joined on `utmAdId` | C | ○ | ● | ● | ● | ● | ● | — | — |
-| `econ.cac` | Ad spend ÷ closes | C | ○ | ● | ● | ● | ○ | ● | — | — |
-| `econ.ltvCac` | LTV : CAC ratio | C | ○ | ● | ○ | ● | ○ | ○ | — | — |
-| `econ.paybackMonths` | Months to recover CAC | C | ○ | ● | ○ | ● | — | ○ | — | — |
-| `econ.revenueLifetime` | Lifetime attributed revenue | C | ● | ● | ● | ● | ● | ● | — | — |
-| `econ.spendLifetime` | Lifetime ad spend | C | ○ | ● | ● | ○ | ○ | ● | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `econ.roas` | Revenue ÷ ad spend — joined on `utmAdId` | C | ○ | ● | ● | ● | ● | ● | ● | ● | ● | — | — | — | — |
+| `econ.cac` | Ad spend ÷ closes | C | ○ | ● | ● | ● | ● | ○ | ● | ○ | ● | — | — | — | — |
+| `econ.ltvCac` | LTV : CAC ratio | C | ○ | ● | ○ | ○ | ● | ○ | ● | ○ | ○ | — | — | — | — |
+| `econ.paybackMonths` | Months to recover CAC | C | ○ | ● | ○ | ○ | ● | — | ● | — | ○ | — | — | — | — |
+| `econ.revenueLifetime` | Lifetime attributed revenue | C | ● | ● | ● | ● | ● | ● | ● | ● | ● | — | — | — | — |
+| `econ.spendLifetime` | Lifetime ad spend | C | ○ | ● | ● | ● | ○ | ○ | ○ | ○ | ● | — | — | — | — |
 
 ## 10. Health, risk & benchmark (8)
 
@@ -270,16 +272,16 @@ prose disagrees, the prose is what changes.
 > your size."* Same psychology, professional register. Anonymized cohort — never
 > named peers.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `health.status` | healthy · at-risk · critical | C | ● | ● | ● | ● | ● | ○ | ○ | — |
-| `health.reason` | Which rule fired | C | ● | ● | ● | ○ | ○ | ○ | ○ | — |
-| `health.trend` | Direction vs. prior period | C | ● | ● | ● | ● | ○ | ● | ○ | — |
-| `health.benchmark` | Cohort percentile | C | ● | ● | ● | ○ | ○ | ● | — | — |
-| `risk.deliveryStalls` | Won but delivery not marked | C | ● | ● | ● | ● | ○ | — | ○ | — |
-| `risk.escalation` | Escalation flag — Story 3.6 | T | ● | ● | ● | ● | ○ | — | ○ | — |
-| `risk.escalationReason` | What triggered it | T | ● | ● | ● | ● | ○ | — | ○ | — |
-| `risk.slaBreaches` | Missed SLAs, period | C | ● | ● | ● | ○ | — | — | ○ | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `health.status` | healthy · at-risk · critical | C | ● | ● | ● | ● | ● | ● | ● | ● | ○ | ○ | — | ○ | — |
+| `health.reason` | Which rule fired | C | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ○ | ○ | — | ○ | — |
+| `health.trend` | Direction vs. prior period | C | ● | ● | ● | ● | ● | ○ | ● | ○ | ● | ○ | — | ○ | — |
+| `health.benchmark` | Cohort percentile | C | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | — | — | — | — |
+| `risk.deliveryStalls` | Won but delivery not marked | C | ● | ● | ● | ● | ● | ○ | ● | ○ | — | ○ | — | ○ | — |
+| `risk.escalation` | Escalation flag — Story 3.6 | T | ● | ● | ● | ● | ● | ○ | ● | ○ | — | ○ | — | ○ | — |
+| `risk.escalationReason` | What triggered it | T | ● | ● | ● | ● | ● | ○ | ● | ○ | — | ○ | — | ○ | — |
+| `risk.slaBreaches` | Missed SLAs, period | C | ● | ● | ● | ● | ○ | — | ○ | — | — | ○ | — | ○ | — |
 
 ## 11. Data integrity — per client (6)
 
@@ -293,14 +295,14 @@ prose disagrees, the prose is what changes.
 > version of the Story 6.1 duplicate-conversion audit — 6.1 is a one-time manual pass,
 > this is the instrument that keeps it true afterward.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `data.freshness` | Last successful sync — Story 4.5 | C | ● | ● | ● | ○ | ○ | ● | ○ | ○ |
-| `data.metaSync` | ok · stale · failed · not_connected | M | ○ | ● | ● | — | — | ○ | — | — |
-| `data.googleSync` | ok · stale · failed · not_connected | G | ○ | ● | ● | — | — | ○ | — | — |
-| `data.ghlSync` | ok · stale · failed · not_connected | H | ● | ● | ● | — | — | ○ | ○ | — |
-| `data.pixelStatus` | Conversion tracking firing | M G | ○ | ● | ● | — | — | — | — | — |
-| `quality.attributionGap` | Platform-reported vs. GHL actual | C | ○ | ● | ● | ○ | — | — | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `data.freshness` | Last successful sync — Story 4.5 | C | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | ○ | ○ | ○ | ○ |
+| `data.metaSync` | ok · stale · failed · not_connected | M | ○ | ● | ● | ● | — | — | — | — | ○ | — | — | — | — |
+| `data.googleSync` | ok · stale · failed · not_connected | G | ○ | ● | ● | ● | — | — | — | — | ○ | — | — | — | — |
+| `data.ghlSync` | ok · stale · failed · not_connected | H | ● | ● | ● | ● | — | — | — | — | ○ | ○ | — | ○ | — |
+| `data.pixelStatus` | Conversion tracking firing | M G | ○ | ● | ● | ● | — | — | — | — | — | — | — | — | — |
+| `quality.attributionGap` | Platform-reported vs. GHL actual | C | ○ | ● | ● | ● | ○ | — | ○ | — | — | — | — | — | — |
 
 ## 12. Onboarding & launch (6)
 
@@ -309,24 +311,24 @@ prose disagrees, the prose is what changes.
 > AP1 campaign created paused · AP2 launched · AP3–5 post-launch. These fields
 > auto-hide once the stage passes AP2.
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `onboard.stage` | Fulfillment stage PR1–AP5 | H | ● | ● | ● | ○ | ○ | ● | — | — |
-| `onboard.daysInStage` | Time in current stage | C | ● | ● | ● | ○ | — | ○ | — | — |
-| `onboard.readinessPct` | Checklist completion | C | ● | ● | ● | ○ | ○ | ● | — | — |
-| `onboard.blockers` | Open blockers | T | ● | ● | ● | ○ | ○ | ● | — | — |
-| `onboard.targetLaunch` | Scheduled launch date | T | ● | ● | ● | ● | ● | ● | — | — |
-| `onboard.daysSinceLaunch` | Days live | C | ● | ● | ● | ○ | ○ | ● | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `onboard.stage` | Fulfillment stage PR1–AP5 | H | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | — | — | — | — |
+| `onboard.daysInStage` | Time in current stage | C | ● | ● | ● | ● | ○ | — | ○ | — | ○ | — | — | — | — |
+| `onboard.readinessPct` | Checklist completion | C | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | — | — | — | — |
+| `onboard.blockers` | Open blockers | T | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | — | — | — | — |
+| `onboard.targetLaunch` | Scheduled launch date | T | ● | ● | ● | ● | ● | ● | ● | ● | ● | — | — | — | — |
+| `onboard.daysSinceLaunch` | Days live | C | ● | ● | ● | ● | ○ | ○ | ○ | ○ | ● | — | — | — | — |
 
 ## 13. Operational (5)
 
-| ID | Field | SRC | NOW | EX | CS | SM | SL | OW | CM | CL |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `ops.lastContact` | Last CSM touch | H | ● | ● | ● | ○ | ● | — | ○ | — |
-| `ops.nextReview` | Scheduled check-in | T | ● | ● | ● | ○ | ● | ● | ○ | — |
-| `ops.priority` | high · normal · low | T | ● | ● | ● | ○ | ○ | — | — | — |
-| `ops.notes` | Internal notes | T | ● | ● | ● | ○ | ○ | — | ○ | — |
-| `ops.openIssues` | Open bug/issue count | T | ● | ● | ● | ○ | — | ○ | — | — |
+| ID | Field | SRC | NOW | EX | CS | TCD | SM | SL | TSM | TST | OW | CM | CL | CSM | CST |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `ops.lastContact` | Last CSM touch | H | ● | ● | ● | ● | ○ | ● | ○ | ● | — | ○ | — | ○ | — |
+| `ops.nextReview` | Scheduled check-in | T | ● | ● | ● | ● | ○ | ● | ○ | ● | ● | ○ | — | ○ | — |
+| `ops.priority` | high · normal · low | T | ● | ● | ● | ● | ○ | ○ | ○ | ○ | — | — | — | — | — |
+| `ops.notes` | Internal notes | T | ● | ● | ● | ● | ○ | ○ | ○ | ○ | — | ○ | — | ○ | — |
+| `ops.openIssues` | Open bug/issue count | T | ● | ● | ● | ● | ○ | — | ○ | — | ○ | — | — | — | — |
 
 ---
 
