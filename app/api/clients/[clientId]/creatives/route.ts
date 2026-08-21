@@ -1,3 +1,9 @@
+/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
+   Reads the meta_creatives subcollection directly for campaign-link badges.
+   Not a leak today (the query is rooted at a clientId gateClient has already
+   authorised), but it is the pattern the zone exists to stop, so this comment
+   is the migration marker: move the data path into lib/dashboard/metrics.ts
+   and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
 import { NextResponse } from "next/server";
 import { firestore } from "@/lib/firestore";
 import { fetchCreatives, type CreativeForDisplay } from "@/lib/dashboard/data-fetchers";
