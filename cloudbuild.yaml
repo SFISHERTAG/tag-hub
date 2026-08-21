@@ -1,5 +1,17 @@
 # Cloud Build → Artifact Registry → Cloud Run.
 #
+# DEPLOY WITH THIS FILE, NOT WITH `gcloud run deploy --source`.
+#
+#   gcloud builds submit --config=cloudbuild.yaml --substitutions=...
+#
+# `--source` does not read this file. It skips the --build-arg lines that inline
+# NEXT_PUBLIC_FIREBASE_* into the client bundle, and it skips the
+# check-substitutions step below that exists to stop exactly that. The result is
+# a revision that starts cleanly, passes health checks, renders every page, and
+# cannot sign anybody in — because the throw is in the browser, between two
+# server calls, where nothing surfaces it. That happened on 2026-08-21 and took
+# about four and a half hours to find. See docs/DEPLOYING_THE_APP.md.
+#
 # There is no push-to-main trigger, despite what this comment used to say.
 # Deploys are a manual `gcloud builds submit`, which means SHORT_SHA and the two
 # _FIREBASE_* substitutions below have to be passed on the command line; the
