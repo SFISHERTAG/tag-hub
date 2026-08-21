@@ -86,6 +86,50 @@ function main() {
         `        Inspect ${dest}, then delete the file and re-run to take it over.`,
     );
   }
+
+  warnIfHooksPathRedirected(dest);
+}
+
+/**
+ * Copying into .git/hooks only runs the hooks if git is still looking there.
+ *
+ * `core.hooksPath` overrides that directory outright, and nothing above reads
+ * it — so with it set, every file above is copied somewhere git never opens
+ * and this script still reports success. That is reachable, not theoretical:
+ * it happened here while comparing this approach against a hooksPath-based
+ * one, and the hooks silently stopped running until the value was unset.
+ *
+ * Warn rather than fail. An unrelated pre-existing hooksPath is the user's
+ * setting to keep, and the install genuinely did copy the files; what is not
+ * acceptable is letting it look like the hooks are live when they are not.
+ */
+function warnIfHooksPathRedirected(dest) {
+  let configured;
+  try {
+    configured = execSync("git config --get core.hooksPath", {
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+  } catch {
+    return; // Unset, so git uses .git/hooks and the copy above is what runs.
+  }
+  if (!configured) return;
+
+  const effective = resolve(commonGitDir(), "..", configured);
+  if (effective === resolve(dest)) return;
+
+  console.warn(
+    `\n[hooks] WARNING: hooks were installed to\n` +
+      `          ${dest}\n` +
+      `        but core.hooksPath redirects git to\n` +
+      `          ${configured}\n` +
+      `        so nothing installed above will run. Either unset it:\n\n` +
+      `          git config --unset core.hooksPath\n\n` +
+      `        or install to that path instead. Note core.hooksPath can also be\n` +
+      `        set per-worktree in .git/worktrees/<name>/config.worktree, which\n` +
+      `        beats the repo-level value.\n`,
+  );
 }
 
 main();
