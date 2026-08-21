@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { createGoogleDoc, shareGoogleDoc, addDocTab } from "../google";
+import { formatIntakeForDoc, unmappedKeys } from "../intake-format";
 import { saveIntakeSubmission, logProvisioningEvent, saveTenantResources } from "../firestore";
 import { generateAllContent } from "../gemini";
 import { logAutomationEvent } from "../postgres";
@@ -86,10 +87,17 @@ export async function handlePhase2(req: Request, res: Response): Promise<void> {
     console.log("[Phase 2] Creating Google Doc...");
     const docTitle = `${clientName} - Onboarding Doc`;
 
-    // Format intake data for the doc
-    const intakeFormatted = Object.entries(intakeData)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join("\n");
+    // Format intake data for the doc.
+    // Never `key: value` straight from the payload — this document is shared
+    // with the client as reader, so a GHL slug key would be the first thing
+    // they read. formatIntakeForDoc keeps every answer and shows no raw keys.
+    const intakeFormatted = formatIntakeForDoc(intakeData);
+    const unmapped = unmappedKeys(intakeData);
+    if (unmapped.length > 0) {
+      // Loud here, graceful in the document: these are the keys to add to
+      // INTAKE_LABELS once the real payload shape is known.
+      console.warn(`[Phase 2] Intake keys with no readable label: ${unmapped.join(", ")}`);
+    }
 
     const initialContent = `${docTitle}\n\nSubmission Date: ${new Date().toISOString()}\n\nIntake Data:\n${intakeFormatted}`;
 

@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { formatIntakeForPrompt } from "./intake-format";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
 
@@ -17,7 +18,7 @@ The UVP should:
 - Resonate with business owners seeking tax advisory
 
 Intake Data:
-${JSON.stringify(intakeData, null, 2)}
+${formatIntakeForPrompt(intakeData)}
 
 Write ONLY the UVP text, no headers or formatting.`;
 
@@ -50,7 +51,7 @@ Each variation should:
 - Be conversational and authentic
 
 Intake Data:
-${JSON.stringify(intakeData, null, 2)}
+${formatIntakeForPrompt(intakeData)}
 
 Format each variation clearly with the label and the copy.`;
 
@@ -75,7 +76,7 @@ The script should:
 - Be natural and conversational (avoid reading-from-paper feel)
 
 Intake Data:
-${JSON.stringify(intakeData, null, 2)}
+${formatIntakeForPrompt(intakeData)}
 
 Format as:
 **OPENING**
@@ -120,7 +121,7 @@ Include:
 Be specific and actionable. Use dates relative to "Day 1" (e.g., Week 1, Week 2, Month 2).
 
 Intake Data:
-${JSON.stringify(intakeData, null, 2)}
+${formatIntakeForPrompt(intakeData)}
 
 Format clearly with sections and subsections.`;
 
