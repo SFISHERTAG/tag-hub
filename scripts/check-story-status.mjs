@@ -12,9 +12,21 @@ const STORIES_DIR = "docs/stories";
 const repoRoot = execSync("git rev-parse --show-toplevel").toString().trim();
 const storiesPath = join(repoRoot, STORIES_DIR);
 
+/*
+ * Where this check reads its changes from.
+ *
+ * Locally that is the index: the check runs from pre-commit, and the index is
+ * what is about to become a commit. In CI there is no index, so reading it
+ * returns nothing and every rule below passes without having looked at
+ * anything, which is a green that means "did not run". TAG_DIFF_BASE makes the
+ * range explicit: CI sets it to the PR's base ref.
+ */
+const DIFF_BASE = process.env.TAG_DIFF_BASE;
+const DIFF_ARGS = DIFF_BASE ? `${DIFF_BASE}...HEAD` : "--cached";
+
 function stagedFiles() {
   try {
-    return execSync("git diff --cached --name-only", { cwd: repoRoot })
+    return execSync(`git diff --name-only ${DIFF_ARGS}`, { cwd: repoRoot })
       .toString()
       .split("\n")
       .filter(Boolean);
@@ -160,7 +172,7 @@ function checkArchitectureConstraints() {
     if (!/\.(ts|tsx)$/.test(file) || ROLE_DEFINITION_FILES.includes(file)) continue;
     let fileDiff;
     try {
-      fileDiff = execSync(`git diff --cached -U0 -- ${JSON.stringify(file)}`, { cwd: repoRoot }).toString();
+      fileDiff = execSync(`git diff ${DIFF_ARGS} -U0 -- ${JSON.stringify(file)}`, { cwd: repoRoot }).toString();
     } catch {
       continue;
     }
@@ -200,7 +212,7 @@ function checkArchitectureConstraints() {
     for (const file of sourceFiles) {
       let fileDiff;
       try {
-        fileDiff = execSync(`git diff --cached -U0 -- ${JSON.stringify(file)}`, { cwd: repoRoot }).toString();
+        fileDiff = execSync(`git diff ${DIFF_ARGS} -U0 -- ${JSON.stringify(file)}`, { cwd: repoRoot }).toString();
       } catch {
         continue;
       }

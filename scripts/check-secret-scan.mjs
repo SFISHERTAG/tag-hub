@@ -39,7 +39,21 @@ function git(args) {
   return execSync(`git ${args}`, { stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024 }).toString();
 }
 
+/*
+ * The set of files this check looks at.
+ *
+ * Locally that is the index, because the check runs from pre-commit and the
+ * index is what is about to become a commit. In CI there is no index, so
+ * reading it would return nothing and the check would pass without having
+ * looked at anything, a green that means "did not run". TAG_DIFF_BASE makes
+ * the range explicit instead: CI sets it to the PR's base ref and the check
+ * scans everything the PR adds.
+ */
 function stagedFiles() {
+  const base = process.env.TAG_DIFF_BASE;
+  if (base) {
+    return git(`diff --name-only --diff-filter=ACM ${base}...HEAD`).split("\n").filter(Boolean);
+  }
   return git("diff --cached --name-only --diff-filter=ACM").split("\n").filter(Boolean);
 }
 
