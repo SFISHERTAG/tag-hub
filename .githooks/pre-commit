@@ -1,5 +1,5 @@
 #!/bin/sh
-# tag-agent-hooks v1 — installed into .git/hooks by scripts/install-hooks.mjs.
+# tag-agent-hooks v2 — installed into .git/hooks by scripts/install-hooks.mjs.
 # Edit this file, not the installed copy, then run: npm run hooks:install
 #
 # Supersedes scripts/hooks/pre-commit, which was installed via core.hooksPath —
@@ -9,20 +9,57 @@
 # Dropping role-parity or the Angular gate here would remove a gate nobody
 # would notice was gone, which is the failure mode both hooks exist to prevent.
 #
-# Each check is skipped when its script is absent, so checking out a branch
-# that predates the check does not break committing on it.
+# v1 tried to honour that by guarding each check with `if [ -f <script> ]`, so
+# that checking out a branch predating a check did not break committing on it.
+# That guard caused the exact failure it was written to prevent: on a branch
+# that had drifted and lost scripts/, all three checks skipped silently and the
+# branch looked healthy through two weeks of commits.
+#
+# v2 keeps the old-branch case working without the blind spot, by asking *why*
+# a script is absent. package.json is this branch's own manifest of which
+# checks it expects:
+#
+#   declared in package.json + script present -> run it
+#   declared in package.json + script MISSING -> hard fail; the tree
+#       contradicts its own config, which means a stale or partial branch
+#   not declared + script present             -> run it anyway
+#   not declared + script absent              -> skip; this branch genuinely
+#       predates the check, which is the case the v1 guard existed for
+#
+# The drift test is inline rather than in its own script on purpose: a check
+# that can go missing independently of this hook reopens the blind spot.
 
-if [ -f scripts/check-agent-isolation.mjs ]; then
-  node scripts/check-agent-isolation.mjs || exit 1
-fi
+# run_check <package.json script key> <script path>
+run_check() {
+  key="$1"
+  script="$2"
 
-if [ -f scripts/check-story-status.mjs ]; then
-  node scripts/check-story-status.mjs || exit 1
-fi
+  if grep -q "\"${key}\"" package.json 2>/dev/null; then
+    if [ ! -f "${script}" ]; then
+      echo "" >&2
+      echo "pre-commit: BRANCH DRIFT — refusing to commit." >&2
+      echo "" >&2
+      echo "  package.json declares \"${key}\", but ${script} is missing." >&2
+      echo "  branch: $(git rev-parse --abbrev-ref HEAD 2>/dev/null)" >&2
+      echo "" >&2
+      echo "  This tree contradicts its own config, which means it is a stale or" >&2
+      echo "  partial branch — the checks you think are running are not running." >&2
+      echo "  Do not commit through this; the guardrails are off." >&2
+      echo "" >&2
+      echo "  Fix by catching the branch up:  git merge origin/main" >&2
+      echo "" >&2
+      exit 1
+    fi
+    node "${script}" || exit 1
+  elif [ -f "${script}" ]; then
+    node "${script}" || exit 1
+  fi
+}
 
-if [ -f scripts/check-role-parity.mjs ]; then
-  node scripts/check-role-parity.mjs || exit 1
-fi
+run_check "check:agent-isolation" scripts/check-agent-isolation.mjs
+run_check "check:branch-freshness"  scripts/check-branch-freshness.mjs
+run_check "check:story-status"    scripts/check-story-status.mjs
+run_check "check:role-parity"     scripts/check-role-parity.mjs
 
 # The Angular gate only runs when the commit actually touches web/. It is the
 # slowest check here and irrelevant to a backend-only commit.
