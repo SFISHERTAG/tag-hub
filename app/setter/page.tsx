@@ -48,7 +48,6 @@ export default async function SetterPage() {
       <div className="mx-auto max-w-7xl">
         <SetterDashboard
           ghlLocationId={ghlLocationId}
-          setterEmail={session.email || ""}
           userRole={session.currentRole}
           initialMetrics={metrics}
           initialLeads={leads}

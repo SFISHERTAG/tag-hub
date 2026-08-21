@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { Panel } from "../ui";
 import { type LeadMetric, type SetterMetrics } from "@/lib/dashboard/speed-to-lead";
+import { refreshSetterDashboard } from "./actions";
 
 interface SetterDashboardProps {
   ghlLocationId: string;
-  setterEmail: string;
   userRole: string;
   initialMetrics: SetterMetrics;
   initialLeads: LeadMetric[];
@@ -14,7 +14,6 @@ interface SetterDashboardProps {
 
 export function SetterDashboard({
   ghlLocationId,
-  setterEmail,
   userRole,
   initialMetrics,
   initialLeads,
@@ -22,30 +21,37 @@ export function SetterDashboard({
   const [metrics, setMetrics] = useState<SetterMetrics>(initialMetrics);
   const [leads, setLeads] = useState<LeadMetric[]>(initialLeads);
   const [filter, setFilter] = useState<"urgent" | "normal" | "aged">("urgent");
+  const [staleSince, setStaleSince] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!ghlLocationId) return;
+
+    let cancelled = false;
+
     async function fetchData() {
-      try {
-        const response = await fetch("/api/setter/metrics", {
-          method: "POST",
-          body: JSON.stringify({ setterEmail }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setMetrics(data.metrics);
-          setLeads(data.leads);
-        }
-      } catch (error) {
-        console.error("Error fetching setter data:", error);
+      const result = await refreshSetterDashboard(ghlLocationId);
+      if (cancelled) return;
+
+      if (!result.ok) {
+        // A frozen queue that looks live is the failure mode here: this board
+        // exists to catch a two-minute window, so a stuck refresh has to be
+        // visible rather than logged to a console nobody has open.
+        setStaleSince((current) => current ?? new Date().toLocaleTimeString());
+        return;
       }
+
+      setStaleSince(null);
+      setMetrics(result.metrics);
+      setLeads(result.leads);
     }
 
-    if (ghlLocationId && setterEmail) {
-      // Refresh every 10 seconds for real-time updates (speed to lead is critical)
-      const interval = setInterval(fetchData, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [ghlLocationId, setterEmail]);
+    // Refresh every 10 seconds for real-time updates (speed to lead is critical)
+    const interval = setInterval(fetchData, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [ghlLocationId]);
 
   const filteredLeads = leads.filter((lead) => lead.priority === filter);
 
@@ -65,6 +71,12 @@ export function SetterDashboard({
         <p className="text-sm text-ink-2">
           Prioritize fresh leads (call within 2 min), work aged queue between hot calls
         </p>
+        {staleSince && (
+          <p className="rounded border border-warn/30 bg-warn-tint px-2.5 py-1.5 text-xs text-warn">
+            Live refresh has been failing since {staleSince}. The queue below
+            is not updating. Reload the page.
+          </p>
+        )}
       </div>
 
       {/* Key Metrics */}
