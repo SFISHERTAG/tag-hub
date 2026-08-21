@@ -57,18 +57,21 @@ executive) that each want their own hook.
    Postgres, and the standing rule is that new endpoints go in `app/api`, not
    `functions/`. Every payload and handler in that plan needs rewriting before
    it is usable here. Do not treat it as a spec.
-3. Vendor risk is uneven. ElevenLabs and HeyGen are stable, documented, and
-   safe to integrate. Higgsfield and especially "OpenChatCut MCP" are the load
-   bearing pieces of the automation claim and the least proven. The assembly
-   step is what actually removes the editor; if it does not work, the pipeline
-   degrades into "generate assets, then hand them to an editor anyway," which
-   is the current SOP with extra subscriptions.
+3. Vendor risk is uneven, and the 2026-08-20 verification below confirms it.
+   ElevenLabs and HeyGen have real, publicly priced, key-authenticated APIs.
+   Higgsfield and ChatCut do not, and they are the load bearing pieces of the
+   automation claim. The assembly step is what actually removes the editor; if
+   it does not work headlessly, the pipeline degrades into "generate assets,
+   then hand them to an editor anyway," which is the current SOP with extra
+   subscriptions.
 
 **On the economics as pitched.** The "$89-$109/mo replaces a $1,500-$3,000/mo
-editor" framing undercounts. Someone still writes the prompts, reviews every
-render, and rejects the bad ones, and that someone is the CSM whose time is not
-free. The honest saving is per-variant marginal cost going to near zero, which
-is the real prize, not the headcount line.
+editor" framing is wrong twice. First, someone still writes the prompts, reviews
+every render, and rejects the bad ones, and that someone is the CSM whose time
+is not free. Second, and confirmed below, those figures are consumer seat
+prices for a use case that requires API access, and on HeyGen the two are
+entirely separate billing pools. The honest saving is per-variant marginal cost
+collapsing, which is the real prize, not the headcount line.
 
 ### Cheapest test before any code
 
@@ -84,6 +87,102 @@ top-of-funnel ad hooks is low risk, avatar for the long-form pre-call trust
 video is high risk with a skeptical high-net-worth audience. The manual test
 should cover the ad hook only.
 
+### Verified API pricing, 2026-08-20
+
+Checked against vendor pricing pages and developer docs directly. Every number
+below was read off the source, not a review site.
+
+| Vendor | Programmatic access | Billing unit | Entry cost | Publicly priced |
+| --- | --- | --- | --- | --- |
+| ElevenLabs | API key | per 1K characters | $0.10 / 1K chars (TTS v3) | Yes |
+| HeyGen | API key (`x-api-key`) | per second of output | $0.0667 / sec (Avatar IV digital twin) | Yes |
+| Higgsfield | MCP + account auth, no API key | plan credits | $19/mo Starter, 270 credits | Plan only, no per-unit rate |
+| ChatCut | CLI with stored key, no REST API | credits | $0.25 / credit, $25/mo floor | Yes |
+
+**Three findings that change the plan.**
+
+*HeyGen's API wallet is separate from its web plan credits.* The docs are
+explicit: MCP usage draws on the web plan's premium credits, while API key
+usage draws on a prepaid API wallet, and "the two billing pools are
+independent." The $29/mo Creator plan in the original pitch buys nothing for a
+backend integration. API access is prepaid pay-as-you-go from $5, with no
+subscription. Avatar IV digital twin runs $4.00 per minute of output against
+roughly $1.00 per minute of equivalent consumer plan allowance, so programmatic
+access is about four times the seat price for the premium engine. Avatar III at
+$0.0167/sec ($1.00/min) is the cheap path if fidelity allows.
+
+*The ElevenLabs to HeyGen handoff works.* `POST /v3/videos` accepts `audio_url`
+or `audio_asset_id` to drive lip sync, mutually exclusive with `script`. This
+was the single question that could have killed the two-vendor core, and the
+answer is yes. HeyGen also exposes a native `engine_type: "elevenlabs"` in
+`voice_settings`, so there are two viable routes. Two incidental wins: the
+endpoint takes an `Idempotency-Key` header, which matches the pattern Story 5.6
+already establishes, and it supports `callback_url` webhooks rather than
+requiring polling.
+
+*Neither automation vendor has a headless API.* Higgsfield's own FAQ answers
+"Do I need an API key?" with "No" and routes everything through MCP with
+interactive account authentication, billed against consumer plan credits. That
+is a poor fit for an unattended Cloud Run backend, which is the same
+constraint this project already hits with interactively-authenticated MCP
+servers in headless runs. ChatCut has no public REST API at all. Its interface
+is the `@chatcut/skill` npm CLI, which needs Node 18+, transcodes locally,
+blocks for up to 40 minutes per job, and obtains a long-lived key only after a
+PKCE browser sign-in. It is containerizable with a stored key, but it is a CLI
+dependency, not an API.
+
+*"OpenChatCut" does not exist.* The product is ChatCut at chatcut.io. The
+`assemble_timeline` MCP payload in the source material was fabricated, along
+with the `mcp.higgsfield.ai` assembly role. Higgsfield's MCP endpoint is real;
+the timeline assembler described alongside it is not.
+
+**One genuinely favorable surprise.** ChatCut charges credits only for AI
+generation. Cutting, trimming, captions, transcript editing, and MP4 export are
+free on every plan, including free. The assembly step, the thing that actually
+replaces the editor, has no marginal cost. It only bills when it generates new
+footage.
+
+### Corrected cost model
+
+One 30-second vertical ad, roughly 75 words of script, ElevenLabs voice driving
+a HeyGen avatar, plus two 5-second generated B-roll clips, assembled and
+exported.
+
+| Line | Cost |
+| --- | --- |
+| ElevenLabs TTS, ~450 chars | $0.05 |
+| HeyGen Avatar IV digital twin, 30 sec | $2.00 |
+| B-roll, 10 sec generated (ChatCut, 6 credits) | $1.50 |
+| Assembly, captions, export | $0.00 |
+| **Marginal cost per ad** | **~$3.55** |
+
+Dropping to the Avatar III engine takes the avatar line to $0.50 and the ad to
+roughly $2.05.
+
+At volume, including the ElevenLabs Creator floor of $22/mo that professional
+voice cloning requires:
+
+- 20 ads/month: about $92 total ($22 ElevenLabs + $40 HeyGen + ~$30 ChatCut)
+- 100 ads/month: about $372 total ($22 + $200 + $150)
+
+One-time: $1.00 per digital twin creation call.
+
+Set against $500 to $1,000 per Fiverr asset, 20 ads a month is roughly $92
+against $10,000 to $20,000. Even with the corrected, higher API figures the
+economics are not close. The original pitch was wrong about the price and still
+understated the advantage, because it compared subscription to subscription
+instead of marginal cost to per-asset cost.
+
+### Open questions not yet answered
+
+- What consent or verification HeyGen requires before building a digital twin
+  of a real person. Not checked, and it gates using the actual accountant.
+- Whether Avatar III fidelity is acceptable for paid social, since it is a
+  quarter the price of Avatar IV.
+- HeyGen API rate limits and concurrency on the pay-as-you-go tier.
+- Whether the HeyGen API wallet hard-stops or auto-tops-up on exhaustion. This
+  is the uncapped-cost question and it matters before any CSM-facing button.
+
 ### Proposed disposition
 
 Queued. Revisit after Epic 1 closes and Meta is verified live (4.2, 4.4, 5.6).
@@ -92,10 +191,18 @@ is the input that decides whether this becomes an epic of its own (Epic 10; 7 th
 
 ### If promoted, likely shape
 
-- Two vendors first (ElevenLabs + HeyGen), not four. Ship script-to-avatar-clip.
+- Two vendors only: ElevenLabs plus HeyGen. Both have real key-authenticated
+  APIs and public per-unit pricing. Ship script-to-avatar-clip and stop there.
+- Drop Higgsfield entirely. No API key, no per-unit pricing, interactive auth.
+  It buys generated B-roll that ChatCut also generates, at a worse integration
+  cost.
+- Treat assembly as manual for now. ChatCut's editor is free to use and its CLI
+  is a later option if the first two prove out. Do not design a backend around
+  a 40-minute blocking CLI before the avatar step has earned it.
 - Reuse the existing cubby creatives model rather than inventing new storage;
   generated assets are just another creative source feeding campaign linkage.
-- Assembly (Higgsfield, OpenChatCut) is a separate later story, gated on the
-  first two proving out. Manual assembly in the interim is acceptable.
-- Admin-side spend caps are not optional. Credit-metered vendors invoked from a
-  CSM-facing button is an uncapped-cost surface by default.
+- Use HeyGen's `Idempotency-Key` and `callback_url` rather than inventing new
+  patterns. Both line up with what Stories 5.6 and 6.5 already do.
+- Admin-side spend caps are not optional. A prepaid wallet invoked from a
+  CSM-facing button is an uncapped-cost surface until the auto-top-up question
+  above is answered.
