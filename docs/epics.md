@@ -1,10 +1,14 @@
 # TAG Hub — Epics and Stories
 
-Story files for Epics 1–2 live in `docs/stories/`. Epics 3–6 shard when they
-come up; splitting them now would freeze decisions that earlier epics will
-inform.
+Story files for Epics 1–7 and 10–12 live in `docs/stories/`. Epics 8 and 9 shard
+when they come up; splitting them now would freeze decisions that earlier epics
+will inform.
 
-Status values: `Done` · `In progress` · `Ready` · `Blocked` · `Draft`
+Status values: `Done` · `In progress` · `In review` · `Ready` · `Blocked` · `Draft`
+
+**The story doc is the source of truth for status.** Where a story has a file in
+`docs/stories/`, the `**Status:**` line in that file wins and the table below is
+a summary of it. Reconciled against the story docs on 2026-08-21.
 
 ---
 
@@ -19,11 +23,11 @@ epic gates the rest.
 | ID | Story | Status |
 | --- | --- | --- |
 | 1.1 | Token resolution seam | Done |
-| 1.2 | Agency OAuth install | Blocked — GHL account consolidation |
-| 1.3 | Identity Platform sign-in | Ready |
-| 1.4 | Role and location claims | Scaffolded |
-| 1.5 | Location-scoped routing | Ready |
-| 1.6 | Tenant registry and entitlements | Scaffolded |
+| 1.2 | Agency OAuth install | Blocked — GHL account consolidation (install itself complete 2026-08-09) |
+| 1.3 | Identity Platform sign-in | Done |
+| 1.4 | Role and location claims | Done |
+| 1.5 | Location-scoped routing | Done |
+| 1.6 | Tenant registry and entitlements | In progress — AC2 (nav filtering) and AC3 (`requireService` callers) unmet |
 | 1.7 | Deploy to Cloud Run | Ready |
 | 1.8 | Provision the client's Hub user at Phase 1 | Done |
 
@@ -39,9 +43,9 @@ remaining work is making it multi-tenant and adding call preparation.
 | 2.3 | Outcome timing capture | Done |
 | 2.4 | Contacts list and detail with notes | Done |
 | 2.5 | Move a deal between stages | Ready |
-| 2.6 | Mark won / lost with value | Ready |
-| 2.7 | Call preparation panel | Draft |
-| 2.8 | Follow-up queue | Draft |
+| 2.6 | Mark won / lost with value | Done |
+| 2.7 | Call preparation panel | Ready |
+| 2.8 | Follow-up queue | Ready |
 
 ## Epic 3 — CSM portfolio and impersonation
 
@@ -50,14 +54,16 @@ account to work in it — auditably.
 
 | ID | Story | Status |
 | --- | --- | --- |
-| 3.1 | Portfolio list with process stage | Ready |
-| 3.2 | Client health signals | Ready |
-| 3.3 | Enter a client tenant | Ready |
-| 3.4 | Impersonation banner and read-only default | Ready |
-| 3.5 | Audit log of tenant access | Ready |
-| 3.6 | Escalation view — ascension and risk | Ready |
+| 3.1 | Portfolio list with process stage | In progress — Phase 1 complete |
+| 3.2 | Client health signals | In progress — Phase 1 complete |
+| 3.3 | Enter a client tenant | Done |
+| 3.4 | Impersonation banner and read-only default | Done |
+| 3.5 | Audit log of tenant access | Done |
+| 3.6 | Escalation view — ascension and risk | In review — AC3/AC5 gaps pending live GHL data |
 
-**No blocker.** Stories 1.4 + 1.6 scaffolded. Epic 3 ready to build once admin sets up CSM location claims.
+**No blocker.** 1.4 is Done and 1.6 is in progress; the impersonation half of
+this epic (3.3–3.5) has landed. Remaining work is Phase 2 of 3.1/3.2 and
+closing 3.6's two data-dependent acceptance criteria.
 
 Story 3.5 is not optional and should not be deferred behind 3.3. Entering a
 client's data without a record of who did it is the kind of gap that is only
@@ -70,14 +76,17 @@ GoHighLevel.
 
 | ID | Story | Status |
 | --- | --- | --- |
-| 4.1 | Meta System User and ad account access | Blocked — Meta setup |
-| 4.2 | Spend and delivery by ad | Ready |
-| 4.3 | Funnel counts — leads, booked, showed, closed | Ready |
-| 4.4 | ROAS joined on `utmAdId` | Ready |
-| 4.5 | "As of" freshness indicator | Ready |
-| 4.6 | Owner's own calendar view | Ready |
+| 4.1 | Meta System User and ad account access | Unblocked — System User + token live, client ad accounts assigned (2026-08-16) |
+| 4.2 | Spend and delivery by ad | Blocked — Meta credentials not present in this environment |
+| 4.3 | Funnel counts — leads, booked, showed, closed | Done |
+| 4.4 | ROAS joined on `utmAdId` | Done |
+| 4.5 | "As of" freshness indicator | Done |
+| 4.6 | Owner's own calendar view | Done |
 
-**Blocker:** Story 4.1 (Meta setup) gates all of 4.2–4.6. Once Meta BM + API are ready, these can be built in parallel.
+**Blocker moved.** 4.1 is no longer the gate: the System User and token are live
+and client ad accounts are assigned. What remains is that this environment has no
+`META_SYSTEM_USER_TOKEN`/`META_BUSINESS_ID`, so 4.2 cannot be exercised against
+real spend. The GHL-sourced stories (4.3–4.6) landed without it.
 
 ## Epic 5 — Onboarding and campaign launch
 
@@ -86,14 +95,16 @@ one auditable action.
 
 | ID | Story | Status |
 | --- | --- | --- |
-| 5.1 | Onboarding checklist from Fulfillment stages | Ready |
-| 5.2 | Campaign template per offer | Ready |
+| 5.1 | Onboarding checklist from Fulfillment stages | Done |
+| 5.2 | Campaign template per offer | Done |
 | 5.3 | Launch preview | Ready |
-| 5.4 | Create paused via Marketing API | Ready |
-| 5.5 | Explicit activation, advancing to `AP 2 - Ads Launched` | Ready |
-| 5.6 | Budget ceilings and idempotency | Ready |
+| 5.4 | Create paused via Marketing API | Done |
+| 5.5 | Explicit activation, advancing to `AP 2 - Ads Launched` | Done |
+| 5.6 | Budget ceilings and idempotency | In progress — implemented and unit-tested, held from Done pending live Meta verification |
 
-**Blocker:** Story 4.1 (Meta API) gates 5.4–5.5. Onboarding flow (5.1–5.3, 5.6) can be built independently.
+**Blocker:** 5.6's double-submit test passes against a mocked Meta client and an
+in-memory Firestore, not a real ad account. It stays out of Done until that same
+scenario runs against live Meta credentials.
 
 ## Epic 6 — Acquisition loop
 
@@ -101,11 +112,11 @@ one auditable action.
 
 | ID | Story | Status |
 | --- | --- | --- |
-| 6.1 | Per-tenant duplicate-conversion audit | Ready — manual audit required |
-| 6.2 | Conversion dispatch on showed | Ready |
-| 6.3 | Conversion dispatch on closed-won with value | Ready |
-| 6.4 | Pre-call vs on-call DQ in show-rate maths | Ready |
-| 6.5 | Delivery monitoring and retry | Ready |
+| 6.1 | Per-tenant duplicate-conversion audit | Blocked — manual audit required before implementation |
+| 6.2 | Conversion dispatch on showed | Done |
+| 6.3 | Conversion dispatch on closed-won with value | Done |
+| 6.4 | Pre-call vs on-call DQ in show-rate maths | Done |
+| 6.5 | Delivery monitoring and retry | Done |
 
 **Critical blocker:** Story 6.1 is a manual audit (not code) — must complete before 6.2–6.3 deploy. Duplicate conversions would poison Meta's algorithm worse than no data.
 
@@ -125,9 +136,14 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.1 | Client success aggregate view | Shell built — `/success` |
 | 7.2 | Field catalog and per-role defaults | Draft |
 | 7.3 | Dashboard configuration UI | Draft |
-| 7.4 | Client-visibility allowlist at the query layer | Allowlist + catalog built |
+| 7.4 | Client-visibility allowlist at the query layer | In progress — allowlist and catalog landed, fetcher adoption outstanding |
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
-| 7.6 | Data scope at the query layer — whose rows, per hat | Enforcement layer built |
+| 7.6 | Data scope at the query layer — whose rows, per hat | In progress — enforcement layer landed, metric migration outstanding |
+
+The Knowledge Base stories previously carried the ids 7.1 and 7.2, colliding with
+the two command-surface stories of the same number. They are now Epic 12, and
+`7.1`/`7.2` mean only what the table above says. 7.1, 7.2, 7.3 and 7.5 have no
+story docs, so their statuses are unverified prose.
 
 Field definitions live in `docs/client-fields.md` (100 fields, 63 of them
 live before Meta setup).
@@ -367,3 +383,25 @@ step is that inventory, and its real count gets recorded rather than assumed.
 
 Detail, sequencing and the per-feature runbook live in
 `docs/ANGULAR_MIGRATION_PLAN.md`.
+
+## Epic 12 — Knowledge Base
+
+**Goal:** the CSM operating manual is readable and editable inside the Hub,
+rather than living as generated static files nobody opens.
+
+These two stories previously carried the ids 7.1 and 7.2, which collided with two
+different stories of the same number in Epic 7. Renumbered 2026-08-21; the files
+and their internal cross-references moved with them.
+
+| ID | Story | Status | Doc |
+| --- | --- | --- | --- |
+| 12.1 | Knowledge Base view — read-only, TAG-side staff | Ready | `12.1-knowledge-base-view.md` |
+| 12.2 | Knowledge Base admin edit — versioned, not overwritten | Ready | `12.2-knowledge-base-admin-edit.md` |
+
+**Both read Ready while the code has shipped** (commits 64be44e, 430c517). That
+is not drift: each story has exactly one unchecked task, and it is the same task
+— browser verification of the authorized and unauthorized role paths, which this
+environment cannot run because it has no test-auth credentials. The status is
+honest about a gate that never executed rather than claiming a Done nobody
+watched. Whoever gets a test-auth session runs both checks and closes both
+stories.
