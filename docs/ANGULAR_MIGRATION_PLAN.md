@@ -89,6 +89,16 @@ produces a screen that exists in two places and a defect fixed twice.
 **Definition of done for a feature is step 6, not step 5.** A passing Angular screen with the
 Next page still present is not progress; it is two implementations of one feature.
 
+**Considered and rejected, 2026-08-21: retiring pages instead of deleting them.** The proposal
+was to move a replaced page to `legacy/` in the feature commit and sweep the directory in 10.7,
+so that rolling one route back during a soak meant moving a directory rather than reverting a
+commit that also carries endpoints later stories build on. That is a real benefit when a
+rollback has to be fast because customers are affected. It is worth nothing here: the Angular
+cutover happens pre-launch, nobody is being served, and a broken screen is fixed forward rather
+than rolled back. What it costs is a directory that has to be swept, three build exclusions, and
+a two-step rule where one step does the job. Revisit only if a feature story ever ships to live
+users before the migration finishes.
+
 ---
 
 ## 4. Rules that exist because these failures already happened
