@@ -114,9 +114,10 @@ function CampaignCard({ campaign }: { campaign: CampaignWithCreativeCount }) {
         </div>
       </div>
 
-      {campaign.roas_24h && (
+      {campaign.costPerConversion24h !== undefined && (
         <div className="text-xs text-ink-2">
-          ROAS (24h): <span className="font-semibold text-ink">{campaign.roas_24h.toFixed(2)}x</span>
+          Cost per conversion (24h):{" "}
+          <span className="font-semibold text-ink">${campaign.costPerConversion24h.toFixed(2)}</span>
         </div>
       )}
 
