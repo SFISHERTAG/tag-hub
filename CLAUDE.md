@@ -9,6 +9,18 @@ to Angular. The backend (Firebase Functions in `functions/`, and the `lib/` serv
 is unaffected by this migration and keeps its existing contracts below unchanged. When this
 branch merges back, these become the project's live instructions.
 
+## Working alongside other sessions (read before touching a shared ref)
+Several Claude sessions work this repo concurrently, in the main checkout and in worktrees
+under `.claude/worktrees/`, sharing one `.git`, one `main`, and one set of hooks. **Read
+`docs/AGENT_COORDINATION.md` before moving `main`, before acting on a worktree you do not
+own, and before reporting that anything is verified.** The short version:
+- Re-read state in the same command as the action. A reading seconds old is a guess.
+- Name the commit a check ran against. `cd`-ing into the repo does not tell you the branch —
+  the main checkout usually sits on a feature branch, not `main`.
+- Never move another session's commits or uncommitted files. Surface them and ask.
+- Say what you did *not* do, and ship the undo for anything shared you moved.
+- Secrets go from a terminal to their destination, never through a session transcript.
+
 ## Terminology override
 - Use "client" (not "Member") for this project's customers.
 - No other CCE-specific identity rules apply unless explicitly stated in this file.
