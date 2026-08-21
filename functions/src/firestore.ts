@@ -5,17 +5,38 @@ const db = new Firestore({
 });
 
 /**
- * Add a user email to the OTP sign-in whitelist.
- * Allows them to authenticate via TAG Success Hub.
+ * Record a client email on the OTP sign-in whitelist document.
+ *
+ * Despite the name, this grants nothing. No code anywhere reads
+ * `auth/otpWhitelist` — a reader has never existed in this repo's history.
+ * Sign-in is gated by Firebase Auth user existence
+ * (`app/api/auth/otp/request`) plus the role claims written by
+ * `provisionClientOwner`. Until something reads this document it is a record,
+ * not a control, and must not be cited as one.
+ *
+ * Two bugs lived here undetected for exactly that reason:
+ *
+ * 1. `update()` rejects with NOT_FOUND when the document is absent, which it
+ *    is in any project where nothing seeded it — and this runs *before*
+ *    `provisionClientOwner` in Phase 1, so it failed the whole webhook short
+ *    of creating the user. `set(..., { merge: true })` creates on first write.
+ * 2. `arrayUnion` is variadic. Passing an array appended a nested
+ *    `["someone@example.com"]` as one element instead of the address itself.
+ *
+ * Fixing 1 removes an accidental brake on unauthenticated provisioning, so it
+ * lands together with `requireWebhookSecret` on Phase 1 rather than before it.
  */
 export async function addToOtpWhitelist(email: string): Promise<void> {
   const whitelistRef = db.collection("auth").doc("otpWhitelist");
 
   const { FieldValue } = await import("@google-cloud/firestore");
-  await whitelistRef.update({
-    emails: FieldValue.arrayUnion([email.toLowerCase()]),
-    updatedAt: new Date(),
-  });
+  await whitelistRef.set(
+    {
+      emails: FieldValue.arrayUnion(email.toLowerCase()),
+      updatedAt: new Date(),
+    },
+    { merge: true },
+  );
 }
 
 /**
