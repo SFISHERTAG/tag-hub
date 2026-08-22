@@ -31,7 +31,8 @@ mirrors that data.
 
 | Collection | Contents |
 | --- | --- |
-| `ghl/agency` | Agency OAuth token and company id |
+| `ghl/agency` | Credential root — records which company is primary |
+| `ghl/agency/companies/{companyId}` | One agency OAuth token per installing company |
 | `ghl/agency/locations/{id}` | Per-location tokens — minted or direct-install |
 | `locations/{id}` | Entitlements, Meta account ids, owner model |
 | `locations/{id}/appointmentOutcomes/{id}` | Outcome timing |

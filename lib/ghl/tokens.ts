@@ -17,7 +17,9 @@ import {
  *
  *   1. A cached location token that is still valid.
  *   2. A direct-install token, refreshed via its own refresh token.
- *   3. A freshly minted token from the agency install.
+ *   3. A freshly minted token from the agency install that owns the location.
+ *      Agency tokens are keyed by company, so a location minted through one
+ *      agency is never re-minted through another's credential.
  *   4. The development Private Integration Token, for the single location
  *      named in GHL_LOCATION_ID.
  *
@@ -119,8 +121,12 @@ export async function resolveToken(locationId: string): Promise<string> {
       }
     }
 
-    // 3. Mint from the agency install.
-    const agency = await loadAgencyToken();
+    // 3. Mint from the agency install. A location records which agency it is
+    // reachable through the first time it is minted, so a re-mint goes back to
+    // the same company. Only a location that predates that field falls back to
+    // the primary: minting is company-scoped, so trying other agencies in turn
+    // would just be probing for a location we were never granted.
+    const agency = await loadAgencyToken(stored?.agencyCompanyId);
     if (agency) {
       const agencyAccess = await validAgencyAccessToken(agency);
       const minted = await mintLocationToken(
@@ -132,6 +138,7 @@ export async function resolveToken(locationId: string): Promise<string> {
         accessToken: minted.access_token,
         expiresAt: Date.now() + minted.expires_in * 1000,
         source: "agency-mint",
+        agencyCompanyId: agency.companyId,
         updatedAt: Date.now(),
       });
       return minted.access_token;

@@ -17,7 +17,7 @@ const listStoredLocationIds = vi.fn(async () => []);
 vi.mock("./store", () => ({
   loadLocationToken: (...args: [string]) => loadLocationToken(...args),
   saveLocationToken: (...args: [string, unknown]) => saveLocationToken(...args),
-  loadAgencyToken: () => loadAgencyToken(),
+  loadAgencyToken: (...args: [string | undefined]) => loadAgencyToken(...args),
   saveAgencyToken: (...args: [unknown]) => saveAgencyToken(...args),
   listStoredLocationIds: () => listStoredLocationIds(),
 }));
@@ -93,6 +93,69 @@ describe("resolveToken fallback chain", () => {
     vi.stubEnv("GHL_LOCATION_ID", "");
 
     await expect(resolveToken("loc1")).rejects.toThrow(/No GHL credential available/);
+  });
+
+  it("tier 3 mints through the agency that owns the location, not the primary", async () => {
+    // The location was minted through an agency that is not primary. Asking
+    // the primary for it would be asking a company for a location it was
+    // never granted, which is how the shared-document defect failed.
+    loadLocationToken.mockResolvedValue({
+      accessToken: "expired",
+      expiresAt: Date.now() - 1000,
+      source: "agency-mint",
+      agencyCompanyId: "owning-company",
+      updatedAt: 0,
+    });
+    loadAgencyToken.mockResolvedValue({
+      accessToken: "owning-access",
+      refreshToken: "owning-refresh",
+      companyId: "owning-company",
+      expiresAt: Date.now() + 10 * 60_000,
+      updatedAt: 0,
+    });
+    mintLocationToken.mockResolvedValue({
+      access_token: "minted-token",
+      expires_in: 3600,
+      locationId: "loc1",
+    });
+
+    const token = await resolveToken("loc1");
+
+    expect(token).toBe("minted-token");
+    expect(loadAgencyToken).toHaveBeenCalledWith("owning-company");
+    expect(mintLocationToken).toHaveBeenCalledWith(
+      "owning-access",
+      "owning-company",
+      "loc1",
+    );
+    expect(saveLocationToken).toHaveBeenCalledWith(
+      "loc1",
+      expect.objectContaining({ agencyCompanyId: "owning-company" }),
+    );
+  });
+
+  it("a location with no recorded agency falls back to the primary and records it", async () => {
+    loadLocationToken.mockResolvedValue(null);
+    loadAgencyToken.mockResolvedValue({
+      accessToken: "primary-access",
+      refreshToken: "primary-refresh",
+      companyId: "primary-company",
+      expiresAt: Date.now() + 10 * 60_000,
+      updatedAt: 0,
+    });
+    mintLocationToken.mockResolvedValue({
+      access_token: "minted-token",
+      expires_in: 3600,
+      locationId: "loc1",
+    });
+
+    await resolveToken("loc1");
+
+    expect(loadAgencyToken).toHaveBeenCalledWith(undefined);
+    expect(saveLocationToken).toHaveBeenCalledWith(
+      "loc1",
+      expect.objectContaining({ agencyCompanyId: "primary-company" }),
+    );
   });
 
   it("all tiers failing except a dev PIT for a different location throws LocationNotAuthorizedError", async () => {

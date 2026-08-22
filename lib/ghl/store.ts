@@ -7,19 +7,38 @@ import { firestore } from "@/lib/firestore";
  * Two ways a location becomes reachable:
  *
  *   1. Agency install — one company token that mints short-lived location
- *      tokens on demand. This is how all 40 sub-accounts get served.
+ *      tokens on demand. This is how sub-accounts under our own agency get
+ *      served.
  *
  *   2. Direct location install — the app installed onto a single sub-account.
- *      Yields a location token with its own refresh token. Useful for testing
- *      against one client before rolling out agency-wide.
+ *      Yields a location token with its own refresh token. This is the only
+ *      path for a client who stays inside their own agency, so it is not a
+ *      testing convenience: it is half the portfolio.
  *
  * Both paths write a document under `ghl/agency/locations/{locationId}`, so
  * token resolution does not care which one produced it.
+ *
+ * Agency tokens are keyed by company. They used to share one document, which
+ * meant a second agency completing a company-level install silently overwrote
+ * ours — including `companyId`, so every subsequent mint for every one of our
+ * own sub-accounts would have been attempted against the wrong company and
+ * failed. One outside install, whole portfolio dark, no alarm. Keying by
+ * company makes that install land in its own document instead.
+ *
+ * The first agency to install becomes the primary, recorded on the `ghl/agency`
+ * root. The primary is what mints for a location whose owning agency is not
+ * recorded, which is every location stored before this change.
  */
 
 export { firestore };
 
-const AGENCY_DOC = "ghl/agency";
+/**
+ * Legacy single-token document, now the root that records which company is
+ * primary. Pre-existing deployments have a full token here; `loadAgencyToken`
+ * migrates it into the per-company layout on first read.
+ */
+const AGENCY_ROOT = "ghl/agency";
+const agencyDoc = (companyId: string) => `ghl/agency/companies/${companyId}`;
 const locationDoc = (locationId: string) =>
   `ghl/agency/locations/${locationId}`;
 
@@ -32,13 +51,100 @@ export type StoredAgencyToken = {
   updatedAt: number;
 };
 
-export async function saveAgencyToken(token: StoredAgencyToken): Promise<void> {
-  await firestore().doc(AGENCY_DOC).set(token);
+/**
+ * The root document. Post-migration it holds only `primaryCompanyId`; the
+ * token fields are what a pre-migration deployment left behind.
+ */
+type AgencyRoot = Partial<StoredAgencyToken> & { primaryCompanyId?: string };
+
+/** Company ids are path segments, so they get the same guard location ids do. */
+function isValidCompanyId(value: string): boolean {
+  return /^[A-Za-z0-9_-]{1,128}$/.test(value);
 }
 
-export async function loadAgencyToken(): Promise<StoredAgencyToken | null> {
-  const snapshot = await firestore().doc(AGENCY_DOC).get();
-  return snapshot.exists ? (snapshot.data() as StoredAgencyToken) : null;
+export class InvalidCompanyIdError extends Error {
+  constructor(readonly companyId: string) {
+    super(`Refusing to store an agency token under an unusable company id.`);
+    this.name = "InvalidCompanyIdError";
+  }
+}
+
+async function readRoot(): Promise<AgencyRoot | null> {
+  const snapshot = await firestore().doc(AGENCY_ROOT).get();
+  return snapshot.exists ? (snapshot.data() as AgencyRoot) : null;
+}
+
+/** The company whose token serves locations with no recorded owner. */
+export async function loadPrimaryCompanyId(): Promise<string | null> {
+  const root = await readRoot();
+  return root?.primaryCompanyId ?? root?.companyId ?? null;
+}
+
+/**
+ * Stores an agency token under its own company.
+ *
+ * Never overwrites another company's document, and never reassigns the primary
+ * once one is set — a later install by a different agency is stored, but it
+ * does not inherit the portfolio.
+ */
+export async function saveAgencyToken(token: StoredAgencyToken): Promise<void> {
+  if (!isValidCompanyId(token.companyId)) {
+    throw new InvalidCompanyIdError(token.companyId);
+  }
+
+  await firestore().doc(agencyDoc(token.companyId)).set(token);
+
+  const primary = await loadPrimaryCompanyId();
+  if (!primary) {
+    await firestore()
+      .doc(AGENCY_ROOT)
+      .set({ primaryCompanyId: token.companyId }, { merge: true });
+  }
+}
+
+/**
+ * Loads an agency token: a named company's, or the primary's when unnamed.
+ *
+ * Migrates the legacy root token into the per-company layout the first time it
+ * is read, so a deployment carrying a live agency install keeps working with no
+ * migration step and no reinstall.
+ */
+export async function loadAgencyToken(
+  companyId?: string,
+): Promise<StoredAgencyToken | null> {
+  const root = await readRoot();
+  const wanted = companyId ?? root?.primaryCompanyId ?? root?.companyId;
+  if (!wanted || !isValidCompanyId(wanted)) return null;
+
+  const snapshot = await firestore().doc(agencyDoc(wanted)).get();
+  if (snapshot.exists) return snapshot.data() as StoredAgencyToken;
+
+  // Legacy: the root still holds the token itself. Copy it down, then record
+  // it as primary so the next read takes the path above.
+  if (root?.accessToken && root.refreshToken && root.companyId === wanted) {
+    const migrated: StoredAgencyToken = {
+      accessToken: root.accessToken,
+      refreshToken: root.refreshToken,
+      companyId: root.companyId,
+      expiresAt: root.expiresAt ?? 0,
+      updatedAt: root.updatedAt ?? 0,
+    };
+    await firestore().doc(agencyDoc(wanted)).set(migrated);
+    await firestore()
+      .doc(AGENCY_ROOT)
+      .set({ primaryCompanyId: wanted }, { merge: true });
+    return migrated;
+  }
+
+  return null;
+}
+
+/** Every agency that has completed an install, primary first. */
+export async function listAgencyCompanyIds(): Promise<string[]> {
+  const docs = await firestore()
+    .collection("ghl/agency/companies")
+    .listDocuments();
+  return docs.map((doc) => doc.id);
 }
 
 export type StoredLocationToken = {
@@ -49,6 +155,13 @@ export type StoredLocationToken = {
   refreshToken?: string;
   /** How this credential was obtained. */
   source: "agency-mint" | "direct-install";
+  /**
+   * Which agency this location is reachable through. Recorded on mint so a
+   * re-mint goes back to the same company rather than guessing the primary.
+   * Absent on direct installs, and on anything stored before agency tokens
+   * were keyed by company.
+   */
+  agencyCompanyId?: string;
   updatedAt: number;
 };
 
