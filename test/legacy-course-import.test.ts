@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { canSeeCourse, COURSE_AUDIENCES } from "@/lib/course/visibility";
 import { NEW_LEGACY_COURSES, CREDENTIAL_PLACEHOLDER } from "@/lib/course/legacy-content";
+import { COURSE_CORRECTIONS } from "@/lib/course/legacy-corrections";
 import { ROLES } from "@/lib/auth/role-labels";
 
 /**
@@ -159,5 +160,74 @@ describe("course visibility", () => {
   it("never locks an admin out of a course they administer", () => {
     expect(canSeeCourse(ROLES.ADMIN, byslug("csm-training").visibleToRoles)).toBe(true);
     expect(canSeeCourse(ROLES.ADMIN, byslug("sales-rep-training").visibleToRoles)).toBe(true);
+  });
+});
+
+describe("part C corrections", () => {
+  it("covers every lesson in both seeded courses", () => {
+    const onboarding = COURSE_CORRECTIONS.find((c) => c.slug === "onboarding-expectations");
+    const sales = COURSE_CORRECTIONS.find((c) => c.slug === "sales-training");
+
+    // 12 and 10, not the 11 and 9 the handoff recorded.
+    expect(onboarding?.lessons).toHaveLength(12);
+    expect(sales?.lessons).toHaveLength(10);
+  });
+
+  it("replaces the summary rather than trimming it", () => {
+    const sales = COURSE_CORRECTIONS.find((c) => c.slug === "sales-training");
+    const total = (sales?.lessons ?? []).reduce((sum, lesson) => sum + lesson.content.length, 0);
+
+    // seed.ts holds ~4,463 characters for this course. Anything close to that
+    // means a correction quietly reverted to the paraphrase.
+    expect(total).toBeGreaterThan(50_000);
+  });
+
+  it("keeps Committing Phase, which the handoff suspected was never real", () => {
+    const sales = COURSE_CORRECTIONS.find((c) => c.slug === "sales-training");
+    const lesson = sales?.lessons.find((l) => l.loomId === "d8244b649066442ca7577d620aa4f826");
+
+    expect(lesson).toBeDefined();
+    expect(lesson?.content).toContain("The Commitment Phase");
+  });
+
+  it("uses support@ on both lessons whose page text and mailto disagreed", () => {
+    const onboarding = COURSE_CORRECTIONS.find((c) => c.slug === "onboarding-expectations");
+    const crm = onboarding?.lessons.find((l) => l.loomId === "a8cb4c5e6d9542de934a3943cc7843a9");
+    const meta = onboarding?.lessons.find((l) => l.loomId === "d979f9495e78411786926aac21bcf483");
+
+    for (const lesson of [crm, meta]) {
+      expect(lesson?.content).toContain("support@taxadvisorygrowth.net");
+      expect(lesson?.content).not.toContain("dj@thedealclosers.net");
+      expect(lesson?.content).not.toContain("dmbcwithaustyn@gmail.com");
+    }
+  });
+
+  it("does not add the tech-support booking link that is not on the live page", () => {
+    const onboarding = COURSE_CORRECTIONS.find((c) => c.slug === "onboarding-expectations");
+    const bookCall = onboarding?.lessons.find((l) => l.title === "Book A Call 2-3 Days");
+
+    expect(bookCall?.content).toContain("GCG8N9f8oqMtDZx9lPXE");
+    expect(bookCall?.content).toContain("KX741GkenVU8IjGvPBuX");
+    expect(bookCall?.content).not.toContain("tag-technical-support");
+  });
+
+  it("gives every correction a unique join key", () => {
+    for (const course of COURSE_CORRECTIONS) {
+      const keys = course.lessons.map((lesson) => lesson.loomId || `title:${lesson.title}`);
+      expect(new Set(keys).size).toBe(keys.length);
+      // A keyless correction would update by `undefined` and match nothing.
+      expect(keys.every((key) => key && key !== "title:undefined")).toBe(true);
+    }
+  });
+
+  it("retitles only where the lesson was actually renamed", () => {
+    const retitled = COURSE_CORRECTIONS.flatMap((course) =>
+      course.lessons.filter((lesson) => lesson.title && lesson.loomId),
+    );
+
+    // Skool also differs on three others by a typo, a stray space and
+    // capitalisation. Copying those in would be churn.
+    expect(retitled).toHaveLength(1);
+    expect(retitled[0].title).toBe("Niches, Offer, Pricing, Closing");
   });
 });

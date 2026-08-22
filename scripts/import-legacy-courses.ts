@@ -1,5 +1,6 @@
 import { pool } from "../lib/postgres";
 import { NEW_LEGACY_COURSES, type LegacyCourse } from "../lib/course/legacy-content";
+import { COURSE_CORRECTIONS, type CourseCorrection } from "../lib/course/legacy-corrections";
 
 /**
  * One-time import of the legacy Skool trainings (story 12.4).
@@ -135,6 +136,68 @@ async function importCourse(
   return { lessons, videos, docs };
 }
 
+/**
+ * Part C: replaces the paraphrased body text on the two seeded courses.
+ *
+ * Lessons are matched on their loom id rather than their title or position.
+ * Three of these lessons have been retitled in Skool since seeding, and a
+ * title match would have skipped exactly those three — the ones most in need
+ * of correcting.
+ *
+ * A correction that matches no row is a hard failure, not a warning. The whole
+ * point of this pass is that the seeded text is wrong; a correction that
+ * silently applied to nothing would leave that text in place while the script
+ * reported success.
+ */
+async function applyCorrections(
+  client: {
+    query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, string>[]; rowCount: number | null }>;
+  },
+  correction: CourseCorrection,
+): Promise<number> {
+  const course = await client.query("SELECT id FROM courses WHERE slug = $1", [correction.slug]);
+  if (course.rows.length === 0) {
+    throw new Error(`Cannot correct "${correction.slug}": no such course.`);
+  }
+  const courseId = course.rows[0].id;
+
+  let applied = 0;
+  for (const lesson of correction.lessons) {
+    const matched = lesson.loomId
+      ? await client.query(
+          `UPDATE course_subsections SET content = $3,
+             title = COALESCE($4, title),
+             updated_at = now()
+           WHERE loom_id = $2
+             AND section_id IN (SELECT id FROM course_sections WHERE course_id = $1)`,
+          [courseId, lesson.loomId, lesson.content, lesson.title ?? null],
+        )
+      : await client.query(
+          `UPDATE course_subsections SET content = $3, updated_at = now()
+           WHERE title = $2
+             AND section_id IN (SELECT id FROM course_sections WHERE course_id = $1)`,
+          [courseId, lesson.title, lesson.content],
+        );
+
+    const rows = matched.rowCount ?? 0;
+    if (rows === 0) {
+      throw new Error(
+        `Correction matched no lesson in ${correction.slug}: ` +
+          `${lesson.loomId ? `loom ${lesson.loomId}` : `title "${lesson.title}"`}.`,
+      );
+    }
+    if (rows > 1) {
+      throw new Error(
+        `Correction matched ${rows} lessons in ${correction.slug}: ` +
+          `${lesson.loomId ? `loom ${lesson.loomId}` : `title "${lesson.title}"`}.`,
+      );
+    }
+    applied += rows;
+  }
+
+  return applied;
+}
+
 async function main(): Promise<void> {
   const options = parseOptions(process.argv.slice(2));
   await assertTarget();
@@ -156,6 +219,16 @@ async function main(): Promise<void> {
         );
       }
     }
+
+    console.log("\n  Corrections to the seeded courses:");
+    for (const correction of COURSE_CORRECTIONS) {
+      const chars = correction.lessons.reduce((sum, lesson) => sum + lesson.content.length, 0);
+      const retitled = correction.lessons.filter((lesson) => lesson.title).length;
+      console.log(
+        `    ${correction.slug}: ${correction.lessons.length} lessons rewritten, ` +
+          `${chars} chars, ${retitled} retitled`,
+      );
+    }
     return;
   }
 
@@ -170,6 +243,11 @@ async function main(): Promise<void> {
       console.log(
         `    ${counts.lessons} lessons, ${counts.videos} videos, ${counts.docs} reference docs`,
       );
+    }
+
+    for (const correction of COURSE_CORRECTIONS) {
+      const applied = await applyCorrections(client, correction);
+      console.log(`  ${correction.slug}: ${applied} lessons corrected`);
     }
 
     await client.query("COMMIT");
