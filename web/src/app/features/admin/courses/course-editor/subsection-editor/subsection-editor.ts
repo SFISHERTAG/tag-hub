@@ -7,8 +7,10 @@ import { MatInputModule } from '@angular/material/input';
 import { ConfirmDialogService } from '../../../../../shared/ui';
 import type { ApiResult } from '../../../../../core/models/api-result.model';
 import { AdminCoursesService } from '../../../services/admin-courses.service';
-import type { CourseSubsection } from '../../../services/admin-courses.model';
+import type { CourseSubsection, CourseVideo } from '../../../services/admin-courses.model';
 import { CheckboxEditor } from '../checkbox-editor/checkbox-editor';
+import { DocEditor } from '../doc-editor/doc-editor';
+import { VideoEditor } from '../video-editor/video-editor';
 
 /**
  * One lesson: its title, its Loom video, its body copy, and the checklist a
@@ -28,6 +30,8 @@ import { CheckboxEditor } from '../checkbox-editor/checkbox-editor';
     MatFormFieldModule,
     MatInputModule,
     CheckboxEditor,
+    VideoEditor,
+    DocEditor,
   ],
   templateUrl: './subsection-editor.html',
   styleUrl: './subsection-editor.scss',
@@ -48,6 +52,10 @@ export class SubsectionEditor {
   });
 
   protected readonly newCheckboxLabel = new FormControl('', { nonNullable: true });
+
+  protected readonly newVideoLink = new FormControl('', { nonNullable: true });
+  protected readonly newDocLabel = new FormControl('', { nonNullable: true });
+  protected readonly newDocUrl = new FormControl('', { nonNullable: true });
 
   protected readonly pending = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -106,6 +114,68 @@ export class SubsectionEditor {
       )
     ) {
       this.newCheckboxLabel.setValue('');
+    }
+  }
+
+  /**
+   * Adds a video from a pasted share URL.
+   *
+   * No provider is sent: the server recognises Loom, Fathom and Drive links by
+   * shape, and asking someone to classify a link they just copied is a step
+   * that only exists to be got wrong. The provider select on an existing row
+   * is for the rarer case of typing a bare id.
+   */
+  protected async addVideo(): Promise<void> {
+    const link = this.newVideoLink.value.trim();
+    if (!link) return;
+
+    if (
+      await this.run(() =>
+        this.service.createVideo(this.courseId(), this.subsection().id, { link }),
+      )
+    ) {
+      this.newVideoLink.setValue('');
+    }
+  }
+
+  /**
+   * Moves one video and sends the resulting order in full.
+   *
+   * The list is rebuilt locally only to compute the new order; the screen is
+   * re-read from the server afterwards like every other write here, so a
+   * rejected reorder does not leave the editor showing an order the database
+   * does not have.
+   */
+  protected async moveVideo(video: CourseVideo, direction: -1 | 1): Promise<void> {
+    const videos = [...this.subsection().videos];
+    const from = videos.findIndex((candidate) => candidate.id === video.id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= videos.length) return;
+
+    const [moved] = videos.splice(from, 1);
+    videos.splice(to, 0, moved);
+
+    await this.run(() =>
+      this.service.reorderVideos(
+        this.courseId(),
+        this.subsection().id,
+        videos.map((candidate) => candidate.id),
+      ),
+    );
+  }
+
+  protected async addDoc(): Promise<void> {
+    const label = this.newDocLabel.value.trim();
+    const url = this.newDocUrl.value.trim();
+    if (!label || !url) return;
+
+    if (
+      await this.run(() =>
+        this.service.createDoc(this.courseId(), this.subsection().id, { label, url }),
+      )
+    ) {
+      this.newDocLabel.setValue('');
+      this.newDocUrl.setValue('');
     }
   }
 

@@ -45,6 +45,8 @@ const COURSE: Course = {
           id: 'sub1',
           title: 'Set up your tools',
           content: 'First paragraph\n\nSecond paragraph',
+          videos: [],
+          docs: [],
           checkboxes: [
             { id: 'cb1', label: 'Install the app' },
             { id: 'cb2', label: 'Sign in' },

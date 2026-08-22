@@ -74,6 +74,8 @@ account.
 | `appointments` | Show/DQ/booked appointments from GHL | GHL API → Cloud Functions → this table | Yes | Includes timing (pre-call vs. on-call DQ) |
 | `courses` | Course catalog and structure | Migrating from Firestore | **NO — BLOCKED** | See migration status |
 | `course_progress` | Per-user completion tracking | Migrating from Firestore | No | Depends on `courses` table |
+| `course_subsection_videos` | Every video on one lesson: provider (`loom`/`fathom`/`drive`), provider-native id, optional label, order | App writes directly (admin editor, and the 12.4 import) | N/A | `sql/008_course_subsection_media.sql`. Primary store for lesson video, not a cache. `course_subsections.loom_id` is retained as the single-Loom fast path and is NOT backfilled into this table — the read path falls back to it when a lesson has no rows here, so the two are complementary rather than a split-brain |
+| `course_subsection_docs` | Non-video reference links on one lesson (Google Doc/Sheet), label + URL + order | App writes directly (admin editor, and the 12.4 import) | N/A | `sql/008_course_subsection_media.sql`. Separate from videos because a doc has no provider constraint and always carries a label, where a video has a constrained provider and an id |
 | `automation_log` | Cloud Functions execution history | Cloud Functions | Yes | Keyed to location + function name |
 | `flow_frameworks` | FLOW sales-coaching framework versions | App writes directly | N/A | `sql/flow-schema.sql`, org-scoped |
 | `flow_tabs` / `flow_sections` / `flow_cards` | FLOW framework structure | App writes directly | N/A | Hierarchy under a framework |

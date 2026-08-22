@@ -1,0 +1,28 @@
+<form class="doc-editor" [formGroup]="form" (ngSubmit)="save()">
+  <mat-form-field appearance="outline" class="doc-editor__label" subscriptSizing="dynamic">
+    <mat-label>Link label</mat-label>
+    <input matInput formControlName="label" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="doc-editor__url" subscriptSizing="dynamic">
+    <mat-label>URL</mat-label>
+    <input matInput formControlName="url" />
+  </mat-form-field>
+
+  <button matButton type="submit" [disabled]="pending()">Save</button>
+
+  <button
+    matIconButton
+    type="button"
+    class="doc-editor__danger"
+    [disabled]="pending()"
+    [attr.aria-label]="'Remove reference link ' + doc().label"
+    (click)="remove()"
+  >
+    <mat-icon>delete_outline</mat-icon>
+  </button>
+
+  @if (error(); as message) {
+    <p class="doc-editor__error" role="alert">{{ message }}</p>
+  }
+</form>

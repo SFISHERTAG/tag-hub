@@ -1,0 +1,33 @@
+// Colour comes from M3 system tokens only. No raw hex, per CLAUDE.md.
+
+:host {
+  display: block;
+}
+
+.doc-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.doc-editor__label {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+}
+
+.doc-editor__url {
+  flex: 2 1 18rem;
+  min-inline-size: 0;
+}
+
+.doc-editor__danger {
+  color: var(--mat-sys-error);
+}
+
+.doc-editor__error {
+  flex-basis: 100%;
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-error);
+}

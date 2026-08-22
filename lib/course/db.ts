@@ -1,6 +1,14 @@
 import "server-only";
 import { pool } from "@/lib/postgres";
-import type { Course, Section, Subsection, Checkbox } from "./types";
+import type {
+  Course,
+  Section,
+  Subsection,
+  Checkbox,
+  SubsectionDoc,
+  SubsectionVideo,
+  VideoProvider,
+} from "./types";
 
 /**
  * Row shapes as the SELECTs above actually return them: snake_case columns,
@@ -10,6 +18,15 @@ import type { Course, Section, Subsection, Checkbox } from "./types";
 type SubsectionRow = { id: string; title: string; loom_id: string | null; content: string };
 type SectionRow = { id: string; title: string };
 type CourseRow = { id: string; slug: string; title: string; description: string | null };
+type CheckboxRow = { id: string; label: string; subsection_id: string };
+type VideoRow = {
+  id: string;
+  subsection_id: string;
+  provider: VideoProvider;
+  external_id: string;
+  label: string | null;
+};
+type DocRow = { id: string; subsection_id: string; label: string; url: string };
 
 /**
  * Course content, in Postgres.
@@ -20,29 +37,84 @@ type CourseRow = { id: string; slug: string; title: string; description: string 
  * sitting alongside it: one source of truth, not two that can drift.
  */
 
-async function getCheckboxes(subsectionId: string): Promise<Checkbox[]> {
-  const result = await pool.query(
-    "SELECT id, label FROM course_checkboxes WHERE subsection_id = $1 ORDER BY display_order",
-    [subsectionId],
-  );
-  return result.rows;
+/** Groups child rows by their `subsection_id`, preserving each query's ORDER BY. */
+function groupBySubsection<Row extends { subsection_id: string }, Mapped>(
+  rows: Row[],
+  map: (row: Row) => Mapped,
+): Map<string, Mapped[]> {
+  const grouped = new Map<string, Mapped[]>();
+  for (const row of rows) {
+    const existing = grouped.get(row.subsection_id);
+    if (existing) {
+      existing.push(map(row));
+    } else {
+      grouped.set(row.subsection_id, [map(row)]);
+    }
+  }
+  return grouped;
 }
 
+/**
+ * One section's lessons, with their checklist, videos and reference docs.
+ *
+ * Three child queries for the whole section rather than three per lesson. The
+ * previous shape issued one checkbox query per subsection, and adding videos
+ * and docs the same way would have tripled a waterfall the audit already
+ * flagged on FLOW. `= ANY($1)` keeps this at four round trips per section no
+ * matter how many lessons it holds.
+ */
 async function getSubsections(sectionId: string): Promise<Subsection[]> {
   const result = await pool.query(
     "SELECT id, title, loom_id, content FROM course_subsections WHERE section_id = $1 ORDER BY display_order",
     [sectionId],
   );
 
-  return Promise.all(
-    result.rows.map(async (row: SubsectionRow) => ({
-      id: row.id,
-      title: row.title,
-      loomId: row.loom_id ?? undefined,
-      content: row.content,
-      checkboxes: await getCheckboxes(row.id),
-    })),
-  );
+  const subsectionIds = result.rows.map((row: SubsectionRow) => row.id);
+  if (subsectionIds.length === 0) return [];
+
+  const [checkboxes, videos, docs] = await Promise.all([
+    pool.query(
+      `SELECT id, label, subsection_id FROM course_checkboxes
+       WHERE subsection_id = ANY($1) ORDER BY display_order`,
+      [subsectionIds],
+    ),
+    pool.query(
+      `SELECT id, subsection_id, provider, external_id, label FROM course_subsection_videos
+       WHERE subsection_id = ANY($1) ORDER BY display_order`,
+      [subsectionIds],
+    ),
+    pool.query(
+      `SELECT id, subsection_id, label, url FROM course_subsection_docs
+       WHERE subsection_id = ANY($1) ORDER BY display_order`,
+      [subsectionIds],
+    ),
+  ]);
+
+  const checkboxesBy = groupBySubsection<CheckboxRow, Checkbox>(checkboxes.rows, (row) => ({
+    id: row.id,
+    label: row.label,
+  }));
+  const videosBy = groupBySubsection<VideoRow, SubsectionVideo>(videos.rows, (row) => ({
+    id: row.id,
+    provider: row.provider,
+    externalId: row.external_id,
+    label: row.label ?? undefined,
+  }));
+  const docsBy = groupBySubsection<DocRow, SubsectionDoc>(docs.rows, (row) => ({
+    id: row.id,
+    label: row.label,
+    url: row.url,
+  }));
+
+  return result.rows.map((row: SubsectionRow) => ({
+    id: row.id,
+    title: row.title,
+    loomId: row.loom_id ?? undefined,
+    content: row.content,
+    videos: videosBy.get(row.id) ?? [],
+    docs: docsBy.get(row.id) ?? [],
+    checkboxes: checkboxesBy.get(row.id) ?? [],
+  }));
 }
 
 async function getSections(courseId: string): Promise<Section[]> {
@@ -179,6 +251,94 @@ export async function updateSubsection(
 
 export async function deleteSubsection(id: string): Promise<void> {
   await pool.query("DELETE FROM course_subsections WHERE id = $1", [id]);
+}
+
+export async function createVideo(
+  subsectionId: string,
+  fields: { provider: VideoProvider; externalId: string; label?: string },
+): Promise<string> {
+  const count = await pool.query(
+    "SELECT COUNT(*)::int AS n FROM course_subsection_videos WHERE subsection_id = $1",
+    [subsectionId],
+  );
+  const result = await pool.query(
+    `INSERT INTO course_subsection_videos (subsection_id, provider, external_id, label, display_order)
+     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+    [subsectionId, fields.provider, fields.externalId, fields.label || null, count.rows[0].n],
+  );
+  return result.rows[0].id;
+}
+
+export async function updateVideo(
+  id: string,
+  fields: { provider: VideoProvider; externalId: string; label?: string },
+): Promise<void> {
+  await pool.query(
+    `UPDATE course_subsection_videos SET provider = $2, external_id = $3, label = $4 WHERE id = $1`,
+    [id, fields.provider, fields.externalId, fields.label || null],
+  );
+}
+
+export async function deleteVideo(id: string): Promise<void> {
+  await pool.query("DELETE FROM course_subsection_videos WHERE id = $1", [id]);
+}
+
+/**
+ * Rewrites the whole order for one lesson's videos in a transaction.
+ *
+ * Whole-list rather than swap-a-pair: a partial reorder that fails halfway
+ * leaves two rows sharing a display_order, and the read path's ORDER BY then
+ * returns them in whatever order the planner feels like — a silent, unstable
+ * shuffle rather than a visible error.
+ */
+export async function reorderVideos(subsectionId: string, orderedIds: string[]): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (const [index, id] of orderedIds.entries()) {
+      await client.query(
+        "UPDATE course_subsection_videos SET display_order = $3 WHERE id = $1 AND subsection_id = $2",
+        [id, subsectionId, index],
+      );
+    }
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createDoc(
+  subsectionId: string,
+  fields: { label: string; url: string },
+): Promise<string> {
+  const count = await pool.query(
+    "SELECT COUNT(*)::int AS n FROM course_subsection_docs WHERE subsection_id = $1",
+    [subsectionId],
+  );
+  const result = await pool.query(
+    `INSERT INTO course_subsection_docs (subsection_id, label, url, display_order)
+     VALUES ($1, $2, $3, $4) RETURNING id`,
+    [subsectionId, fields.label, fields.url, count.rows[0].n],
+  );
+  return result.rows[0].id;
+}
+
+export async function updateDoc(
+  id: string,
+  fields: { label: string; url: string },
+): Promise<void> {
+  await pool.query("UPDATE course_subsection_docs SET label = $2, url = $3 WHERE id = $1", [
+    id,
+    fields.label,
+    fields.url,
+  ]);
+}
+
+export async function deleteDoc(id: string): Promise<void> {
+  await pool.query("DELETE FROM course_subsection_docs WHERE id = $1", [id]);
 }
 
 export async function createCheckbox(subsectionId: string, label: string): Promise<string> {

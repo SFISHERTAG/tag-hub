@@ -14,11 +14,15 @@
         <input matInput formControlName="title" />
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Loom video id</mat-label>
-        <input matInput formControlName="loomId" placeholder="fdba6345d0cb4175baa850e81066216f" />
-        <mat-hint>The id from the share URL, not the whole URL.</mat-hint>
-      </mat-form-field>
+      @if (subsection().videos.length === 0) {
+        <mat-form-field appearance="outline">
+          <mat-label>Loom video id</mat-label>
+          <input matInput formControlName="loomId" placeholder="fdba6345d0cb4175baa850e81066216f" />
+          <mat-hint>
+            The original single-video field. Add a video below and this one stops being used.
+          </mat-hint>
+        </mat-form-field>
+      }
 
       <mat-form-field appearance="outline">
         <mat-label>Content</mat-label>
@@ -42,6 +46,77 @@
     @if (error(); as message) {
       <p class="lesson-editor__error" role="alert">{{ message }}</p>
     }
+
+    <section class="lesson-editor__videos" aria-label="Videos">
+      <h4 class="lesson-editor__subheading">Videos</h4>
+      @for (video of subsection().videos; track video.id; let index = $index) {
+        <app-video-editor
+          [courseId]="courseId()"
+          [video]="video"
+          [first]="index === 0"
+          [last]="index === subsection().videos.length - 1"
+          (changed)="changed.emit()"
+          (move)="moveVideo(video, $event)"
+        />
+      } @empty {
+        <p class="lesson-editor__hint">
+          No videos yet. Paste a Loom, Fathom or Google Drive share link below.
+        </p>
+      }
+
+      <form class="lesson-editor__add" (ngSubmit)="addVideo()">
+        <mat-form-field
+          appearance="outline"
+          class="lesson-editor__add-field"
+          subscriptSizing="dynamic"
+        >
+          <mat-label>Share URL</mat-label>
+          <input matInput [formControl]="newVideoLink" />
+        </mat-form-field>
+        <button
+          matButton="outlined"
+          type="submit"
+          [disabled]="pending() || !newVideoLink.value.trim()"
+        >
+          Add video
+        </button>
+      </form>
+    </section>
+
+    <section class="lesson-editor__docs" aria-label="Reference links">
+      <h4 class="lesson-editor__subheading">Reference links</h4>
+      @for (doc of subsection().docs; track doc.id) {
+        <app-doc-editor [courseId]="courseId()" [doc]="doc" (changed)="changed.emit()" />
+      } @empty {
+        <p class="lesson-editor__hint">No reference links yet.</p>
+      }
+
+      <form class="lesson-editor__add" (ngSubmit)="addDoc()">
+        <mat-form-field
+          appearance="outline"
+          class="lesson-editor__add-field"
+          subscriptSizing="dynamic"
+        >
+          <mat-label>Link label</mat-label>
+          <input matInput [formControl]="newDocLabel" />
+        </mat-form-field>
+        <mat-form-field
+          appearance="outline"
+          class="lesson-editor__add-field"
+          subscriptSizing="dynamic"
+        >
+          <mat-label>URL</mat-label>
+          <input matInput [formControl]="newDocUrl" />
+        </mat-form-field>
+        <button
+          matButton="outlined"
+          type="submit"
+          [disabled]="pending() || !newDocLabel.value.trim() || !newDocUrl.value.trim()"
+        >
+          Add link
+        </button>
+      </form>
+    </section>
 
     <section class="lesson-editor__checkboxes" aria-label="Checklist items">
       <h4 class="lesson-editor__subheading">Checklist</h4>

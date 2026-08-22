@@ -15,11 +15,11 @@ import {
   type CourseCheckbox,
   type CourseSection,
   type CourseSubsection,
+  type CourseVideo,
   type ProgressEntry,
   type ProgressMap,
 } from '../services/course.model';
-
-const LOOM_EMBED_BASE = 'https://www.loom.com/embed/';
+import { canEmbed, videoEmbedUrl, videoShareUrl, videoTitle } from '../services/video-embed';
 
 /**
  * Working through a course.
@@ -156,16 +156,70 @@ export class CoursePlayer {
   }
 
   /**
-   * The Loom embed URL.
+   * Every video on a lesson, newest schema first and the old column as the
+   * fallback.
    *
-   * Built from an id that is percent-encoded and bypassed only after that.
-   * The field is an id by contract, but it is admin-entered free text, and an
-   * unencoded value interpolated into a URL is how a "video id" becomes a
-   * different origin.
+   * A lesson seeded before story 12.3 has a `loomId` and no video rows. It is
+   * synthesised into the same shape here rather than handled as a separate
+   * case in the template, so the list, the lazy loading and the titles all
+   * behave identically whichever way the video is stored.
    */
-  protected loomUrl(loomId: string): SafeResourceUrl {
+  protected videosFor(subsection: CourseSubsection): readonly CourseVideo[] {
+    if (subsection.videos.length > 0) return subsection.videos;
+    const loomId = subsection.loomId;
+    if (!loomId) return [];
+    return [{ id: `loom:${loomId}`, provider: 'loom', externalId: loomId }];
+  }
+
+  /**
+   * Which videos have been opened.
+   *
+   * "Call Recording Links" carries 35 recordings. Rendering 35 iframes at once
+   * is minutes of network and a dead phone, so an iframe only exists once
+   * someone asks for that recording. A one-video lesson is treated as already
+   * open — making someone click twice to watch the only thing on the page
+   * would be lazy loading applied where there is nothing to save.
+   */
+  private readonly openedVideos = signal<ReadonlySet<string>>(new Set());
+
+  protected isVideoOpen(video: CourseVideo, total: number): boolean {
+    if (!this.canPlayInline(video)) return false;
+    return total === 1 || this.openedVideos().has(video.id);
+  }
+
+  /**
+   * Whether this video plays in the page or opens elsewhere.
+   *
+   * Fathom is currently link-out: its embed URL answers 200 and allows
+   * framing, but renders nothing. See `video-embed.ts` for the check that
+   * established that.
+   */
+  protected canPlayInline(video: CourseVideo): boolean {
+    return canEmbed(video.provider);
+  }
+
+  protected videoShareLink(video: CourseVideo): string {
+    return videoShareUrl(video.provider, video.externalId);
+  }
+
+  protected openVideo(video: CourseVideo): void {
+    this.openedVideos.update((current) => new Set(current).add(video.id));
+  }
+
+  protected videoLabel(video: CourseVideo, index: number, total: number): string {
+    return videoTitle(video, index, total);
+  }
+
+  /**
+   * The embed URL for one video.
+   *
+   * Percent-encoded, then bypassed. The id is validated server-side and is an
+   * id by contract, but it is admin-entered free text, and an unencoded value
+   * interpolated into a URL is how a "video id" becomes a different origin.
+   */
+  protected videoUrl(video: CourseVideo): SafeResourceUrl {
     return this.sanitizer.bypassSecurityTrustResourceUrl(
-      `${LOOM_EMBED_BASE}${encodeURIComponent(loomId)}`,
+      videoEmbedUrl(video.provider, video.externalId),
     );
   }
 
