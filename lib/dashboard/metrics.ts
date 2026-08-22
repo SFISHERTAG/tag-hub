@@ -1,4 +1,4 @@
-import type { Role } from "@/lib/auth/roles";
+import { ROLES, type Role } from "@/lib/auth/roles";
 import type { ScopeFilter } from "./scope";
 
 /**
@@ -34,6 +34,64 @@ export type MetricData =
   | { shape: "funnel"; steps: Array<{ label: string; value: number }> }
   | { shape: "matrix"; rows: string[]; cols: string[]; cells: number[][] };
 
+/**
+ * The datasets a metric may read. Deliberately a closed list: a metric that
+ * needs something not here is a conversation about the data model, not a
+ * one-line addition at a call site.
+ */
+export type Dataset = "opportunities" | "appointments" | "ad_spend";
+
+/**
+ * One row, normalised across every dataset.
+ *
+ * The normalisation is what lets a single recording fake police the whole
+ * registry in test/metric-scope.test.ts. It also puts the uid problem where it
+ * cannot be missed: `ownerUid` is a Firebase uid, and GHL rows carry
+ * `assignedTo`, a GHL user id. No mapping between those exists in this repo yet
+ * (`users` holds sign-in identity only, and `Tenant.ownerGhlUserId` covers just
+ * the tenant owner), so an adapter over GHL can only supply `null` here today.
+ * A metric may therefore be location-scoped for real right now, and uid-scoped
+ * only once that mapping exists.
+ */
+export type SourceRow = {
+  readonly locationId: string;
+  /** Firebase uid this row belongs to, or null when the dataset has no owner. */
+  readonly ownerUid: string | null;
+  /** Epoch ms the row is attributed to. */
+  readonly at: number;
+  /** The number this row contributes. */
+  readonly value: number;
+  /** Grouping label for categorical and funnel shapes; null for plain scalars. */
+  readonly bucket: string | null;
+};
+
+/**
+ * What a metric asks for. Carries the scope constraints explicitly rather than
+ * letting a fetch narrow rows after the fact.
+ *
+ * Filtering inside the metric instead of here still produces the right number
+ * today and is still a leak the moment a dataset grows past one page: what
+ * escapes is the rows that crossed the boundary, not the rows that survived the
+ * reduce. So the query is the unit the test inspects.
+ */
+export type SourceQuery = {
+  readonly dataset: Dataset;
+  readonly locations: readonly string[];
+  readonly uids: readonly string[] | "all";
+  readonly period: Period;
+};
+
+/**
+ * The one way a metric reaches data.
+ *
+ * A metric receives this rather than importing Firestore or Postgres directly,
+ * which is the boundary eslint.config.mjs draws for lib/dashboard/** and
+ * app/api/**, expressed as a type instead of a lint rule.
+ */
+export type MetricSource = {
+  read(query: SourceQuery): Promise<readonly SourceRow[]>;
+};
+
 export type Metric = {
   id: string;
   title: string;
@@ -42,9 +100,12 @@ export type Metric = {
   availableFor: Role[];
   /**
    * The only data path. Takes the resolved scope, never a bare locationId —
-   * that is what makes "forgot to filter" a type error instead of a leak.
+   * that is what makes "forgot to filter" a type error instead of a leak — and
+   * reads through the injected source rather than querying directly, which is
+   * what lets the registry test prove the scope was passed down rather than
+   * merely accepted.
    */
-  fetch: (scope: ScopeFilter, period: Period) => Promise<MetricData>;
+  fetch: (scope: ScopeFilter, period: Period, source: MetricSource) => Promise<MetricData>;
 };
 
 export type Visual = {
@@ -78,14 +139,108 @@ export const VISUAL_REGISTRY: Record<string, Visual> = {
 };
 
 /**
+ * Builds the query for a scope, so a metric cannot compose one that drops a
+ * constraint. Every registered metric goes through this rather than writing a
+ * SourceQuery literal — the literal is what lets someone quietly pass
+ * `uids: "all"` from a `self` scope.
+ */
+export function scopedQuery(dataset: Dataset, scope: ScopeFilter, period: Period): SourceQuery {
+  return { dataset, locations: scope.locations, uids: scope.uids, period };
+}
+
+function sum(rows: readonly SourceRow[]): number {
+  return rows.reduce((total, row) => total + row.value, 0);
+}
+
+function byBucket(rows: readonly SourceRow[]): Array<{ label: string; value: number }> {
+  const totals = new Map<string, number>();
+  for (const row of rows) {
+    const label = row.bucket ?? "Unlabelled";
+    totals.set(label, (totals.get(label) ?? 0) + row.value);
+  }
+  return Array.from(totals, ([label, value]) => ({ label, value }));
+}
+
+/**
  * Metrics, added as each is migrated off the bundled widget ids.
  *
- * Empty on purpose at this commit: the enforcement layer lands first so that
- * every metric added after it is scoped by construction. Migrating the eleven
- * existing widgets is separate work with its own risk (saved dashboards
- * reference the old ids and must not be emptied).
+ * These three are new, not migrations: they are the metric-shaped numbers the
+ * registry makes expressible. No bundled widget is retired by them — see
+ * BUNDLED_WIDGET_METRICS below for why none of the eleven has an equivalent.
+ *
+ * Every entry is scoped by construction (fetch cannot be written without a
+ * ScopeFilter) and proven scoped by test/metric-scope.test.ts, which drives
+ * itself off this object so a metric added tomorrow is covered today.
  */
-export const METRIC_REGISTRY: Record<string, Metric> = {};
+export const METRIC_REGISTRY: Record<string, Metric> = {
+  pipeline_open_value: {
+    id: "pipeline_open_value",
+    title: "Open pipeline value",
+    shape: "scalar",
+    availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
+    fetch: async (scope, period, source) => ({
+      shape: "scalar",
+      value: sum(await source.read(scopedQuery("opportunities", scope, period))),
+      unit: "USD",
+    }),
+  },
+
+  pipeline_by_stage: {
+    id: "pipeline_by_stage",
+    title: "Pipeline by stage",
+    shape: "categorical",
+    availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
+    fetch: async (scope, period, source) => ({
+      shape: "categorical",
+      buckets: byBucket(await source.read(scopedQuery("opportunities", scope, period))),
+    }),
+  },
+
+  appointments_booked: {
+    id: "appointments_booked",
+    title: "Appointments booked",
+    shape: "scalar",
+    availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
+    fetch: async (scope, period, source) => ({
+      shape: "scalar",
+      value: (await source.read(scopedQuery("appointments", scope, period))).length,
+    }),
+  },
+};
+
+/**
+ * Bundled widget id to its (metric, visual) replacement.
+ *
+ * The compatibility map Story 7.6 asks for, so a saved dashboard referencing an
+ * old id resolves rather than being emptied. `null` means the id has no metric
+ * equivalent and keeps its bespoke component.
+ *
+ * Every entry is null today, and that is the honest answer rather than an
+ * unfinished one. `Shape` covers numbers; a deal board, a day's schedule, a
+ * client book, a team rollup, a department summary and a calendar are screens.
+ * The three metrics above are new capabilities the registry makes possible, not
+ * replacements for any of these: `appointments_booked` counts appointments and
+ * `day_view` lists today's calls, and swapping one for the other would answer a
+ * question nobody asked while looking like a migration.
+ *
+ * The map still earns its place. It names every bundled id, so a saved
+ * dashboard cannot reference one nobody has ruled on, and the test below keeps
+ * it in step with WIDGET_REGISTRY — a widget added without a decision recorded
+ * here fails CI.
+ */
+export const BUNDLED_WIDGET_METRICS: Record<string, WidgetInstance | null> = {
+  pipeline_board: null,
+  kpi_summary: null,
+  day_view: null,
+  leads_funnel: null,
+  spend_roas: null,
+  client_health: null,
+  portfolio: null,
+  team_performance: null,
+  team_health_rollup: null,
+  department_overview: null,
+  owner_calendar: null,
+};
 
 /** A visual can draw a metric only if it accepts that metric's shape. */
 export function visualsFor(metric: Metric): Visual[] {
