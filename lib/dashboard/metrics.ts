@@ -79,6 +79,20 @@ export type SourceQuery = {
   readonly locations: readonly string[];
   readonly uids: readonly string[] | "all";
   readonly period: Period;
+  /**
+   * Which record statuses count. Required, not defaulted: "Open pipeline
+   * value" once summed won, lost and abandoned deals because the fetch
+   * defaulted to everything and nothing made the metric say otherwise. "any"
+   * is the explicit opt-in for genuinely status-blind reads.
+   */
+  readonly statuses: readonly string[] | "any";
+  /**
+   * Whether the period selects events (rows dated inside it) or the metric is
+   * a point-in-time stock the period does not slice. "Open pipeline value" is
+   * a stock: filtering it by createdAt made still-open deals vanish once they
+   * aged past the window.
+   */
+  readonly timeframe: "in-period" | "current";
 };
 
 /**
@@ -144,8 +158,20 @@ export const VISUAL_REGISTRY: Record<string, Visual> = {
  * SourceQuery literal — the literal is what lets someone quietly pass
  * `uids: "all"` from a `self` scope.
  */
-export function scopedQuery(dataset: Dataset, scope: ScopeFilter, period: Period): SourceQuery {
-  return { dataset, locations: scope.locations, uids: scope.uids, period };
+export function scopedQuery(
+  dataset: Dataset,
+  scope: ScopeFilter,
+  period: Period,
+  shape: { statuses: readonly string[] | "any"; timeframe: "in-period" | "current" },
+): SourceQuery {
+  return {
+    dataset,
+    locations: scope.locations,
+    uids: scope.uids,
+    period,
+    statuses: shape.statuses,
+    timeframe: shape.timeframe,
+  };
 }
 
 function sum(rows: readonly SourceRow[]): number {
@@ -180,7 +206,14 @@ export const METRIC_REGISTRY: Record<string, Metric> = {
     availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
     fetch: async (scope, period, source) => ({
       shape: "scalar",
-      value: sum(await source.read(scopedQuery("opportunities", scope, period))),
+      // Open deals only, as current state: the value of what is still in
+      // play right now, not "deals created this period" (which excluded a
+      // six-week-old live deal and included freshly created dead ones).
+      value: sum(
+        await source.read(
+          scopedQuery("opportunities", scope, period, { statuses: ["open"], timeframe: "current" }),
+        ),
+      ),
       unit: "USD",
     }),
   },
@@ -192,7 +225,11 @@ export const METRIC_REGISTRY: Record<string, Metric> = {
     availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
     fetch: async (scope, period, source) => ({
       shape: "categorical",
-      buckets: byBucket(await source.read(scopedQuery("opportunities", scope, period))),
+      buckets: byBucket(
+        await source.read(
+          scopedQuery("opportunities", scope, period, { statuses: ["open"], timeframe: "current" }),
+        ),
+      ),
     }),
   },
 
@@ -203,7 +240,18 @@ export const METRIC_REGISTRY: Record<string, Metric> = {
     availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
     fetch: async (scope, period, source) => ({
       shape: "scalar",
-      value: (await source.read(scopedQuery("appointments", scope, period))).length,
+      // "Booked" means it was scheduled and stayed scheduled: a no-show was
+      // still a booked appointment, a cancelled or invalid one stopped being
+      // one. Counting cancellations inflated this by exactly the events that
+      // did not happen.
+      value: (
+        await source.read(
+          scopedQuery("appointments", scope, period, {
+            statuses: ["new", "confirmed", "showed", "noshow"],
+            timeframe: "in-period",
+          }),
+        )
+      ).length,
     }),
   },
 };

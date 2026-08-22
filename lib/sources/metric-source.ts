@@ -1,10 +1,10 @@
 import "server-only";
 import type { MetricSource, SourceQuery, SourceRow } from "@/lib/dashboard/metrics";
 import { getPipelines } from "@/lib/ghl/pipelines";
-import { getOpportunities } from "@/lib/ghl/opportunities";
+import { searchAllOpportunities, type OpportunityStatus } from "@/lib/ghl/opportunities";
 import { getAppointments } from "@/lib/ghl/appointments";
 import { getTenant } from "@/lib/ghl/tenants";
-import { getAdSpend } from "@/lib/meta/ads";
+import { getAdSpendForRange } from "@/lib/meta/ads";
 
 /**
  * The real `MetricSource`: the adapter that turns a scoped query into rows.
@@ -42,18 +42,18 @@ export class UnsupportedScopeError extends Error {
 /** The GHL and Meta surface this adapter needs, narrowed to what it calls. */
 export type SourcePorts = {
   getPipelines: typeof getPipelines;
-  getOpportunities: typeof getOpportunities;
+  getOpportunities: typeof searchAllOpportunities;
   getAppointments: typeof getAppointments;
   getTenant: typeof getTenant;
-  getAdSpend: typeof getAdSpend;
+  getAdSpendForRange: typeof getAdSpendForRange;
 };
 
 const REAL_PORTS: SourcePorts = {
   getPipelines,
-  getOpportunities,
+  getOpportunities: searchAllOpportunities,
   getAppointments,
   getTenant,
-  getAdSpend,
+  getAdSpendForRange,
 };
 
 /**
@@ -80,9 +80,39 @@ function requireTenancyScope(query: SourceQuery): void {
   }
 }
 
+/**
+ * Thrown when upstream data cannot be represented honestly.
+ *
+ * A row whose timestamp does not parse used to become `at: NaN`, which every
+ * period comparison rejects — so the row silently vanished from the sum. A
+ * malformed record is an error, not a smaller number.
+ */
+export class SourceDataError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SourceDataError";
+  }
+}
+
+function parseTimestamp(raw: string | undefined, describe: string): number {
+  const parsed = Date.parse(raw ?? "");
+  if (Number.isNaN(parsed)) {
+    throw new SourceDataError(
+      `${describe} has an unparseable timestamp (${JSON.stringify(raw ?? null)}). ` +
+        `Dropping the row would silently understate the metric, so this fails instead.`,
+    );
+  }
+  return parsed;
+}
+
 /** Rows whose timestamp falls inside the period. Inclusive from, exclusive to. */
 function withinPeriod(rows: readonly SourceRow[], query: SourceQuery): readonly SourceRow[] {
   return rows.filter((row) => row.at >= query.period.from && row.at < query.period.to);
+}
+
+/** Applies the query's status constraint to rows bucketed by status. */
+function matchesStatuses(status: string, statuses: readonly string[] | "any"): boolean {
+  return statuses === "any" || statuses.includes(status);
 }
 
 async function readOpportunities(
@@ -100,22 +130,35 @@ async function readOpportunities(
         for (const stage of pipeline.stages) stageNames.set(stage.id, stage.name);
       }
 
+      // A single-status constraint is pushed down to the GHL query, so the
+      // pagination budget is spent on rows the metric will keep — under
+      // status "all" this location's dominant abandoned records could crowd
+      // live deals out of every page. Multi-status (or "any") fetches all and
+      // filters here.
+      const single =
+        query.statuses !== "any" && query.statuses.length === 1
+          ? (query.statuses[0] as OpportunityStatus)
+          : null;
+
       const perPipeline = await Promise.all(
         pipelines.map((pipeline) =>
-          ports.getOpportunities(locationId, pipeline.id, { status: "all" }),
+          ports.getOpportunities(locationId, pipeline.id, { status: single ?? "all" }),
         ),
       );
 
-      return perPipeline.flat().map<SourceRow>((opportunity) => ({
-        locationId,
-        // Always null: see requireTenancyScope. `opportunity.assignedTo` is a
-        // GHL user id and is deliberately not passed off as a uid here — a
-        // wrong join would silently attribute one person's deals to another.
-        ownerUid: null,
-        at: Date.parse(opportunity.createdAt),
-        value: opportunity.monetaryValue,
-        bucket: stageNames.get(opportunity.pipelineStageId) ?? "Unknown stage",
-      }));
+      return perPipeline
+        .flat()
+        .filter((opportunity) => matchesStatuses(opportunity.status, query.statuses))
+        .map<SourceRow>((opportunity) => ({
+          locationId,
+          // Always null: see requireTenancyScope. `opportunity.assignedTo` is a
+          // GHL user id and is deliberately not passed off as a uid here — a
+          // wrong join would silently attribute one person's deals to another.
+          ownerUid: null,
+          at: parseTimestamp(opportunity.createdAt, `Opportunity ${opportunity.id}`),
+          value: opportunity.monetaryValue,
+          bucket: stageNames.get(opportunity.pipelineStageId) ?? "Unknown stage",
+        }));
     }),
   );
 
@@ -133,15 +176,17 @@ async function readAppointments(
         endMs: query.period.to,
       });
 
-      return appointments.map<SourceRow>((appointment) => ({
-        locationId,
-        ownerUid: null,
-        at: Date.parse(appointment.startTime),
-        // One row is one appointment. Metrics that want a count take the row
-        // count; a value of 1 keeps a sum meaning the same thing.
-        value: 1,
-        bucket: appointment.status,
-      }));
+      return appointments
+        .filter((appointment) => matchesStatuses(appointment.status, query.statuses))
+        .map<SourceRow>((appointment) => ({
+          locationId,
+          ownerUid: null,
+          at: parseTimestamp(appointment.startTime, `Appointment ${appointment.id}`),
+          // One row is one appointment. Metrics that want a count take the row
+          // count; a value of 1 keeps a sum meaning the same thing.
+          value: 1,
+          bucket: appointment.status,
+        }));
     }),
   );
 
@@ -152,24 +197,43 @@ async function readAdSpend(
   query: SourceQuery,
   ports: SourcePorts,
 ): Promise<readonly SourceRow[]> {
-  const days = Math.max(1, Math.ceil((query.period.to - query.period.from) / 86_400_000));
+  // Resolve tenants first and dedupe by ad account. Two locations sharing one
+  // metaAdAccountId (agency-managed accounts, or a copy-paste in the tenant
+  // register) would otherwise each contribute the account's FULL spend, and a
+  // tenancy-wide query would sum it twice. One account, one fetch, one set of
+  // rows — attributed to the first location that names it.
+  const tenants = await Promise.all(
+    query.locations.map(async (locationId) => ({
+      locationId,
+      tenant: await ports.getTenant(locationId),
+    })),
+  );
 
-  const perLocation = await Promise.all(
-    query.locations.map(async (locationId) => {
-      const tenant = await ports.getTenant(locationId);
-      // No ad account configured is a real "nothing to report", not a failure:
-      // getAdSpend already returns [] when Meta is unconfigured, and a tenant
-      // that runs no ads genuinely has no spend.
-      if (!tenant.metaAdAccountId) return [];
+  const byAccount = new Map<string, string>();
+  for (const { locationId, tenant } of tenants) {
+    // No ad account configured is a real "nothing to report", not a failure:
+    // a tenant that runs no ads genuinely has no spend.
+    if (tenant.metaAdAccountId && !byAccount.has(tenant.metaAdAccountId)) {
+      byAccount.set(tenant.metaAdAccountId, locationId);
+    }
+  }
 
-      const spend = await ports.getAdSpend(tenant.metaAdAccountId, days);
+  const perAccount = await Promise.all(
+    Array.from(byAccount, async ([accountId, locationId]) => {
+      // The period travels as a position, not a length. The old shape passed
+      // a day count to a fetch anchored at "now", so a query for last month
+      // returned this month's spend relabelled.
+      const spend = await ports.getAdSpendForRange(accountId, {
+        fromMs: query.period.from,
+        toMs: query.period.to,
+      });
 
       return spend.map<SourceRow>((ad) => ({
         locationId,
         ownerUid: null,
-        // Meta returns a spend total for the window, not a per-day series, so
-        // every row is attributed to the start of the period. A timeseries
-        // metric needs a daily breakdown from lib/meta before it can be honest.
+        // Meta returns one total for the window, not a per-day series, so the
+        // row is attributed to the start of the period. A timeseries metric
+        // needs a daily breakdown from lib/meta before it can be honest.
         at: query.period.from,
         value: ad.spend,
         bucket: ad.adName,
@@ -177,7 +241,7 @@ async function readAdSpend(
     }),
   );
 
-  return perLocation.flat();
+  return perAccount.flat();
 }
 
 /**
@@ -195,16 +259,23 @@ export function createMetricSource(ports: SourcePorts = REAL_PORTS): MetricSourc
       // position resolveScope takes one layer up.
       if (query.locations.length === 0) return [];
 
-      switch (query.dataset) {
-        case "opportunities":
-          return withinPeriod(await readOpportunities(query, ports), query);
-        case "appointments":
-          // Already fetched by range; filtering again costs nothing and keeps
-          // the period contract true regardless of what GHL returns.
-          return withinPeriod(await readAppointments(query, ports), query);
-        case "ad_spend":
-          return readAdSpend(query, ports);
-      }
+      // The period applies uniformly: "in-period" filters rows by their
+      // timestamp, "current" means the metric is a point-in-time stock the
+      // period does not slice. No dataset gets a bespoke exemption — the old
+      // ad_spend special case was exactly the kind of per-case decision a new
+      // dataset author would copy wrongly.
+      const rows = await (() => {
+        switch (query.dataset) {
+          case "opportunities":
+            return readOpportunities(query, ports);
+          case "appointments":
+            return readAppointments(query, ports);
+          case "ad_spend":
+            return readAdSpend(query, ports);
+        }
+      })();
+
+      return query.timeframe === "in-period" ? withinPeriod(rows, query) : rows;
     },
   };
 }
