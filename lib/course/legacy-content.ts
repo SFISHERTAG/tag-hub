@@ -15,6 +15,10 @@ import type { VideoProvider } from "./types";
  * "Ad Copy & Callout Standards". That is why this file has 13 CSM lessons where
  * Skool currently shows 15.
  *
+ * Lesson titles are written properly rather than copied from Skool's casing:
+ * "MUST WATCH" and "REMINDERS" are shouted there and "AD Launching" is a typo.
+ * Acronyms stay as acronyms (A2P, TAG, ACH).
+ *
  * TWO LESSONS ARE DELIBERATELY INCOMPLETE HERE. The live Wistia and ADS lessons
  * carry plaintext passwords in their body text. Sam's decision is that they stay
  * in the lesson for now, but a password committed to this repo is a different
@@ -76,7 +80,7 @@ const CSM_TRAINING: LegacyCourse = {
           content: "",
         },
         {
-          title: "MUST WATCH",
+          title: "Must Watch",
           videos: [{ provider: "loom", externalId: "afd7384d02ed4cb29e635e2a7819dfa7" }],
           docs: [],
           checkboxes: WATCHED,
@@ -500,7 +504,7 @@ B2B UNDER 250 GOOD CPC
 Facebook login: ${CREDENTIAL_PLACEHOLDER}`,
         },
         {
-          title: "AD Launching",
+          title: "Ad Launching",
           videos: [{ provider: "loom", externalId: "439018a0bdd54af0acfca6ed76966b5d" }],
           docs: [],
           checkboxes: WATCHED,
@@ -571,7 +575,7 @@ Wistia login: ${CREDENTIAL_PLACEHOLDER}`,
           content: "",
         },
         {
-          title: "REMINDERS",
+          title: "Reminders",
           videos: [{ provider: "loom", externalId: "2d5d277e958f4f60b0456e1853baa355" }],
           docs: [],
           checkboxes: WATCHED,

@@ -21,11 +21,11 @@
  * The two lessons that show one email address and link another use
  * `support@taxadvisorygrowth.net`, per Sam on 2026-08-21.
  *
- * Only one lesson is retitled. Skool also differs from the seeded titles on
- * three others, but only in a typo ("Must To Buy"), a stray space ("Chunking
- * Down ( Reflex Selling)") and capitalisation — those are Skool being sloppy,
- * not the lesson being renamed, and copying them in would be churn that makes
- * the Hub worse. Flagged rather than applied.
+ * Titles are stated here rather than inherited, and they are the correct
+ * titles rather than Skool's. Skool carries a dropped word ("Must To Buy"), a
+ * stray space ("Chunking Down ( Reflex Selling)") and a shouted parenthetical;
+ * the Hub does not copy a typo in just because it is upstream. Where Skool has
+ * genuinely renamed a lesson — lesson 2 — the rename is taken.
  */
 
 export type LessonCorrection = {
@@ -497,6 +497,8 @@ https://docs.google.com/document/d/1sYBWN8FDKkVD9VfuXbTvyQfYYKuk761K6mgngvxpYGM/
     },
     {
       loomId: "75984e180643411abb55796c4ea76882",
+      // Skool shouts this one. Kept in sentence case.
+      title: "Recording Instructions (Skip if Using an Actor)",
       content: `STEP 1
 
 Create a Google Drive Select " Share " , " Anyone with Link" & " Editor Access"
@@ -1576,6 +1578,8 @@ Everything else becomes much easier.`,
     },
     {
       loomId: "ab40f65f6eb147e8a7f5240a5193384f",
+      // Skool's title drops a word: "Must To Buy".
+      title: "The Seven Beliefs Every Business Owner Must Have to Buy",
       content: `The Seven Beliefs Every Business Owner Must Have Before They'll Invest in Tax Advisory
 
 One of the biggest mistakes tax advisors make is believing that people buy because they heard a good presentation.
@@ -2116,6 +2120,8 @@ When you fully understand the problem, your recommendation becomes the obvious n
     },
     {
       loomId: "551ac771d1b34fc6826f1b82b8718a9d",
+      // Skool has a stray space inside the bracket.
+      title: "Chunking Down (Reflex Selling)",
       content: `Building Trust Through Empathy and Understanding
 
 People don't buy because you have the best solution.

@@ -220,14 +220,36 @@ describe("part C corrections", () => {
     }
   });
 
-  it("retitles only where the lesson was actually renamed", () => {
-    const retitled = COURSE_CORRECTIONS.flatMap((course) =>
-      course.lessons.filter((lesson) => lesson.title && lesson.loomId),
+  it("states correct titles rather than copying Skool's", () => {
+    const titles = COURSE_CORRECTIONS.flatMap((course) =>
+      course.lessons.filter((lesson) => lesson.title && lesson.loomId).map((l) => l.title),
     );
 
-    // Skool also differs on three others by a typo, a stray space and
-    // capitalisation. Copying those in would be churn.
-    expect(retitled).toHaveLength(1);
-    expect(retitled[0].title).toBe("Niches, Offer, Pricing, Closing");
+    // The rename Skool genuinely made.
+    expect(titles).toContain("Niches, Offer, Pricing, Closing");
+
+    // Skool's typo, stray space and shouting are not copied in.
+    expect(titles).toContain("The Seven Beliefs Every Business Owner Must Have to Buy");
+    expect(titles).toContain("Chunking Down (Reflex Selling)");
+    expect(titles).toContain("Recording Instructions (Skip if Using an Actor)");
+    expect(titles).not.toContain("The Seven Beliefs Every Business Owner Must To Buy");
+    expect(titles).not.toContain("Chunking Down ( Reflex Selling)");
+  });
+
+  it("writes lesson titles in the new courses properly too", () => {
+    const titles = NEW_LEGACY_COURSES.flatMap((course) =>
+      course.sections.flatMap((section) => section.lessons.map((lesson) => lesson.title)),
+    );
+
+    expect(titles).toContain("Must Watch");
+    expect(titles).toContain("Reminders");
+    expect(titles).toContain("Ad Launching");
+    expect(titles).not.toContain("MUST WATCH");
+    expect(titles).not.toContain("REMINDERS");
+
+    // Acronyms are not sentence-cased into nonsense.
+    expect(titles).toContain("A2P");
+    expect(titles).toContain("TAG Essentials");
+    expect(titles).toContain("ACH Pitch Doc");
   });
 });
