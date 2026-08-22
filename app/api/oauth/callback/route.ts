@@ -2,7 +2,11 @@ import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { exchangeCode } from "@/lib/ghl/oauth";
-import { saveAgencyToken, saveLocationToken } from "@/lib/ghl/store";
+import {
+  loadPrimaryCompanyId,
+  saveAgencyToken,
+  saveLocationToken,
+} from "@/lib/ghl/store";
 
 export const dynamic = "force-dynamic";
 
@@ -76,8 +80,18 @@ export async function GET(request: NextRequest) {
 
   try {
     if (token.userType === "Company" && token.companyId) {
-      // Agency install — this one token reaches every sub-account by minting
-      // short-lived location tokens on demand.
+      // Agency install — this token reaches that company's sub-accounts by
+      // minting short-lived location tokens on demand.
+      //
+      // Anyone can arrive here: the install link is not ours to gate, and a
+      // client who runs their own agency may complete a company-level install
+      // rather than picking a single location. That install is stored under
+      // its own company and does not displace the primary, so it cannot take
+      // the portfolio down with it. Flagging it in the redirect is what makes
+      // it visible rather than merely harmless — an unexpected agency landing
+      // here is worth someone looking at.
+      const primaryBefore = await loadPrimaryCompanyId();
+
       await saveAgencyToken({
         accessToken: token.access_token,
         refreshToken: token.refresh_token,
@@ -86,12 +100,18 @@ export async function GET(request: NextRequest) {
         updatedAt: now,
       });
 
-      return redirectTo("/?installed=agency");
+      const isPrimary = !primaryBefore || primaryBefore === token.companyId;
+      return redirectTo(
+        isPrimary
+          ? "/?installed=agency"
+          : `/?installed=agency-additional&companyId=${encodeURIComponent(token.companyId)}`,
+      );
     }
 
     if (token.locationId) {
-      // Direct install onto a single sub-account. Useful for testing one client
-      // before rolling out agency-wide.
+      // Direct install onto a single sub-account. This is the only path for a
+      // client who stays inside their own agency, so it is a first-class case
+      // rather than a testing convenience.
       await saveLocationToken(token.locationId, {
         accessToken: token.access_token,
         refreshToken: token.refresh_token,
@@ -116,8 +136,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Token exchange succeeded but saving to Firestore failed. Run " +
-          "`gcloud auth application-default login` for local development.",
+          "Token exchange succeeded but the credential was not stored, so " +
+          "nothing was authorized. If this is local development, run " +
+          "`gcloud auth application-default login`.",
         detail: err instanceof Error ? err.message : String(err),
       },
       { status: 500 },

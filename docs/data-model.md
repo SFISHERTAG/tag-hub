@@ -28,6 +28,22 @@ uses this same shared client rather than constructing its own.
 | `bug_reports` | Client-submitted bugs and feedback | doc ID | No |
 | `manual_pages` | Knowledge base (TAG CSM Operating Manual) content, viewable in-app | doc ID (`p0`–`p13`, matches `_archive/manual-content.json`) | No |
 | `manual_pages/{id}/versions` | Version history for one knowledge base page — full prior snapshot + author + timestamp, written before every admin edit | doc ID (auto) | No |
+| `ghl/agency` | Root of GHL credential storage. Records `primaryCompanyId`, the agency whose token serves locations with no recorded owner | fixed doc ID | No |
+| `ghl/agency/companies/{companyId}` | One agency OAuth token per installing company | GHL company ID | No |
+| `ghl/agency/locations/{locationId}` | Per-location tokens, minted from an agency token or obtained by direct install | GHL location ID | No |
+
+**GHL agency tokens are keyed by company, not shared.** They previously lived in
+one document at `ghl/agency`. Any agency completing a company-level install
+overwrote it, `companyId` included, so every later mint for every one of our own
+sub-accounts would have been attempted against the wrong company. That is a
+whole-portfolio outage triggered by one outside install, with no error until
+requests started failing. The first install recorded becomes `primaryCompanyId`
+and is never reassigned; later installs by other agencies are stored under their
+own company and serve only their own locations. `ghl/agency/locations/{id}`
+carries `agencyCompanyId` so a re-mint returns to the agency that owns the
+location rather than guessing the primary. Documents written before this change
+have no `agencyCompanyId` and fall back to the primary, which is correct for
+them: they were all minted through it.
 
 **Why Firestore for these:** real-time sync, permission-based read/write rules,
 sub-millisecond lookups, immutable audit trail (`setOnServer()` guards). None of
