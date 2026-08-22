@@ -138,10 +138,18 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.3 | Dashboard configuration UI | Draft |
 | 7.4 | Client-visibility allowlist at the query layer | In progress — allowlist and catalog landed, fetcher adoption outstanding |
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
-| 7.6 | Data scope at the query layer — whose rows, per hat | In progress — enforcement layer landed, metric migration outstanding |
+| 7.6 | Data scope at the query layer — whose rows, per hat | In progress — enforcement layer and metric registry landed, route wiring outstanding |
+| 7.7 | Write scope and team to the claim | Draft |
+| 7.8 | Map uids to GHL users | Draft |
 
 The Knowledge Base stories previously carried the ids 7.1 and 7.2, colliding with
 the two command-surface stories of the same number. They are now Epic 12, and
+7.7 and 7.8 were split out of 7.6 while scoping its remaining work, and each
+records a gap found rather than planned: nothing writes `scope`/`team` into a
+claim, so the per-hat scope 7.6 designed is inert; and no mapping exists between
+Firebase uids and GHL user ids, so per-user rows are unreachable. They are
+independent to build, and `team` scope produces nothing useful until both land.
+
 `7.1`/`7.2` mean only what the table above says. 7.1, 7.2, 7.3 and 7.5 have no
 story docs, so their statuses are unverified prose.
 
