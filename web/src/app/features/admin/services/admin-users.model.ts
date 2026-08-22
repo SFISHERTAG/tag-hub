@@ -10,6 +10,18 @@ import type { Role } from '../../../core/models/role.model';
  * re-checks `ROLES.ADMIN` server-side; a client that invents a role value gets
  * a 400, and one that omits a field gets a 403 before the field is read.
  */
+/** The three data-scope levels a grant may carry. Mirrors lib/auth/grants.ts. */
+export type ScopeLevel = 'self' | 'team' | 'tenancy';
+
+export const SCOPE_LEVELS: readonly ScopeLevel[] = ['self', 'team', 'tenancy'];
+
+/** What each level means, in the admin's language rather than the model's. */
+export const SCOPE_LABELS: Record<ScopeLevel, string> = {
+  self: 'Own rows only',
+  team: "Their team's rows",
+  tenancy: 'Everything in their locations',
+};
+
 export interface DirectoryUser {
   readonly uid: string;
   readonly email: string | null;
@@ -17,6 +29,10 @@ export interface DirectoryUser {
   readonly locations: readonly string[];
   readonly groupId: string | null;
   readonly groupName: string | null;
+  /** Null means the grant carries no override and the role default applies. */
+  readonly scope: ScopeLevel | null;
+  /** Populated only when `scope` is 'team'. */
+  readonly team: readonly string[];
 }
 
 export interface Group {
@@ -74,6 +90,10 @@ export interface IndividualRoleInput {
   readonly email: string | null;
   /** CS reporting line. Only tag_csm / tag_csd participate; null otherwise. */
   readonly managerEmail: string | null;
+  /** Null clears the override, so the role default applies again. */
+  readonly scope: ScopeLevel | null;
+  /** Only meaningful with scope 'team'; null otherwise. */
+  readonly team: readonly string[] | null;
 }
 
 export interface CreatedGroup {

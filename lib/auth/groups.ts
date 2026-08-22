@@ -1,6 +1,7 @@
 import "server-only";
 import { firestore } from "@/lib/firestore";
 import { setUserClaims } from "./admin";
+import type { ScopeLevel } from "./grants";
 import { isValidLocationId } from "@/lib/ghl/tenants";
 import type { Role } from "./roles";
 
@@ -178,13 +179,24 @@ export async function removeMemberFromGroup(groupId: string, uid: string): Promi
     });
 }
 
-/** Individual assignment is "no group" — detaches first so group and individual state can't both claim this user. */
+/**
+ * Individual assignment is "no group" — detaches first so group and individual
+ * state can't both claim this user.
+ *
+ * `scope` and `team` are optional and omitted by default, so a caller that does
+ * not pass them writes exactly the grant this function always wrote and the
+ * role default still applies (Story 7.7, AC2). Group assignment deliberately
+ * does not take them: a group's members share a role, not a team, and giving
+ * every member the same team list is a different feature.
+ */
 export async function assignIndividualRole(
   uid: string,
   role: Role,
   locations: string[],
+  scope?: ScopeLevel,
+  team?: string[],
 ): Promise<void> {
   validateLocations(locations);
   await detachFromCurrentGroup(uid);
-  await setUserClaims(uid, [{ role, locations }]);
+  await setUserClaims(uid, [{ role, locations, scope, team }]);
 }

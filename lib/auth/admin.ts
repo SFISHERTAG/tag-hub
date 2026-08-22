@@ -1,7 +1,12 @@
 import "server-only";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { initializeApp, getApp, cert } from "firebase-admin/app";
-import type { Role } from "./roles";
+import {
+  assertTeamUidsExist,
+  assertWithinClaimLimit,
+  normaliseGrants,
+  type GrantInput,
+} from "./grants";
 
 /**
  * Firebase Admin SDK for user management.
@@ -139,11 +144,25 @@ export function invalidateClaimsCache(uid: string): void {
  */
 export async function setUserClaims(
   uid: string,
-  roleGrants: Array<{ role: Role; locations: string[] }>,
+  roleGrants: readonly GrantInput[],
 ): Promise<void> {
-  await getAdminAuth().setCustomUserClaims(uid, {
-    roles: roleGrants,
+  // Validation is in lib/auth/grants.ts rather than here so it is provable
+  // without Firebase. Order matters: normalise first so the size check measures
+  // what would actually be written, and resolve team members before writing
+  // anything, so a bad uid costs nothing rather than half a team.
+  const grants = normaliseGrants(uid, roleGrants);
+  const claims = { roles: grants };
+  assertWithinClaimLimit(claims);
+  await assertTeamUidsExist(grants, async (memberUid) => {
+    try {
+      await getAdminAuth().getUser(memberUid);
+      return true;
+    } catch {
+      return false;
+    }
   });
+
+  await getAdminAuth().setCustomUserClaims(uid, claims);
   // A downgrade that waits out the TTL on the instance that performed it
   // would be a strange thing to explain to whoever just made the change.
   invalidateClaimsCache(uid);

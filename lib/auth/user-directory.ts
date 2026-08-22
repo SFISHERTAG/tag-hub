@@ -1,6 +1,7 @@
 import "server-only";
 import { adminAuth } from "./admin";
 import { isRole, type Role } from "./roles";
+import { SCOPE_LEVELS, type ScopeLevel } from "./grants";
 import { listGroups } from "./groups";
 
 export type DirectoryUser = {
@@ -10,6 +11,10 @@ export type DirectoryUser = {
   locations: string[];
   groupId: string | null;
   groupName: string | null;
+  /** Per-hat data scope on the primary grant, or null when it falls back to the role default. */
+  scope: ScopeLevel | null;
+  /** Team uids when `scope` is "team"; empty otherwise. */
+  team: string[];
 };
 
 /** Every Firebase user, paginated to whatever this project actually has — small enough today not to need a server-side search. */
@@ -39,6 +44,19 @@ export async function listAllUsers(): Promise<DirectoryUser[]> {
       );
       const role = primary ? (primary.role as Role) : null;
       const locations = Array.isArray(primary?.locations) ? (primary.locations as string[]) : [];
+      // Read back so the admin screen can show what is set and therefore offer
+      // to clear it. Parsed with the same tolerance as parseRoleGrants: an
+      // unrecognised value reads as "unset", which is what the session does
+      // with it, so the screen and the session agree.
+      const rawScope = (primary as Record<string, unknown> | undefined)?.scope;
+      const scope = (SCOPE_LEVELS as readonly unknown[]).includes(rawScope)
+        ? (rawScope as ScopeLevel)
+        : null;
+      const rawTeam = (primary as Record<string, unknown> | undefined)?.team;
+      const team =
+        scope === "team" && Array.isArray(rawTeam)
+          ? (rawTeam as unknown[]).filter((uid): uid is string => typeof uid === "string")
+          : [];
       const group = groupByUid.get(record.uid);
       users.push({
         uid: record.uid,
@@ -47,6 +65,8 @@ export async function listAllUsers(): Promise<DirectoryUser[]> {
         locations,
         groupId: group?.id ?? null,
         groupName: group?.name ?? null,
+        scope,
+        team,
       });
     }
     pageToken = page.pageToken;
