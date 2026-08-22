@@ -153,32 +153,31 @@ export function assertWithinClaimLimit(claims: object): void {
 /**
  * Confirms every team member is a real user, before any of them is stored.
  *
- * The resolver is injected so this stays provable without Firebase, and so the
- * caller decides what "exists" means — `getUser` today, possibly a directory
- * read later.
+ * `missingOf` answers one question in one batch: of these uids, which do NOT
+ * resolve to a user? It must answer only that — a transient failure is not an
+ * answer, so the resolver propagates its own errors rather than mapping them
+ * to "missing". The first version of this took a per-uid exists() callback
+ * whose bare catch did exactly that mapping, and an Auth outage read as
+ * "these team members do not resolve to a user", naming real people.
  *
- * All-or-nothing on purpose. Writing the members that resolved and dropping the
- * rest would silently narrow a manager's team to whoever happened to be
+ * All-or-nothing on purpose. Writing the members that resolved and dropping
+ * the rest would silently narrow a manager's team to whoever happened to be
  * spelled correctly, and neither the admin who typed it nor the manager who
  * lives with it would see anything wrong. The same reasoning as Story 7.8's
  * refusal to answer a partially resolved team.
  */
 export async function assertTeamUidsExist(
   grants: readonly GrantClaim[],
-  userExists: (uid: string) => Promise<boolean>,
+  missingOf: (uids: readonly string[]) => Promise<readonly string[]>,
 ): Promise<void> {
   const members = Array.from(new Set(grants.flatMap((grant) => grant.team ?? [])));
   if (members.length === 0) return;
 
-  const results = await Promise.all(
-    members.map(async (uid) => ({ uid, exists: await userExists(uid) })),
-  );
-
-  const missing = results.filter((result) => !result.exists).map((result) => result.uid);
+  const missing = await missingOf(members);
   if (missing.length > 0) {
     throw new GrantValidationError(
       `These team members do not resolve to a user: ${missing.join(", ")}. ` +
-        `Nothing was written — a team stored without them would silently be smaller ` +
+        `Nothing was written; a team stored without them would silently be smaller ` +
         `than the one that was intended.`,
     );
   }

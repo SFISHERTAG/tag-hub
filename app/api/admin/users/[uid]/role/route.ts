@@ -95,7 +95,11 @@ export async function PUT(
  */
 function readScope(body: Record<string, unknown>): ScopeLevel | undefined {
   const raw = body.scope;
-  if (raw === undefined || raw === null || raw === "") return undefined;
+  // Only null/absent clear the override. '' used to be treated as a clear
+  // too, which made it the one malformed value that silently CHANGED the
+  // grant instead of 400ing — a scope the sender meant as a value, arriving
+  // empty, reverted the user to the role default with a 200.
+  if (raw === undefined || raw === null) return undefined;
   if (!(SCOPE_LEVELS as readonly unknown[]).includes(raw)) {
     throw badRequest(`Unknown scope. Expected one of: ${SCOPE_LEVELS.join(", ")}.`);
   }
