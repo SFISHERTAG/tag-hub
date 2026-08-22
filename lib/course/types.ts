@@ -23,6 +23,8 @@ export type SubsectionDoc = {
 export type Subsection = {
   id: string;
   title: string;
+  /** Empty means every signed-in user. See lib/course/visibility.ts. */
+  visibleToRoles: string[];
   /**
    * The single-Loom fast path, kept from the original schema. A subsection may
    * have this, or rows in `videos`, or both; the player renders `videos` when
@@ -45,6 +47,8 @@ export type Course = {
   id: string;
   title: string;
   description: string;
+  /** Empty means every signed-in user. See lib/course/visibility.ts. */
+  visibleToRoles: string[];
   sections: Section[];
 };
 

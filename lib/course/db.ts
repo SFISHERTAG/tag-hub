@@ -15,9 +15,21 @@ import type {
  * nullable where the schema allows it. Named rather than left as `any` so a
  * column rename breaks here instead of producing `undefined` in the UI.
  */
-type SubsectionRow = { id: string; title: string; loom_id: string | null; content: string };
+type SubsectionRow = {
+  id: string;
+  title: string;
+  loom_id: string | null;
+  content: string;
+  visible_to_roles: string[] | null;
+};
 type SectionRow = { id: string; title: string };
-type CourseRow = { id: string; slug: string; title: string; description: string | null };
+type CourseRow = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  visible_to_roles: string[] | null;
+};
 type CheckboxRow = { id: string; label: string; subsection_id: string };
 type VideoRow = {
   id: string;
@@ -65,7 +77,8 @@ function groupBySubsection<Row extends { subsection_id: string }, Mapped>(
  */
 async function getSubsections(sectionId: string): Promise<Subsection[]> {
   const result = await pool.query(
-    "SELECT id, title, loom_id, content FROM course_subsections WHERE section_id = $1 ORDER BY display_order",
+    `SELECT id, title, loom_id, content, visible_to_roles FROM course_subsections
+     WHERE section_id = $1 ORDER BY display_order`,
     [sectionId],
   );
 
@@ -111,6 +124,7 @@ async function getSubsections(sectionId: string): Promise<Subsection[]> {
     title: row.title,
     loomId: row.loom_id ?? undefined,
     content: row.content,
+    visibleToRoles: row.visible_to_roles ?? [],
     videos: videosBy.get(row.id) ?? [],
     docs: docsBy.get(row.id) ?? [],
     checkboxes: checkboxesBy.get(row.id) ?? [],
@@ -134,7 +148,7 @@ async function getSections(courseId: string): Promise<Section[]> {
 
 export async function getCourse(slugOrId: string): Promise<Course | undefined> {
   const result = await pool.query(
-    "SELECT id, slug, title, description FROM courses WHERE slug = $1 OR id = $1 LIMIT 1",
+    "SELECT id, slug, title, description, visible_to_roles FROM courses WHERE slug = $1 OR id = $1 LIMIT 1",
     [slugOrId],
   );
   if (result.rows.length === 0) return undefined;
@@ -144,12 +158,15 @@ export async function getCourse(slugOrId: string): Promise<Course | undefined> {
     id: row.slug,
     title: row.title,
     description: row.description,
+    visibleToRoles: row.visible_to_roles ?? [],
     sections: await getSections(row.id),
   };
 }
 
 export async function getAllCourses(): Promise<Course[]> {
-  const result = await pool.query("SELECT id, slug, title, description FROM courses ORDER BY display_order");
+  const result = await pool.query(
+    "SELECT id, slug, title, description, visible_to_roles FROM courses ORDER BY display_order",
+  );
 
   return Promise.all(
     result.rows.map(async (row: CourseRow) => ({
@@ -157,6 +174,7 @@ export async function getAllCourses(): Promise<Course[]> {
       title: row.title,
       // The column is nullable; Course.description is not.
       description: row.description ?? "",
+      visibleToRoles: row.visible_to_roles ?? [],
       sections: await getSections(row.id),
     })),
   );
@@ -176,7 +194,7 @@ export async function listCourseSummaries(): Promise<CourseSummary[]> {
 /** Internal (row) id, not the slug — admin editing operates on the real course row. */
 export async function getCourseById(id: string): Promise<Course | undefined> {
   const result = await pool.query(
-    "SELECT id, slug, title, description FROM courses WHERE id = $1",
+    "SELECT id, slug, title, description, visible_to_roles FROM courses WHERE id = $1",
     [id],
   );
   if (result.rows.length === 0) return undefined;
@@ -186,6 +204,7 @@ export async function getCourseById(id: string): Promise<Course | undefined> {
     id: row.id,
     title: row.title,
     description: row.description,
+    visibleToRoles: row.visible_to_roles ?? [],
     sections: await getSections(row.id),
   };
 }

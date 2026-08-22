@@ -1,5 +1,29 @@
 import { pool } from "@/lib/postgres";
-import type { Course } from "./types";
+/**
+ * Locally typed rather than importing `Course` from ./types.
+ *
+ * This file is the one-time migration of the original static content and it
+ * predates videos, reference docs and hat visibility. Those fields are
+ * required on the live `Course` type because every reader depends on them, but
+ * this seed has no opinion about them and back-filling `videos: []` into
+ * twenty-two literals would imply it did. Story 12.4's import is the file that
+ * writes those columns.
+ */
+type SeedCheckbox = { id: string; label: string };
+type SeedSubsection = {
+  id: string;
+  title: string;
+  loomId?: string;
+  checkboxes: SeedCheckbox[];
+  content: string;
+};
+type SeedSection = { id: string; title: string; subsections: SeedSubsection[] };
+type SeedCourse = {
+  id: string;
+  title: string;
+  description: string;
+  sections: SeedSection[];
+};
 
 /**
  * One-time migration of the old static lib/course/data.ts content into
@@ -14,7 +38,7 @@ function loomId(shareUrl: string): string {
   return match ? match[1] : "";
 }
 
-const SEED_COURSES: Course[] = [
+const SEED_COURSES: SeedCourse[] = [
   {
     id: "onboarding-expectations",
     title: "Onboarding & Expectations",
