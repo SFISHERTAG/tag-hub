@@ -86,7 +86,7 @@ describe('UserRow', () => {
       role: ROLES.TAG_CSM,
       locationsRaw: 'loc1, loc2',
       managerEmail: 'csd@tag.io',
-      scope: '',
+      scope: null,
       team: [],
     });
   });
@@ -256,7 +256,7 @@ describe('UserRow data scope', () => {
 
   it('clears an override back to the role default', async () => {
     const { fixture, component } = setup({ ...USER, scope: 'tenancy', team: [] });
-    component['form'].patchValue({ scope: '' });
+    component['form'].patchValue({ scope: null });
     fixture.detectChanges();
 
     await component['save']();
@@ -264,5 +264,31 @@ describe('UserRow data scope', () => {
       'uid-1',
       expect.objectContaining({ scope: null, team: null }),
     );
+  });
+});
+
+describe('UserRow ghost team members', () => {
+  it('offers a stored uid missing from the directory as a deselectable option', () => {
+    const { component } = setup({ ...USER, scope: 'team', team: ['uid-2', 'uid-gone'] });
+    expect(component['ghostTeam']()).toEqual(['uid-gone']);
+    // Still selected, so the admin can see it and remove it.
+    expect(component['form'].getRawValue().team).toContain('uid-gone');
+  });
+
+  it('sends the team without the ghost once the admin deselects it', async () => {
+    const { fixture, component } = setup({ ...USER, scope: 'team', team: ['uid-2', 'uid-gone'] });
+    component['form'].patchValue({ team: ['uid-2'] });
+    fixture.detectChanges();
+
+    await component['save']();
+    expect(assignRole).toHaveBeenCalledWith(
+      'uid-1',
+      expect.objectContaining({ scope: 'team', team: ['uid-2'] }),
+    );
+  });
+
+  it('lists nobody as a ghost when every stored member is in the directory', () => {
+    const { component } = setup({ ...USER, scope: 'team', team: ['uid-2'] });
+    expect(component['ghostTeam']()).toEqual([]);
   });
 });

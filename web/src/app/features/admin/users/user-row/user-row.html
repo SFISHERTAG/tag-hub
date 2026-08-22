@@ -32,7 +32,7 @@
       <mat-form-field appearance="outline">
         <mat-label>Data scope</mat-label>
         <mat-select formControlName="scope">
-          <mat-option value="">Role default</mat-option>
+          <mat-option [value]="null">Role default</mat-option>
           @for (level of scopeLevels; track level) {
             <mat-option [value]="level">{{ scopeLabels[level] }}</mat-option>
           }
@@ -46,6 +46,9 @@
           <mat-select formControlName="team" multiple>
             @for (peer of teamOptions(); track peer.uid) {
               <mat-option [value]="peer.uid">{{ peer.email ?? peer.uid }}</mat-option>
+            }
+            @for (uid of ghostTeam(); track uid) {
+              <mat-option [value]="uid">Unknown user ({{ uid }}) — deselect to remove</mat-option>
             }
           </mat-select>
           <mat-hint>A team scope with nobody in it is refused, not saved as empty.</mat-hint>

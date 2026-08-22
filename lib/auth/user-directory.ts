@@ -1,7 +1,8 @@
 import "server-only";
 import { adminAuth } from "./admin";
-import { isRole, type Role } from "./roles";
-import { SCOPE_LEVELS, type ScopeLevel } from "./grants";
+import type { Role } from "./roles";
+import type { ScopeLevel } from "./grants";
+import { parseRoleGrants } from "./session";
 import { listGroups } from "./groups";
 
 export type DirectoryUser = {
@@ -32,31 +33,18 @@ export async function listAllUsers(): Promise<DirectoryUser[]> {
     const page = await adminAuth().listUsers(1000, pageToken);
     for (const record of page.users) {
       const claims = record.customClaims ?? {};
-      // Claims are written as `roles: [{role, locations}]` (setUserClaims in
-      // ./admin) — there is no top-level `role`/`locations` field to read.
-      // Individual assignment currently writes exactly one grant, so the
-      // first entry is the user's role; a future multi-grant write path
-      // would need this to expose the full array instead.
-      const grants = Array.isArray(claims.roles) ? claims.roles : [];
-      const primary = grants.find(
-        (g): g is { role: Role; locations: unknown } =>
-          typeof g === "object" && g !== null && isRole((g as Record<string, unknown>).role),
-      );
-      const role = primary ? (primary.role as Role) : null;
-      const locations = Array.isArray(primary?.locations) ? (primary.locations as string[]) : [];
-      // Read back so the admin screen can show what is set and therefore offer
-      // to clear it. Parsed with the same tolerance as parseRoleGrants: an
-      // unrecognised value reads as "unset", which is what the session does
-      // with it, so the screen and the session agree.
-      const rawScope = (primary as Record<string, unknown> | undefined)?.scope;
-      const scope = (SCOPE_LEVELS as readonly unknown[]).includes(rawScope)
-        ? (rawScope as ScopeLevel)
-        : null;
-      const rawTeam = (primary as Record<string, unknown> | undefined)?.team;
-      const team =
-        scope === "team" && Array.isArray(rawTeam)
-          ? (rawTeam as unknown[]).filter((uid): uid is string => typeof uid === "string")
-          : [];
+      // Through parseRoleGrants, the same reader the session uses — the
+      // screen that WRITES grants must agree with the session that enforces
+      // them about what a claim says. This also reads the legacy single-role
+      // shape (scripts/create-user.mjs wrote it until 2026-08-22), which the
+      // old hand-copied parsing here could not: those users showed "no role"
+      // in the directory while holding a fully working session.
+      const grants = parseRoleGrants(claims);
+      const primary = grants[0];
+      const role: Role | null = primary?.role ?? null;
+      const locations = primary?.locations ?? [];
+      const scope: ScopeLevel | null = primary?.scope ?? null;
+      const team = primary?.scope === "team" ? (primary.team ?? []) : [];
       const group = groupByUid.get(record.uid);
       users.push({
         uid: record.uid,

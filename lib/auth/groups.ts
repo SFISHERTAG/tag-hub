@@ -1,7 +1,11 @@
 import "server-only";
 import { firestore } from "@/lib/firestore";
 import { setUserClaims } from "./admin";
-import type { ScopeLevel } from "./grants";
+import {
+  assertWithinClaimLimit,
+  normaliseGrants,
+  type ScopeLevel,
+} from "./grants";
 import { isValidLocationId } from "@/lib/ghl/tenants";
 import type { Role } from "./roles";
 
@@ -126,6 +130,14 @@ export async function updateGroupRole(
   locations: string[],
 ): Promise<void> {
   validateLocations(locations);
+  // The grant is identical for every member, so its validity is decided once,
+  // here — before the group doc changes and before any member's claims do.
+  // Letting each per-member setUserClaims discover the same problem meant a
+  // grant that was invalid for everyone could partially write: the Promise.all
+  // fired all members concurrently and some landed before a sibling rejected.
+  // (The subject uid does not matter for a teamless grant; validation ignores it.)
+  assertWithinClaimLimit({ roles: normaliseGrants("", [{ role, locations }]) });
+
   const group = await getGroup(id);
   if (!group) throw new Error(`Group ${id} not found.`);
 
@@ -197,6 +209,14 @@ export async function assignIndividualRole(
   team?: string[],
 ): Promise<void> {
   validateLocations(locations);
+  // Validate BEFORE the detach. setUserClaims re-runs this, but by then the
+  // group write has happened: the 2026-08-22 review found a rejected grant
+  // ("nothing was written") that had already removed the user from their
+  // group, leaving them with the group's old claims and none of its updates.
+  // The validation is pure, so running it here costs nothing and makes the
+  // error message's promise true.
+  assertWithinClaimLimit({ roles: normaliseGrants(uid, [{ role, locations, scope, team }]) });
+
   await detachFromCurrentGroup(uid);
   await setUserClaims(uid, [{ role, locations, scope, team }]);
 }

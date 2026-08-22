@@ -96,12 +96,19 @@ describe("mergeGrants", () => {
     expect(both.filter((g) => g.role === OWNER_ROLE).length).toBe(2);
   });
 
-  it("updates a matching grant in place rather than duplicating it", () => {
-    const stale = { role: OWNER_ROLE, locations: [LOCATION], scope: "self" as const };
-    const merged = mergeGrants([stale], clientOwnerGrants(LOCATION));
+  it("matches a grant in place rather than duplicating it, and keeps its scope", () => {
+    // This pin used to expect the opposite: an existing scope "self" was
+    // called stale and re-provisioning was expected to heal it to the owner
+    // default. That was right when provisioning was the ONLY writer of scope.
+    // Story 7.7 made the admin UI a writer too, and provisioning cannot tell
+    // a stale value from a chosen one — so "healing" became the bug where a
+    // webhook retry silently undid an admin's override. The existing explicit
+    // scope now wins; only a grant with no scope at all gets the default.
+    const chosen = { role: OWNER_ROLE, locations: [LOCATION], scope: "self" as const };
+    const merged = mergeGrants([chosen], clientOwnerGrants(LOCATION));
     const owners = merged.filter((g) => g.role === OWNER_ROLE);
     expect(owners.length).toBe(1);
-    expect(owners[0].scope).toBe("tenancy");
+    expect(owners[0].scope).toBe("self");
   });
 
   it("does not mutate the arrays it is given", () => {
