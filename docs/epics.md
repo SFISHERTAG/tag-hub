@@ -405,3 +405,35 @@ environment cannot run because it has no test-auth credentials. The status is
 honest about a gate that never executed rather than claiming a Done nobody
 watched. Whoever gets a test-auth session runs both checks and closes both
 stories.
+
+## Epic 13 — Lifecycle handoff and churn prevention
+
+**Goal:** a prospect who closes becomes a tracked client automatically, and a
+client who stalls is visible before they leave.
+
+Opened 2026-08-22 from the audit of the Fulfillment pipeline in
+`rb6hPt8Ue77L4abghRMc`. That audit found 35 of 37 opportunities parked at
+`New Client`, two stages the code does not recognise, and no link between a
+closed prospect and the client it becomes. The sales side and the delivery side
+are the same client and are currently two disconnected records.
+
+| ID | Story | Status | Doc |
+| --- | --- | --- | --- |
+| 13.1 | createOpportunity in the typed service layer | Draft | `13.1-create-opportunity-in-the-service-layer.md` |
+| 13.2 | Fulfillment stage model parity | Draft | `13.2-fulfillment-stage-model-parity.md` |
+| 13.3 | Prospect to fulfillment handoff | Draft — blocked on the Fulfillment location decision | `13.3-prospect-to-fulfillment-handoff.md` |
+| 13.4 | Ascension value on the fulfillment opportunity | Draft | `13.4-ascension-value-on-the-fulfillment-opportunity.md` |
+| 13.5 | Stage SLA timers on the client card | Draft | `13.5-stage-sla-timers-on-the-client-card.md` |
+
+**13.2 is a live defect, not a nice-to-have.** `PR 3 - VSL Creatives` and
+`PR 4 - Creative Edits` exist in the pipeline and not in
+`lib/onboarding/stage-tasks.ts`. Anyone moved to either sees no checklist. It is
+unreported only because nobody is there yet.
+
+**13.3 is blocked on a decision, not on work.** The provisioning webhook creates
+the Fulfillment opportunity in the cloned client sub-account; every live
+Fulfillment opportunity is in TAG's own sub-account. Both cannot be right.
+
+**Sequencing:** 13.1 unblocks 13.3. 13.2 unblocks 13.5. 13.4 and 13.5 both sit
+downstream of the handoff, because neither ascension value nor a stage timer
+means anything until clients reliably arrive in the pipeline in the first place.
