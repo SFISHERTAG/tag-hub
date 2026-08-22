@@ -144,6 +144,8 @@ describe("the guard catches a metric that ignores its filter", () => {
         locations: scope.locations,
         uids: "all",
         period,
+        statuses: "any",
+        timeframe: "in-period",
       });
       const mine = scope.uids === "all" ? rows : rows.filter((r) => scope.uids.includes(r.ownerUid ?? ""));
       return { shape: "scalar", value: mine.reduce((t, r) => t + r.value, 0) };
@@ -166,17 +168,23 @@ describe("the guard catches a metric that ignores its filter", () => {
 describe("scopedQuery", () => {
   it("copies the scope's constraints verbatim", () => {
     const scope = unsafeScopeForTests("team", LOCATIONS, ["user-a", "user-b"]);
-    expect(scopedQuery("opportunities", scope, PERIOD)).toEqual({
+    expect(
+      scopedQuery("opportunities", scope, PERIOD, { statuses: ["open"], timeframe: "current" }),
+    ).toEqual({
       dataset: "opportunities",
       locations: LOCATIONS,
       uids: ["user-a", "user-b"],
       period: PERIOD,
+      statuses: ["open"],
+      timeframe: "current",
     });
   });
 
   it("keeps a tenancy scope's 'all' rather than expanding it to a uid list", () => {
     const scope = unsafeScopeForTests("tenancy", LOCATIONS, "all");
-    expect(scopedQuery("appointments", scope, PERIOD).uids).toBe("all");
+    expect(
+      scopedQuery("appointments", scope, PERIOD, { statuses: "any", timeframe: "in-period" }).uids,
+    ).toBe("all");
   });
 });
 
@@ -202,6 +210,40 @@ describe("bundled widget compatibility map", () => {
     for (const [widgetId, instance] of Object.entries(BUNDLED_WIDGET_METRICS)) {
       if (instance === null) continue;
       expect(isValidInstance(instance), `${widgetId} maps to an invalid pairing`).toBe(true);
+    }
+  });
+});
+
+/**
+ * Stream-1 pins: the semantic constraints each metric must push down. These
+ * are registry-driven like the scope assertions above, but the expectations
+ * are per-metric because the right statuses are part of what the metric MEANS.
+ */
+describe("metrics constrain status and timeframe to match their names", () => {
+  it("pipeline metrics ask for open deals only, as current state", async () => {
+    for (const id of ["pipeline_open_value", "pipeline_by_stage"] as const) {
+      const { source, queries } = recordingSource([row()]);
+      await METRIC_REGISTRY[id].fetch(unsafeScopeForTests("tenancy", LOCATIONS, "all"), PERIOD, source);
+      for (const query of queries) {
+        expect(query.statuses, `${id} must not fetch closed deals`).toEqual(["open"]);
+        expect(query.timeframe, `${id} is a stock, not a flow`).toBe("current");
+      }
+    }
+  });
+
+  it("appointments_booked excludes cancelled and invalid events", async () => {
+    const { source, queries } = recordingSource([row()]);
+    await METRIC_REGISTRY.appointments_booked.fetch(
+      unsafeScopeForTests("tenancy", LOCATIONS, "all"),
+      PERIOD,
+      source,
+    );
+    for (const query of queries) {
+      expect(query.statuses).not.toBe("any");
+      expect(query.statuses).not.toContain("cancelled");
+      expect(query.statuses).not.toContain("invalid");
+      expect(query.statuses, "a no-show was still a booked appointment").toContain("noshow");
+      expect(query.timeframe).toBe("in-period");
     }
   });
 });
