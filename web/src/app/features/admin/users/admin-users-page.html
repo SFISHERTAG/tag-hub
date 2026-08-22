@@ -50,6 +50,7 @@
             <app-user-row
               [user]="user"
               [managerEmail]="managerEmailFor(user)"
+              [peers]="users()"
               (changed)="load()"
             />
           }

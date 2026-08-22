@@ -91,6 +91,8 @@ export class AdminUsersService {
         locationsRaw: input.locationsRaw,
         email: input.email,
         managerEmail: input.managerEmail,
+        scope: input.scope,
+        team: input.team,
       }),
     );
   }

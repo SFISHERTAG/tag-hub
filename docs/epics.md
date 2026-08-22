@@ -149,7 +149,7 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.4 | Client-visibility allowlist at the query layer | In progress — allowlist and catalog landed, fetcher adoption outstanding |
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
 | 7.6 | Data scope at the query layer — whose rows, per hat | In progress — enforcement layer and metric registry landed, route wiring outstanding |
-| 7.7 | Write scope and team to the claim | Draft |
+| 7.7 | Write scope and team to the claim | In Review — all tasks complete; AC9 verified by inspection only, see Completion Notes |
 | 7.8 | Map uids to GHL users | Draft |
 
 The Knowledge Base stories previously carried the ids 7.1 and 7.2, colliding with

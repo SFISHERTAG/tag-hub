@@ -32,6 +32,19 @@ const USER: DirectoryUser = {
   locations: ['loc1', 'loc2'],
   groupId: 'grp-1',
   groupName: 'CS team',
+  scope: null,
+  team: [],
+};
+
+const PEER: DirectoryUser = {
+  uid: 'uid-2',
+  email: 'closer@taxadvisorygrowth.net',
+  role: ROLES.CLIENT_CLOSER,
+  locations: ['loc1'],
+  groupId: null,
+  groupName: null,
+  scope: null,
+  team: [],
 };
 
 const assignRole =
@@ -53,6 +66,9 @@ function setup(user: DirectoryUser = USER, managerEmail: string | null = 'csd@ta
   const fixture = TestBed.createComponent(UserRow);
   fixture.componentRef.setInput('user', user);
   fixture.componentRef.setInput('managerEmail', managerEmail);
+  // The directory as the page passes it: this user plus their peers. The
+  // component is responsible for excluding the user from their own team.
+  fixture.componentRef.setInput('peers', [user, PEER]);
   fixture.detectChanges();
 
   const component = fixture.componentInstance;
@@ -70,6 +86,8 @@ describe('UserRow', () => {
       role: ROLES.TAG_CSM,
       locationsRaw: 'loc1, loc2',
       managerEmail: 'csd@tag.io',
+      scope: '',
+      team: [],
     });
   });
 
@@ -95,6 +113,8 @@ describe('UserRow', () => {
     expect(assignRole).toHaveBeenCalledWith('uid-1', {
       role: ROLES.TAG_CSM,
       locationsRaw: 'loc1, loc2',
+      scope: null,
+      team: null,
       email: 'csm@taxadvisorygrowth.net',
       managerEmail: 'csd@tag.io',
     });
@@ -165,5 +185,84 @@ describe('UserRow', () => {
 
     expect(component['roleLabel']()).toBe('No role');
     expect(component['groupLabel']()).toBe('No group');
+  });
+});
+
+/**
+ * Story 7.7. Until this screen could write them, `scope` and `team` were fields
+ * only the read path had ever seen, so every grant fell back to the role
+ * default. The tests below are about the two ways this screen could write
+ * something the server will refuse or the session will misread.
+ */
+describe('UserRow data scope', () => {
+  it('seeds an existing override so it can be seen before it is changed', () => {
+    const { component } = setup({ ...USER, scope: 'team', team: ['uid-2'] });
+    expect(component['form'].getRawValue().scope).toBe('team');
+    expect(component['form'].getRawValue().team).toEqual(['uid-2']);
+  });
+
+  it("offers the team picker only for a team scope", () => {
+    const { fixture, component } = setup();
+    expect(component['picksTeam']()).toBe(false);
+
+    component['form'].patchValue({ scope: 'team' });
+    fixture.detectChanges();
+    expect(component['picksTeam']()).toBe(true);
+
+    component['form'].patchValue({ scope: 'tenancy' });
+    fixture.detectChanges();
+    expect(component['picksTeam']()).toBe(false);
+  });
+
+  it('never offers the user their own account as a team member', () => {
+    const { component } = setup();
+    const options = component['teamOptions']().map((peer) => peer.uid);
+    expect(options).not.toContain('uid-1');
+    expect(options).toContain('uid-2');
+  });
+
+  it('sends null for both when the scope is left at the role default', async () => {
+    const { component } = setup();
+    await component['save']();
+    expect(assignRole).toHaveBeenCalledWith(
+      'uid-1',
+      expect.objectContaining({ scope: null, team: null }),
+    );
+  });
+
+  it('sends the team alongside a team scope', async () => {
+    const { fixture, component } = setup();
+    component['form'].patchValue({ scope: 'team', team: ['uid-2'] });
+    fixture.detectChanges();
+
+    await component['save']();
+    expect(assignRole).toHaveBeenCalledWith(
+      'uid-1',
+      expect.objectContaining({ scope: 'team', team: ['uid-2'] }),
+    );
+  });
+
+  it('drops a stale team when the scope moves off team, rather than sending one the server refuses', async () => {
+    const { fixture, component } = setup({ ...USER, scope: 'team', team: ['uid-2'] });
+    component['form'].patchValue({ scope: 'tenancy' });
+    fixture.detectChanges();
+
+    await component['save']();
+    expect(assignRole).toHaveBeenCalledWith(
+      'uid-1',
+      expect.objectContaining({ scope: 'tenancy', team: null }),
+    );
+  });
+
+  it('clears an override back to the role default', async () => {
+    const { fixture, component } = setup({ ...USER, scope: 'tenancy', team: [] });
+    component['form'].patchValue({ scope: '' });
+    fixture.detectChanges();
+
+    await component['save']();
+    expect(assignRole).toHaveBeenCalledWith(
+      'uid-1',
+      expect.objectContaining({ scope: null, team: null }),
+    );
   });
 });

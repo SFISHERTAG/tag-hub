@@ -29,6 +29,29 @@
         <mat-hint>Blank means unrestricted.</mat-hint>
       </mat-form-field>
 
+      <mat-form-field appearance="outline">
+        <mat-label>Data scope</mat-label>
+        <mat-select formControlName="scope">
+          <mat-option value="">Role default</mat-option>
+          @for (level of scopeLevels; track level) {
+            <mat-option [value]="level">{{ scopeLabels[level] }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Whose rows this hat sees. Role default is the usual choice.</mat-hint>
+      </mat-form-field>
+
+      @if (picksTeam()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Team</mat-label>
+          <mat-select formControlName="team" multiple>
+            @for (peer of teamOptions(); track peer.uid) {
+              <mat-option [value]="peer.uid">{{ peer.email ?? peer.uid }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>A team scope with nobody in it is refused, not saved as empty.</mat-hint>
+        </mat-form-field>
+      }
+
       @if (reportsToCsd()) {
         <mat-form-field appearance="outline">
           <mat-label>Reports to (CSD email)</mat-label>

@@ -118,6 +118,8 @@ describe('AdminUsersService', () => {
       locationsRaw: '',
       email: 'csm@taxadvisorygrowth.net',
       managerEmail: 'csd@taxadvisorygrowth.net',
+      scope: null,
+      team: null,
     });
     const request = httpMock.expectOne('/api/admin/users/uid-1/role');
 
@@ -127,6 +129,8 @@ describe('AdminUsersService', () => {
       locationsRaw: '',
       email: 'csm@taxadvisorygrowth.net',
       managerEmail: 'csd@taxadvisorygrowth.net',
+      scope: null,
+      team: null,
     });
 
     request.flush({ ok: true });

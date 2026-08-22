@@ -87,7 +87,15 @@ export type Session = {
  * same shape. Supports both the old single-role claims and the current
  * multi-role array so a session issued before the migration still resolves.
  */
-function parseRoleGrants(claims: Record<string, unknown>): RoleGrant[] {
+/**
+ * Exported for Story 7.7's round-trip test, not for callers.
+ *
+ * The write path in lib/auth/grants.ts and this parser have to agree on which
+ * scope values survive: a level written here and dropped there is a grant that
+ * looks set in the admin screen and behaves as though it never was. Nothing but
+ * the test should import this.
+ */
+export function parseRoleGrants(claims: Record<string, unknown>): RoleGrant[] {
   // New format: roles array with role+locations pairs
   if (Array.isArray(claims.roles)) {
     return (claims.roles as unknown[])
