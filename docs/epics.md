@@ -338,6 +338,8 @@ is measurable or guesswork.
 | 11.3 | Verified doc claims — checks over prose | In Progress | `11.3-verified-doc-claims.md` |
 | 11.4 | Calibration instrumentation on 10.4 | Draft | `11.4-calibration-instrumentation-on-10.4.md` |
 | 11.5 | Endpoint inventory ahead of each feature story | Draft | `11.5-endpoint-inventory-ahead-of-each-feature-story.md` |
+| 11.6 | Resolve the courses store split | Ready — Option A decided 2026-08-22 | `11.6-resolve-the-courses-store-split.md` |
+| 11.7 | The root build script masks a failure | Draft | `11.7-the-root-build-script-masks-a-failure.md` |
 
 **11.1 was the one already failing silently.** Angular CLI requires Node
 `v22.22.3` / `v24.15.0` / `v26.0.0`; the dev machine ran `v24.14.0`, one patch
@@ -405,3 +407,43 @@ environment cannot run because it has no test-auth credentials. The status is
 honest about a gate that never executed rather than claiming a Done nobody
 watched. Whoever gets a test-auth session runs both checks and closes both
 stories.
+
+## Epic 13 — Lifecycle handoff and churn prevention
+
+**Goal:** a prospect who closes becomes a tracked client automatically, and a
+client who stalls is visible before they leave.
+
+Opened 2026-08-22 from the audit of the Fulfillment pipeline in
+`rb6hPt8Ue77L4abghRMc`. That audit found 35 of 37 opportunities parked at
+`New Client`, two stages the code does not recognise, and no link between a
+closed prospect and the client it becomes. The sales side and the delivery side
+are the same client and are currently two disconnected records.
+
+| ID | Story | Status | Doc |
+| --- | --- | --- | --- |
+| 13.1 | createOpportunity in the typed service layer | Draft | `13.1-create-opportunity-in-the-service-layer.md` |
+| 13.2 | Fulfillment stage model parity | Draft | `13.2-fulfillment-stage-model-parity.md` |
+| 13.3 | Prospect to fulfillment handoff | Draft — location decided 2026-08-22 | `13.3-prospect-to-fulfillment-handoff.md` |
+| 13.4 | Ascension value on the fulfillment opportunity | Draft | `13.4-ascension-value-on-the-fulfillment-opportunity.md` |
+| 13.5 | Stage SLA timers on the client card | Draft | `13.5-stage-sla-timers-on-the-client-card.md` |
+| 13.6 | Escalations desk | Draft | `13.6-escalations-desk.md` |
+
+**13.2 is a live defect, not a nice-to-have.** `PR 3 - VSL Creatives` and
+`PR 4 - Creative Edits` exist in the pipeline and not in
+`lib/onboarding/stage-tasks.ts`. Anyone moved to either sees no checklist. It is
+unreported only because nobody is there yet.
+
+**13.3 is blocked on a decision, not on work.** The provisioning webhook creates
+the Fulfillment opportunity in the cloned client sub-account; every live
+Fulfillment opportunity is in TAG's own sub-account. Both cannot be right.
+
+**13.6 is half-built already.** The client-facing surface shipped in 10.4 as
+bug reports, Firestore-backed, with an Angular feature module. It extends rather
+than replaces. The story records why not a GHL pipeline (clients do not log into
+GHL, and several are not in our agency at all) and why not Postgres (there is no
+project-wide move off Firestore; the one feature mid-migration is stalled, story
+11.6).
+
+**Sequencing:** 13.1 unblocks 13.3. 13.2 unblocks 13.5. 13.4 and 13.5 both sit
+downstream of the handoff, because neither ascension value nor a stage timer
+means anything until clients reliably arrive in the pipeline in the first place.

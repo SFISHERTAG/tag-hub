@@ -129,13 +129,31 @@ requirement on these reads.
 via Cloud Functions on onboarding. Updates to location names/metadata are NOT
 sync'd from Firestore—check schema for stale data policy.
 
-**Courses table:** Firestore source is authoritative. Backfill to Postgres was
-started in `functions/sql/003` but code still reads from Firestore. **This is
-a known split-brain.** Either:
-- Finish the backfill, update all reads to Postgres, drop from Firestore, or
-- Remove the Postgres table, revert `003`, commit the reversal.
+**Courses:** split by half, not by store. Corrected 2026-08-22; the previous
+text here claimed Firestore was authoritative and that code still read from it,
+which was false for structure and named the wrong migration file.
 
-Do not leave it split. Decision pending: see `docs/stories/X.X-courses.md`.
+- **Structure** (`courses`, `course_sections`, and below) is on **Postgres**,
+  created by `functions/sql/007_courses.sql` and read and written through
+  `lib/course/db.ts` by every `app/api/admin/courses/*` route. Landed in
+  `4638e98`.
+- **Per-user progress** is on **Firestore**, read through
+  `lib/course/firestore.ts` by `app/api/courses/progress/route.ts` and
+  `app/api/courses/[courseId]/route.ts`.
+- A `course_progress` table already exists in Postgres, created by
+  `003_migrate_firestore_to_postgres.sql`. **Nothing reads or writes it.**
+
+That empty table is the split-brain: one entity, two stores, one of them live
+and one of them a schema nobody filled. Either:
+- Move progress writes to `course_progress`, migrate existing Firestore
+  progress, and drop the Firestore path, or
+- Keep progress in Firestore and drop `course_progress` from `003`.
+
+Do not leave it split. The decision is story 11.6
+(`docs/stories/11.6-resolve-the-courses-store-split.md`). It previously pointed
+at `docs/stories/X.X-courses.md`, a placeholder filename that was never created,
+which is why this sat unresolved: it was recorded as a note inside a doc rather
+than as work anyone could pick up.
 
 ---
 
@@ -189,8 +207,16 @@ Immutability is enforced by Firestore security rules (see `.firebase/firestore.r
 
 ## Migration in progress
 
-**Firestore → Postgres (courses):** started but not finished. Code is split: 
-course structure reads from Postgres, user progress reads from Firestore. 
-Status: blocked on product decision.
+**Firestore → Postgres (courses):** started but not finished. Code is split:
+course structure reads from Postgres, user progress reads from Firestore.
+Blocked on a decision, not on engineering. Tracked as story 11.6; see the
+Courses entry under Backfill Status above for the two options and the evidence.
 
 Until resolved: never assume "it's in Postgres" when reading courses.
+
+**There is no project-wide move off Firestore.** Firestore remains the primary
+system of record, including the sign-in path (`lib/auth/otp.ts`), tenants, audit,
+onboarding, and GHL credentials. 29 modules call `firestore()`. Courses is one
+feature mid-migration, not the leading edge of a general one. Recorded here
+because the half-finished state above reads like evidence of a direction that
+does not exist.
