@@ -80,7 +80,16 @@ function agentId() {
 function stampMerge(messageFile) {
   const message = readFileSync(messageFile, "utf8");
   if (new RegExp(`^${MERGE_TRAILER}:`, "m").test(message)) return;
-  const body = message.replace(/\s*$/, "");
+
+  // Overrides are recorded here too, and this is where they matter MOST:
+  // TAG_MAIN_OWNER exists for merges into main, so the merge path is the one
+  // that uses it. The first version of this stamped overrides only on ordinary
+  // commits, so the very first merge to use one recorded nothing — the same
+  // merge/non-merge split that left merges unattributed in the first place.
+  const bypassed = overridesUsed();
+  const body =
+    message.replace(/\s*$/, "") +
+    (bypassed && !/^Guard-Override:/m.test(message) ? `\nGuard-Override: ${bypassed}` : "");
   const separator = /\n[A-Za-z-]+:[^\n]*$/.test(body) ? "\n" : "\n\n";
   writeFileSync(messageFile, `${body}${separator}${MERGE_TRAILER}: ${agentId()}\n`);
 }
