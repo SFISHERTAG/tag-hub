@@ -82,6 +82,7 @@ GoHighLevel.
 | 4.4 | ROAS joined on `utmAdId` | Done |
 | 4.5 | "As of" freshness indicator | Done |
 | 4.6 | Owner's own calendar view | Done |
+| 4.7 | Creatives to campaigns linking | **Backlog — shipped without a story** |
 
 **Blocker moved.** 4.1 is no longer the gate: the System User and token are live
 and client ad accounts are assigned. What remains is that this environment has no
@@ -171,6 +172,7 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.6 | Data scope at the query layer — whose rows, per hat | In progress — enforcement layer and metric registry landed, route wiring outstanding |
 | 7.7 | Write scope and team to the claim | In Review — all tasks complete; AC9 verified by inspection only, see Completion Notes |
 | 7.8 | Map uids to GHL users | Draft |
+| 7.9 | Admin: users, groups and role assignment | **Backlog — shipped without a story** |
 
 The Knowledge Base stories previously carried the ids 7.1 and 7.2, colliding with
 the two command-surface stories of the same number. They are now Epic 12, and
@@ -219,6 +221,7 @@ here before the client does.
 | 8.2 | Per-client integration health | Partly rendered in 7.1 |
 | 8.3 | Attribution drift monitor | Draft |
 | 8.4 | In-app bug reporting | Draft |
+| 8.5 | The rules engine behind health and escalation | **Backlog — shipped without a story** |
 
 8.2 is per client, not global, and that distinction is the whole point. One
 client's pixel stops firing and *that* dashboard reports zero conversions while
