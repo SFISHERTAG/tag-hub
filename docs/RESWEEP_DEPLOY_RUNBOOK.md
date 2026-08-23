@@ -60,7 +60,13 @@ before proceeding, because the migration drops the source table afterwards:
 CREATE TABLE csm_directory_backup AS SELECT * FROM csm_directory;
 ```
 
-**Then apply it.** There is no migration runner in this repo; the SQL files
+**Then apply it.** There is still no migration *runner* — the SQL files are
+applied by hand — but as of story 15.0 there is a *ledger*. Run
+`npm run check:migrations` before and after: it reports what is on disk with no
+ledger row, and what has been edited since it was applied. It does not apply
+anything.
+
+There is no migration runner in this repo; the SQL files
 are applied by hand.
 
 ```bash

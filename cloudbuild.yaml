@@ -130,6 +130,29 @@ steps:
 
   # Pull the previous image so unchanged layers are reused. Without this every
   # build reinstalls node_modules from scratch.
+  # The functions workspace has its own tsconfig and its own eslint, and the
+  # root build (`next build`) never compiles functions/src. So a type error or
+  # a broken import in functions/ reached production with every gate green —
+  # ROLES_AND_GRANTS_PLAN.md §10 records this as the one *critical* finding, and
+  # notes it is not a design flaw but an absence: the fixture enforcing the
+  # grant-ordering fix runs in no pipeline at all.
+  #
+  # `npm run check:functions` existed before this step and was only ever run by
+  # hand. Story 15.0 wires it in. It runs before the image is built, because a
+  # build that succeeds and ships broken functions code is the exact failure
+  # being prevented.
+  - id: check-functions
+    name: node:22
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        npm --prefix functions ci --no-audit --no-fund
+        npm --prefix functions run build
+        npm --prefix functions run lint
+        echo "functions gate passed."
+
   - id: pull-cache
     name: gcr.io/cloud-builders/docker
     entrypoint: bash
