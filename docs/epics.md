@@ -630,3 +630,32 @@ user. Same keys, same types.
 **15.0 first, and not only for this epic.** Nothing records which migrations
 have been applied; 006 already failed once on a clean deploy. This epic adds two
 more and the Firestore exit adds one per collection.
+
+## Epic 17 — End-to-End Campaign Orchestration
+
+**Goal:** From intake form to live Meta campaign running Mon-Thu-Sun with KPI monitoring and budget scaling, fully automated via Gemini orchestration.
+
+Opened 2026-08-23. Phases 1–3 (provisioning, intake+Gemini copy, Meta setup) are live. Epic 17 extends from "Meta account ready" to "campaign live, monitored, and scaling."
+
+**Scope:** Actor/AI video generation, editor integration, GHL funnel wiring, Meta campaign creation with predetermined settings, Mon-Thu-Sun scheduling with Thursday copy operation, KPI monitoring with alert routing, budget scaling based on ROAS signal.
+
+**Blocked on:** 10.4 (Angular migration calibration) landing. The design phase (17.1) will interview the tech lead on seven decisions before implementation. Stories 17.2–17.7 build to that locked design.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 17.1 | Orchestration layer design | Blocked — gates on 10.4 landing |
+| 17.2 | Actor/AI video generation | Blocked on 17.1 |
+| 17.3 | Editor integration | Blocked on 17.1 |
+| 17.4 | GHL funnel placeholder wiring | Blocked on 17.1 |
+| 17.5 | Meta campaign creation from copy variations | Blocked on 17.1 |
+| 17.6 | Scheduling (Mon-Thu-Sun + Thursday copy) | Blocked on 17.1 |
+| 17.7 | KPI monitoring + budget scaling + escalations | Blocked on 17.1 |
+
+**Design questions (17.1 interview, when 10.4 lands):**
+1. Where do actor videos live and how do they flow to editor?
+2. How does editor hand off processed video back into the workflow?
+3. How does Gemini wire videos into GHL PSL/pre-call placeholders?
+4. What's the Meta campaign template (budget, audiences, placements)?
+5. How does scheduling work (Cloud Scheduler, Pub/Sub, Firestore triggers)?
+6. Which KPIs trigger alerts, and to whom?
+7. What signal drives budget scaling (ROAS, daily spend trend, cost-per-lead)?
