@@ -338,7 +338,7 @@ is measurable or guesswork.
 | 11.3 | Verified doc claims — checks over prose | In Progress | `11.3-verified-doc-claims.md` |
 | 11.4 | Calibration instrumentation on 10.4 | Draft | `11.4-calibration-instrumentation-on-10.4.md` |
 | 11.5 | Endpoint inventory ahead of each feature story | Draft | `11.5-endpoint-inventory-ahead-of-each-feature-story.md` |
-| 11.6 | Resolve the courses store split | Draft — needs a product decision | `11.6-resolve-the-courses-store-split.md` |
+| 11.6 | Resolve the courses store split | Ready — Option A decided 2026-08-22 | `11.6-resolve-the-courses-store-split.md` |
 
 **11.1 was the one already failing silently.** Angular CLI requires Node
 `v22.22.3` / `v24.15.0` / `v26.0.0`; the dev machine ran `v24.14.0`, one patch
@@ -422,7 +422,7 @@ are the same client and are currently two disconnected records.
 | --- | --- | --- | --- |
 | 13.1 | createOpportunity in the typed service layer | Draft | `13.1-create-opportunity-in-the-service-layer.md` |
 | 13.2 | Fulfillment stage model parity | Draft | `13.2-fulfillment-stage-model-parity.md` |
-| 13.3 | Prospect to fulfillment handoff | Draft — blocked on the Fulfillment location decision | `13.3-prospect-to-fulfillment-handoff.md` |
+| 13.3 | Prospect to fulfillment handoff | Draft — location decided 2026-08-22 | `13.3-prospect-to-fulfillment-handoff.md` |
 | 13.4 | Ascension value on the fulfillment opportunity | Draft | `13.4-ascension-value-on-the-fulfillment-opportunity.md` |
 | 13.5 | Stage SLA timers on the client card | Draft | `13.5-stage-sla-timers-on-the-client-card.md` |
 | 13.6 | Escalations desk | Draft | `13.6-escalations-desk.md` |
