@@ -482,3 +482,100 @@ project-wide move off Firestore; the one feature mid-migration is stalled, story
 **Sequencing:** 13.1 unblocks 13.3. 5.10 and 13.2 both unblock 13.5. 13.4 and 13.5 both sit
 downstream of the handoff, because neither ascension value nor a stage timer
 means anything until clients reliably arrive in the pipeline in the first place.
+
+## Epic 14 — Off Firestore
+
+**Goal:** one store. Postgres holds the data; Firebase keeps Auth and nothing
+else.
+
+Decided 2026-08-23. Assessment and evidence in
+`docs/firestore-exit-assessment.md`. The driver is operating two databases,
+local development, and one query language instead of two — not only Firestore's
+query limits. The cheaper read-model split was considered and rejected for not
+addressing any of those.
+
+**Firebase Auth stays.** Hats live in custom claims on the Auth user, not in a
+collection. Sign-in, sessions and the grant model are untouched by this epic.
+
+**Why it is tractable, all four verified in code:** no `onSnapshot` anywhere, so
+nothing depends on realtime; no `firestore.rules`, so no authorization to port;
+no Firebase reference in `web/src`, so the swap happens behind an unchanged HTTP
+contract; three transaction call sites in total.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 14.1 | Repository seam over every collection | Draft |
+| 14.2 | Local Postgres and the migration runner | Draft |
+| 14.3 | `authCodes`, `authCodeCooldowns` (+ the missing TTL) | Draft |
+| 14.4 | `orgs`, `locations`, `users` | Draft |
+| 14.5 | `bug_reports`, `creatives` | Draft |
+| 14.6 | `auditLog` — copy and verify, never move | Draft |
+| 14.7 | `manual_pages` and versions | Draft |
+| 14.8 | `flow_scripts`: resolve the two-store split | Draft |
+| 14.9 | GHL agency tokens — Postgres or Secret Manager | Draft |
+| 14.10 | Delete `lib/firestore.ts` and drop the SDK | Draft |
+
+**Story 11.6 was the pilot and is done** (Review, 2026-08-23). It proved the
+sequence — dual-write, backfill, verify by count, cut over, delete the old path
+— on a collection whose worst failure is a missing training video rather than a
+missing audit record.
+
+**The actual work is 14.1.** 21 files import `@/lib/firestore` directly across
+12 directories. Until each collection is reachable through one module, every
+later story is a scattered edit instead of a swap.
+
+**14.9 is last and is a separate decision.** Those are live OAuth refresh tokens
+for every sub-account. Losing them is a whole-portfolio outage with no error
+until requests start failing.
+
+## Epic 15 — No hats
+
+**Goal:** a person is the set of grants they hold, not one hat at a time.
+
+Opened 2026-08-23 from `docs/ROLES_AND_GRANTS_PLAN.md` — three design iterations
+and six adversarial reviews, reviewed and marked "not implemented". Sequenced by
+`docs/no-hats-sequence.md`, which re-cuts the plan's story order against a
+dependency graph as §9 of the plan instructs.
+
+**The live bug this exists to fix.** Every client founder in production holds
+five grants and can reach exactly one of them, permanently.
+`functions/src/auth.ts` issues all five; `resolveSession` falls back to
+`availableRoles[0]` because `requestedRole` is always undefined; and the UI to
+change it never shipped. `switchRole` exists in the `RbacService` interface and
+its three implementations and is called by no component. A CEO who also closes
+already holds the closer grant and cannot get to it.
+
+Confirmed still live 2026-08-23, from the other end: granting one account all
+thirteen roles produced an account stuck on `admin`, which is deliberately
+without widgets, with no way to move.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 15.0 | Migration ledger | Draft |
+| 15.A | Grants on the session; delete the dead switcher | Draft |
+| 15.A2 | Registry truth: scope, kpi_summary split, sales widgets | Draft |
+| 15.C | Union reachability | Draft — **moved ahead of 15.B** |
+| 15.B | Per-location entitlement; close the cross-tenant leak | Draft — **moved after 15.C** |
+| 15.D | `hasAnyRoleAnywhere` at location-free gates | Draft — the live bug dies here |
+| 15.F | `validateLocations(locations, role)` | Draft |
+| 15.G | Tab tables and fold; typed 503 | Draft |
+| 15.H | Cut over to tabs | Draft |
+| 15.I | Grant store, reconciler, templates, admin | Draft |
+| 15.K | Delete `currentRole` and `availableRoles` | Draft |
+| 15.M | Retire `ROLE_COOKIE` | Draft |
+| 15.J | Drag and drop | Draft — deliberately last |
+| 15.L | Drop `dashboard_configs` | Draft — not in the same release as 15.H |
+
+**Why C and B swapped.** The plan orders B before C, and its own migration
+findings say "Story B removes the client's only location source four stories
+before its replacement." B is the removal, C is the replacement. A removal goes
+after its replacement exists. This is the re-cut §9 asked for.
+
+**Do not touch the claim shape.** §4 of the plan is the load-bearing decision:
+retyping `locations` makes `parseRoleGrants` drop every entry, which
+`resolveSession` reads as signed out. A rollback would sign out every migrated
+user. Same keys, same types.
+
+**15.0 first, and not only for this epic.** Nothing records which migrations
+have been applied; 006 already failed once on a clean deploy. This epic adds two
+more and the Firestore exit adds one per collection.
