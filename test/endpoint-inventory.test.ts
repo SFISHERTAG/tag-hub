@@ -32,9 +32,25 @@ describe("featureAreaOf", () => {
     expect(featureAreaOf("app/api/flow/org/[orgId]/framework/route.ts")).toBe("api");
   });
 
-  it("returns null for a file outside app/", () => {
-    expect(featureAreaOf("lib/auth/session.ts")).toBeNull();
+  it("returns null for a file the inventory does not track", () => {
     expect(featureAreaOf("web/src/app/app.routes.ts")).toBeNull();
+    expect(featureAreaOf("scripts/something.mjs")).toBeNull();
+  });
+
+  /**
+   * Changed 2026-08-23, story 11.5. This previously asserted that `lib/` was
+   * null, which encoded the blind spot rather than a decision: `"use server"`
+   * marks a file and not a directory, and lib/auth/impersonation-actions.ts
+   * carried two Server Actions the inventory could not see. It reported "0
+   * Server Actions remaining" while the one metric this story exists to track
+   * was not zero.
+   *
+   * A blind spot in a progress metric reads as progress, which is the worst
+   * direction for it to fail in.
+   */
+  it("tracks lib/, because a Server Action can live there and one did", () => {
+    expect(featureAreaOf("lib/auth/session.ts")).toBe("lib");
+    expect(featureAreaOf("lib/auth/impersonation-actions.ts")).toBe("lib");
   });
 
   it("groups a root-level page under root rather than dropping it", () => {

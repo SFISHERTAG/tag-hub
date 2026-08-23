@@ -359,7 +359,7 @@ is measurable or guesswork.
 | 11.2 | Story isolation and merge discipline | Draft | `11.2-story-isolation-and-merge-discipline.md` |
 | 11.3 | Verified doc claims — checks over prose | In Progress | `11.3-verified-doc-claims.md` |
 | 11.4 | Calibration instrumentation on 10.4 | Draft | `11.4-calibration-instrumentation-on-10.4.md` |
-| 11.5 | Endpoint inventory ahead of each feature story | Draft | `11.5-endpoint-inventory-ahead-of-each-feature-story.md` |
+| 11.5 | Endpoint inventory ahead of each feature story | Review — re-run 2026-08-23, metric reached zero |
 | 11.6 | Resolve the courses store split | Ready — Option A decided 2026-08-22 | `11.6-resolve-the-courses-store-split.md` |
 | 11.7 | The root build script masks a failure | Draft | `11.7-the-root-build-script-masks-a-failure.md` |
 

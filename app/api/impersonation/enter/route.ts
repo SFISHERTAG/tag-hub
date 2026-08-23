@@ -10,9 +10,10 @@ import { createImpersonationEntry } from "@/lib/audit/store";
 export const dynamic = "force-dynamic";
 
 /**
- * Story 3.3 — enter a client tenant. HTTP replacement for `enterImpersonation`
- * in lib/auth/impersonation-actions.ts, which redirects and so cannot be called
- * from an SPA.
+ * Story 3.3 — enter a client tenant. This replaced the `enterImpersonation`
+ * Server Action, which redirected and so could not be called from an SPA. That
+ * action was deleted 2026-08-23 (story 11.5) once it had no callers left; it
+ * was the last `"use server"` file in the repo.
  *
  * Deliberately not under /api/auth: that prefix is exempt from proxy.ts's
  * optimistic cookie gate and from the Angular interceptor's 401 refresh, and

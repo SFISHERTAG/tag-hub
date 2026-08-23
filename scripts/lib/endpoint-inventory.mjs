@@ -8,15 +8,29 @@
 // producing it by hand is how a story discovers its own size halfway through.
 
 /**
- * Which feature area a path belongs to, or null if it is not under `app/`.
+ * Which feature area a path belongs to, or null if it is somewhere this
+ * inventory does not track.
  *
- * The first segment, with two deliberate exceptions. `app/api/**` collapses to
- * one area however deep it goes, because endpoints are the thing being counted
- * rather than a feature. `app/l/[locationId]/**` stays whole: it is the
+ * The first segment, with three deliberate exceptions. `app/api/**` collapses
+ * to one area however deep it goes, because endpoints are the thing being
+ * counted rather than a feature. `app/l/[locationId]/**` stays whole: it is the
  * location-scoped surface and it migrates as one unit, so splitting it by its
  * dynamic segment would report four areas that cannot ship separately.
+ *
+ * And `lib/**` is included at all, which it was not until 2026-08-23. Server
+ * Actions are not required to live under `app/` — `"use server"` marks the
+ * file, not the directory — and `lib/auth/impersonation-actions.ts` had carried
+ * two of them since story 3.3. The inventory reported "0 Server Actions
+ * remaining" while that file existed, which is the one number this whole story
+ * exists to get right: the count of `"use server"` files is the metric that has
+ * to reach zero before the Next rendering path can be deleted.
+ *
+ * A blind spot in a progress metric reads as progress. Everything under `lib/`
+ * collapses to one area for the same reason `app/api/**` does — it is not a
+ * feature surface, it is a place actions should not be.
  */
 export function featureAreaOf(path) {
+  if (path.startsWith("lib/")) return "lib";
   if (!path.startsWith("app/")) return null;
 
   const rest = path.slice("app/".length);
