@@ -1,5 +1,9 @@
 # Start here
 
+> If you were handed a different `NEW_SESSION_PROMPT.md`, this is the one that
+> is current. A shorter copy exists on a detached worktree 49 commits behind
+> `main` (`functions-typescript-build-8fa5d4`). Check `main`, per rule 4.
+
 You are picking up TAG. Read this, then read the two documents it names, then
 start. Should take fifteen minutes.
 
@@ -26,11 +30,34 @@ including the one writing this.
 
 ---
 
+## The nine standing orders, in full
+
+Scannable here so you have them before you open anything. Each one in
+`AGENT_COORDINATION.md` §10 carries the incident that produced it — read those
+when you want to argue with a rule rather than obey it, which is encouraged.
+
+1. **Cite or flag.** Every factual claim carries `file:line` and the SHA it was
+   read at, or says it is unverified.
+2. **Validate the instrument.** Plant a hit you know exists and confirm your
+   check finds it, before believing a clean result. Show the planted case.
+3. **Produce the artefact, then describe it.** If you write "attached", a path
+   and SHA must follow.
+4. **A document is not evidence, including this one.** Nor is source code
+   evidence about production — check the artefact.
+5. **When correcting a document, diff it against the original.** Confirm nothing
+   that was *right* disappeared.
+6. **Every count carries its unit.** Files, lines, occurrences. Never add across
+   units or scopes.
+7. **Report produced and survived separately.**
+8. **Prefer a mechanism to a norm.** If a rule can be a script, make it one.
+9. **Verification is never self-assigned and never sighted.** The producer does
+   not verify; the verifier re-derives *before* reading the original.
+
+§11 is the tenth in practice: **if it can run, it needs a story.**
+
 ## Read these two, in order
 
-1. **`docs/AGENT_COORDINATION.md`** — §10 is nine standing orders, §11 is the
-   story rule. Every one has the incident that produced it attached, so you can
-   argue with them rather than obey them.
+1. **`docs/AGENT_COORDINATION.md`** — §10 in full, §11 for the story rule.
 2. **`docs/LETTER_TO_THE_NEXT_LEAD.md`** — fourteen things that went wrong and
    what they cost. Written by the previous lead about their own mistakes.
 
@@ -96,6 +123,40 @@ Then wire 5.12's handler in `app/api`, then 5.13.
 deployed. Running `npm run deploy` in `functions/` ships two open doors.
 
 ---
+
+## Where to kick off
+
+**Do this first, in this order.** It is about an hour and it ends with something
+landed.
+
+1. **Run the three orientation commands above.** Confirm `main`, confirm the
+   live revision. If either surprises you, stop and say so before doing anything
+   else — a wrong baseline makes everything after it wrong.
+
+2. **Port `functions/src/google.ts` to `lib/onboarding/google-docs.ts`.** It is
+   231 lines, needs `googleapis` which is already a root dependency, and it is
+   the next module in the 5.12 rebuild. `lib/onboarding/intake-format.ts` is the
+   worked example — a straight move, a header note saying it was ported and why
+   the `functions/` copy still exists, and tests it did not have before.
+
+3. **Write its tests.** `createGoogleDoc` and `addDocTab` are the two that
+   matter. `intake-format.test.ts` is the model: test the guarantee the module
+   claims, not the lines it contains.
+
+4. **Run the gate and land it.** `npx tsc --noEmit`, `npm run test`,
+   `npm run lint`. One module, one commit.
+
+Then stop and ask about `email` and `gemini` — both need a new root dependency
+and that is Sam's call, not yours.
+
+**Why this task.** It is self-contained, it has a worked example one commit back,
+it needs no new dependency and no deploy, and it moves a real user-facing gap: a
+client who submits the intake form currently gets nothing.
+
+**What not to start with.** Do not begin with the coordination layer, the swarm
+model, or an audit of the audits. On 2026-08-23 that layer produced seven
+documents, four had substantive errors, and none of it changed a line of shipped
+code.
 
 ## Open decisions that are Sam's, not yours
 
