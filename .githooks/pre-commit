@@ -56,6 +56,12 @@ run_check() {
   fi
 }
 
+# Ownership of main, checked first: if this session should not be writing to
+# main at all, none of the other gates matter. Note that git does NOT run this
+# hook for a merge — .githooks/pre-merge-commit and .githooks/pre-push cover
+# the two paths that never come through here, and the merge path is the one
+# that actually moved main on 2026-08-23.
+run_check "check:main-ownership"   scripts/check-main-ownership.mjs
 run_check "check:agent-isolation" scripts/check-agent-isolation.mjs
 run_check "check:branch-freshness"  scripts/check-branch-freshness.mjs
 run_check "check:secret-scan"      scripts/check-secret-scan.mjs

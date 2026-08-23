@@ -1,0 +1,10 @@
+#!/bin/sh
+# tag-agent-hooks v2 — installed into .git/hooks by scripts/install-hooks.mjs.
+# Edit this file, not the installed copy, then run: npm run hooks:install
+#
+# git does NOT run pre-commit for a merge. This hook is the one that would
+# actually have caught 2026-08-23, when a session merged a feature branch into
+# main while another was mid-story against the previous tip.
+if [ -f scripts/check-main-ownership.mjs ]; then
+  node scripts/check-main-ownership.mjs || exit 1
+fi

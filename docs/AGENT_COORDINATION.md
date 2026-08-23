@@ -106,6 +106,50 @@ immediately rather than reasoning about who might have seen it.
 
 ---
 
+## 9. `main` has one owner, and it is not whoever gets there first
+
+Added 2026-08-23, after `main` moved twice in one day under a session that was mid-story
+against the previous tip. Nothing was corrupted either time — the changes did not overlap —
+which is exactly why it went unremarked. The damage is not a bad merge; it is that a session
+verified against a commit that stopped being `main` while it worked, which is §2's "green
+check from the wrong branch" arriving by a different road.
+
+**The rule.** One session owns `main` at a time. Everyone else works on a branch and asks the
+owner to land it. Ownership is handed over explicitly, in a message, not assumed from being
+idle or from having a merge ready.
+
+**The enforcement**, because an agreement nobody checks is the drift:
+
+| Hook | Catches |
+| --- | --- |
+| `pre-commit` | An ordinary commit made while on `main` |
+| `pre-merge-commit` | A **merge** into `main`. This is the one that matters |
+| `pre-push` | A push of `refs/heads/main` from any branch |
+
+All three call `scripts/check-main-ownership.mjs`.
+
+**Why it is not a `pre-commit` check alone: `git` does not run `pre-commit` for a merge.** A
+guard living only there would not have caught the event that prompted it. If you are ever
+tempted to consolidate these three into one hook, that is the reason not to.
+
+**The escape hatch is typed each time, never persisted:**
+
+```bash
+TAG_MAIN_OWNER=1 git merge --no-ff claude/some-branch
+TAG_MAIN_OWNER=1 git push origin main
+```
+
+A marker written to config gets set once and then outlives the intent, which is how a guard
+ends up existing on paper only. Typing it is the moment to ask whether you are actually the
+owner. If you are not, stop.
+
+**Parking the main checkout is the other half.** With `main` checked out nowhere,
+`git worktree list` shows zero holders and nobody can move it without an explicit,
+visible checkout. Park with `git switch -c hold/main-parked` from the same commit: it changes
+no file, preserves untracked files, and leaves stashes alone. Never park with
+`git checkout --detach`, which is what deleted a tracked file from another session's tree on
+2026-08-20 (§1).
+
 ## Message shape
 
 Address it, then answer the four questions the recipient actually has.
