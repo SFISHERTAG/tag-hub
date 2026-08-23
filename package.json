@@ -12,6 +12,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "check:story-status": "node scripts/check-story-status.mjs",
+    "check:story-regression": "node scripts/check-story-regression.mjs",
     "check:agent-isolation": "node scripts/check-agent-isolation.mjs",
     "check:branch-freshness": "node scripts/check-branch-freshness.mjs",
     "check:secret-scan": "node scripts/check-secret-scan.mjs",
