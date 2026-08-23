@@ -131,7 +131,7 @@ fc61ff9  Initial Skool training schema + import
 - 2026-08-21 production outage: 4.5 hours, sign-in down
 - Two independent faults: (1) `gcloud run deploy --source` bypassed Firebase config check; (2) users left with dead refresh tokens
 - This branch documents both and adds safeguard to prevent (1) recurring
-- Also documents diagnostics: image repo field names the deploy method, grepping bundle for `AIza` confirms sign-in will work
+- Also documents diagnostics: image repo field names the deploy method, grepping bundle for `AIza` confirms sign-in will work *(both superseded 2026-08-22 — see the correction below and `docs/DEPLOYING_THE_APP.md`)*
 
 **Action:** Rebase to f55143b, merge to main. This is the outage knowledge.
 
@@ -193,7 +193,14 @@ fc61ff9  Initial Skool training schema + import
 
 **Deploy method diagnosis:**
 - Image repo field: `hub/` = cloudbuild.yaml (correct), `cloud-run-source-deploy/...` = source deploy (broken)
-- Bundle check: `curl -s https://hub.taxadvisorygrowth.com/signin | grep -oE '/_next/static/[^"]+\.js' | ... | grep -c 'AIza'` — non-zero = key inlined (sign-in works), zero = broken
+- Bundle check: ~~`curl -s .../signin | grep -oE '/_next/static/[^"]+\.js' | ... | grep -c 'AIza'` — non-zero = key inlined, zero = broken~~
+
+> **Corrected 2026-08-22.** The bundle check above is obsolete and inverted.
+> `/signin` is served by Angular now, which has no `firebase` dependency and no
+> client-side key; auth is server-side OTP. Zero is the *healthy* result. Acting
+> on this line rolled back a working deploy. The image-repo field is also only a
+> hint, not proof — a source-built image served correctly for days. Current
+> verification is in `docs/DEPLOYING_THE_APP.md`.
 
 ---
 
