@@ -21,7 +21,6 @@ export type Tenant = {
   ownerGhlUserId?: string;
 };
 
-const TENANTS_COLLECTION = "locations";
 
 /**
  * Whether a string is safe to use as a Firestore document id for this
@@ -30,6 +29,15 @@ const TENANTS_COLLECTION = "locations";
  * or pasted id from ever addressing something other than a flat document
  * under `locations/`.
  */
+/*
+ * This module is named for "tenants" and the collection is `locations`. It held
+ * a `TENANTS_COLLECTION = "locations"` constant saying so, now unused because
+ * the path lives in the repository seam. Keeping the note: the Postgres table
+ * in migration 003 is `tenants`, the Firestore collection is `locations`, and
+ * this file is named for the first while reading the second. Three names, one
+ * entity. Story 14.4 has to settle it rather than inherit it.
+ */
+
 export function isValidLocationId(value: string): boolean {
   return /^[A-Za-z0-9_-]{1,128}$/.test(value);
 }

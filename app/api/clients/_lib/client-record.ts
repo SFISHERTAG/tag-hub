@@ -1,9 +1,12 @@
-/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
-   Queries directly instead of going through a scoped metric fetch. Not a leak
-   today (every read is keyed on a clientId that gateClient has already
-   authorised), but it is the pattern the zone exists to stop, so this comment
-   is the migration marker: move the data path into lib/dashboard/metrics.ts
-   and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
+/*
+ * The `import/no-restricted-paths` disable that stood here is gone: the data
+ * path now runs through the `lib/data` repository seam (story 14.1), so the
+ * zone no longer fires and eslint reported the directive as unused.
+ *
+ * The concern it recorded is NOT resolved and is kept deliberately. This still
+ * queries directly instead of going through a scoped metric fetch, which is the pattern the zone exists to stop. The remaining move is
+ * into lib/dashboard/metrics.ts. See docs/ROLE_SCOPE_MODEL.md.
+ */
 import "server-only";
 import { repository } from "@/lib/data";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";

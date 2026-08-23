@@ -1,5 +1,6 @@
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
+import type { ManualPageVersion as StoredVersion } from "@/lib/data";
 import { toFields, fromFields } from "./serialize";
 import type { ManualPage, ManualPageSummary, ManualPageVersion } from "./types";
 
@@ -19,24 +20,29 @@ import type { ManualPage, ManualPageSummary, ManualPageVersion } from "./types";
  * "cannot be imported from a Client Component" throw.
  */
 
-const COLLECTION = "manual_pages";
-
 function pageDoc(pageId: string) {
-  return firestore().collection(COLLECTION).doc(pageId);
+  return repository().manualPages.doc(pageId);
+}
+
+function versions(pageId: string) {
+  return repository().manualPageVersions(pageId);
 }
 
 export async function listManualPages(): Promise<ManualPageSummary[]> {
-  const snap = await firestore().collection(COLLECTION).orderBy("num").get();
-  return snap.docs.map((doc) => {
-    const data = doc.data();
-    return { id: doc.id, num: data.num, title: data.title, eyebrow: data.eyebrow, status: data.status };
-  });
+  const found = await repository().manualPages.list({ orderBy: { field: "num" } });
+  return found.map(({ id, data }) => ({
+    id,
+    num: data.num,
+    title: data.title,
+    eyebrow: data.eyebrow,
+    status: data.status,
+  })) as ManualPageSummary[];
 }
 
 export async function getManualPage(pageId: string): Promise<ManualPage | null> {
-  const doc = await pageDoc(pageId).get();
-  if (!doc.exists) return null;
-  return fromFields(doc.id, doc.data()!);
+  const data = await pageDoc(pageId).get();
+  if (!data) return null;
+  return fromFields(pageId, data);
 }
 
 /**
@@ -49,7 +55,7 @@ export async function seedManualPage(page: ManualPage): Promise<void> {
   await pageDoc(id).set(toFields(fields));
 }
 
-function toManualPageVersion(id: string, data: FirebaseFirestore.DocumentData): ManualPageVersion {
+function toManualPageVersion(id: string, data: StoredVersion): ManualPageVersion {
   return {
     id,
     page: fromFields(data.pageId, data.page),
@@ -60,8 +66,10 @@ function toManualPageVersion(id: string, data: FirebaseFirestore.DocumentData): 
 }
 
 export async function listManualPageVersions(pageId: string): Promise<ManualPageVersion[]> {
-  const snap = await pageDoc(pageId).collection("versions").orderBy("createdAt", "desc").get();
-  return snap.docs.map((doc) => toManualPageVersion(doc.id, doc.data()));
+  const found = await versions(pageId).list({
+    orderBy: { field: "createdAt", direction: "desc" },
+  });
+  return found.map(({ id, data }) => toManualPageVersion(id, data));
 }
 
 /**
@@ -77,19 +85,23 @@ export async function updateManualPage(
 ): Promise<void> {
   const doc = pageDoc(pageId);
   const current = await doc.get();
-  if (!current.exists) throw new Error(`manual_pages/${pageId} does not exist`);
+  if (!current) throw new Error(`manual_pages/${pageId} does not exist`);
 
-  const versionId = doc.collection("versions").doc().id;
+  const versionId = versions(pageId).newId();
   const versionFields = {
     pageId,
-    page: current.data()!, // already in stored (blocksJson) form — round-trips through fromFields on read
+    page: current, // already in stored (blocksJson) form — round-trips through fromFields on read
     authorUid: actor.uid,
     authorEmail: actor.email,
     createdAt: Date.now(),
   };
 
-  const batch = firestore().batch();
-  batch.set(doc.collection("versions").doc(versionId), versionFields);
+  // One batch, not two writes: the version snapshot and the new live content
+  // must land together. A partial write loses the ability to revert to what
+  // was there a moment ago, which is the whole point of the versions
+  // subcollection.
+  const batch = repository().batch();
+  batch.set(versions(pageId).doc(versionId), versionFields);
   batch.set(doc, toFields(next));
   await batch.commit();
 }
@@ -99,9 +111,9 @@ export async function revertManualPage(
   versionId: string,
   actor: { uid: string; email: string },
 ): Promise<void> {
-  const versionDoc = await pageDoc(pageId).collection("versions").doc(versionId).get();
-  if (!versionDoc.exists) throw new Error(`version ${versionId} not found for manual_pages/${pageId}`);
-  const version = toManualPageVersion(versionDoc.id, versionDoc.data()!);
+  const versionData = await versions(pageId).doc(versionId).get();
+  if (!versionData) throw new Error(`version ${versionId} not found for manual_pages/${pageId}`);
+  const version = toManualPageVersion(versionId, versionData);
   const { num, title, eyebrow, lede, status, level, blocks } = version.page;
   await updateManualPage(pageId, { num, title, eyebrow, lede, status, level, blocks }, actor);
 }

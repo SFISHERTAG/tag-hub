@@ -4,7 +4,7 @@ import type { BatchWriter, CollectionRef, DocRef, Query, StoredDoc, Tx } from ".
 
 import type { Group } from "@/lib/auth/groups";
 import type { CsmRecord } from "@/lib/dashboard/csm-directory";
-import type { ClientData, ClientAlert } from "@/lib/dashboard/csm-clients";
+import type { ClientAlert } from "@/lib/dashboard/csm-clients";
 import type { BugReport } from "@/lib/bug-reports";
 import type { DeadLetterEntry } from "@/lib/webhooks/types";
 import type { Tenant } from "@/lib/ghl/tenants";

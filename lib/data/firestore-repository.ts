@@ -23,19 +23,15 @@ import type {
   Tx,
   Writable,
 } from "./types";
-import type { Group } from "@/lib/auth/groups";
 import type { CsmRecord } from "@/lib/dashboard/csm-directory";
-import type { ClientData, ClientAlert } from "@/lib/dashboard/csm-clients";
-import type { BugReport } from "@/lib/bug-reports";
+import type { ClientAlert } from "@/lib/dashboard/csm-clients";
 import type { DeadLetterEntry } from "@/lib/webhooks/types";
-import type { Tenant } from "@/lib/ghl/tenants";
 import type {
   StoredAgencyToken,
   StoredLocationToken,
   AppointmentOutcome,
   FollowUpConfig,
 } from "@/lib/ghl/store";
-import type { AuditEvent } from "@/lib/audit/store";
 import type { ConversionLogEntry } from "@/lib/meta/conversions";
 import type { OnboardingCompletion } from "@/lib/onboarding/store";
 import type { CampaignLaunchState } from "@/lib/onboarding/campaign-launch-store";
