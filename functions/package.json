@@ -30,6 +30,8 @@
     "typescript": "^5.5.2"
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1"
+    "@types/pg": "^8.23.1",
+    "eslint": "^9.0.0",
+    "eslint-plugin-import": "^2.30.0"
   }
 }
