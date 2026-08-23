@@ -72,7 +72,7 @@ const ACTIVATED: ActivatedCampaign = {
   campaignId: 'camp-1',
   opportunityId: 'opp-1',
   stageId: 'stage-2',
-  stageName: 'AP 2 - Ads Launched',
+  stageName: 'Campaign Launched',
   activated: true,
 };
 
@@ -241,7 +241,7 @@ describe('CampaignLaunch', () => {
     await component['activate']();
 
     expect(activate).toHaveBeenCalledWith('camp-1', 'loc1');
-    expect(component['activated']()?.stageName).toBe('AP 2 - Ads Launched');
+    expect(component['activated']()?.stageName).toBe('Campaign Launched');
   });
 
   it('cannot activate twice — a second click is a second spend decision', async () => {

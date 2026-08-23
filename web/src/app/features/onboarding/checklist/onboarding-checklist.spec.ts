@@ -26,8 +26,8 @@ const READY: ChecklistReady = {
   locationId: 'loc1',
   tenantName: 'Acme Tax',
   opportunityId: 'opp-1',
-  stage: 'PR1',
-  stageName: 'PR 1 - Paperwork',
+  stage: 'OB',
+  stageName: 'Onboarding Booked',
   daysInStage: 3,
   tasks: [
     { id: 'task-a', label: 'Send the welcome pack' },
@@ -35,7 +35,7 @@ const READY: ChecklistReady = {
   ],
   completedTaskIds: ['task-a'],
   readOnly: false,
-  stageOrder: ['PR1', 'PR2', 'AP1'],
+  stageOrder: ['OB', 'OC', 'TP', 'IC', 'CC', 'CR', 'EC', 'CL', 'FA', 'DC', 'AS', 'OFF'],
 };
 
 const checklist = vi.fn<(locationId?: string) => Promise<ApiResult<Checklist>>>();
@@ -89,7 +89,7 @@ describe('OnboardingChecklist', () => {
   });
 
   it('renders "no client selected" as a state, not as an error', async () => {
-    const { component } = await setup({ state: 'no-client', stageOrder: ['PR1'] });
+    const { component } = await setup({ state: 'no-client', stageOrder: ['OB'] });
 
     expect(component['state']()).toBe('no-client');
     expect(component['error']()).toBeNull();
@@ -101,7 +101,7 @@ describe('OnboardingChecklist', () => {
       state: 'no-opportunity',
       locationId: 'loc1',
       tenantName: 'Acme Tax',
-      stageOrder: ['PR1'],
+      stageOrder: ['OB', 'OC', 'TP', 'IC', 'CC', 'CR', 'EC', 'CL', 'FA', 'DC', 'AS', 'OFF'],
     });
 
     expect(component['state']()).toBe('no-opportunity');
@@ -112,7 +112,7 @@ describe('OnboardingChecklist', () => {
   it('shows the stage, the days in it, and the tasks the server sent', async () => {
     const { component } = await setup();
 
-    expect(component['stageLabel']()).toBe('PR1');
+    expect(component['stageLabel']()).toBe('OB');
     expect(component['daysLabel']()).toBe('3 days in stage');
     expect(component['progressLabel']()).toBe('1 of 2 done');
     expect(component['isComplete']('task-a')).toBe(true);

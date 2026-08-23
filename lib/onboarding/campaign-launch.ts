@@ -287,8 +287,12 @@ function toActionableError(error: unknown, offerLabel: string): Error {
   return new Error(`Campaign creation failed for "${offerLabel}": ${message}`);
 }
 
-/** Fulfillment pipeline stage this story advances the opportunity to. */
-export const AP2_STAGE_NAME = "AP 2 - Ads Launched";
+/**
+ * Fulfillment pipeline stage this story advances the opportunity to.
+ * Updated 2026-08-23: GHL pipeline rebuilt with new stage names.
+ * Old name was "AP 2 - Ads Launched" — new name is "Campaign Launched".
+ */
+export const AP2_STAGE_NAME = "Campaign Launched";
 
 export type ActivationResult = {
   campaignId: string;
