@@ -514,14 +514,25 @@ no table, no service, no delivery. Story 13.5 needs one for SLA breaches and
 of those lands first. Preferences before delivery is a page of switches that
 control nothing.
 
-**One item is deliberately not here: the conflict calendar.** Connecting a
-personal Google or Outlook calendar is an OAuth grant between the user and
-Google or Microsoft, performed in GHL's own UI, and no GHL scope exposes it.
-Doing it in-app means requesting sensitive Google Calendar scopes, which puts
-the whole application into Google verification —
-`app/api/auth/google/route.ts` records that sign-in deliberately avoids exactly
-that. 16.1 deep-links to GHL instead. Revisit only if conflict detection turns
-out to block adoption.
+**The conflict calendar is an open decision, not a task.** Connecting a personal
+Google or Outlook calendar is an OAuth grant between the user and Google or
+Microsoft, performed in GHL's own UI, and no GHL scope exposes it.
+
+Deep-linking to GHL was the first answer and it only serves TAG staff. Story
+13.6 already records why: clients do not log into GHL, and several are not in
+our agency at all. `client_closer` and `client_setter` are real roles held by
+people with a Hub login and no GHL seat — the population most exposed to
+double-booking. The alternative, our own Google Calendar OAuth, serves everyone
+and triggers Google verification for the whole application, which
+`app/api/auth/google/route.ts` says sign-in was deliberately scoped to avoid.
+
+**Decided 2026-08-23: keep the client out of GHL.** That eliminates GHL seats
+entirely and reduces the deep-link to a TAG-staff convenience. For client-side
+callers it is our own Google OAuth or no conflict detection — there is no third
+path. The next step is to price Google verification properly: calendar scopes
+are *sensitive* rather than *restricted*, which means verification and brand
+review but not the annual third-party security assessment, and that is a
+materially different cost from the one 16.1 first assumed.
 
 ## Epic 14 — Off Firestore
 
