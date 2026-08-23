@@ -36,6 +36,34 @@ const TRAILER = "Agent-Worktree";
  */
 const MERGE_TRAILER = "Merged-By-Worktree";
 
+/**
+ * Records that a guard was deliberately overridden on this commit.
+ *
+ * Added 2026-08-23. A commit reached `main` directly via TAG_MAIN_OWNER=1. The
+ * flow was correct — the guard refused, the session asked Sam, Sam approved,
+ * the typed override was used — but the commit itself carried no sign of it.
+ * Reconstructing that took a reflog read and a trailer lookup.
+ *
+ * The escape hatches are deliberately NOT being made harder to reach. A guard
+ * that refuses without naming the legitimate path is an obstacle, and the
+ * friction did its job here: it forced the question to a human. What was
+ * missing is a record, so an override is auditable after the fact rather than
+ * archaeological.
+ */
+const OVERRIDES = [
+  ["TAG_MAIN_OWNER", "main-ownership"],
+  ["TAG_SEAM_OK", "firestore-seam"],
+  ["TAG_ROLE_STRINGS_OK", "role-strings"],
+  ["TAG_STALE_OK", "branch-freshness"],
+  ["TAG_STORY_REOPEN_OK", "story-regression"],
+];
+
+/** Names every guard bypassed on this commit, or null when none were. */
+function overridesUsed() {
+  const used = OVERRIDES.filter(([env]) => process.env[env] === "1").map(([, name]) => name);
+  return used.length > 0 ? used.join(", ") : null;
+}
+
 function git(args) {
   return execSync(`git ${args}`, { stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
 }
@@ -73,7 +101,10 @@ function main() {
   const message = readFileSync(messageFile, "utf8");
   if (new RegExp(`^${TRAILER}:`, "m").test(message)) return;
 
-  const body = message.replace(/\s*$/, "");
+  const bypassed = overridesUsed();
+  const body =
+    message.replace(/\s*$/, "") +
+    (bypassed && !/^Guard-Override:/m.test(message) ? `\nGuard-Override: ${bypassed}` : "");
   // Trailers belong in one block at the end. If the message already ends with
   // trailers (Co-Authored-By and friends), join that block rather than
   // starting a second one separated by a blank line.
