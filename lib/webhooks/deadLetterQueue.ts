@@ -1,8 +1,7 @@
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
+import type { Query } from "@/lib/data";
 import type { DeadLetterEntry } from "./types";
-
-const DLQ_COLLECTION = "webhookDeadLetter";
 
 /**
  * Record a webhook event that couldn't be processed: bad signature,
@@ -17,10 +16,12 @@ const DLQ_COLLECTION = "webhookDeadLetter";
 export async function recordFailure(
   entry: Omit<DeadLetterEntry, "id" | "flagged" | "resolved" | "receivedAt">,
 ): Promise<string> {
-  const doc = await firestore()
-    .collection(DLQ_COLLECTION)
-    .add({ ...entry, receivedAt: Date.now(), flagged: false, resolved: false });
-  return doc.id;
+  return repository().webhookDeadLetter.add({
+    ...entry,
+    receivedAt: Date.now(),
+    flagged: false,
+    resolved: false,
+  });
 }
 
 /**
@@ -31,19 +32,16 @@ export async function recordFailure(
  * look) — collapsing the two into one boolean would lose that distinction.
  */
 export async function flagForReview(entryId: string, flaggedBy: string, reason?: string): Promise<void> {
-  await firestore()
-    .collection(DLQ_COLLECTION)
-    .doc(entryId)
-    .update({
-      flagged: true,
-      flaggedBy,
-      flaggedReason: reason ?? null,
-      flaggedAt: Date.now(),
-    });
+  await repository().webhookDeadLetter.doc(entryId).update({
+    flagged: true,
+    flaggedBy,
+    flaggedReason: reason ?? undefined,
+    flaggedAt: Date.now(),
+  });
 }
 
 export async function resolve(entryId: string, resolvedBy: string): Promise<void> {
-  await firestore().collection(DLQ_COLLECTION).doc(entryId).update({
+  await repository().webhookDeadLetter.doc(entryId).update({
     resolved: true,
     resolvedBy,
     resolvedAt: Date.now(),
@@ -52,25 +50,31 @@ export async function resolve(entryId: string, resolvedBy: string): Promise<void
 
 /** Flagged and still unresolved — the "needs a human now" list. */
 export async function listFlagged(source?: string): Promise<DeadLetterEntry[]> {
-  let query = firestore()
-    .collection(DLQ_COLLECTION)
-    .where("flagged", "==", true)
-    .where("resolved", "==", false)
-    .orderBy("receivedAt", "desc")
-    .limit(200);
-
-  if (source) query = query.where("source", "==", source);
-
-  const snapshot = await query.get();
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as DeadLetterEntry);
+  return list([
+    { field: "flagged", op: "==", value: true },
+    { field: "resolved", op: "==", value: false },
+  ], source);
 }
 
 /** Everything unresolved, flagged or not — the full backlog. */
 export async function listUnresolved(source?: string): Promise<DeadLetterEntry[]> {
-  let query = firestore().collection(DLQ_COLLECTION).where("resolved", "==", false).orderBy("receivedAt", "desc").limit(200);
+  return list([{ field: "resolved", op: "==", value: false }], source);
+}
 
-  if (source) query = query.where("source", "==", source);
-
-  const snapshot = await query.get();
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as DeadLetterEntry);
+/**
+ * Shared query shape for the two listings above. They differ only by whether
+ * `flagged` is required, and the optional source filter behaved identically in
+ * both, so it lives here once rather than being repeated with the ordering and
+ * the 200 cap alongside it.
+ */
+async function list(
+  where: NonNullable<Query<DeadLetterEntry>["where"]>,
+  source?: string,
+): Promise<DeadLetterEntry[]> {
+  const found = await repository().webhookDeadLetter.list({
+    where: source ? [...where, { field: "source", op: "==", value: source }] : where,
+    orderBy: { field: "receivedAt", direction: "desc" },
+    limit: 200,
+  });
+  return found.map(({ id, data }) => ({ ...data, id }));
 }

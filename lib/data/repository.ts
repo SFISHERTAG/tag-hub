@@ -61,6 +61,8 @@ export type ManualPageVersion = {
   readonly createdAt: number;
 };
 
+export type StoredBugReport = Omit<BugReport, "id">;
+
 export type AgencyRoot = {
   readonly primaryCompanyId?: string;
 };
@@ -85,7 +87,8 @@ export interface Repository {
   readonly groups: CollectionRef<Group>;
   readonly csm: CollectionRef<CsmRecord>;
   readonly clients: CollectionRef<ClientData>;
-  readonly bugReports: CollectionRef<BugReport>;
+  /** Stored shape: the doc id is the id, so it is not a field. */
+  readonly bugReports: CollectionRef<StoredBugReport>;
   readonly manualPages: CollectionRef<ManualPageFields>;
   readonly webhookDeadLetter: CollectionRef<DeadLetterEntry>;
   readonly webhookEventsProcessed: CollectionRef<ProcessedEvent>;

@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { Sentinel } from "./sentinels";
+
 /**
  * Store-neutral primitives for the repository seam (story 14.1).
  *
@@ -54,11 +56,20 @@ export type Tx = {
   readonly __brand: "RepositoryTransaction";
 };
 
+/**
+ * What a caller may write: any field may instead be a store-computed sentinel.
+ *
+ * Without this, `createdAt: serverTimestamp()` against a `createdAt: number`
+ * field forces a double cast at every write site, and a cast is exactly the
+ * thing that would let a genuinely wrong value through unnoticed.
+ */
+export type Writable<T> = { [K in keyof T]: T[K] | Sentinel };
+
 export interface DocRef<T> {
   readonly path: string;
   readonly id: string;
   get(tx?: Tx): Promise<T | null>;
-  set(data: T, options?: { readonly merge?: boolean }, tx?: Tx): Promise<void>;
+  set(data: Writable<T>, options?: { readonly merge?: boolean }, tx?: Tx): Promise<void>;
   /**
    * Create-if-absent. Resolves `true` when this caller won the create and
    * `false` when the document already existed — it does not throw on the
@@ -68,8 +79,8 @@ export interface DocRef<T> {
    * The Firestore implementation reads the gRPC ALREADY_EXISTS code; the
    * Postgres one will read a unique-violation. Neither leaks past the seam.
    */
-  create(data: T): Promise<boolean>;
-  update(data: Partial<T>, tx?: Tx): Promise<void>;
+  create(data: Writable<T>): Promise<boolean>;
+  update(data: Partial<Writable<T>>, tx?: Tx): Promise<void>;
   delete(tx?: Tx): Promise<void>;
 }
 
@@ -78,7 +89,7 @@ export interface CollectionRef<T> {
   doc(id: string): DocRef<T>;
   /** Allocates an id without writing. `lib/knowledge-base/db.ts` needs one before its batch. */
   newId(): string;
-  add(data: T): Promise<string>;
+  add(data: Writable<T>): Promise<string>;
   list(query?: Query<T>): Promise<StoredDoc<T>[]>;
   /** One round trip for many ids. Without it `lib/ghl/store.ts` degrades to N reads. */
   getAll(ids: readonly string[]): Promise<StoredDoc<T>[]>;
@@ -89,8 +100,8 @@ export interface CollectionRef<T> {
  * snapshot and the page update together; a partial write loses revert history.
  */
 export interface BatchWriter {
-  set<T>(ref: DocRef<T>, data: T, options?: { readonly merge?: boolean }): void;
-  update<T>(ref: DocRef<T>, data: Partial<T>): void;
+  set<T>(ref: DocRef<T>, data: Writable<T>, options?: { readonly merge?: boolean }): void;
+  update<T>(ref: DocRef<T>, data: Partial<Writable<T>>): void;
   delete<T>(ref: DocRef<T>): void;
   commit(): Promise<void>;
 }

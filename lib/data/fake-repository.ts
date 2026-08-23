@@ -6,6 +6,7 @@ import type {
   Query,
   StoredDoc,
   Tx,
+  Writable,
 } from "./types";
 import type {
   AgencyRoot,
@@ -17,6 +18,7 @@ import type {
   MetaFetchLog,
   ProcessedEvent,
   Repository,
+  StoredBugReport,
 } from "./repository";
 import { mapSentinels, sentinelKind, sentinelValues, type Sentinel } from "./sentinels";
 import type { Group } from "@/lib/auth/groups";
@@ -237,19 +239,19 @@ class FakeDocRef<T> implements DocRef<T> {
     return this.store.read(this.path) as T | null;
   }
 
-  async set(data: T, options?: { readonly merge?: boolean }): Promise<void> {
+  async set(data: Writable<T>, options?: { readonly merge?: boolean }): Promise<void> {
     const row = data as unknown as Row;
     if (options?.merge) this.store.merge(this.path, row);
     else this.store.write(this.path, row);
   }
 
-  async create(data: T): Promise<boolean> {
+  async create(data: Writable<T>): Promise<boolean> {
     if (this.store.has(this.path)) return false;
     this.store.write(this.path, data as unknown as Row);
     return true;
   }
 
-  async update(data: Partial<T>): Promise<void> {
+  async update(data: Partial<Writable<T>>): Promise<void> {
     this.store.merge(this.path, data as unknown as Row);
   }
 
@@ -272,7 +274,7 @@ class FakeCollectionRef<T> implements CollectionRef<T> {
     return this.store.newId();
   }
 
-  async add(data: T): Promise<string> {
+  async add(data: Writable<T>): Promise<string> {
     const id = this.store.newId();
     this.store.write(`${this.path}/${id}`, data as unknown as Row);
     return id;
@@ -309,7 +311,7 @@ class FakeBatchWriter implements BatchWriter {
 
   constructor(private readonly store: FakeStore) {}
 
-  set<T>(ref: DocRef<T>, data: T, options?: { readonly merge?: boolean }): void {
+  set<T>(ref: DocRef<T>, data: Writable<T>, options?: { readonly merge?: boolean }): void {
     this.queued.push(() => {
       const row = data as unknown as Row;
       if (options?.merge) this.store.merge(ref.path, row);
@@ -317,7 +319,7 @@ class FakeBatchWriter implements BatchWriter {
     });
   }
 
-  update<T>(ref: DocRef<T>, data: Partial<T>): void {
+  update<T>(ref: DocRef<T>, data: Partial<Writable<T>>): void {
     this.queued.push(() => this.store.merge(ref.path, data as unknown as Row));
   }
 
@@ -356,7 +358,7 @@ export function fakeRepository(store: FakeStore = new FakeStore()): {
       return collection<ClientData>("clients");
     },
     get bugReports() {
-      return collection<BugReport>("bugReports");
+      return collection<StoredBugReport>("bugReports");
     },
     get manualPages() {
       return collection<ManualPageFields>("manual_pages");

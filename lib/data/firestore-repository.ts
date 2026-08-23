@@ -21,6 +21,7 @@ import type {
   Query,
   StoredDoc,
   Tx,
+  Writable,
 } from "./types";
 import type { Group } from "@/lib/auth/groups";
 import type { CsmRecord } from "@/lib/dashboard/csm-directory";
@@ -48,6 +49,7 @@ import type {
   MetaFetchLog,
   ProcessedEvent,
   Repository,
+  StoredBugReport,
 } from "./repository";
 
 /*
@@ -75,8 +77,8 @@ function toFieldValue(sentinel: Sentinel): unknown {
   }
 }
 
-function row<T>(codec: Codec<T>, data: T): Record<string, unknown> {
-  return mapSentinels(codec.toStore(data), toFieldValue);
+function row<T>(codec: Codec<T>, data: Writable<T> | Partial<Writable<T>>): Record<string, unknown> {
+  return mapSentinels(codec.toStore(data as T), toFieldValue);
 }
 
 type Native = { readonly tx: Transaction };
@@ -108,7 +110,7 @@ class FsDocRef<T> implements DocRef<T> {
     return this.codec.fromStore(data);
   }
 
-  async set(data: T, options?: { readonly merge?: boolean }, tx?: Tx): Promise<void> {
+  async set(data: Writable<T>, options?: { readonly merge?: boolean }, tx?: Tx): Promise<void> {
     const written = row(this.codec, data);
     const native = nativeTx(tx);
     if (native) {
@@ -120,7 +122,7 @@ class FsDocRef<T> implements DocRef<T> {
     else await this.ref.set(written);
   }
 
-  async create(data: T): Promise<boolean> {
+  async create(data: Writable<T>): Promise<boolean> {
     try {
       await this.ref.create(row(this.codec, data));
       return true;
@@ -132,8 +134,8 @@ class FsDocRef<T> implements DocRef<T> {
     }
   }
 
-  async update(data: Partial<T>, tx?: Tx): Promise<void> {
-    const written = row(this.codec, data as T);
+  async update(data: Partial<Writable<T>>, tx?: Tx): Promise<void> {
+    const written = row(this.codec, data);
     const native = nativeTx(tx);
     if (native) {
       native.update(this.ref, written);
@@ -196,7 +198,7 @@ class FsCollectionRef<T> implements CollectionRef<T> {
     return this.ref.doc().id;
   }
 
-  async add(data: T): Promise<string> {
+  async add(data: Writable<T>): Promise<string> {
     const created = await this.ref.add(row(this.codec, data));
     return created.id;
   }
@@ -232,14 +234,14 @@ class FsBatchWriter implements BatchWriter {
     this.batch = firestore().batch();
   }
 
-  set<T>(ref: DocRef<T>, data: T, options?: { readonly merge?: boolean }): void {
+  set<T>(ref: DocRef<T>, data: Writable<T>, options?: { readonly merge?: boolean }): void {
     const native = firestore().doc(ref.path);
     const written = mapSentinels(data as unknown as Record<string, unknown>, toFieldValue);
     if (options?.merge) this.batch.set(native, written, { merge: true });
     else this.batch.set(native, written);
   }
 
-  update<T>(ref: DocRef<T>, data: Partial<T>): void {
+  update<T>(ref: DocRef<T>, data: Partial<Writable<T>>): void {
     this.batch.update(
       firestore().doc(ref.path),
       mapSentinels(data as unknown as Record<string, unknown>, toFieldValue),
@@ -269,6 +271,8 @@ function document<T>(path: string, codec: Codec<T> = identityCodec<T>()): DocRef
  */
 const authCodeCodec = timestampCodec<AuthCode>(["expiresAt", "issuedAt"]);
 const cooldownCodec = timestampCodec<AuthCodeCooldown>(["lastIssuedAt"]);
+/** `createdAt` is written as a serverTimestamp sentinel and read back as a Timestamp. */
+const bugReportCodec = timestampCodec<StoredBugReport>(["createdAt"]);
 
 export function firestoreRepository(): Repository {
   return {
@@ -288,7 +292,7 @@ export function firestoreRepository(): Repository {
       return collection<ClientData>("clients");
     },
     get bugReports() {
-      return collection<BugReport>("bugReports");
+      return collection<StoredBugReport>("bugReports", bugReportCodec);
     },
     get manualPages() {
       return collection<ManualPageFields>("manual_pages");

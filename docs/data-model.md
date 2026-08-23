@@ -133,7 +133,7 @@ account.
 
 | Table | Purpose | Sync source | Backfill done? | Notes |
 |---|---|---|---|---|
-| `clients` | Denormalized client summary (FLOW health, metrics) | Firestore `locations` | Partial | See backfill note below |
+| `clients` | **Not in use.** Created by `003`, never queried. The live client data is the Firestore `clients` collection read by `lib/dashboard/csm-clients.ts` | — | N/A | Same name, different store. See the dead-table note below |
 | `appointments` | Show/DQ/booked appointments from GHL | GHL API → Cloud Functions → this table | Yes | Includes timing (pre-call vs. on-call DQ) |
 | `courses` | Course catalog and structure | Migrating from Firestore | **NO — BLOCKED** | See migration status |
 | `course_progress` | Per-user completion tracking | **Postgres is authoritative** (story 11.6, 2026-08-23) | N/A | Was a split-brain: schema here, live data in Firestore. Firestore path deleted; backfill verified by count |
@@ -208,9 +208,27 @@ requirement on these reads.
 
 ### Backfill Status
 
-**Clients table:** `locations` snapshot was loaded once. New locations are sync'd
-via Cloud Functions on onboarding. Updates to location names/metadata are NOT
-sync'd from Firestore—check schema for stale data policy.
+**Clients table: nothing reads it.** This previously described a live
+denormalised table with a partial backfill and a stale-data policy. Verified
+2026-08-23 against code: there is no SQL against `clients` anywhere in `lib/`,
+`app/` or `functions/src`. The client data the app actually serves comes from
+the **Firestore** collection of the same name, via
+`lib/dashboard/csm-clients.ts` at four call sites.
+
+The shared name is why the old text read as plausible. Anyone checking whether
+`clients` is used finds that it is, in Firestore, and stops there. A dead
+Postgres table beside a live Firestore collection of the same name is worse than
+an obviously unused one.
+
+It is one of fourteen such tables. `003` creates seventeen and only three —
+`csm`, `dashboard_configs`, `course_progress` — are ever queried. The rest are
+schemas written months ago for a migration that did not finish, and they are
+listed in `docs/14.1-firestore-audit.md`.
+
+Treat them as unproven rather than as a head start. A stale schema that nearly
+fits is more dangerous than none, because it invites a cutover onto columns
+nobody re-examined. Stories 14.4 through 14.9 each read their table in `003` and
+make an explicit adopt-or-replace call before writing a backfill.
 
 **Courses:** split by half, not by store. Corrected 2026-08-22; the previous
 text here claimed Firestore was authoritative and that code still read from it,
