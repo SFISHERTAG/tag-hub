@@ -227,6 +227,21 @@ agreement, not verification.
 
 ---
 
+**Overrides are recorded, not prevented.** Each standing order above that is
+mechanised carries a typed escape hatch, and every one of them stamps a
+`Guard-Override:` trailer onto the resulting commit. The hatches are deliberately
+easy to reach: a guard that refuses without naming the legitimate path is an
+obstacle, and on 2026-08-23 the friction did its job — `check-main-ownership`
+refused a commit to `main`, the session escalated to Sam, Sam approved, and the
+override was used correctly. What was missing was any sign of it on the commit
+itself, which took a reflog read to reconstruct. Now it is one `git log` away.
+
+Monitoring conditions for a supervisory loop are in `docs/KRONOS_WATCHPOINTS.md`,
+kept separate on purpose: these are rules for whoever is working, that is
+configuration for something watching.
+
+---
+
 ## Message shape
 
 Address it, then answer the four questions the recipient actually has.
