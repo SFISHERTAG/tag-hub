@@ -83,6 +83,68 @@ You want `csm` set and `csm_directory` null.
 
 ---
 
+## 1b. Applying migrations: the ledger, and who is allowed to
+
+Added 2026-08-23 after applying `011` surfaced two things nobody had written
+down.
+
+### `tag_app_user` cannot alter tables it does not own
+
+```
+ERROR:  must be owner of table course_progress
+```
+
+That is `010_course_progress_reporting.sql` — a single `CREATE INDEX` — failing
+as the application user. The split, which had never been stated:
+
+| Migration does | Works as `tag_app_user`? |
+|---|---|
+| `CREATE TABLE` (new table, then grants on it) | Yes. The creator owns it |
+| `CREATE INDEX` / `ALTER TABLE` on an existing table | **No.** Requires the owner role |
+
+Every migration up to `009` created its own tables, so this never came up. `010`
+is the first to touch a table it did not create, and it will not be the last —
+Epic 14 alters existing tables repeatedly.
+
+So a migration is applied with the owner role, not with the app user, unless it
+only creates new objects. The alternative, worth considering once rather than
+working around every time, is to make `tag_app_user` the owner of the tables it
+uses.
+
+### `010` is outstanding
+
+`010_course_progress_reporting.sql` is on disk, in git, and **not applied**. It
+needs the owner role per above. `npm run check:migrations` reports it, and will
+keep reporting it until someone with those rights runs:
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction \
+  -f functions/sql/010_course_progress_reporting.sql
+```
+
+Nothing is broken while it is missing. It is a reporting index; the aggregate it
+serves does a sequential scan without it, and `course_progress` is currently
+close to empty.
+
+### An applied migration is immutable
+
+`011` has run. Editing that file now would change its bytes without changing
+what the database did, which is the exact drift the checksum column exists to
+catch. Corrections go in a new migration, or in this document. The ledger row
+for `010` was removed by hand rather than by editing `011`'s backfill, for the
+same reason.
+
+### Why the ledger's own backfill is not evidence
+
+`011` inserts `001`–`010` with a NULL checksum because it is asserting that
+those files already ran. It cannot verify that, and within minutes of being
+applied the assertion turned out to be **wrong about `010`** — the file existed,
+the row claimed it had run, and the index it creates was absent.
+
+That is the argument for the whole story, made by accident on its first day.
+Treat unverified rows as "someone believed this" and not as "this happened". A
+row only becomes evidence once a checksum is written by a real apply.
+
 ## 2. Webhook secrets, and the Phase 1 cutover
 
 **What breaks without it.** Phase 1 provisioning returns 500 on every call,
