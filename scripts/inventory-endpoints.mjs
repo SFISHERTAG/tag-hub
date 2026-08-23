@@ -37,12 +37,16 @@ function currentCommit() {
 }
 
 /**
- * Tracked files under app/ only. `git ls-files` rather than a directory walk,
+ * Tracked files under app/ and lib/. `git ls-files` rather than a directory walk,
  * so an untracked scratch file or a stale build artifact cannot inflate a count
  * that an estimate is built on.
  */
 function loadAppFiles() {
-  const listed = execSync('git ls-files "app/*.ts" "app/*.tsx"', { cwd: repoRoot })
+  // lib/ is listed as well as app/, and that is not tidiness. `"use server"`
+  // marks a file, not a directory, and lib/auth/impersonation-actions.ts held
+  // two Server Actions that this inventory could not see — so it reported zero
+  // remaining while the metric it exists to track was not zero.
+  const listed = execSync('git ls-files "app/*.ts" "app/*.tsx" "lib/*.ts"', { cwd: repoRoot })
     .toString()
     .split("\n")
     .filter(Boolean);
