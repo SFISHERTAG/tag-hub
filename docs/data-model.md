@@ -118,6 +118,18 @@ renaming a table after 003 grants explicitly on it (004 and 006 both do). A new
 table added without its own GRANT works on a fresh sequential deploy and fails
 on an existing database, which is the harder of the two to notice.
 
+**Migration ledger (`schema_migrations`, story 15.0).** Which migrations have
+been applied is now recorded rather than remembered: one row per filename, with
+`applied_at` and a sha256 of the file. `npm run check:migrations` reports drift
+— files on disk with no row, rows with no file, and the one that matters, a file
+edited after it was applied. It is read-only and never applies anything; there
+is no staging environment and these files are hand-applied against production,
+so a runner that guesses wrong is worse than a human with a trustworthy list.
+
+`011` backfills `001`–`010` with a NULL checksum. Those rows assert history
+nothing can verify, so the checker reports them as *unverified* rather than as
+agreement — a checksum invented after the fact would look like evidence.
+
 **Migration order.** `functions/sql/*.sql` run in file-number order, and each
 one has to be safe both on a fresh database and on one that has already seen
 its predecessors. 006 originally assumed the opposite order and failed on

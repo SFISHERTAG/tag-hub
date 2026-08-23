@@ -22,6 +22,7 @@
     "web:test": "npm --prefix web run test -- --watch=false",
     "web:gate": "npm run web:build && npm run web:lint && npm run web:test",
     "check:functions": "npm --prefix functions run build && npm --prefix functions run lint",
+    "check:migrations": "tsx scripts/check-migrations.mjs",
     "prepare": "node scripts/install-hooks.mjs || true",
     "build:next-only": "next build"
   },
