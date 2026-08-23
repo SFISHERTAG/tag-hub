@@ -20,6 +20,22 @@ import { basename } from "node:path";
 
 const TRAILER = "Agent-Worktree";
 
+/**
+ * Who PERFORMED a merge, which is a different fact from who authored the
+ * content and is the one that matters on main.
+ *
+ * Added 2026-08-23 after a monitoring session flagged main moving and
+ * attributed it to Sam. It was not Sam; every session in this repo commits as
+ * the same git author, so authorship cannot distinguish them. Ordinary commits
+ * carry Agent-Worktree and merges carried nothing, which meant the highest
+ * stakes commits in the repo were the only ones with no attribution at all.
+ *
+ * Deliberately NOT Agent-Worktree. Stamping that on a merge would claim
+ * authorship of the merged branch's work, which is the reason merges were
+ * skipped in the first place and that reason still holds.
+ */
+const MERGE_TRAILER = "Merged-By-Worktree";
+
 function git(args) {
   return execSync(`git ${args}`, { stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
 }
@@ -32,6 +48,15 @@ function agentId() {
   return m ? m[1] : "main-checkout";
 }
 
+/** Records the worktree that performed a merge. Never claims authorship. */
+function stampMerge(messageFile) {
+  const message = readFileSync(messageFile, "utf8");
+  if (new RegExp(`^${MERGE_TRAILER}:`, "m").test(message)) return;
+  const body = message.replace(/\s*$/, "");
+  const separator = /\n[A-Za-z-]+:[^\n]*$/.test(body) ? "\n" : "\n\n";
+  writeFileSync(messageFile, `${body}${separator}${MERGE_TRAILER}: ${worktree()}\n`);
+}
+
 function main() {
   const [messageFile, source] = process.argv.slice(2);
   if (!messageFile) return;
@@ -39,7 +64,11 @@ function main() {
   // A merge or squash message is assembled by git from other commits, and an
   // amend already carries whatever trailer the original had. Stamping those
   // either duplicates an existing trailer or attributes someone else's work.
-  if (source === "merge" || source === "squash" || source === "commit") return;
+  //
+  // A merge still gets a MERGE trailer, because "who merged this into main" is
+  // a separate question from "who wrote it" and is the one nobody could answer.
+  if (source === "merge") return stampMerge(messageFile);
+  if (source === "squash" || source === "commit") return;
 
   const message = readFileSync(messageFile, "utf8");
   if (new RegExp(`^${TRAILER}:`, "m").test(message)) return;
