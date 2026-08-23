@@ -249,14 +249,73 @@ answer, rather than continuously against memory. Two things make it safe:
   earliest date it could have been and note it, rather than splitting the
   difference.
 
+## Verified in GHL, 2026-08-22
+
+Checked live in the Tax Advisory Growth sub-account (`rb6hPt8Ue77L4abghRMc`)
+under The Deal Closers LLC. All four open questions are now answered.
+
+**1. Opportunity custom fields exist and are first-class.** Settings has a
+dedicated Opportunity object tab with Create field and Create folder. Date picker
+is a supported type. Keys are stable dotted strings
+(`{{opportunity.date_joined}}`), not per-location GUIDs.
+
+*This corrects story 5.10 AC1/AC2.* That story assumed field ids differ per
+sub-account and specified a key-to-id resolver with a cache. If the dotted key is
+addressable directly, the resolver may be unnecessary. Verify against the API
+before building it, since the UI showing a key does not prove the API accepts one.
+
+**2. The workflow trigger exists.** Trigger **Opportunity changed**, described as
+"Fires on field updates within an opportunity." Its filter list has a dedicated
+**Opportunity custom field** group, so a workflow can fire on a specific milestone
+field changing. There is no separate "custom field changed" trigger; this is the
+one.
+
+**3. The workflow action exists.** Action **Update opportunity** sets the stage.
+It has an explicit toggle, "Allow opportunity to move to any previous stage in
+pipeline", off by default.
+
+*Design note:* leave that toggle **off** for the rollup. Forward-only means a
+field cleared by accident cannot yank a client backwards through their pipeline,
+and backwards movement should be a human decision.
+
+**4. The GHL-side rollup is therefore viable**, and the sync-loop fallback is not
+needed.
+
+### The Fulfillment folder already exists, and it is being built right now
+
+The sub-account already has 18 opportunity fields in 3 folders, including a
+folder named **Fulfillment** holding eight of them:
+
+| Field | Type | Key | Created |
+| --- | --- | --- | --- |
+| Build | Checkbox | `opportunity.build` | **2026-08-22 12:20** |
+| High Level Name | Single line | `opportunity.high_level_n…` | **2026-08-22 11:43** |
+| A2P 10DLC | Checkbox | `opportunity.a2p_10dlc` | **2026-08-22 11:34** |
+| Intake Form URL | Single line | `opportunity.intake_form_…` | 2025-10-07 |
+| Agreement Signed | Dropdown (single) | `opportunity.agreement_si…` | 2025-10-01 |
+| Intake Status | Dropdown (multi) | `opportunity.intake_statu…` | 2025-10-01 |
+| Onboarding Access | Checkbox | `opportunity.prerequisite…` | 2025-10-01 |
+| Date Joined | Date picker | `opportunity.date_joined` | 2025-10-01 |
+
+Three were created the same day this document was written, so someone is actively
+building this folder.
+
+**The conflict:** the new fields are **checkboxes**, and this document's central
+decision is date-only. A checkbox records that something happened and forgets
+when, which is exactly the property that made the tracking sheet untrustworthy.
+Converting later means the dates before the conversion do not exist and cannot be
+recovered, so the cost of continuing on checkboxes compounds daily.
+
+This needs resolving before more fields are added. It is not a criticism of the
+work in progress; the folder, the naming, and the instinct are all right.
+
 ## Open questions
 
-1. Which derived signals are actually reachable? A2P status via the
-   LeadConnector API is the important one and is unverified.
-2. Are opportunity custom fields readable and writable on the API version this
-   codebase pins (`2021-07-28`)? Assumed yes, unverified. This gates everything.
-3. Can a GHL workflow trigger on an opportunity custom field change and write an
-   opportunity stage? The rollup design depends on it. If not, the rollup moves
-   to the backend and the sync-loop cost in the section above becomes real.
-4. Does renaming the stages break any existing workflow that triggers on a stage
-   name?
+1. Does the API accept the dotted key directly, or only the per-location field
+   id? Determines whether story 5.10 needs its resolver.
+2. Which derived signals are reachable? A2P status via the LeadConnector API is
+   still the important unknown; the `A2P 10DLC` field above is manual today.
+3. Does renaming the stages break any existing published workflow that triggers
+   on a stage name? Tax Advisory Growth has six published workflows, several
+   named for stage transitions (`Closed Won -> New Client + Tag`,
+   `Closed Lost -> Results`), so this needs checking rather than assuming.
