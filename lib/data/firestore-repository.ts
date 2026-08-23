@@ -8,7 +8,10 @@ import type {
   WriteBatch,
 } from "@google-cloud/firestore";
 
+import { FieldValue } from "@google-cloud/firestore";
+
 import { firestore } from "@/lib/firestore";
+import { mapSentinels, sentinelKind, sentinelValues, type Sentinel } from "./sentinels";
 import type { Codec } from "./codec";
 import { identityCodec, timestampCodec } from "./codec";
 import type {
@@ -60,6 +63,22 @@ import type {
 /** Firestore's gRPC status code for ALREADY_EXISTS. */
 const ALREADY_EXISTS = 6;
 
+/** Sentinels are resolved on the way out, never stored as the branded object. */
+function toFieldValue(sentinel: Sentinel): unknown {
+  switch (sentinelKind(sentinel)) {
+    case "serverTimestamp":
+      return FieldValue.serverTimestamp();
+    case "deleteField":
+      return FieldValue.delete();
+    case "arrayUnion":
+      return FieldValue.arrayUnion(...sentinelValues(sentinel));
+  }
+}
+
+function row<T>(codec: Codec<T>, data: T): Record<string, unknown> {
+  return mapSentinels(codec.toStore(data), toFieldValue);
+}
+
 type Native = { readonly tx: Transaction };
 
 function nativeTx(tx: Tx | undefined): Transaction | null {
@@ -90,20 +109,20 @@ class FsDocRef<T> implements DocRef<T> {
   }
 
   async set(data: T, options?: { readonly merge?: boolean }, tx?: Tx): Promise<void> {
-    const row = this.codec.toStore(data);
+    const written = row(this.codec, data);
     const native = nativeTx(tx);
     if (native) {
-      if (options?.merge) native.set(this.ref, row, { merge: true });
-      else native.set(this.ref, row);
+      if (options?.merge) native.set(this.ref, written, { merge: true });
+      else native.set(this.ref, written);
       return;
     }
-    if (options?.merge) await this.ref.set(row, { merge: true });
-    else await this.ref.set(row);
+    if (options?.merge) await this.ref.set(written, { merge: true });
+    else await this.ref.set(written);
   }
 
   async create(data: T): Promise<boolean> {
     try {
-      await this.ref.create(this.codec.toStore(data));
+      await this.ref.create(row(this.codec, data));
       return true;
     } catch (error) {
       // The collision is the answer, not a failure: exactly one concurrent
@@ -114,13 +133,13 @@ class FsDocRef<T> implements DocRef<T> {
   }
 
   async update(data: Partial<T>, tx?: Tx): Promise<void> {
-    const row = this.codec.toStore(data as T);
+    const written = row(this.codec, data as T);
     const native = nativeTx(tx);
     if (native) {
-      native.update(this.ref, row);
+      native.update(this.ref, written);
       return;
     }
-    await this.ref.update(row);
+    await this.ref.update(written);
   }
 
   async delete(tx?: Tx): Promise<void> {
@@ -178,8 +197,8 @@ class FsCollectionRef<T> implements CollectionRef<T> {
   }
 
   async add(data: T): Promise<string> {
-    const written = await this.ref.add(this.codec.toStore(data));
-    return written.id;
+    const created = await this.ref.add(row(this.codec, data));
+    return created.id;
   }
 
   async list(query?: Query<T>): Promise<StoredDoc<T>[]> {
@@ -215,13 +234,16 @@ class FsBatchWriter implements BatchWriter {
 
   set<T>(ref: DocRef<T>, data: T, options?: { readonly merge?: boolean }): void {
     const native = firestore().doc(ref.path);
-    const row = data as unknown as Record<string, unknown>;
-    if (options?.merge) this.batch.set(native, row, { merge: true });
-    else this.batch.set(native, row);
+    const written = mapSentinels(data as unknown as Record<string, unknown>, toFieldValue);
+    if (options?.merge) this.batch.set(native, written, { merge: true });
+    else this.batch.set(native, written);
   }
 
   update<T>(ref: DocRef<T>, data: Partial<T>): void {
-    this.batch.update(firestore().doc(ref.path), data as Record<string, unknown>);
+    this.batch.update(
+      firestore().doc(ref.path),
+      mapSentinels(data as unknown as Record<string, unknown>, toFieldValue),
+    );
   }
 
   delete<T>(ref: DocRef<T>): void {
@@ -245,7 +267,7 @@ function document<T>(path: string, codec: Codec<T> = identityCodec<T>()): DocRef
  * `authCodes` and `authCodeCooldowns` are the two paths that store `Timestamp`.
  * Their codecs are the reason `Timestamp` does not appear above this line.
  */
-const authCodeCodec = timestampCodec<AuthCode>(["expiresAt"]);
+const authCodeCodec = timestampCodec<AuthCode>(["expiresAt", "issuedAt"]);
 const cooldownCodec = timestampCodec<AuthCodeCooldown>(["lastIssuedAt"]);
 
 export function firestoreRepository(): Repository {
@@ -323,4 +345,18 @@ export function firestoreRepository(): Repository {
       }));
     },
   };
+}
+
+let memo: Repository | null = null;
+
+/**
+ * The app's repository. Memoised so call sites can reach for it freely without
+ * each one building its own, the same reason `lib/firestore.ts` memoises the
+ * client it wraps.
+ *
+ * 14.2 replaces the body of this function and nothing else.
+ */
+export function repository(): Repository {
+  if (!memo) memo = firestoreRepository();
+  return memo;
 }

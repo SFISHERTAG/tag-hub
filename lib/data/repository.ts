@@ -30,6 +30,8 @@ export type AuthCode = {
   readonly codeHash: string;
   /** Epoch millis. Firestore stores a Timestamp; the seam normalises on read. */
   readonly expiresAt: number;
+  /** Epoch millis, same normalisation. */
+  readonly issuedAt?: number;
   readonly attempts: number;
 };
 

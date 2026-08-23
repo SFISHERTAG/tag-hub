@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { FakeStore, fakeRepository } from "./fake-repository";
 import type { ProcessedEvent } from "./repository";
+import { deleteField, serverTimestamp } from "./sentinels";
 
 /*
  * These cover the five operations the audit found beyond get/set/query, plus
@@ -141,3 +142,30 @@ describe("repository seam", () => {
     expect(store.read("groups/g1")).toEqual({ name: "closers" });
   });
 });
+
+describe("server-side sentinels", () => {
+  it("lets the store assign serverTimestamp, not the caller", async () => {
+    const { repository, store } = fakeRepository();
+    const id = await repository.bugReports.add({
+      title: "broken",
+      createdAt: serverTimestamp(),
+    } as never);
+
+    const row = store.read(`bugReports/${id}`);
+    expect(typeof row?.createdAt).toBe("number");
+    // The branded object must never reach the store.
+    expect(JSON.stringify(row)).not.toContain("__tag_sentinel__");
+  });
+
+  it("removes a nested field with deleteField rather than writing undefined", async () => {
+    const { repository, store } = fakeRepository();
+    const ref = repository.onboardingChecklists("loc-1").doc("opp-1");
+
+    await ref.set({ completedTasks: { a: true, b: true } } as never);
+    await ref.set({ completedTasks: { b: deleteField() } } as never, { merge: true });
+
+    const row = store.read("locations/loc-1/onboardingChecklists/opp-1");
+    expect(row?.completedTasks).toEqual({ a: true });
+    expect(Object.keys(row?.completedTasks as object)).not.toContain("b");
+  });
+})

@@ -22,4 +22,5 @@ export type {
   Repository,
 } from "./repository";
 
-export { firestoreRepository } from "./firestore-repository";
+export { firestoreRepository, repository } from "./firestore-repository";
+export { arrayUnion, deleteField, serverTimestamp, type Sentinel } from "./sentinels";

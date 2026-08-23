@@ -18,6 +18,7 @@ import type {
   ProcessedEvent,
   Repository,
 } from "./repository";
+import { mapSentinels, sentinelKind, sentinelValues, type Sentinel } from "./sentinels";
 import type { Group } from "@/lib/auth/groups";
 import type { CsmRecord } from "@/lib/dashboard/csm-directory";
 import type { ClientData, ClientAlert } from "@/lib/dashboard/csm-clients";
@@ -47,6 +48,46 @@ import type { CampaignLaunchState } from "@/lib/onboarding/campaign-launch-store
  */
 
 type Row = Record<string, unknown>;
+
+/** Marks a key the caller asked to delete. Pruned on write, never stored. */
+const DELETED = Symbol("deleted");
+
+/**
+ * Tests need a serverTimestamp that is deterministic, so this counts instead of
+ * reading the clock. What matters for the seam is that the STORE assigns it and
+ * the caller does not, which is preserved either way.
+ */
+let clock = 0;
+
+function resolveSentinel(sentinel: Sentinel): unknown {
+  switch (sentinelKind(sentinel)) {
+    case "serverTimestamp":
+      clock += 1;
+      return clock;
+    case "deleteField":
+      return DELETED;
+    case "arrayUnion":
+      return sentinelValues(sentinel);
+  }
+}
+
+/** Drops DELETED keys at every level, so a deleted field is absent, not undefined. */
+function prune(row: Row): Row {
+  const out: Row = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (value === DELETED) continue;
+    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      out[key] = prune(value as Row);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+function resolved(row: Row): Row {
+  return mapSentinels(row, resolveSentinel);
+}
 
 function matches(row: Row, field: string, op: Comparison, value: unknown): boolean {
   const actual = row[field];
@@ -85,11 +126,34 @@ export class FakeStore {
   }
 
   write(path: string, row: Row): void {
-    this.rows.set(path, { ...row });
+    this.rows.set(path, prune(resolved(row)));
   }
 
+  /**
+   * Merge is shallow at the top level but must still honour a nested delete,
+   * because the one live deleteField in the repo is nested:
+   * `{ completedTasks: { [taskId]: deleteField() } }`.
+   */
   merge(path: string, row: Row): void {
-    this.rows.set(path, { ...(this.rows.get(path) ?? {}), ...row });
+    const current = this.rows.get(path) ?? {};
+    const incoming = resolved(row);
+    const merged: Row = { ...current };
+    for (const [key, value] of Object.entries(incoming)) {
+      const existing = merged[key];
+      if (
+        value !== null &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        existing !== null &&
+        typeof existing === "object" &&
+        !Array.isArray(existing)
+      ) {
+        merged[key] = { ...(existing as Row), ...(value as Row) };
+      } else {
+        merged[key] = value;
+      }
+    }
+    this.rows.set(path, prune(merged));
   }
 
   remove(path: string): void {
