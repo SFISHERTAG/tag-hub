@@ -43,7 +43,8 @@ depend on it, rather than four stories earlier with a gap behind it.
 | # | Story | Depends on | Why here |
 |---|---|---|---|
 | 0 | Migration ledger + backfill 001–009 | — | Nothing tracks what SQL has been applied. 006 already failed once on a clean deploy. Three more migrations are coming |
-| A | `grants` on the session, beside `currentRole`. Reduced `SessionPayload`. Delete dead `switchRole` and `POST /api/session/role` | 0 | Additive. `currentRole` stays, so nothing breaks. The switcher is provably dead so deleting it is a no-op |
+| A | `grants` on the session, beside `currentRole`. Reduced `SessionPayload` | 0 | Additive. `currentRole` stays, so nothing breaks |
+| — | *Switcher deletion moved from A to D (2026-08-23).* The switcher has no component caller, but it is reachable from a console and is currently the only way to change hat. Deleting it in A removes the workaround four stories before D removes the need for one | | |
 | A2 | Registry truth: `scope` on both registries, `kpi_summary` split, sales roles on pipeline/day-view, widget-parity check | A | Independent of the location work. Ships the salesperson/ROAS rule and gives `tag_sales` widgets for the first time |
 | **C** | Union reachability. `Session.locations` → `reachableLocations` | A | **Moved ahead of B.** Additive; creates the location source B will rely on |
 | **B** | `location-context.ts` as the single tenant-scoped authority. Convert every tenant-scoped gate together. `?locationId=` required | C | **Moved after C.** Closes the cross-tenant leak. Every gate converts in one story, per the plan's own warning against a partial conversion |

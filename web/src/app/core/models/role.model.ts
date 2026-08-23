@@ -62,3 +62,21 @@ export const HAT_DESCRIPTIONS: Record<Role, string> = {
 export function isRole(value: unknown): value is Role {
   return typeof value === 'string' && (ROLE_LIST as readonly string[]).includes(value);
 }
+
+/**
+ * The roles whose reach is every location, regardless of their grant.
+ *
+ * Story 15.A. Mirrors `GLOBAL_ROLES` in `lib/auth/grants.ts` and the two must
+ * change together: a divergence shows a screen the API will refuse, or hides
+ * one it would have served. The server is authoritative — this exists so the
+ * guard can avoid a round trip, never to make the decision.
+ *
+ * The plan counted three inline copies of this triple and there were four; this
+ * was the one it missed, because it looked for them server-side.
+ */
+export const GLOBAL_ROLES: readonly Role[] = [ROLES.TAG_EXEC, ROLES.TAG_CSD, ROLES.ADMIN];
+
+/** True when the role reaches every location. */
+export function isGlobalRole(role: string): boolean {
+  return (GLOBAL_ROLES as readonly string[]).includes(role);
+}

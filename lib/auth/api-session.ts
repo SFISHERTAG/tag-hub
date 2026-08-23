@@ -2,6 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { getSession, getImpersonation, type Session } from "./session";
 import { ROLES } from "./roles";
+import { isGlobalRole } from "./grants";
 import type { ApiError } from "../api/errorInterceptor";
 
 /**
@@ -74,11 +75,7 @@ export async function requireApiLocationAccess(
 
   const { session } = gate;
 
-  if (
-    session.currentRole === ROLES.TAG_EXEC ||
-    session.currentRole === ROLES.TAG_CSD ||
-    session.currentRole === ROLES.ADMIN
-  ) {
+  if (isGlobalRole(session.currentRole)) {
     return gate;
   }
 

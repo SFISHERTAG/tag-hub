@@ -1,4 +1,4 @@
-import type { Role } from "./roles";
+import { ROLES, type Role } from "./roles";
 
 /**
  * The write side of Story 7.6's per-hat scope.
@@ -37,6 +37,28 @@ export const SCOPE_LEVELS = ["self", "team", "tenancy"] as const;
  * about the message: "this team is too large" and "your role change failed" are
  * different problems and only one of them is true.
  */
+/**
+ * The roles whose reach is every location, regardless of what their grant says.
+ *
+ * Story 15.A. This was written out inline three times — session.ts:205,
+ * session.ts:296 and api-session.ts:78 — byte-identical, and three places to
+ * forget when a fourth global role appears.
+ *
+ * It belongs here rather than in role-labels.ts because it is the constant that
+ * makes ROLES_AND_GRANTS_PLAN.md §4 enforceable: "global reach comes from the
+ * role, not the claim". Any design expressing the wildcard as `locations: []`
+ * turns an ordinary admin typo — a blank locations textarea, which
+ * app/api/admin/users/_locations.ts returns as `[]` — into "reaches every
+ * tenant". Because reach is decided here, `locations: []` can keep meaning no
+ * locations, and that empty textarea keeps failing closed.
+ */
+export const GLOBAL_ROLES: readonly Role[] = [ROLES.TAG_EXEC, ROLES.TAG_CSD, ROLES.ADMIN];
+
+/** True when the role reaches every location. Takes a string so callers need not narrow first. */
+export function isGlobalRole(role: string): boolean {
+  return (GLOBAL_ROLES as readonly string[]).includes(role);
+}
+
 export const CLAIMS_BYTE_LIMIT = 1000;
 
 export class GrantValidationError extends Error {
