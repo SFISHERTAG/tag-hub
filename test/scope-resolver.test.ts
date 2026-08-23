@@ -15,6 +15,9 @@ function session(overrides: Partial<Session> & { currentRole: Role }): Session {
     email: "a@test",
     availableRoles: [overrides.currentRole],
     locations: ["loc-a"],
+    // Story 15.A added Session.grants. resolveScope does not read it; the
+    // default keeps the fixture a valid Session without implying otherwise.
+    grants: [{ role: overrides.currentRole, locations: ["loc-a"] }],
     ...overrides,
   };
 }

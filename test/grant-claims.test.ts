@@ -184,6 +184,7 @@ describe("what is written survives being read", () => {
       locations: ["loc-a"],
       scope: written.scope,
       team: written.team,
+      grants: [written],
     };
     const scope = resolveScope(session);
     expect(scope.level).toBe("team");
@@ -200,6 +201,7 @@ describe("what is written survives being read", () => {
       locations: ["loc-a"],
       scope: written.scope,
       team: written.team,
+      grants: [written],
     };
     // DEFAULT_SCOPE_BY_ROLE says "team" for a sales manager, and an empty team
     // narrows to self. Unchanged by this story, and asserted so it stays that way.

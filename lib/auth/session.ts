@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminAuth, getLiveClaims, SESSION_COOKIE } from "./admin";
 import { hasAnyRole, isRole, ROLES, type Role } from "./roles";
+import { isGlobalRole } from "./grants";
 import { listAllLocationIds } from "../ghl/tenants";
 
 /**
@@ -78,6 +79,16 @@ export type Session = {
   scope?: "self" | "team" | "tenancy";
   /** Team uids on the current grant, when its scope is "team". */
   team?: string[];
+  /**
+   * Every grant this person holds, not just the one `currentRole` names.
+   *
+   * Story 15.A, and deliberately unused by this story. `parseRoleGrants` has
+   * always built the full array and `resolveSession` has always thrown all but
+   * one entry away; this keeps it. Later stories read it and remove readers of
+   * `currentRole` one at a time, so that by 15.K deleting `currentRole` is a
+   * pure removal rather than the ~30-site rewrite that failed review.
+   */
+  grants: RoleGrant[];
 };
 
 /**
@@ -201,11 +212,7 @@ export async function resolveSession(
     // tag_exec, tag_csd, and admin get all known locations dynamically —
     // a CS Director's whole-department view needs every client's location
     // reachable, not just the ones on their own individual grant.
-    if (
-      currentRole === ROLES.TAG_EXEC ||
-      currentRole === ROLES.TAG_CSD ||
-      currentRole === ROLES.ADMIN
-    ) {
+    if (isGlobalRole(currentRole)) {
       locations = await listAllLocationIds();
     }
 
@@ -217,6 +224,9 @@ export async function resolveSession(
       locations,
       scope: currentGrant?.scope,
       team: currentGrant?.team,
+      // The full set, kept rather than discarded. Nothing reads it yet; see
+      // the field's comment on Session for why it arrives before its readers.
+      grants: roleGrants,
     };
   } catch {
     // Expired, revoked, malformed, or forged — all mean "not signed in".
@@ -292,12 +302,7 @@ export async function ownsLocation(session: Session, locationId: string): Promis
   if (!locationId) return false;
 
   // tag_exec, tag_csd, and admin can access any location
-  if (
-    session.currentRole === ROLES.TAG_EXEC ||
-    session.currentRole === ROLES.TAG_CSD ||
-    session.currentRole === ROLES.ADMIN
-  )
-    return true;
+  if (isGlobalRole(session.currentRole)) return true;
 
   if (session.locations.includes(locationId)) return true;
 

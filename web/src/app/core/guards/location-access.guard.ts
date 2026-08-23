@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { RBAC_SERVICE } from '../services/rbac.service';
-import { ROLES } from '../models/role.model';
+import { ROLES, isGlobalRole } from '../models/role.model';
 
 /**
  * Client-side mirror of requireLocationAccess in lib/auth/session.ts.
@@ -35,14 +35,10 @@ export const locationAccessGuard: CanActivateFn = (route) => {
   // and refusing is the safe reading of it.
   if (!locationId) return router.createUrlTree(['/']);
 
-  // The wide hats reach every tenant. Mirrors lib/auth/session.ts, and the two
-  // must change together: a divergence here shows a screen the API will refuse,
-  // or hides one it would have served.
-  if (
-    session.currentRole === ROLES.TAG_EXEC ||
-    session.currentRole === ROLES.TAG_CSD ||
-    session.currentRole === ROLES.ADMIN
-  ) {
+  // The wide hats reach every tenant. Mirrors GLOBAL_ROLES in lib/auth/grants.ts,
+  // and the two must change together: a divergence here shows a screen the API
+  // will refuse, or hides one it would have served.
+  if (isGlobalRole(session.currentRole)) {
     return true;
   }
 
