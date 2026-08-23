@@ -130,6 +130,18 @@ so a runner that guesses wrong is worse than a human with a trustworthy list.
 nothing can verify, so the checker reports them as *unverified* rather than as
 agreement — a checksum invented after the fact would look like evidence.
 
+**Applied 2026-08-23, and the backfill was immediately wrong.** It claimed
+`010_course_progress_reporting.sql` had run. It had not: the index that file
+creates was absent, because `010` was written an hour earlier by story 11.6 and
+never applied. The false row was deleted by hand — not by editing `011`, which
+has already run and is therefore immutable. `010` remains outstanding and needs
+the owner role rather than `tag_app_user`; see
+`docs/RESWEEP_DEPLOY_RUNBOOK.md` §1b.
+
+Worth keeping, because it is the case for the ledger made by the ledger: nothing
+before it could have detected that, and it detected it on itself within minutes.
+Production now reads 10 applied with `010` correctly flagged as missing.
+
 **Migration order.** `functions/sql/*.sql` run in file-number order, and each
 one has to be safe both on a fresh database and on one that has already seen
 its predecessors. 006 originally assumed the opposite order and failed on
