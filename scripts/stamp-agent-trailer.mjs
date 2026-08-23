@@ -54,7 +54,7 @@ function stampMerge(messageFile) {
   if (new RegExp(`^${MERGE_TRAILER}:`, "m").test(message)) return;
   const body = message.replace(/\s*$/, "");
   const separator = /\n[A-Za-z-]+:[^\n]*$/.test(body) ? "\n" : "\n\n";
-  writeFileSync(messageFile, `${body}${separator}${MERGE_TRAILER}: ${worktree()}\n`);
+  writeFileSync(messageFile, `${body}${separator}${MERGE_TRAILER}: ${agentId()}\n`);
 }
 
 function main() {
