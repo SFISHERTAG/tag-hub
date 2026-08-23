@@ -109,6 +109,59 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+
+  /*
+   * Story 14.1: the repository seam.
+   *
+   * Firestore is reachable from exactly one module, lib/data/firestore-repository.ts.
+   * Everything else goes through the Repository interface, so 14.2 onward can
+   * swap the backing store without touching a call site.
+   *
+   * This is the load-bearing half of the story. Without it new code bypasses
+   * the seam by convenience rather than intent, which is how the one bypass
+   * that existed got there: lib/ghl/store.ts re-exported the client handle, so
+   * fifteen importers could have obtained it without importing lib/firestore
+   * at all.
+   *
+   * A re-export cannot escape this rule. `export { firestore } from "@/lib/firestore"`
+   * is an import and is caught here; so is importing it in order to re-export
+   * it. No separate symbol check is needed.
+   *
+   * lib/data/** is the exemption because it IS the implementation. scripts/ is
+   * out of scope: seed and setup scripts run standalone against a project id
+   * and are not part of the request path. functions/ has its own workspace and
+   * its own Firestore client, and folds into app/api under story 14.A.
+   */
+  {
+    files: ["lib/**/*.ts", "app/**/*.ts", "app/**/*.tsx"],
+    ignores: ["lib/data/**", "lib/firestore.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/lib/firestore",
+              message:
+                "Firestore is reachable only through the repository seam. Use `repository()` from @/lib/data. If the operation you need is missing, add it to the Repository interface rather than reaching past it — that interface is what 14.2 implements a second time over Postgres.",
+            },
+            {
+              name: "@google-cloud/firestore",
+              message:
+                "The Firestore SDK stays behind lib/data. Timestamp and FieldValue in particular must not cross the seam: the repository normalises timestamps to epoch millis and exposes serverTimestamp()/deleteField()/arrayUnion() from @/lib/data, which have real Postgres equivalents.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["**/lib/firestore", "**/lib/firestore.js"],
+              message:
+                "Firestore is reachable only through the repository seam. Use `repository()` from @/lib/data.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

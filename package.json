@@ -18,6 +18,7 @@
     "check:branch-freshness": "node scripts/check-branch-freshness.mjs",
     "check:secret-scan": "node scripts/check-secret-scan.mjs",
     "check:role-parity": "node scripts/check-role-parity.mjs",
+    "check:firestore-seam": "node scripts/check-firestore-seam.mjs",
     "hooks:install": "node scripts/install-hooks.mjs",
     "web:build": "npm --prefix web run build -- --configuration production",
     "web:lint": "npm --prefix web run lint",
