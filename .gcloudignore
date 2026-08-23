@@ -22,3 +22,12 @@
 
 # Angular's local build cache. Regenerated in the image.
 .angular/
+
+# Nested workspaces. `#!include:.gitignore` pulls in the ROOT .gitignore only,
+# and its `/node_modules` is root-anchored, so `web/node_modules` (299 MiB) and
+# `functions/node_modules` (237 MiB) were uploading on every build. They are
+# ignored locally by web/.gitignore and functions/.gitignore, which gcloud never
+# reads. Unanchored, so any depth is covered.
+node_modules/
+dist/
+.angular/
