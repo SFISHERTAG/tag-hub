@@ -1,0 +1,13 @@
+@if (locationId(); as location) {
+  <div class="impersonation" role="status">
+    <mat-icon aria-hidden="true">visibility</mat-icon>
+    <span class="impersonation__text">
+      Viewing <strong>{{ location }}</strong> as a client. Actions here are recorded against you.
+    </span>
+    <button mat-button type="button" [disabled]="busy()" (click)="exit()">Leave</button>
+  </div>
+
+  @if (error(); as message) {
+    <div class="impersonation__error" role="alert">{{ message }}</div>
+  }
+}

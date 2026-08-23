@@ -1,0 +1,28 @@
+// M3 tokens only. No raw hex, per the theme contract.
+//
+// tertiary-container rather than error: this is a state to be aware of, not a
+// fault. Error styling here would cry wolf on an ordinary CSM workflow, and a
+// warning that fires on normal work stops being read.
+
+.impersonation {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-body-medium);
+}
+
+.impersonation__text {
+  flex: 1 1 auto;
+  // Long tenant ids must wrap rather than push the Leave button off a phone.
+  overflow-wrap: anywhere;
+}
+
+.impersonation__error {
+  padding: 0.5rem 1rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-body-small);
+}

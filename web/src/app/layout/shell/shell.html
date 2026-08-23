@@ -7,6 +7,11 @@
   <app-user-menu />
 </mat-toolbar>
 
+<!-- Above the sidenav container, not inside it: the banner must not scroll away
+     with content. Somebody who has scrolled down is exactly the person who has
+     forgotten whose tenant they are in. -->
+<app-impersonation-banner />
+
 <mat-sidenav-container class="shell">
   @if (isWide()) {
     <mat-sidenav mode="side" opened class="rail">

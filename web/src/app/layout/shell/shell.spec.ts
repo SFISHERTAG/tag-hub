@@ -44,6 +44,7 @@ function setup(matches: boolean, role: Role = ROLES.TAG_EXEC) {
         useValue: {
           session: signal(session(role)).asReadonly(),
           load: () => Promise.resolve(),
+          exitImpersonation: () => Promise.resolve({ data: null, error: null }) as never,
           signOut: () => Promise.resolve(),
           switchRole: () =>
             Promise.resolve({ data: null, error: { message: 'stub', context: 'test' } }),

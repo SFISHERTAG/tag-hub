@@ -53,6 +53,11 @@ export class MockRbacService implements RbacService {
     return Promise.resolve(ok(next));
   }
 
+  /** No impersonation in the mock; returns the session unchanged. */
+  async exitImpersonation() {
+    return { data: this.session(), error: null } as never;
+  }
+
   /** Clears the mock session, same as the real one does on success. */
   async signOut(): Promise<void> {
     this.applySession(null);
