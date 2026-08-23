@@ -8,6 +8,10 @@ an ordering someone else picked.
 
 Written against `high-findings-port`, branched from `main` at `9ff5549`.
 
+**Before any of this, read `docs/DEPLOYING_THE_APP.md`.** It covers the one way
+to deploy the app and the command that looks equivalent, skips every guard in
+`cloudbuild.yaml`, and takes sign-in down without reporting a failure.
+
 Verify before you start, because `main` moves:
 
 ```bash
