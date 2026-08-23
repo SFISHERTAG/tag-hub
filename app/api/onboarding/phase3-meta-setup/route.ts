@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { authorizeOnboardingTrigger } from "@/lib/api/webhook-auth";
+import { postAlert, slackConfigured } from "@/lib/slack";
 
 /**
  * POST /api/onboarding/phase3-meta-setup
@@ -42,6 +43,19 @@ export async function POST(request: NextRequest) {
     // Call Cloud Functions webhook
     const functionsUrl = process.env.CLOUD_FUNCTIONS_URL;
     if (!functionsUrl) {
+      // Live path, not an edge case: story 5.13 is not deployed and
+      // CLOUD_FUNCTIONS_URL is unset in production. Nobody is asked for Meta
+      // access and nothing says so. Alert before throwing, so the silence
+      // reaches a person.
+      if (slackConfigured()) {
+        await postAlert(
+          `Meta access request did not run for location ${locationId}: ` +
+            `CLOUD_FUNCTIONS_URL is not configured. The client has not been ` +
+            `asked for ad account access. See story 5.13.`,
+        ).catch(() => {
+          // Alerting must never be the reason this handler throws.
+        });
+      }
       throw new Error("CLOUD_FUNCTIONS_URL not configured");
     }
 
