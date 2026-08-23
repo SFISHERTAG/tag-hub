@@ -4,10 +4,21 @@
 
 .signin {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1.5rem;
   min-block-size: 100dvh;
   padding: 1.5rem;
+}
+
+// The source is 1254px square with a baked-in black background — RGB, no alpha
+// — so it only sits correctly on the true-black body the theme contract
+// mandates. Putting it on a card or any lighter surface would show the square.
+// Capped well below its intrinsic size so it stays crisp on a 3x display.
+.signin__mark {
+  inline-size: min(9rem, 40vw);
+  block-size: auto;
 }
 
 .signin__card {
