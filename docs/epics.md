@@ -101,16 +101,20 @@ one auditable action.
 | 5.4 | Create paused via Marketing API | Done |
 | 5.5 | Explicit activation, advancing to `AP 2 - Ads Launched` | Done |
 | 5.6 | Budget ceilings and idempotency | In progress — implemented and unit-tested, held from Done pending live Meta verification |
-| 5.7 | Stage SLA deadlines | Draft |
-| 5.8 | SLA breach sweep and escalation | Draft |
-| 5.9 | Adjustable stage SLA baselines | Draft |
-| 5.10 | Opportunity custom fields in the GHL client | Draft — blocks 5.7/5.8 |
+| 5.7 | Stage SLA deadlines | Superseded by 13.5 |
+| 5.8 | SLA breach sweep and escalation | Superseded by 13.5/13.6 |
+| 5.9 | Adjustable stage SLA baselines | Superseded by 13.5 |
+| 5.10 | Opportunity custom fields in the GHL client | Draft — blocks 13.5 |
 
-**Architecture note:** 5.7–5.10 are built on
+**Reconciled with Epic 13 on 2026-08-22.** 5.7, 5.8 and 5.9 duplicated Epic 13's
+SLA work and are superseded; 5.10 survives as its prerequisite. Decision record:
+`docs/epic-5-13-reconciliation.md`.
+
+**Architecture note:** 5.10 and Epic 13's SLA work are built on
 `docs/fulfillment-pipeline-architecture.md`, which re-draws the Fulfillment
 stages as ownership handoffs and moves onboarding milestones onto dated
 opportunity custom fields. 5.1's stage model is superseded; see its own note.
-Sequence is 5.10, then 5.7, then 5.8, then 5.9.
+Sequence is 5.10, then 13.2, then 13.5, then 13.6.
 
 **Blocker:** 5.6's double-submit test passes against a mocked Meta client and an
 in-memory Firestore, not a real ad account. It stays out of Done until that same
@@ -442,16 +446,19 @@ are the same client and are currently two disconnected records.
 | ID | Story | Status | Doc |
 | --- | --- | --- | --- |
 | 13.1 | createOpportunity in the typed service layer | Draft | `13.1-create-opportunity-in-the-service-layer.md` |
-| 13.2 | Fulfillment stage model parity | Draft | `13.2-fulfillment-stage-model-parity.md` |
+| 13.2 | Fulfillment stage model parity | Draft — premise superseded, scope reduced | `13.2-fulfillment-stage-model-parity.md` |
 | 13.3 | Prospect to fulfillment handoff | Draft — location decided 2026-08-22 | `13.3-prospect-to-fulfillment-handoff.md` |
 | 13.4 | Ascension value on the fulfillment opportunity | Draft | `13.4-ascension-value-on-the-fulfillment-opportunity.md` |
-| 13.5 | Stage SLA timers on the client card | Draft | `13.5-stage-sla-timers-on-the-client-card.md` |
+| 13.5 | Stage SLA timers on the client card | Draft — merged with 5.7/5.8/5.9 | `13.5-stage-sla-timers-on-the-client-card.md` |
 | 13.6 | Escalations desk | Draft | `13.6-escalations-desk.md` |
 
-**13.2 is a live defect, not a nice-to-have.** `PR 3 - VSL Creatives` and
-`PR 4 - Creative Edits` exist in the pipeline and not in
-`lib/onboarding/stage-tasks.ts`. Anyone moved to either sees no checklist. It is
-unreported only because nobody is there yet.
+**13.2's original premise is dead.** It described an 11-stage pipeline with
+`PR 3 - VSL Creatives` and `PR 4 - Creative Edits`. GHL rebuilt the pipeline on
+2026-08-22 at 11:29 and none of those stages exist; the live board is 12 stages.
+Parity landed in `2787e21` with coverage in `lib/onboarding/stage-tasks.test.ts`.
+What remains of 13.2 is the "no tasks" vs "unrecognized stage" distinction and
+ordering from GHL `position`. Do not act on the original acceptance criteria:
+they would add eleven dead stages to working code.
 
 **13.3 is blocked on a decision, not on work.** The provisioning webhook creates
 the Fulfillment opportunity in the cloned client sub-account; every live
@@ -464,6 +471,6 @@ GHL, and several are not in our agency at all) and why not Postgres (there is no
 project-wide move off Firestore; the one feature mid-migration is stalled, story
 11.6).
 
-**Sequencing:** 13.1 unblocks 13.3. 13.2 unblocks 13.5. 13.4 and 13.5 both sit
+**Sequencing:** 13.1 unblocks 13.3. 5.10 and 13.2 both unblock 13.5. 13.4 and 13.5 both sit
 downstream of the handoff, because neither ascension value nor a stage timer
 means anything until clients reliably arrive in the pipeline in the first place.
