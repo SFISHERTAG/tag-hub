@@ -149,17 +149,16 @@ steps:
       - |
         set -e
         # NODE_ENV=production in this image makes npm ci skip devDependencies,
-        # and eslint is a devDependency. Force it, or the lint half of the gate
-        # silently has no linter.
+        # and the linter is one. Force it, or the lint half of the gate silently
+        # has no linter.
         export NODE_ENV=development
-        # Both installs are required and neither is redundant. functions/ needs
-        # its own deps for tsc; eslint is NOT in functions/package.json at all
-        # and resolves from the root node_modules, so `npm run lint` inside
-        # functions fails with "eslint: not found" without the root install.
-        # That is exactly how this step failed the first time it ran.
-        npm ci --no-audit --no-fund
+        # functions/ only. It used to install the root tree as well — 938 MB —
+        # purely because eslint was declared nowhere in functions/package.json
+        # and resolved from above. It is a devDependency here now, with its own
+        # config and its own TypeScript parser, so the workspace lints itself.
         npm --prefix functions ci --no-audit --no-fund
-        npm run check:functions
+        npm --prefix functions run build
+        npm --prefix functions run lint
         echo "functions gate passed."
 
   - id: pull-cache
