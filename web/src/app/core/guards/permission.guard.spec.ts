@@ -38,6 +38,7 @@ function configure(session: Session | null) {
     load: () => Promise.resolve(),
     switchRole: () =>
       Promise.resolve({ data: null, error: { message: 'stub', context: 'test' } }),
+    signOut: () => Promise.resolve(),
     applySession: () => undefined,
   };
   TestBed.configureTestingModule({

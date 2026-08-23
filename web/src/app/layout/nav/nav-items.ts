@@ -34,8 +34,9 @@ export interface NavItem {
  * matched zero entries, so a CS Director signed in to an empty tab bar, and the
  * team_health_rollup widget built for them was unreachable. A director sees the
  * whole department, so they belong anywhere a CSM belongs and then some. After
- * this pass they match six entries: Dashboard, Portfolio, Clients, Training,
- * Knowledge base and Report a bug.
+ * this pass they match five entries: Dashboard, Portfolio, Clients, Training
+ * and Knowledge base. It was six until story 10.9 moved Report a bug into the
+ * user menu.
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   {
@@ -140,19 +141,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
     // Equal to ADMIN_ROLES (features/admin/admin.routes.ts).
     permission: [ROLES.ADMIN],
   },
-  {
-    path: '/bug-reports',
-    label: 'Report a bug',
-    icon: 'bug_report',
-    // Subset of BUG_REPORT_ROLES (features/bug-reports/bug-reports.routes.ts),
-    // which is ROLE_LIST. The endpoint gates on authentication only: anyone
-    // using the product can report a defect in it.
-    //
-    // Last on purpose. It is a utility rather than a destination, and it is the
-    // obvious first candidate to move into a bottom-nav overflow sheet when one
-    // lands — see the note below on how long this bar gets for a tag_exec.
-    permission: ROLE_LIST,
-  },
+  // Report a bug used to sit here, last, with a note calling it "the obvious
+  // first candidate to move into a bottom-nav overflow sheet when one lands".
+  // Story 10.9 landed the user menu, which is that overflow, and moved it there.
+  // The route and its guard are unchanged; only the entry point moved, so it now
+  // appears in exactly one place instead of competing with nine destinations.
 ];
 
 /**

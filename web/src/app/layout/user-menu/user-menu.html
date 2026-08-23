@@ -1,0 +1,54 @@
+<button
+  mat-icon-button
+  [matMenuTriggerFor]="menu"
+  [attr.aria-label]="'Account menu for ' + email()"
+  class="user-menu__trigger"
+>
+  <mat-icon>account_circle</mat-icon>
+</button>
+
+<mat-menu #menu="matMenu" class="user-menu__panel">
+  <!-- Non-interactive header. Not a menu item: it is not actionable, and
+       making it focusable would put a dead stop in the keyboard order. -->
+  <div class="user-menu__email" role="presentation">{{ email() }}</div>
+
+  <!-- TEMPORARY: hat switcher. Deleted by story 15.D along with switchRole and
+       POST /api/session/role. Kept as one contiguous block so that removal is a
+       clean cut. Renders nothing unless the user holds more than one grant. -->
+  @if (otherRoles().length > 0) {
+    <mat-divider />
+    <div class="user-menu__section" role="presentation">
+      Wearing {{ currentRoleLabel() }}
+    </div>
+    @for (role of otherRoles(); track role) {
+      <button mat-menu-item type="button" [disabled]="busy()" (click)="switchTo(role)">
+        <mat-icon>switch_account</mat-icon>
+        <span>Switch to {{ label(role) }}</span>
+      </button>
+    }
+  }
+  <!-- END TEMPORARY -->
+
+  <mat-divider />
+
+  <button mat-menu-item type="button" routerLink="/settings">
+    <mat-icon>settings</mat-icon>
+    <span>Settings</span>
+  </button>
+
+  <button mat-menu-item type="button" routerLink="/bug-reports">
+    <mat-icon>bug_report</mat-icon>
+    <span>Report a bug</span>
+  </button>
+
+  <mat-divider />
+
+  <button mat-menu-item type="button" [disabled]="busy()" (click)="signOut()">
+    <mat-icon>logout</mat-icon>
+    <span>Log out</span>
+  </button>
+
+  @if (error(); as message) {
+    <div class="user-menu__error" role="alert">{{ message }}</div>
+  }
+</mat-menu>

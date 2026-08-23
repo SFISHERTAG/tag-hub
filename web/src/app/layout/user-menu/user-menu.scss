@@ -1,0 +1,25 @@
+// Every colour is an M3 system token. No raw hex, per the theme contract.
+
+.user-menu__email {
+  padding: 0.75rem 1rem 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+  // An address is long and a menu is not; wrapping beats a panel that grows
+  // past the viewport on a phone.
+  overflow-wrap: anywhere;
+}
+
+.user-menu__section {
+  padding: 0.5rem 1rem 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-small);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.user-menu__error {
+  padding: 0.5rem 1rem 0.75rem;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
+  max-inline-size: 16rem;
+}

@@ -93,6 +93,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/bug-reports/bug-reports.routes').then((m) => m.routes),
       },
       {
+        // Story 10.9. Reached from the user menu, not the nav: it is an account
+        // screen rather than a destination in the product.
+        path: 'settings',
+        loadChildren: () => import('./features/settings/settings.routes').then((m) => m.routes),
+      },
+      {
         path: 'admin',
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.routes),
       },
