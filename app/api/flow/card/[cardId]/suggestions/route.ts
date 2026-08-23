@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSuggestion, getCardOrgId } from "@/lib/flow/db";
 import { getSession, requireLocationAccess } from "@/lib/auth/session";
-import { hasAnyRole } from "@/lib/auth/roles";
+import { hasAnyRole, ROLES } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
 
 /** Roles that close deals — the people who actually run the script live. */
-const SUGGESTER_ROLES = ["tag_exec", "client_closer", "tag_sales"] as const;
+const SUGGESTER_ROLES = [ROLES.TAG_EXEC, ROLES.CLIENT_CLOSER, ROLES.TAG_SALES] as const;
 
 interface SuggestionPayload {
   org_id: string;

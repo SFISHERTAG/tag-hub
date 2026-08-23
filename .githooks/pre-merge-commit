@@ -51,3 +51,10 @@ run_check "check:role-parity"       scripts/check-role-parity.mjs
 # hook, so that rule is a gate you have to remember to run and this is the
 # one that runs itself.
 run_check "check:firestore-seam"  scripts/check-firestore-seam.mjs
+
+# Story 14.B: tree-wide, not diff-scoped. The inline-role check inside
+# check-story-status only sees files in the commit, so it cannot find a
+# violation already present. This reads the whole tree and exempts per line
+# rather than per file. 0.06s, so it runs on every commit rather than being
+# a periodic job somebody remembers.
+run_check "check:role-strings"    scripts/check-role-strings.mjs
