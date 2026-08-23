@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireApiSession } from "@/lib/auth/api-session";
 import { getCourse } from "@/lib/course/data";
 import { canSeeCourse, canSeeSubsection } from "@/lib/course/visibility";
-import { getCourseProgress } from "@/lib/course/firestore";
+import { getCourseProgress } from "@/lib/course/progress";
 import { handle, notFound } from "../../admin/_lib/http";
 
 export const dynamic = "force-dynamic";
