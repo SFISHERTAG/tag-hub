@@ -1,6 +1,28 @@
 import "server-only";
 import type { Session } from "@/lib/auth/session";
-import type { Role } from "@/lib/auth/roles";
+import { ROLES, type Role } from "@/lib/auth/roles";
+
+/**
+ * The two role sets this module routes on, named once.
+ *
+ * Each list was written out twice — once inline in getLocationForDashboard and
+ * again in the isInternalUser / isClientUser helper below it — which is two
+ * places to forget when a role is added. Story 14.B consolidated them while
+ * converting the literals to ROLES.*, the same shape 15.A used for
+ * GLOBAL_ROLES.
+ */
+const AGENCY_DASHBOARD_ROLES: readonly Role[] = [
+  ROLES.TAG_EXEC,
+  ROLES.TAG_CSM,
+  ROLES.TAG_SALES,
+  ROLES.TAG_SALES_MANAGER,
+];
+
+const CLIENT_DASHBOARD_ROLES: readonly Role[] = [
+  ROLES.CLIENT_OWNER,
+  ROLES.CLIENT_MANAGER,
+  ROLES.CLIENT_CLOSER,
+];
 
 /**
  * Determine which location ID to use based on user role and session.
@@ -13,7 +35,7 @@ export function getLocationForDashboard(session: Session): string {
   const { currentRole, locations } = session;
 
   // CSM/Exec roles: use TAG_GROWTH agency sub-account
-  if (["tag_exec", "tag_csm", "tag_sales", "tag_sales_manager"].includes(currentRole)) {
+  if (isInternalUser(currentRole)) {
     const tagGrowthId = process.env.GHL_LOCATION_ID_TAG_GROWTH;
     if (!tagGrowthId) {
       throw new Error(
@@ -24,7 +46,7 @@ export function getLocationForDashboard(session: Session): string {
   }
 
   // Client roles: use their assigned location
-  if (["client_owner", "client_manager", "client_closer"].includes(currentRole)) {
+  if (isClientUser(currentRole)) {
     if (!locations[0]) {
       throw new Error("Client has no assigned location");
     }
@@ -39,21 +61,12 @@ export function getLocationForDashboard(session: Session): string {
  * Type-safe way to check if user is a CSM/internal user.
  */
 export function isInternalUser(role: Role): boolean {
-  return [
-    "tag_exec",
-    "tag_csm",
-    "tag_sales",
-    "tag_sales_manager",
-  ].includes(role);
+  return AGENCY_DASHBOARD_ROLES.includes(role);
 }
 
 /**
  * Type-safe way to check if user is a client.
  */
 export function isClientUser(role: Role): boolean {
-  return [
-    "client_owner",
-    "client_manager",
-    "client_closer",
-  ].includes(role);
+  return CLIENT_DASHBOARD_ROLES.includes(role);
 }

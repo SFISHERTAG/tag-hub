@@ -79,6 +79,13 @@ run_check "check:role-parity"     scripts/check-role-parity.mjs
 # one that runs itself.
 run_check "check:firestore-seam"  scripts/check-firestore-seam.mjs
 
+# Story 14.B: tree-wide, not diff-scoped. The inline-role check inside
+# check-story-status only sees files in the commit, so it cannot find a
+# violation already present. This reads the whole tree and exempts per line
+# rather than per file. 0.06s, so it runs on every commit rather than being
+# a periodic job somebody remembers.
+run_check "check:role-strings"    scripts/check-role-strings.mjs
+
 # The Angular gate only runs when the commit actually touches web/. It is the
 # slowest check here and irrelevant to a backend-only commit.
 if git diff --cached --name-only | grep -q '^web/'; then

@@ -1,4 +1,8 @@
 // Client-safe widget definitions (no server-only imports)
+// ROLES comes from role-labels, not roles.ts: this file is client-safe and
+// roles.ts is server-only. role-labels.ts deliberately carries no server-only
+// marker for exactly this case.
+import { ROLES } from "@/lib/auth/role-labels";
 import type { Role } from "@/lib/auth/roles";
 
 export type WidgetSize = {
@@ -48,77 +52,77 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
   pipeline_board: {
     id: "pipeline_board",
     title: "Top Deals",
-    availableFor: ["client_closer", "client_manager", "tag_exec", "tag_csm"],
+    availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
     defaultSize: { cols: 2, rows: 2 },
     description: "Highest-value deals in your pipeline, ranked",
   },
   day_view: {
     id: "day_view",
     title: "Today's Schedule",
-    availableFor: ["client_closer", "tag_exec"],
+    availableFor: [ROLES.CLIENT_CLOSER, ROLES.TAG_EXEC],
     defaultSize: { cols: 2, rows: 1 },
     description: "Appointments and calls for today",
   },
   leads_funnel: {
     id: "leads_funnel",
     title: "Leads Funnel",
-    availableFor: ["client_owner", "client_manager", "tag_exec", "tag_csm"],
+    availableFor: [ROLES.CLIENT_OWNER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
     defaultSize: { cols: 1, rows: 1 },
     description: "Lead, booked, showed, closed counts",
   },
   spend_roas: {
     id: "spend_roas",
     title: "Spend & ROAS",
-    availableFor: ["client_owner", "tag_exec"],
+    availableFor: [ROLES.CLIENT_OWNER, ROLES.TAG_EXEC],
     defaultSize: { cols: 2, rows: 1 },
     description: "Ad spend and return on ad spend",
   },
   client_health: {
     id: "client_health",
     title: "Client Health",
-    availableFor: ["tag_csm", "tag_csd", "tag_exec"],
+    availableFor: [ROLES.TAG_CSM, ROLES.TAG_CSD, ROLES.TAG_EXEC],
     defaultSize: { cols: 1, rows: 1 },
     description: "Health signals and escalation flags",
   },
   portfolio: {
     id: "portfolio",
     title: "Portfolio",
-    availableFor: ["tag_csm", "tag_csd", "tag_exec"],
+    availableFor: [ROLES.TAG_CSM, ROLES.TAG_CSD, ROLES.TAG_EXEC],
     defaultSize: { cols: 2, rows: 2 },
     description: "All clients and their status",
   },
   team_performance: {
     id: "team_performance",
     title: "Team Performance",
-    availableFor: ["tag_sales_manager", "tag_exec"],
+    availableFor: [ROLES.TAG_SALES_MANAGER, ROLES.TAG_EXEC],
     defaultSize: { cols: 2, rows: 1 },
     description: "Rep and team metrics",
   },
   team_health_rollup: {
     id: "team_health_rollup",
     title: "Team Health",
-    availableFor: ["tag_csd"],
+    availableFor: [ROLES.TAG_CSD],
     defaultSize: { cols: 2, rows: 2 },
     description: "Every CSM on your team, worst book first",
   },
   department_overview: {
     id: "department_overview",
     title: "Department Overview",
-    availableFor: ["tag_exec"],
+    availableFor: [ROLES.TAG_EXEC],
     defaultSize: { cols: 2, rows: 2 },
     description: "Department-wide totals and which books need attention",
   },
   kpi_summary: {
     id: "kpi_summary",
     title: "KPI Summary",
-    availableFor: ["client_owner", "client_manager", "tag_exec", "tag_csm"],
+    availableFor: [ROLES.CLIENT_OWNER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
     defaultSize: { cols: 4, rows: 1 },
     description: "Spend, ROAS, cost per lead, and booking rate at a glance",
   },
   owner_calendar: {
     id: "owner_calendar",
     title: "My Calendar",
-    availableFor: ["client_owner", "tag_exec"],
+    availableFor: [ROLES.CLIENT_OWNER, ROLES.TAG_EXEC],
     defaultSize: { cols: 4, rows: 2 },
     description: "Your own scheduled calls — month view and upcoming list",
   },

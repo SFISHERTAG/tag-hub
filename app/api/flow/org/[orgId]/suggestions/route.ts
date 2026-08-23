@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSuggestionsForOrg } from "@/lib/flow/db";
 import { getSession, requireLocationAccess } from "@/lib/auth/session";
-import { hasAnyRole } from "@/lib/auth/roles";
+import { hasAnyRole, ROLES } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
 
-const REVIEWER_ROLES = ["tag_exec", "tag_sales_manager"] as const;
+const REVIEWER_ROLES = [ROLES.TAG_EXEC, ROLES.TAG_SALES_MANAGER] as const;
 
 /**
  * GET /api/flow/org/[orgId]/suggestions?status=pending

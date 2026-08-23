@@ -1,9 +1,37 @@
 import { firestore } from "../lib/firestore";
+import { ROLES } from "@/lib/auth/role-labels";
 
 /**
  * One-time script to set up CSM Dashboard test data.
  * Run: npx ts-node scripts/setup-csm-test-data.ts
  */
+
+/*
+ * Environment guard, required by CLAUDE.md for every scripts/setup-* script
+ * and absent from this one until story 14.B touched the file.
+ *
+ * It matters more here than the rule suggests. TEST_CLIENT_ID below is a real
+ * Firestore document id, and this script writes to `clients/{id}` with .set().
+ * Run against production with an unset project, it overwrites whatever live
+ * client happens to hold that id with fabricated test data. The sibling
+ * scripts/setup-test-data.mjs has carried this guard all along; this one did
+ * not, and nothing noticed because the check that enforces it only reads files
+ * in the commit.
+ */
+if (process.env.NODE_ENV === "production") {
+  console.error("NODE_ENV is production. Refusing to seed fabricated test data.");
+  process.exit(1);
+}
+
+const projectId = process.env.GOOGLE_CLOUD_PROJECT;
+if (!projectId) {
+  console.error(
+    "GOOGLE_CLOUD_PROJECT is not set. Refusing to run against an unknown/default project.",
+  );
+  process.exit(1);
+}
+
+console.log(`Seeding CSM test data into Firestore project: ${projectId}`);
 
 const TEST_CLIENT_ID = "cMIc51hn6ziLwWtC8t0n";
 const TEST_CSM_EMAIL = "test@taxadvisorygrowth.net";
@@ -107,13 +135,13 @@ async function setupTestData() {
         leads: 25,
         sla: 15,
       },
-      role: "tag_csm",
+      role: ROLES.TAG_CSM,
     });
     console.log("✅ CSM settings created\n");
 
     console.log("✅ All test data created successfully!");
     console.log("\nYou can now:");
-    console.log(`1. Sign in as ${TEST_CSM_EMAIL} with role "tag_csm"`);
+    console.log(`1. Sign in as ${TEST_CSM_EMAIL} with role "${ROLES.TAG_CSM}"`);
     console.log("2. Navigate to /csm-dashboard");
     console.log("3. See Casey Williams Co in your portfolio\n");
   } catch (error) {

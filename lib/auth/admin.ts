@@ -7,6 +7,7 @@ import {
   normaliseGrants,
   type GrantInput,
 } from "./grants";
+import { ROLES } from "./roles";
 
 /**
  * Firebase Admin SDK for user management.
@@ -170,9 +171,15 @@ export async function setUserClaims(
 
 /**
  * Set a user's role to tag_exec (all locations).
+ *
+ * The role came from a string literal until story 14.B. That is the most
+ * dangerous place in the repo for one: this is the claim-ISSUING path, and
+ * CLAUDE.md names a "tag_admin" versus "admin" mismatch as the exact failure
+ * the role constraint exists to prevent. A typo here writes a claim nothing
+ * grants against, and the user is silently locked out rather than refused.
  */
 export async function promoteToExec(uid: string): Promise<void> {
-  await setUserClaims(uid, [{ role: "tag_exec", locations: [] }]);
+  await setUserClaims(uid, [{ role: ROLES.TAG_EXEC, locations: [] }]);
 }
 
 /**

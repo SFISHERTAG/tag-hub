@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { hasRole, ROLES } from "@/lib/auth/roles";
 import { isMetaConfigured, metaMissingConfig } from "@/lib/meta/client";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
-  if (session.currentRole !== "tag_exec") {
+  if (!hasRole(session.currentRole, ROLES.TAG_EXEC)) {
     return NextResponse.json(
       { error: "Only executives can view Meta integration status." },
       { status: 403 },
