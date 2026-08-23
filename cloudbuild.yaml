@@ -80,10 +80,18 @@ substitutions:
   # The origin used to build the one-click sign-in link in the code email.
   # Read from config rather than the request's Host header on purpose: a link
   # built from an attacker-supplied Host would be mailed to the real account
-  # owner pointing at the attacker's site. Must be pinned to _SERVICE above,
-  # same as _GHL_REDIRECT_URI, or the link lands on a URL that is not this
-  # deployment.
-  _PUBLIC_BASE_URL: https://tag-hub-git-vdsoboedgq-uc.a.run.app
+  # owner pointing at the attacker's site.
+  #
+  # This MUST equal _APP_ORIGIN. The CSRF guard in lib/auth/session-cookie.ts
+  # compares the request's Origin against APP_ORIGIN exactly, so a sign-in link
+  # built on any other host loads the app on an origin its own guard then
+  # refuses. On 2026-08-22 this was the run.app URL while _APP_ORIGIN was the
+  # custom domain: every emailed link died on "Cross-site request refused.",
+  # and Google sign-in failed too because lib/auth/base-url.ts builds OAuth
+  # redirect URIs from the same value. The deploy step below uses
+  # --set-env-vars, which replaces the whole set, so fixing this on the service
+  # alone is undone by the next build. It has to be correct here.
+  _PUBLIC_BASE_URL: https://hub.taxadvisorygrowth.com
   # tag-postgres (Cloud SQL) reached over the Unix socket Cloud Run mounts at
   # /cloudsql/<connection-name> when --add-cloudsql-instances is set below —
   # not a TCP host/port, so no public IP or authorized-networks exposure.
