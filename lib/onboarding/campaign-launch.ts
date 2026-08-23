@@ -289,7 +289,7 @@ function toActionableError(error: unknown, offerLabel: string): Error {
 
 /**
  * Fulfillment pipeline stage this story advances the opportunity to.
- * Updated 2026-08-23: GHL pipeline rebuilt with new stage names.
+ * Updated 2026-08-22: GHL pipeline rebuilt with new stage names.
  * Old name was "AP 2 - Ads Launched" — new name is "Campaign Launched".
  */
 export const AP2_STAGE_NAME = "Campaign Launched";
