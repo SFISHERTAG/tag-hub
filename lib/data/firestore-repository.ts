@@ -49,6 +49,7 @@ import type {
   MetaFetchLog,
   ProcessedEvent,
   Repository,
+  StoredAuditRecord,
   StoredBugReport,
   StoredLocation,
 } from "./repository";
@@ -322,7 +323,7 @@ export function firestoreRepository(): Repository {
       collection<MetaCreative>(`clients/${clientId}/meta_creatives`),
     manualPageVersions: (pageId) =>
       collection<ManualPageVersion>(`manual_pages/${pageId}/versions`),
-    auditLog: (locationId) => collection<AuditEvent>(`locations/${locationId}/auditLog`),
+    auditLog: (locationId) => collection<StoredAuditRecord>(`locations/${locationId}/auditLog`),
     appointmentOutcomes: (locationId) =>
       collection<AppointmentOutcome>(`locations/${locationId}/appointmentOutcomes`),
     followUpConfig: (locationId) => document<FollowUpConfig>(`locations/${locationId}/settings/followUp`),

@@ -81,6 +81,25 @@ export type StoredBugReport = Omit<BugReport, "id">;
  * superset, and 14.4 has to reconcile the two when `locations` becomes a table:
  * the Postgres `tenants` table in `003` models neither.
  */
+/**
+ * `locations/{id}/auditLog` holds TWO shapes, and the module's own header says
+ * so: general append-only `AuditEvent` records, and Story 3.5 impersonation
+ * sessions that are created on entry and updated in place on exit.
+ *
+ * Typed as the superset rather than a union because reads are mixed:
+ * `getAuditEvents` returns both kinds sorted together, deliberately, so an
+ * impersonation session sorts alongside ordinary events. The impersonation
+ * fields are optional here because they are absent on every other record.
+ *
+ * Nothing in that module deletes. Immutability is the collection's semantics
+ * plus the absence of a delete call, which is worth knowing before 14.6 moves
+ * it: a Postgres table grants DELETE unless someone decides otherwise.
+ */
+export type StoredAuditRecord = AuditEvent & {
+  readonly entryTimestamp?: number;
+  readonly exitTimestamp?: number | null;
+};
+
 export type StoredLocation = Tenant & {
   readonly slackChannelId?: string;
   readonly driveFolderId?: string;
@@ -129,7 +148,7 @@ export interface Repository {
   clientAlerts(clientId: string): CollectionRef<ClientAlert>;
   clientMetaCreatives(clientId: string): CollectionRef<MetaCreative>;
   manualPageVersions(pageId: string): CollectionRef<ManualPageVersion>;
-  auditLog(locationId: string): CollectionRef<AuditEvent>;
+  auditLog(locationId: string): CollectionRef<StoredAuditRecord>;
   appointmentOutcomes(locationId: string): CollectionRef<AppointmentOutcome>;
   followUpConfig(locationId: string): DocRef<FollowUpConfig>;
   metaConversionLog(locationId: string): CollectionRef<ConversionLogEntry>;

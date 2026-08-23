@@ -1,5 +1,5 @@
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 
 /**
  * Audit logging.
@@ -41,8 +41,7 @@ export type AuditEvent = {
  * Server-side only — no client ever writes directly to the audit log.
  */
 export async function saveAuditEvent(locationId: string, event: AuditEvent): Promise<string> {
-  const doc = await firestore().collection(`locations/${locationId}/auditLog`).add(event);
-  return doc.id;
+  return repository().auditLog(locationId).add(event);
 }
 
 /**
@@ -66,16 +65,16 @@ export async function getAuditEvents(
   locationId: string,
   filter?: { actorId?: string; action?: string },
 ): Promise<AuditEvent[]> {
-  let query = firestore()
-    .collection(`locations/${locationId}/auditLog`)
-    .orderBy("timestamp", "desc")
-    .limit(100);
+  const where = [];
+  if (filter?.actorId) where.push({ field: "actorId" as const, op: "==" as const, value: filter.actorId });
+  if (filter?.action) where.push({ field: "action" as const, op: "==" as const, value: filter.action });
 
-  if (filter?.actorId) query = query.where("actorId", "==", filter.actorId);
-  if (filter?.action) query = query.where("action", "==", filter.action);
-
-  const snapshot = await query.get();
-  return snapshot.docs.map((doc) => doc.data() as AuditEvent);
+  const found = await repository().auditLog(locationId).list({
+    where,
+    orderBy: { field: "timestamp", direction: "desc" },
+    limit: 100,
+  });
+  return found.map(({ data }) => data);
 }
 
 /** Days since the most recent matching event, or null if there are none. Used by story 3.6's "no CSM check-in for 30+ days" rule. */
@@ -108,19 +107,16 @@ export async function createImpersonationEntry(
   actorRole: string,
 ): Promise<string> {
   const entryTimestamp = Date.now();
-  const doc = await firestore()
-    .collection(`locations/${locationId}/auditLog`)
-    .add({
-      actorId,
-      actorRole,
-      action: "impersonation",
-      targetType: "tenant",
-      targetId: locationId,
-      entryTimestamp,
-      exitTimestamp: null,
-      timestamp: entryTimestamp,
-    } satisfies ImpersonationEntry);
-  return doc.id;
+  return repository().auditLog(locationId).add({
+    actorId,
+    actorRole,
+    action: "impersonation",
+    targetType: "tenant",
+    targetId: locationId,
+    entryTimestamp,
+    exitTimestamp: null,
+    timestamp: entryTimestamp,
+  } satisfies ImpersonationEntry);
 }
 
 /**
@@ -143,13 +139,10 @@ export async function closeImpersonationEntry(
   entryId: string,
   actorId: string,
 ): Promise<boolean> {
-  const ref = firestore().collection(`locations/${locationId}/auditLog`).doc(entryId);
+  const ref = repository().auditLog(locationId).doc(entryId);
 
-  return firestore().runTransaction(async (tx) => {
-    const snapshot = await tx.get(ref);
-    if (!snapshot.exists) return false;
-
-    const data = snapshot.data();
+  return repository().transaction(async (tx) => {
+    const data = await ref.get(tx);
     if (!data) return false;
 
     // Shape and ownership, both required. The action check stops an arbitrary
@@ -161,7 +154,7 @@ export async function closeImpersonationEntry(
     // later one, understating how long the access lasted.
     if (data.exitTimestamp !== null) return false;
 
-    tx.update(ref, { exitTimestamp: Date.now() });
+    await ref.update({ exitTimestamp: Date.now() }, tx);
     return true;
   });
 }

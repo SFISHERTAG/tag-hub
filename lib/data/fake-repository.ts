@@ -18,6 +18,7 @@ import type {
   MetaFetchLog,
   ProcessedEvent,
   Repository,
+  StoredAuditRecord,
   StoredBugReport,
   StoredLocation,
 } from "./repository";
@@ -388,7 +389,7 @@ export function fakeRepository(store: FakeStore = new FakeStore()): {
       collection<MetaCreative>(`clients/${clientId}/meta_creatives`),
     manualPageVersions: (pageId) =>
       collection<ManualPageVersion>(`manual_pages/${pageId}/versions`),
-    auditLog: (locationId) => collection<AuditEvent>(`locations/${locationId}/auditLog`),
+    auditLog: (locationId) => collection<StoredAuditRecord>(`locations/${locationId}/auditLog`),
     appointmentOutcomes: (locationId) =>
       collection<AppointmentOutcome>(`locations/${locationId}/appointmentOutcomes`),
     followUpConfig: (locationId) =>
