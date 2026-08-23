@@ -483,6 +483,46 @@ project-wide move off Firestore; the one feature mid-migration is stalled, story
 downstream of the handoff, because neither ascension value nor a stage timer
 means anything until clients reliably arrive in the pipeline in the first place.
 
+## Epic 16 — Account settings
+
+**Goal:** a person can configure their own account, starting with the things
+that decide when the phone rings.
+
+Opened 2026-08-23. Story 10.9 built the surface — a user menu and a `/settings`
+page — because the menu needed somewhere real to send "Settings" and shipping a
+link its guard refuses "sends people into a redirect" (`nav-items.ts`). That
+page currently shows the signed-in address and the granted roles. This epic is
+what fills it.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 16.1 | Scheduling preferences | Draft — **blocked on 7.8** |
+| 16.2 | Profile picture | Draft |
+| 16.3 | Notification preferences | Draft — **blocked on there being notifications** |
+
+**7.8 blocks more than it looks.** Every per-user setting has to be written
+against a GHL user id, and nothing maps an app uid to one.
+`lib/dashboard/owner-calendar.ts` gets away with it by reading
+`tenant.ownerGhlUserId`, which works for one person per client and nobody else.
+`lib/sources/metric-source.ts` calls them "GHL user ids from a different
+identity space". Until 7.8 lands, a per-user scheduling screen would silently
+write one person's settings onto the tenant's owner.
+
+**16.3 has no subsystem under it.** There is no notification code anywhere —
+no table, no service, no delivery. Story 13.5 needs one for SLA breaches and
+15.I needs one for grant changes, so the mechanism should be built by whichever
+of those lands first. Preferences before delivery is a page of switches that
+control nothing.
+
+**One item is deliberately not here: the conflict calendar.** Connecting a
+personal Google or Outlook calendar is an OAuth grant between the user and
+Google or Microsoft, performed in GHL's own UI, and no GHL scope exposes it.
+Doing it in-app means requesting sensitive Google Calendar scopes, which puts
+the whole application into Google verification —
+`app/api/auth/google/route.ts` records that sign-in deliberately avoids exactly
+that. 16.1 deep-links to GHL instead. Revisit only if conflict detection turns
+out to block adoption.
+
 ## Epic 14 — Off Firestore
 
 **Goal:** one store. Postgres holds the data; Firebase keeps Auth and nothing
