@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireApiSession } from "@/lib/auth/api-session";
-import { getUserCheckboxProgress, updateCheckboxProgress } from "@/lib/course/firestore";
+import { getUserCheckboxProgress, updateCheckboxProgress } from "@/lib/course/progress";
 import { handle, readJson, requiredBoolean, requiredString } from "../../admin/_lib/http";
 
 export const dynamic = "force-dynamic";

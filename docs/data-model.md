@@ -89,7 +89,7 @@ account.
 | `clients` | Denormalized client summary (FLOW health, metrics) | Firestore `locations` | Partial | See backfill note below |
 | `appointments` | Show/DQ/booked appointments from GHL | GHL API → Cloud Functions → this table | Yes | Includes timing (pre-call vs. on-call DQ) |
 | `courses` | Course catalog and structure | Migrating from Firestore | **NO — BLOCKED** | See migration status |
-| `course_progress` | Per-user completion tracking | Migrating from Firestore | No | Depends on `courses` table |
+| `course_progress` | Per-user completion tracking | **Postgres is authoritative** (story 11.6, 2026-08-23) | N/A | Was a split-brain: schema here, live data in Firestore. Firestore path deleted; backfill verified by count |
 | `course_subsection_videos` | Every video on one lesson: provider (`loom`/`fathom`/`drive`), provider-native id, optional label, order | App writes directly (admin editor, and the 12.4 import) | N/A | `sql/008_course_subsection_media.sql`. Primary store for lesson video, not a cache. `course_subsections.loom_id` is retained as the single-Loom fast path and is NOT backfilled into this table — the read path falls back to it when a lesson has no rows here, so the two are complementary rather than a split-brain |
 | `course_subsection_docs` | Non-video reference links on one lesson (Google Doc/Sheet), label + URL + order | App writes directly (admin editor, and the 12.4 import) | N/A | `sql/008_course_subsection_media.sql`. Separate from videos because a doc has no provider constraint and always carries a label, where a video has a constrained provider and an id |
 
@@ -149,23 +149,23 @@ which was false for structure and named the wrong migration file.
   created by `functions/sql/007_courses.sql` and read and written through
   `lib/course/db.ts` by every `app/api/admin/courses/*` route. Landed in
   `4638e98`.
-- **Per-user progress** is on **Firestore**, read through
-  `lib/course/firestore.ts` by `app/api/courses/progress/route.ts` and
-  `app/api/courses/[courseId]/route.ts`.
-- A `course_progress` table already exists in Postgres, created by
-  `003_migrate_firestore_to_postgres.sql`. **Nothing reads or writes it.**
+- **Per-user progress** is also on **Postgres** as of 2026-08-23, in
+  `course_progress` (created by `003_migrate_firestore_to_postgres.sql` line
+  258, covered by that file's blanket GRANT at line 289). Read and written
+  through `lib/course/progress.ts`.
 
-That empty table is the split-brain: one entity, two stores, one of them live
-and one of them a schema nobody filled. Either:
-- Move progress writes to `course_progress`, migrate existing Firestore
-  progress, and drop the Firestore path, or
-- Keep progress in Firestore and drop `course_progress` from `003`.
+**Resolved by story 11.6, 2026-08-23.** Until then this was the split-brain the
+pre-commit hook exists to block, sitting in the tree: one entity, two stores,
+one of them live and one of them a schema nobody filled. Progress was moved to
+Postgres, the Firestore documents were backfilled with the copy verified by row
+count, and `lib/course/firestore.ts` was deleted rather than left dormant — a
+collection no longer read but still present is how this lasted as long as it
+did.
 
-Do not leave it split. The decision is story 11.6
-(`docs/stories/11.6-resolve-the-courses-store-split.md`). It previously pointed
-at `docs/stories/X.X-courses.md`, a placeholder filename that was never created,
-which is why this sat unresolved: it was recorded as a note inside a doc rather
-than as work anyone could pick up.
+Worth remembering why it lasted: the blocker was recorded as
+"see `docs/stories/X.X-courses.md`", a placeholder filename for a story nobody
+ever created. Nothing technical was in the way. It was a to-do written inside a
+document, where no sprint would surface it.
 
 ---
 
@@ -219,12 +219,21 @@ Immutability is enforced by Firestore security rules (see `.firebase/firestore.r
 
 ## Migration in progress
 
-**Firestore → Postgres (courses):** started but not finished. Code is split:
-course structure reads from Postgres, user progress reads from Firestore.
-Blocked on a decision, not on engineering. Tracked as story 11.6; see the
-Courses entry under Backfill Status above for the two options and the evidence.
+**Firestore → Postgres (courses): resolved 2026-08-23, story 11.6.** Both halves
+are on Postgres now. Structure was already there; progress moved from the
+`userProgress/{uid}/courses/...` document tree into `course_progress`, and
+`lib/course/firestore.ts` was deleted rather than left dormant, so no code path
+can read progress from Firestore. `lib/course/progress.ts` is the only way in.
 
-Until resolved: never assume "it's in Postgres" when reading courses.
+Two things worth keeping from it. The read went from one Firestore query per
+node — sections, then subsections, then checkboxes, dozens per page — to a
+single `SELECT`. And `getCourseCompletionRates` exists, which is the aggregate
+the document tree could not answer without reading every user's whole subtree;
+it is the reason this option was taken over keeping Firestore.
+
+The Firestore documents were not deleted by the backfill. Removing them is a
+separate decision, and keeping the source intact is what makes the count check
+re-runnable.
 
 **There is no project-wide move off Firestore.** Firestore remains the primary
 system of record, including the sign-in path (`lib/auth/otp.ts`), tenants, audit,
