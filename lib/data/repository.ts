@@ -63,6 +63,9 @@ export type ManualPageVersion = {
 
 export type StoredBugReport = Omit<BugReport, "id">;
 
+/** The doc id is the group id, so it is not a stored field. */
+export type StoredGroup = Omit<Group, "id">;
+
 /**
  * What `locations/{id}` actually holds, which is more than `Tenant` declares.
  *
@@ -129,7 +132,7 @@ export interface Repository {
 
   readonly authCodes: CollectionRef<AuthCode>;
   readonly authCodeCooldowns: CollectionRef<AuthCodeCooldown>;
-  readonly groups: CollectionRef<Group>;
+  readonly groups: CollectionRef<StoredGroup>;
   readonly csm: CollectionRef<CsmRecord>;
   readonly clients: CollectionRef<ClientData>;
   /** Stored shape: the doc id is the id, so it is not a field. */

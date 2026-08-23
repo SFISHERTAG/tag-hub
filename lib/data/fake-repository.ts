@@ -20,6 +20,7 @@ import type {
   Repository,
   StoredAuditRecord,
   StoredBugReport,
+  StoredGroup,
   StoredLocation,
 } from "./repository";
 import { mapSentinels, sentinelKind, sentinelValues, type Sentinel } from "./sentinels";
@@ -351,7 +352,7 @@ export function fakeRepository(store: FakeStore = new FakeStore()): {
       return collection<AuthCodeCooldown>("authCodeCooldowns");
     },
     get groups() {
-      return collection<Group>("groups");
+      return collection<StoredGroup>("groups");
     },
     get csm() {
       return collection<CsmRecord>("csm");

@@ -63,7 +63,22 @@ export type Tx = {
  * field forces a double cast at every write site, and a cast is exactly the
  * thing that would let a genuinely wrong value through unnoticed.
  */
-export type Writable<T> = { [K in keyof T]: T[K] | Sentinel };
+export type Writable<T> = { [K in keyof T]: WritableValue<T[K]> | Sentinel };
+
+/**
+ * Recursive, because `mapSentinels` is. The one live `deleteField` in the repo
+ * is nested — `{ completedTasks: { [taskId]: deleteField() } }` in
+ * `lib/onboarding/store.ts` — so a top-level-only `Writable` was narrower than
+ * the runtime it describes and rejected a write the implementation handles
+ * correctly. Arrays are passed through rather than mapped: no call site writes
+ * a sentinel into an array position, and mapping them would make every array
+ * element optionally a sentinel for no reason.
+ */
+type WritableValue<V> = V extends readonly unknown[]
+  ? V
+  : V extends Record<string, unknown>
+    ? Writable<V>
+    : V;
 
 export interface DocRef<T> {
   readonly path: string;

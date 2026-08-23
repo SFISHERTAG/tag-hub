@@ -4,7 +4,7 @@
    stop, so this comment is the migration marker: move the data path into
    lib/dashboard/metrics.ts and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 import { searchContacts } from "@/lib/ghl/contacts";
 import { getLastMetaFetch } from "@/lib/meta/fetch-log";
 
@@ -25,15 +25,11 @@ export type LastUpdated = {
 };
 
 async function getLastOutcomeMarkedAt(locationId: string): Promise<number | null> {
-  const snapshot = await firestore()
-    .collection(`locations/${locationId}/appointmentOutcomes`)
-    .orderBy("markedAt", "desc")
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) return null;
-  const outcome = snapshot.docs[0].data() as { markedAt: number };
-  return outcome.markedAt;
+  const [latest] = await repository().appointmentOutcomes(locationId).list({
+    orderBy: { field: "markedAt", direction: "desc" },
+    limit: 1,
+  });
+  return latest?.data.markedAt ?? null;
 }
 
 async function getLastContactAddedAt(locationId: string): Promise<number | null> {

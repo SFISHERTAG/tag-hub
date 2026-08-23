@@ -51,6 +51,7 @@ import type {
   Repository,
   StoredAuditRecord,
   StoredBugReport,
+  StoredGroup,
   StoredLocation,
 } from "./repository";
 
@@ -285,7 +286,7 @@ export function firestoreRepository(): Repository {
       return collection<AuthCodeCooldown>("authCodeCooldowns", cooldownCodec);
     },
     get groups() {
-      return collection<Group>("groups");
+      return collection<StoredGroup>("groups");
     },
     get csm() {
       return collection<CsmRecord>("csm");
