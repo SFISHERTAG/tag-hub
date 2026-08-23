@@ -1,4 +1,17 @@
 <main class="signin">
+  <!-- Decorative: the card title already says TAG Hub, so alt="" keeps a screen
+       reader from announcing the same thing twice. width/height are the file's
+       intrinsic size so the box is reserved before the image loads and the form
+       does not jump. -->
+  <img
+    class="signin__mark"
+    src="Lion-lg.png"
+    alt=""
+    width="1254"
+    height="1254"
+    decoding="async"
+  />
+
   <mat-card appearance="outlined" class="signin__card">
     @if (pending()) {
       <mat-progress-bar mode="indeterminate" aria-label="Working" />
