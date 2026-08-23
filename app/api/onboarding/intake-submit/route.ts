@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { authorizeOnboardingTrigger } from "@/lib/api/webhook-auth";
+import { postAlert, slackConfigured } from "@/lib/slack";
 
 /**
  * POST /api/onboarding/intake-submit
@@ -30,7 +31,23 @@ export async function POST(request: NextRequest) {
     // Forward to Phase 2 Cloud Function
     const phase2Url = process.env.PHASE2_WEBHOOK_URL;
     if (!phase2Url) {
-      console.error("PHASE2_WEBHOOK_URL not configured");
+      // A client has just submitted their intake form and nothing downstream
+      // will run. Story 5.12 is not deployed and PHASE2_WEBHOOK_URL is unset in
+      // production, so this branch is the LIVE path, not an edge case.
+      //
+      // The 500 alone goes to GHL and stops there. Nobody at TAG learns that a
+      // client filled in the form and vanished. That silence is the actual
+      // harm, and it is why this alerts before it returns.
+      console.error("[intake-submit] PHASE2_WEBHOOK_URL not configured");
+      if (slackConfigured()) {
+        await postAlert(
+          `Intake form submitted for location ${locationId} (${email}) but ` +
+            `provisioning did not run: PHASE2_WEBHOOK_URL is not configured. ` +
+            `No brief was created. See story 5.12.`,
+        ).catch(() => {
+          // Alerting must never be the reason this handler throws.
+        });
+      }
       return NextResponse.json(
         { error: "Provisioning service not configured" },
         { status: 500 }

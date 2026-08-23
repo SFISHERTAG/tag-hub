@@ -82,6 +82,7 @@ GoHighLevel.
 | 4.4 | ROAS joined on `utmAdId` | Done |
 | 4.5 | "As of" freshness indicator | Done |
 | 4.6 | Owner's own calendar view | Done |
+| 4.7 | Creatives to campaigns linking | **Backlog — shipped without a story** |
 
 **Blocker moved.** 4.1 is no longer the gate: the System User and token are live
 and client ad accounts are assigned. What remains is that this environment has no
@@ -105,6 +106,22 @@ one auditable action.
 | 5.8 | SLA breach sweep and escalation | Superseded by 13.5/13.6 |
 | 5.9 | Adjustable stage SLA baselines | Superseded by 13.5 |
 | 5.10 | Opportunity custom fields in the GHL client | Draft — blocks 13.5 |
+| 5.11 | Provision the client workspace on Closed Won | Done — deployed and enforcing |
+| 5.12 | Intake submission to seeded brief | **Not implemented — nothing runs it** |
+| 5.13 | Request Meta access from the client | **Not implemented — nothing runs it** |
+
+**5.11 to 5.13 were "Phase 1/2/3" until 2026-08-23.** Client provisioning ran as
+three deployed webhooks with no story, no epic and no Status field. Two of the
+three had stopped running entirely and nobody knew, because every guard in this
+repo watches `docs/stories/*.md` and a phase gives them nothing to watch. 5.11
+is live and enforcing; 5.12 and 5.13 are not deployed, and their `app/api`
+routes forward to environment variables that are unset in production. A client
+who submits the intake form today gets nothing, silently.
+
+**5.13 does not wire up Meta.** It emails a request for access — zero references
+to the Graph API. The name implied otherwise and misled the person who owns the
+system, which is the clearest argument for the naming rule in
+`AGENT_COORDINATION.md` §11.
 
 **Reconciled with Epic 13 on 2026-08-22.** 5.7, 5.8 and 5.9 duplicated Epic 13's
 SLA work and are superseded; 5.10 survives as its prerequisite. Decision record:
@@ -155,6 +172,7 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.6 | Data scope at the query layer — whose rows, per hat | In progress — enforcement layer and metric registry landed, route wiring outstanding |
 | 7.7 | Write scope and team to the claim | In Review — all tasks complete; AC9 verified by inspection only, see Completion Notes |
 | 7.8 | Map uids to GHL users | Draft |
+| 7.9 | Admin: users, groups and role assignment | **Backlog — shipped without a story** |
 
 The Knowledge Base stories previously carried the ids 7.1 and 7.2, colliding with
 the two command-surface stories of the same number. They are now Epic 12, and
@@ -203,6 +221,7 @@ here before the client does.
 | 8.2 | Per-client integration health | Partly rendered in 7.1 |
 | 8.3 | Attribution drift monitor | Draft |
 | 8.4 | In-app bug reporting | Draft |
+| 8.5 | The rules engine behind health and escalation | **Backlog — shipped without a story** |
 
 8.2 is per client, not global, and that distinction is the whole point. One
 client's pixel stops firing and *that* dashboard reports zero conversions while

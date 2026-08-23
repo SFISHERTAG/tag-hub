@@ -242,6 +242,54 @@ configuration for something watching.
 
 ---
 
+## 11. If it can run, it needs a story
+
+Added 2026-08-23, after finding that two thirds of client provisioning had
+stopped working and nobody knew.
+
+**The rule.** Anything that can be deployed, can break, or can silently stop
+running gets a story in `docs/stories/`, owned by an epic. Not a phase, not a
+milestone, not a document named after the sprint it was built in. A story.
+
+**Why it is a rule and not a preference.** Every automated guard here watches
+`docs/stories/*.md`. `check-story-status` reads a Status field against its own
+Tasks; `check-story-regression` reads two versions and refuses a commit that
+walks one backwards. Both are good and both are blind to anything that is not a
+story.
+
+The failure mode is precise: work with no story cannot regress, because it has
+no Status to move. Story 10.3 lost five checkboxes and a hook caught it within a
+day. "Phase 2" stopped existing in production and nothing fired, because there
+was nothing to fire about.
+
+**What it cost.** Client provisioning ran as three webhooks named Phase 1, 2 and
+3. Phase 1 is deployed and enforcing. Phases 2 and 3 are not deployed at all,
+and their `app/api` routes forward to environment variables unset in production,
+so a client who submits the intake form authenticates, fails on a missing URL,
+and gets nothing. Every document still described them as live. They are now
+stories 5.11, 5.12 and 5.13, with their real state written down.
+
+**A second cost, same root.** "Phase 1/2/3" also named an unrelated CSM
+dashboard workstream. Six `PHASE_*.md` documents described *that* work, not
+provisioning. That code shipped, is live in `lib/meta/creatives.ts`, and **no
+epic owns it either.** Two bodies of running code, one name, zero stories.
+
+**Applying it:**
+
+- If you are about to name something "Phase N", you are describing a deployment
+  order, not a unit of work. Write the story instead.
+- "Deployed and reachable" belongs in the acceptance criteria of anything that
+  gets deployed. 5.11 is live and correct and passes three of its four criteria;
+  the one it fails is exactly the one that would have caught its siblings dying.
+- A completion report is not a story. `PHASE_1_COMPLETION.md` asserted
+  production-ready for work whose production status nobody could check. Those
+  were retired rather than corrected; the API reference among them was renamed
+  for what it actually describes.
+- When you find running code with no story, say so rather than writing one from
+  guesswork. Status invented to fill a gap is worse than an admitted gap.
+
+---
+
 ## Message shape
 
 Address it, then answer the four questions the recipient actually has.
