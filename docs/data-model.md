@@ -155,7 +155,7 @@ be able to open a course to fix it.
 | `flow_scripts` | FLOW card script content (versioned) | App writes directly | N/A | Also see `flow_scripts` in Firestore table above — same name, different store; Postgres is the live editor content, Firestore's is not currently synced from it |
 | `flow_audit_log` | FLOW change history, revert-capable | App writes directly | N/A | Written by `lib/flow/db.ts#logChange` |
 | `flow_script_suggestions` | Closer-submitted script edit suggestions, pending sales-manager review | App writes directly | N/A | Added Phase 2 item 2.5 fast-follow; approving one creates a new `flow_scripts` row and writes `flow_audit_log`, all inside one transaction |
-| `csm` | CS org reporting lines (who a CSM reports to) | Firestore `csm/{email}` | N/A | Keyed by email to match `clients.csm_assigned`. Migration 004 briefly created the same table as `csm_directory`; 006 consolidates the two |
+| `csm` | **Not in use.** Created by `003`, renamed by `006`, never queried. The live source is the Firestore `csm/{email}` collection read by `lib/dashboard/csm-directory.ts:30` | — | N/A | Wrong the same way the `clients` row was. Migration 004 briefly created it as `csm_directory`; 006 consolidated the two, and nothing has read either since |
 
 **Table grants.** Every table in `public` is read and written by
 `tag_app_user`, granted by 003's blanket
