@@ -1,10 +1,14 @@
-/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
-   Queries directly instead of going through a scoped metric fetch. Not a leak
-   today (every read is keyed on a clientId that gateClient has already
-   authorised), but it is the pattern the zone exists to stop, so this comment
-   is the migration marker: move the data path into lib/dashboard/metrics.ts
-   and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
 import "server-only";
+// Predates the metric
+// registry: queries directly instead of going through a scoped metric fetch.
+// Not a leak today (every read is keyed on a clientId gateClient has already
+// authorised), but it is the pattern the zone exists to stop, so this is the
+// migration marker: move the data path into lib/dashboard/metrics.ts and
+// delete this line. See docs/ROLE_SCOPE_MODEL.md. Line-scoped, not file-wide:
+// a file-level disable of this rule id also switched off the cross-integration
+// zones for the whole file, so a future sibling-integration import here would
+// have passed lint silently.
+// eslint-disable-next-line import/no-restricted-paths
 import { firestore } from "@/lib/firestore";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
