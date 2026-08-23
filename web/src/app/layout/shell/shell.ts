@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { NAV_ITEMS } from '../nav/nav-items';
 import { UserMenu } from '../user-menu/user-menu';
+import { ImpersonationBanner } from '../impersonation-banner/impersonation-banner';
 import { map } from 'rxjs';
 
 /**
@@ -41,6 +42,7 @@ const SIDENAV_BREAKPOINT = '(min-width: 840px)';
     MatButtonModule,
     HasPermissionDirective,
     UserMenu,
+    ImpersonationBanner,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',

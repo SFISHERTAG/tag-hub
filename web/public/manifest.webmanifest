@@ -1,6 +1,6 @@
 {
-  "name": "web",
-  "short_name": "web",
+  "name": "TAG Cockpit",
+  "short_name": "TAG",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",

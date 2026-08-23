@@ -31,6 +31,16 @@ export interface RbacService {
   switchRole(role: Role): Promise<ApiResult<Session>>;
 
   /**
+   * Leaves an impersonated tenant and replaces the session with the result.
+   *
+   * On the contract for the same reason `signOut` is: `layout/` renders the
+   * banner and must not know which features exist. Returns the new session
+   * rather than void, because the server rebuilds the payload — the hats and
+   * locations on the way out are not the ones on the way in.
+   */
+  exitImpersonation(): Promise<ApiResult<Session>>;
+
+  /**
    * Ends the session and clears it.
    *
    * Here rather than on the auth feature's service because `layout/` needs it

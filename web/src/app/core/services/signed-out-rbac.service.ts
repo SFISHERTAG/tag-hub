@@ -31,6 +31,11 @@ export class SignedOutRbacService implements RbacService {
     });
   }
 
+  /** Signed out; there is nothing to leave. */
+  async exitImpersonation() {
+    return { data: null, error: { message: 'Not signed in.', context: 'exitImpersonation' } } as never;
+  }
+
   /** Already signed out; nothing to end. */
   async signOut(): Promise<void> {
     return;

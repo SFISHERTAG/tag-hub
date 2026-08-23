@@ -52,3 +52,12 @@
 .toolbar-spacer {
   flex: 1 1 auto;
 }
+
+// The shell fills the viewport minus the toolbar. When the impersonation banner
+// is present it takes its own space above, so this has to be the remainder
+// rather than a fixed height — a hardcoded 100dvh here pushes the bottom nav
+// off-screen for exactly the users who are impersonating.
+.shell {
+  flex: 1 1 auto;
+  min-block-size: 0;
+}

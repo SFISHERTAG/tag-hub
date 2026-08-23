@@ -10,6 +10,7 @@ import type { RbacService } from './rbac.service';
 const SESSION_URL = '/api/auth/session';
 const ROLE_URL = '/api/session/role';
 const SIGNOUT_URL = '/api/auth/signout';
+const EXIT_IMPERSONATION_URL = '/api/impersonation/exit';
 
 /**
  * The real session source.
@@ -48,6 +49,13 @@ export class HttpRbacService implements RbacService {
     // would briefly render UI for a hat the server may refuse.
     if (!result.error) this._session.set(result.data);
 
+    return result;
+  }
+
+  /** Leaves the impersonated tenant; the server returns the rebuilt session. */
+  async exitImpersonation(): Promise<ApiResult<Session>> {
+    const result = await firstValueFrom(this.api.post<Session>(EXIT_IMPERSONATION_URL, {}));
+    if (result.data) this.applySession(result.data);
     return result;
   }
 
