@@ -98,9 +98,26 @@ export class OverviewTab {
    * the tab is reused across clients rather than recreated, so the previous
    * client's alerts would have stayed on screen.
    */
+  /**
+   * Granularity guard: the effect tracks this computed, not client() itself.
+   * computed() stops propagation when the value is equal, so a health refresh
+   * that hands the tab a NEW object for the SAME client no longer refetches
+   * alerts and flashes the skeleton.
+   */
+  private readonly clientId = computed(() => this.client().id);
+
+  /**
+   * Response-ordering guard, same pattern as clients-book.ts: each load takes
+   * a ticket, and a response only lands if its ticket is still the newest.
+   * Without it, switching from a slow client A to a fast client B rendered
+   * B's alerts and then let A's late response overwrite them — B's page
+   * showing A's list, stable until the next navigation.
+   */
+  private requestId = 0;
+
   constructor() {
     effect(() => {
-      void this.load(this.client().id);
+      void this.load(this.clientId());
     });
   }
 
@@ -109,7 +126,9 @@ export class OverviewTab {
     this.loading.set(true);
     this.error.set(null);
 
+    const id = ++this.requestId;
     const result = await this.clientsApi.getAlerts(clientId);
+    if (id !== this.requestId) return;
 
     if (result.error) {
       this.alerts.set([]);

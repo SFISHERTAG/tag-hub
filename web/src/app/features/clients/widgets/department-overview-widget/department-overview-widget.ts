@@ -1,13 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ErrorState, HudGauge, LoadingState } from '../../../../shared/ui';
 import { ClientWidgetsService } from '../../services/client-widgets.service';
+import { scoreTone } from '../../services/client-status';
 import { SampleDataNotice } from '../../shared/sample-data-notice/sample-data-notice';
 import type { DepartmentSummary, SampleDataDisclosure } from '../../services/client.model';
 
 interface Tile {
   readonly label: string;
   readonly value: number;
-  readonly tone: 'positive' | 'caution' | 'negative' | 'neutral';
+  // 'caution' deliberately absent: the remaining tiles are counts with
+  // binary tones; the graded good/warn/bad signal lives on the dial's tone.
+  readonly tone: 'positive' | 'negative' | 'neutral';
 }
 
 const TOP_BOOKS = 5;
@@ -67,6 +70,12 @@ export class DepartmentOverviewWidget {
         tone: summary.ascensionReadyCount > 0 ? 'positive' : 'neutral',
       },
     ];
+  });
+
+  /** The qualitative signal the old Avg-health tile carried via scoreTone. */
+  protected readonly dialTone = computed(() => {
+    const summary = this.summary();
+    return summary ? scoreTone(summary.avgHealthScore) : null;
   });
 
   protected readonly topBooks = computed(
