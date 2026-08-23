@@ -5,7 +5,7 @@
  * Fulfillment pipeline (see lib/ghl/pipelines.ts's note on the three "stage"
  * concepts in this codebase).
  *
- * Updated 2026-08-23: GHL Fulfillment pipeline was rebuilt with twelve new
+ * Updated 2026-08-22: GHL Fulfillment pipeline was rebuilt with twelve new
  * stages, replacing the PR1-AP5 model. Old codes retained for backward
  * compatibility with existing opportunities; new codes map to live GHL stages.
  *
@@ -59,7 +59,7 @@ export function isFulfillmentStage(value: string): value is FulfillmentStage {
 /**
  * Pulls the stage code out of a real GHL stage name.
  *
- * 2026-08-23: GHL rebuilt the Fulfillment pipeline with new stage names. This
+ * 2026-08-22: GHL rebuilt the Fulfillment pipeline with new stage names. This
  * function accepts three formats:
  * 1. New English names: "Campaign Launched" → CL, "Onboarding Booked" → OB
  * 2. Old format: "AP 2 - Ads Launched" or "PR1" → AP2, PR1
@@ -124,7 +124,7 @@ export type OnboardingTask = {
  * Fixed stage -> task mapping for MVP (Dev notes on story 5.1). Per-client
  * customization is a fast-follow, not this story.
  *
- * Updated 2026-08-23 for new GHL stage model. Includes both old (PR1-AP5,
+ * Updated 2026-08-22 for new GHL stage model. Includes both old (PR1-AP5,
  * archived) and new (OB-OFF, live) mappings for backward compatibility.
  */
 export const STAGE_TASKS: Record<FulfillmentStage, OnboardingTask[]> = {
