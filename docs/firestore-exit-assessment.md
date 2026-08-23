@@ -22,6 +22,14 @@ Assessment written 2026-08-22, from the code rather than from principle.
 >
 > Verified inventory with line numbers: `docs/14.1-firestore-audit.md`. Story
 > titles in `docs/epics.md` were re-cut against it.
+>
+> **The cause, which is the part worth carrying forward.** This inventory was
+> built from `docs/data-model.md`, not from call sites. `data-model.md`
+> describes intent; it was read as a description of reality. The four
+> tractability findings in the next section were derived from code and all four
+> held. Same document, same author, same day — the half built from a document
+> was wrong and the half built from code was right. A doc is not evidence for
+> what the code does, including this one.
 
 ## The short version
 
