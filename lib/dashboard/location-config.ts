@@ -1,10 +1,16 @@
-/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
-   Queries directly instead of going through a scoped metric fetch. Not a leak
-   today (nothing here is per-user), but it is the pattern the zone exists to
-   stop, so this comment is the migration marker: move the data path into
-   lib/dashboard/metrics.ts and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
+/*
+ * The `import/no-restricted-paths` disable that used to sit here is gone: the
+ * data path now runs through the `lib/data` repository seam (story 14.1), so
+ * the zone no longer fires and eslint reported the directive as unused.
+ *
+ * The concern it recorded is NOT resolved and is kept here deliberately. This
+ * still queries directly rather than going through a scoped metric fetch. Not
+ * a leak today, since nothing here is per-user, but it is the pattern the zone
+ * exists to stop. The remaining move is into lib/dashboard/metrics.ts.
+ * See docs/ROLE_SCOPE_MODEL.md.
+ */
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 
 /**
  * Per-location extras the client-owner dashboard needs — things GHL has no
@@ -25,10 +31,9 @@ export type LocationConfig = {
 export async function getLocationConfig(
   locationId: string,
 ): Promise<LocationConfig> {
-  const snapshot = await firestore().doc(`locations/${locationId}`).get();
-  if (!snapshot.exists) return {};
+  const data = await repository().locations.doc(locationId).get();
+  if (!data) return {};
 
-  const data = snapshot.data();
   return {
     slackChannelId:
       typeof data?.slackChannelId === "string" ? data.slackChannelId : undefined,

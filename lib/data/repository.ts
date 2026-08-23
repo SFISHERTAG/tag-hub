@@ -63,6 +63,32 @@ export type ManualPageVersion = {
 
 export type StoredBugReport = Omit<BugReport, "id">;
 
+/**
+ * What `locations/{id}` actually holds, which is more than `Tenant` declares.
+ *
+ * `functions/src/firestore.ts#saveTenantResources` writes five fields the
+ * `Tenant` type does not model, and the app reads two of them:
+ * `lib/dashboard/location-config.ts` for Slack and Drive,
+ * `lib/dashboard/data-fetchers.ts:177` gating creative loading on
+ * `driveFolderId`.
+ *
+ * Surfaced by typing the collection at the seam. Against an untyped snapshot
+ * `data?.slackChannelId` compiled happily and nothing recorded that the
+ * provisioning writer and the reader had a contract `Tenant` was not party to.
+ *
+ * Declared here rather than by widening `Tenant`, because `Tenant` is the shape
+ * `lib/ghl/tenants.ts` reads and writes deliberately. This is the stored
+ * superset, and 14.4 has to reconcile the two when `locations` becomes a table:
+ * the Postgres `tenants` table in `003` models neither.
+ */
+export type StoredLocation = Tenant & {
+  readonly slackChannelId?: string;
+  readonly driveFolderId?: string;
+  readonly metaSetupStatus?: string;
+  readonly metaAccessRequestedAt?: string;
+  readonly metaSetupGuidesentAt?: string;
+};
+
 export type AgencyRoot = {
   readonly primaryCompanyId?: string;
 };
@@ -93,7 +119,7 @@ export interface Repository {
   readonly webhookDeadLetter: CollectionRef<DeadLetterEntry>;
   readonly webhookEventsProcessed: CollectionRef<ProcessedEvent>;
   /** `locations` is the tenant registry. `lib/ghl/tenants.ts` names it "tenants"; the collection is `locations`. */
-  readonly locations: CollectionRef<Tenant>;
+  readonly locations: CollectionRef<StoredLocation>;
   readonly ghlAgencyRoot: DocRef<AgencyRoot>;
   readonly ghlCompanyTokens: CollectionRef<StoredAgencyToken>;
   readonly ghlLocationTokens: CollectionRef<StoredLocationToken>;

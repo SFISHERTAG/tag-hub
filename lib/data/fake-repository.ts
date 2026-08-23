@@ -19,6 +19,7 @@ import type {
   ProcessedEvent,
   Repository,
   StoredBugReport,
+  StoredLocation,
 } from "./repository";
 import { mapSentinels, sentinelKind, sentinelValues, type Sentinel } from "./sentinels";
 import type { Group } from "@/lib/auth/groups";
@@ -370,7 +371,7 @@ export function fakeRepository(store: FakeStore = new FakeStore()): {
       return collection<ProcessedEvent>("webhookEventsProcessed");
     },
     get locations() {
-      return collection<Tenant>("locations");
+      return collection<StoredLocation>("locations");
     },
     get ghlAgencyRoot() {
       return document<AgencyRoot>("ghl/agency");

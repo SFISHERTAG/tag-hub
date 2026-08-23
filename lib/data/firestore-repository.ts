@@ -50,6 +50,7 @@ import type {
   ProcessedEvent,
   Repository,
   StoredBugReport,
+  StoredLocation,
 } from "./repository";
 
 /*
@@ -304,7 +305,7 @@ export function firestoreRepository(): Repository {
       return collection<ProcessedEvent>("webhookEventsProcessed");
     },
     get locations() {
-      return collection<Tenant>("locations");
+      return collection<StoredLocation>("locations");
     },
     get ghlAgencyRoot() {
       return document<AgencyRoot>("ghl/agency");
