@@ -1,7 +1,7 @@
 {
   "name": "tag-automation-functions",
   "version": "1.0.0",
-  "description": "TAG client onboarding automation \u2014 Cloud Functions",
+  "description": "TAG client onboarding automation — Cloud Functions",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -32,6 +32,7 @@
   "devDependencies": {
     "@types/pg": "^8.23.1",
     "eslint": "^9.0.0",
-    "eslint-plugin-import": "^2.30.0"
+    "eslint-plugin-import": "^2.30.0",
+    "typescript-eslint": "^8.67.0"
   }
 }
