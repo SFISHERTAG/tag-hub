@@ -108,6 +108,17 @@ export interface CollectionRef<T> {
   list(query?: Query<T>): Promise<StoredDoc<T>[]>;
   /** One round trip for many ids. Without it `lib/ghl/store.ts` degrades to N reads. */
   getAll(ids: readonly string[]): Promise<StoredDoc<T>[]>;
+  /**
+   * Document ids without reading their contents.
+   *
+   * Not `list()` with a projection. Firestore's `listDocuments()` also returns
+   * documents that exist only as a parent of a subcollection and carry no
+   * fields of their own, which a query would not surface at all. Two sites
+   * enumerate stored credentials this way, and reading every token document to
+   * produce a list of ids would be both slower and a needless handling of
+   * secrets.
+   */
+  listIds(): Promise<string[]>;
 }
 
 /**

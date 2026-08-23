@@ -132,9 +132,31 @@ export type StoredLocation = Tenant & {
   readonly metaSetupStatus?: string;
   readonly metaAccessRequestedAt?: string;
   readonly metaSetupGuidesentAt?: string;
+  /* Four more written by functions/src/firestore.ts#saveTenantResources and
+   * read by nothing on the app side, which is why nothing ever modelled them.
+   * They are declared here so 14.4 builds a column list from what the document
+   * holds rather than from what one reader wanted. */
+  readonly googleDocId?: string;
+  readonly ownerEmail?: string;
+  /** Written as `new Date()`, so it arrives as a Timestamp, not epoch millis. */
+  readonly createdAt?: unknown;
+  readonly provisioned?: boolean;
 };
 
-export type AgencyRoot = {
+/**
+ * `ghl/agency` is both a pointer and, on older deployments, a token.
+ *
+ * It records which company is primary. But deployments predating the
+ * per-company layout still hold a full agency token at this path, and
+ * `loadAgencyToken` reads those fields to migrate them down on first read. So
+ * the document is `Partial<StoredAgencyToken>` plus the pointer, not the
+ * pointer alone.
+ *
+ * My first declaration here had only `primaryCompanyId`, which would have made
+ * the legacy migration path unreachable. Fourth collection whose declared type
+ * was narrower than its contents, and the second of those was mine.
+ */
+export type AgencyRoot = Partial<StoredAgencyToken> & {
   readonly primaryCompanyId?: string;
 };
 

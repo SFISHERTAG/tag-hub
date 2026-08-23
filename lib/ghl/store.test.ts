@@ -8,39 +8,25 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
  * install lands under its own company, and the primary is assigned once.
  */
 
-type Doc = Record<string, unknown>;
+import { FakeStore, fakeRepository } from "@/lib/data/fake-repository";
 
-const docs = new Map<string, Doc>();
+/*
+ * Uses the repository seam's fake (story 14.1), replacing a hand-rolled
+ * Firestore with its own docRef, merge semantics and a listDocuments that
+ * re-implemented "direct children only" path filtering.
+ *
+ * That stub is why this file needed changing at all: it implemented exactly
+ * the Firestore surface this module used, so it encoded that surface as the
+ * contract and broke the moment the module moved behind the seam. The
+ * behaviour under test is unchanged.
+ */
+const store = new FakeStore();
+const { repository } = fakeRepository(store);
 
-function docRef(path: string) {
-  return {
-    id: path.split("/").pop()!,
-    async get() {
-      const data = docs.get(path);
-      return { exists: data !== undefined, data: () => data };
-    },
-    async set(value: Doc, options?: { merge?: boolean }) {
-      docs.set(
-        path,
-        options?.merge ? { ...(docs.get(path) ?? {}), ...value } : value,
-      );
-    },
-  };
-}
-
-const fakeFirestore = {
-  doc: (path: string) => docRef(path),
-  collection: (path: string) => ({
-    async listDocuments() {
-      return [...docs.keys()]
-        .filter((key) => key.startsWith(`${path}/`))
-        .filter((key) => key.slice(path.length + 1).split("/").length === 1)
-        .map((key) => docRef(key));
-    },
-  }),
-};
-
-vi.mock("@/lib/firestore", () => ({ firestore: () => fakeFirestore }));
+vi.mock("@/lib/data", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/data")>("@/lib/data");
+  return { ...actual, repository: () => repository };
+});
 
 const {
   saveAgencyToken,
@@ -61,7 +47,7 @@ function token(companyId: string) {
 }
 
 beforeEach(() => {
-  docs.clear();
+  for (const path of Object.keys(store.snapshot())) store.remove(path);
 });
 
 describe("agency token storage", () => {
@@ -70,7 +56,7 @@ describe("agency token storage", () => {
 
     expect(await loadPrimaryCompanyId()).toBe("tag-co");
     expect(await loadAgencyToken()).toMatchObject({ companyId: "tag-co" });
-    expect(docs.get("ghl/agency/companies/tag-co")).toMatchObject({
+    expect(store.read("ghl/agency/companies/tag-co")).toMatchObject({
       accessToken: "access-tag-co",
     });
   });
@@ -108,13 +94,13 @@ describe("agency token storage", () => {
 
   it("migrates a legacy root token into the per-company layout on read", async () => {
     // What a deployment installed before this change actually has on disk.
-    docs.set("ghl/agency", token("legacy-co"));
+    store.write("ghl/agency", token("legacy-co"));
 
     expect(await loadAgencyToken()).toMatchObject({
       companyId: "legacy-co",
       accessToken: "access-legacy-co",
     });
-    expect(docs.get("ghl/agency/companies/legacy-co")).toMatchObject({
+    expect(store.read("ghl/agency/companies/legacy-co")).toMatchObject({
       accessToken: "access-legacy-co",
     });
     expect(await loadPrimaryCompanyId()).toBe("legacy-co");
@@ -128,7 +114,7 @@ describe("agency token storage", () => {
     await expect(
       saveAgencyToken(token("../../etc/passwd")),
     ).rejects.toBeInstanceOf(InvalidCompanyIdError);
-    expect(docs.size).toBe(0);
+    expect(Object.keys(store.snapshot())).toHaveLength(0);
   });
 
   it("returns null rather than a stranger's token when nothing is installed", async () => {

@@ -286,6 +286,10 @@ class FakeCollectionRef<T> implements CollectionRef<T> {
     );
   }
 
+  async listIds(): Promise<string[]> {
+    return this.store.childrenOf(this.path).map((e) => e.path.split("/").pop() ?? "");
+  }
+
   async getAll(ids: readonly string[]): Promise<StoredDoc<T>[]> {
     const out: StoredDoc<T>[] = [];
     for (const id of ids) {

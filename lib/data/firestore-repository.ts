@@ -208,6 +208,11 @@ class FsCollectionRef<T> implements CollectionRef<T> {
     return snapshot.docs.map((doc) => this.hydrate(doc.id, doc.ref, doc.data()));
   }
 
+  async listIds(): Promise<string[]> {
+    const refs = await this.ref.listDocuments();
+    return refs.map((ref) => ref.id);
+  }
+
   async getAll(ids: readonly string[]): Promise<StoredDoc<T>[]> {
     if (ids.length === 0) return [];
     const refs = ids.map((id) => this.ref.doc(id));
