@@ -3,6 +3,12 @@
   height: 100%;
 }
 
+.app-mark {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  margin-inline-end: 0.625rem;
+}
+
 .app-title {
   font: var(--mat-sys-title-large);
 }
