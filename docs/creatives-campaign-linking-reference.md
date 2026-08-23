@@ -1,6 +1,16 @@
-# Phase 3 API Reference - Creatives-to-Campaigns Linking
+# Creatives-to-campaigns linking — API reference
 
-Complete reference for all new functions and types introduced in Phase 3.
+Renamed 2026-08-23. This was `docs/PHASE_3_API_REFERENCE.md`, and "Phase 3"
+named two unrelated workstreams at once: the CSM dashboard work this file
+describes, and the client-provisioning webhook that is now story 5.13. Nothing
+but context distinguished them.
+
+**The code this describes is live** (`lib/meta/creatives.ts`,
+`app/api/clients/[clientId]/creatives/route.ts`) **and no story or epic owns
+it.** That is a gap, not a claim the work is unwanted. See
+`AGENT_COORDINATION.md` §11.
+
+Reference for the functions and types introduced by that work.
 
 ---
 

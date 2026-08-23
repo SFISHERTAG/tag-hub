@@ -105,6 +105,22 @@ one auditable action.
 | 5.8 | SLA breach sweep and escalation | Superseded by 13.5/13.6 |
 | 5.9 | Adjustable stage SLA baselines | Superseded by 13.5 |
 | 5.10 | Opportunity custom fields in the GHL client | Draft — blocks 13.5 |
+| 5.11 | Provision the client workspace on Closed Won | Done — deployed and enforcing |
+| 5.12 | Intake submission to seeded brief | **Not implemented — nothing runs it** |
+| 5.13 | Request Meta access from the client | **Not implemented — nothing runs it** |
+
+**5.11 to 5.13 were "Phase 1/2/3" until 2026-08-23.** Client provisioning ran as
+three deployed webhooks with no story, no epic and no Status field. Two of the
+three had stopped running entirely and nobody knew, because every guard in this
+repo watches `docs/stories/*.md` and a phase gives them nothing to watch. 5.11
+is live and enforcing; 5.12 and 5.13 are not deployed, and their `app/api`
+routes forward to environment variables that are unset in production. A client
+who submits the intake form today gets nothing, silently.
+
+**5.13 does not wire up Meta.** It emails a request for access — zero references
+to the Graph API. The name implied otherwise and misled the person who owns the
+system, which is the clearest argument for the naming rule in
+`AGENT_COORDINATION.md` §11.
 
 **Reconciled with Epic 13 on 2026-08-22.** 5.7, 5.8 and 5.9 duplicated Epic 13's
 SLA work and are superseded; 5.10 survives as its prerequisite. Decision record:
