@@ -82,6 +82,19 @@ export class Signin {
     // Navigating away mid-countdown would otherwise leave the interval running
     // against a destroyed component.
     inject(DestroyRef).onDestroy(() => this.stopCooldown());
+
+    // OTP link from email contains #e=email&c=code. Parse and auto-populate.
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const email = fragment.get('e');
+    const code = fragment.get('c');
+
+    if (email) {
+      this.email.set(email);
+      if (code?.length === CODE_LENGTH) {
+        this.code.set(code);
+        this.step.set('code');
+      }
+    }
   }
 
   protected async submitEmail(): Promise<void> {
