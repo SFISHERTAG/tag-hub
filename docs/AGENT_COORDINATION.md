@@ -150,6 +150,83 @@ no file, preserves untracked files, and leaves stashes alone. Never park with
 `git checkout --detach`, which is what deleted a tracked file from another session's tree on
 2026-08-20 (§1).
 
+## 10. Standing orders
+
+Added 2026-08-23. Every one of these came from something that actually went wrong
+that day, and the incident is named so the rule is arguable rather than obeyed.
+A rule you cannot argue with is a rule nobody applies to a case it did not
+anticipate.
+
+They live here rather than in a briefing document because sessions are
+consumable: they run out of context and get replaced. A rule only survives that
+if it sits somewhere the replacement is told to read. CLAUDE.md points every
+session here before it touches a shared ref, so this is that place.
+
+**1. Cite or flag.** Every factual claim carries `file:line` and the SHA it was
+read at, or says explicitly that it is unverified.
+*Scar:* `docs/firestore-exit-assessment.md` built its collection inventory from
+`docs/data-model.md` rather than from call sites. A story doc and an audit were
+written from the assessment, and Epic 14's story titles were sequenced off those.
+Five of ten stories ended up named after collections that do not exist. Nobody
+was careless; each step trusted the previous document.
+
+**2. Validate the instrument before trusting a clean result.** Plant a hit you
+know exists and confirm your check finds it. Show the planted case in the report.
+*Scar:* four separate "no violations found" results came from broken checks.
+`git grep -E` does not understand `\s` in this environment and silently matches
+nothing for any input; a comment filter dropped every line containing an
+asterisk; a pattern using `!=` could not match `!==`. An empty result from a
+broken matcher and an empty result from a clean tree are identical.
+
+**3. Produce the artifact, then describe it.** If a report says "attached", a
+path and a SHA must follow.
+*Scar:* a session reported an attached draft and said its tree was clean in the
+same message. Both could not be true. The draft did not exist.
+
+**4. A document is not evidence, including this one.** The code and the commits
+are the truth. When a source is missing, find it — never substitute a weaker one
+that happens to be reachable.
+*Scar:* asked to audit against a file that was on another branch, a session
+proposed falling back to `data-model.md`, which is the document whose errors
+started the whole problem. Separately, a reviewer who could not locate an ESLint
+rule recommended proceeding with one enforcement mechanism instead of two.
+
+**5. When correcting a document, diff it against the original.** Confirm nothing
+that was *right* disappeared, and say what you removed and why.
+*Scar:* a corrected story doc silently deleted the three findings the original
+got right, including the most severe one in it — a hardcoded role in the
+claim-issuing path. The correction replaced the findings table instead of
+merging into it.
+
+**6. Every count carries its unit.** Files, lines, occurrences. Never add across
+units or across scopes.
+*Scar:* "33 occurrences" was actually 33 lines; a line holding four role
+literals is one line and four occurrences. That figure was handed to another
+session mislabelled, propagated into a story, and produced `3 + 33 = 36`. It only
+became visible because the receiving session showed its arithmetic instead of
+asserting a total.
+
+**7. Report produced and survived separately.** Four findings of which two were
+wrong cost more than two that held.
+
+**8. Prefer a mechanism to a norm.** If a rule can be checked by a script, make
+it one.
+*Scar:* the story-status hook stopped a drifting commit twice in one day and did
+not care who was committing. Meanwhile "a document is not evidence" was stated,
+agreed, repeated — and four sessions did it anyway, including the one enforcing
+it. Norms degrade across session replacement. Checks do not.
+
+**9. Verification is never self-assigned and never sighted.** Whoever produced a
+finding does not verify it, and the verifier re-derives from source *before*
+reading the original.
+*Scar:* a blind re-derivation of an audit found `create()` at two call sites
+where the original recorded one. The missed site reserved a campaign launch key,
+and migrating it faithfully would have let a race loser create a duplicate paid
+Meta campaign with no error anywhere. Reading the original first produces
+agreement, not verification.
+
+---
+
 ## Message shape
 
 Address it, then answer the four questions the recipient actually has.
