@@ -339,6 +339,7 @@ is measurable or guesswork.
 | 11.4 | Calibration instrumentation on 10.4 | Draft | `11.4-calibration-instrumentation-on-10.4.md` |
 | 11.5 | Endpoint inventory ahead of each feature story | Draft | `11.5-endpoint-inventory-ahead-of-each-feature-story.md` |
 | 11.6 | Resolve the courses store split | Ready — Option A decided 2026-08-22 | `11.6-resolve-the-courses-store-split.md` |
+| 11.7 | The root build script masks a failure | Draft | `11.7-the-root-build-script-masks-a-failure.md` |
 
 **11.1 was the one already failing silently.** Angular CLI requires Node
 `v22.22.3` / `v24.15.0` / `v26.0.0`; the dev machine ran `v24.14.0`, one patch
