@@ -20,6 +20,11 @@ export type {
   MetaFetchLog,
   ProcessedEvent,
   Repository,
+  StoredAuditRecord,
+  StoredBugReport,
+  StoredClient,
+  StoredGroup,
+  StoredLocation,
 } from "./repository";
 
 export { firestoreRepository, repository } from "./firestore-repository";
