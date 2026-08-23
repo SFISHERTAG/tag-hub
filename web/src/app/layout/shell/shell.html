@@ -1,4 +1,9 @@
 <mat-toolbar>
+  <!-- The mark, not the lockup. The lockup is 3:2 with a tagline under it, so
+       at toolbar height it lands about 60px wide and the tagline is unreadable.
+       The mark alone survives the size, and the title beside it already says
+       the name. Alpha source, so it does not assume the toolbar stays black. -->
+  <img class="app-mark" src="lion-mark.png" alt="" width="64" height="64" />
   <span class="app-title">{{ title() }}</span>
   <!-- Pushes the account control to the trailing edge. One control, both
        layouts — the toolbar is shared, so there is no second implementation to

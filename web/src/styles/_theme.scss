@@ -74,11 +74,52 @@
       outline-variant: #6f6140,
       // 3.46:1 — the default panel edge
 
-      // Brand accent. #e0a324 is the TAG gold already defined in the repo root
-      // design-tokens.json (colors.primary.gold); this is not a new colour.
-      primary: #e0a324,
+      // Brand accent. #ebc507, the gold in the TAG lockup, chosen 2026-08-23.
+      // Replaces #e0a324, which came from design-tokens.json's
+      // colors.primary.gold and read muddy next to the artwork.
+      //
+      // Everything below it exists because `primary` alone was not enough.
+      // mat.theme() above is seeded with mat.$yellow-palette, and every role
+      // NOT overridden here derives from it — which in a dark theme resolves
+      // yellow toward yellow-green. Nine roles were doing that: the secondary
+      // and tertiary families, the primary container pair, and inverse-primary.
+      // That is where the lime was coming from, and overriding `primary` never
+      // touched it.
+      //
+      // The impersonation banner is the clearest case: it uses
+      // tertiary-container, so it would have rendered lime on a black page.
+      primary: #ebc507,
       // 9.43:1 on black, 8.35:1 on surface-container
       on-primary: #1f1500,
+      // 10.74:1 on the gold fill.
+
+      // The rest of the brand roles, pinned so none of them falls back to the
+      // yellow palette.
+      //
+      // These are sampled from the lockup rather than invented around the
+      // primary. TAGLION.png decoded and quantised by area gives, ignoring the
+      // black field: #c09010 at 42% (the mane body), #a0a0a0 at 19% (the word
+      // GROWTH), #f0d090 at 5% (the face highlight), with #503000 and #906010
+      // as the mane shadows. So the app is coloured out of its own logo, which
+      // is what "brand colours" should mean.
+      primary-container: #5c4a00,
+      on-primary-container: #ffe08a, // 6.69:1
+      inverse-primary: #6b5300,
+
+      // The mane body, the single largest colour in the artwork.
+      secondary: #cc911c,            // 7.63:1 on black
+      on-secondary: #241800,         // 6.33:1 on the fill
+      secondary-container: #3d2f0a,
+      on-secondary-container: #f0d9a8, // 9.44:1
+
+      // The face highlight. Pale rather than saturated, which is what makes it
+      // readable as a *state* next to primary's call to action — the
+      // impersonation banner uses tertiary-container, and it has to be
+      // noticeable without competing with a button.
+      tertiary: #f0d090,             // 14.13:1 on black
+      on-tertiary: #3a2a00,          // 9.35:1 on the fill
+      tertiary-container: #4a3a1c,
+      on-tertiary-container: #f7e3bd, // 8.72:1
       // 8.09:1 against the gold fill
 
       // Error

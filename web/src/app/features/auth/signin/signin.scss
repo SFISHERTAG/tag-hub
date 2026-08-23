@@ -12,12 +12,15 @@
   padding: 1.5rem;
 }
 
-// The source is 1254px square with a baked-in black background — RGB, no alpha
-// — so it only sits correctly on the true-black body the theme contract
-// mandates. Putting it on a card or any lighter surface would show the square.
-// Capped well below its intrinsic size so it stays crisp on a 3x display.
+// The full lockup, not the bare mark. Sign-in is the one screen with room for
+// it and the one moment the product should say its whole name, so it is the
+// only place the wordmark and tagline are legible at all — everywhere else the
+// mark alone does the work.
+//
+// RGB with a baked-in black background, so it belongs on the true-black body
+// the theme contract mandates and nowhere lighter, or the rectangle shows.
 .signin__mark {
-  inline-size: min(9rem, 40vw);
+  inline-size: min(20rem, 80vw);
   block-size: auto;
 }
 
