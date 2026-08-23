@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 import type { CampaignFormInputs, PausedCampaign } from "./campaign-launch";
 // (type-only import — no runtime circularity with campaign-launch.ts)
 
@@ -29,7 +29,7 @@ export type CampaignLaunchState = {
   updatedAt: number;
 };
 
-const COLLECTION = (locationId: string) => `locations/${locationId}/campaignLaunches`;
+const launches = (locationId: string) => repository().campaignLaunches(locationId);
 
 export function campaignLaunchKey(
   locationId: string,
@@ -45,15 +45,26 @@ export async function getCampaignLaunchState(
   locationId: string,
   key: string,
 ): Promise<CampaignLaunchState | null> {
-  const doc = await firestore().collection(COLLECTION(locationId)).doc(key).get();
-  return doc.exists ? (doc.data() as CampaignLaunchState) : null;
+  return launches(locationId).doc(key).get();
 }
 
 /**
- * Firestore's `create()` fails if the document already exists, so two
- * concurrent launches with the same key race safely — exactly one create
- * succeeds and the loser reads back the winner's state instead of creating a
- * duplicate campaign.
+ * Reserves the launch key. Two concurrent launches with the same key race
+ * safely: exactly one reservation succeeds and the loser is rejected rather
+ * than going on to create a second Meta campaign.
+ *
+ * **Throwing is the contract, not an implementation detail.** The only caller,
+ * `createPausedCampaign`, does not wrap this call, and the statement after it
+ * builds fresh `in_progress` state and proceeds to spend money at Meta. A
+ * version of this that returned a boolean the caller ignored would turn a
+ * refused reservation into a duplicate paid campaign. The repository seam
+ * reports the collision as `false` rather than raising, so the throw is
+ * re-established here deliberately.
+ *
+ * The previous comment claimed the loser "reads back the winner's state". It
+ * does not, and never did — it throws. Recorded rather than quietly changed:
+ * making the loser resume the winner's launch is a behaviour change, and 14.1
+ * only moves call sites behind the seam.
  */
 export async function reserveCampaignLaunch(
   locationId: string,
@@ -62,17 +73,23 @@ export async function reserveCampaignLaunch(
   formInputs: CampaignFormInputs,
 ): Promise<void> {
   const now = Date.now();
-  await firestore()
-    .collection(COLLECTION(locationId))
-    .doc(key)
-    .create({
-      locationId,
-      templateId,
-      formInputs,
-      status: "in_progress",
-      createdAt: now,
-      updatedAt: now,
-    } satisfies CampaignLaunchState);
+  // create(), not set(): a re-submit must resolve to the existing launch.
+  // set() would let a second caller overwrite one already in progress.
+  const reserved = await launches(locationId).doc(key).create({
+    locationId,
+    templateId,
+    formInputs,
+    status: "in_progress",
+    createdAt: now,
+    updatedAt: now,
+  } satisfies CampaignLaunchState);
+
+  if (!reserved) {
+    throw new Error(
+      `Campaign launch ${key} is already reserved for location ${locationId}. ` +
+        "A concurrent launch with identical inputs won the reservation.",
+    );
+  }
 }
 
 export async function updateCampaignLaunch(
@@ -80,10 +97,9 @@ export async function updateCampaignLaunch(
   key: string,
   patch: Partial<CampaignLaunchState>,
 ): Promise<void> {
-  await firestore()
-    .collection(COLLECTION(locationId))
+  await launches(locationId)
     .doc(key)
-    .set({ ...patch, updatedAt: Date.now() }, { merge: true });
+    .set({ ...patch, updatedAt: Date.now() } as CampaignLaunchState, { merge: true });
 }
 
 export function toPausedCampaign(state: CampaignLaunchState): PausedCampaign {
