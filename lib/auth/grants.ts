@@ -145,7 +145,7 @@ export function assertWithinClaimLimit(claims: object): void {
       `These grants serialise to ${bytes} bytes and Firebase caps custom claims at ` +
         `${CLAIMS_BYTE_LIMIT}. This is a size problem, not a role problem: shrink the ` +
         `team, or move it behind a group id rather than storing the uids inline. ` +
-        `Do not truncate it — a silently shortened team is a silently narrowed dashboard.`,
+        `Do not truncate it; a silently shortened team is a silently narrowed dashboard.`,
     );
   }
 }

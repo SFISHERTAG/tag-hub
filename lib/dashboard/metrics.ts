@@ -74,6 +74,8 @@ export type SourceRow = {
  * escapes is the rows that crossed the boundary, not the rows that survived the
  * reduce. So the query is the unit the test inspects.
  */
+declare const queryBrand: unique symbol;
+
 export type SourceQuery = {
   readonly dataset: Dataset;
   readonly locations: readonly string[];
@@ -93,6 +95,14 @@ export type SourceQuery = {
    * aged past the window.
    */
   readonly timeframe: "in-period" | "current";
+  /**
+   * Unforgeable for the same reason ScopeFilter is: the adapter trusts this
+   * object, so a hand-written literal reaching it would be the cross-tenant
+   * read the 7.6 brand exists to prevent — stopped one layer higher than the
+   * data boundary is not stopped. `scopedQuery` is the only minter;
+   * `unsafeQueryForTests` is the test-only escape hatch.
+   */
+  readonly [queryBrand]: "source-query";
 };
 
 /**
@@ -171,7 +181,16 @@ export function scopedQuery(
     period,
     statuses: shape.statuses,
     timeframe: shape.timeframe,
-  };
+  } as SourceQuery;
+}
+
+/**
+ * Test-only constructor, mirroring `unsafeScopeForTests`. The brand exists
+ * precisely to stop application code building queries directly; tests for the
+ * adapter need to, and this name is unmistakable at a call site.
+ */
+export function unsafeQueryForTests(query: Omit<SourceQuery, typeof queryBrand>): SourceQuery {
+  return query as SourceQuery;
 }
 
 function sum(rows: readonly SourceRow[]): number {
@@ -203,7 +222,11 @@ export const METRIC_REGISTRY: Record<string, Metric> = {
     id: "pipeline_open_value",
     title: "Open pipeline value",
     shape: "scalar",
-    availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
+    // Tenancy-resolving roles only, until Story 7.8 lands the uid mapping:
+    // client_closer and client_manager resolve to self/team scopes the adapter
+    // refuses, so offering them this metric was offering a permanent error
+    // widget. The registry test pins availableFor to what fetch can serve.
+    availableFor: [ROLES.TAG_EXEC, ROLES.TAG_CSM],
     fetch: async (scope, period, source) => ({
       shape: "scalar",
       // Open deals only, as current state: the value of what is still in
@@ -222,7 +245,7 @@ export const METRIC_REGISTRY: Record<string, Metric> = {
     id: "pipeline_by_stage",
     title: "Pipeline by stage",
     shape: "categorical",
-    availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
+    availableFor: [ROLES.TAG_EXEC, ROLES.TAG_CSM],
     fetch: async (scope, period, source) => ({
       shape: "categorical",
       buckets: byBucket(
@@ -237,7 +260,7 @@ export const METRIC_REGISTRY: Record<string, Metric> = {
     id: "appointments_booked",
     title: "Appointments booked",
     shape: "scalar",
-    availableFor: [ROLES.CLIENT_CLOSER, ROLES.CLIENT_MANAGER, ROLES.TAG_EXEC, ROLES.TAG_CSM],
+    availableFor: [ROLES.TAG_EXEC, ROLES.TAG_CSM],
     fetch: async (scope, period, source) => ({
       shape: "scalar",
       // "Booked" means it was scheduled and stayed scheduled: a no-show was

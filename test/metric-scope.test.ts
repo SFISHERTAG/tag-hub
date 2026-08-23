@@ -6,12 +6,14 @@ import {
   visualsFor,
   isValidInstance,
   scopedQuery,
+  unsafeQueryForTests,
   type Metric,
   type MetricSource,
   type SourceQuery,
   type SourceRow,
 } from "@/lib/dashboard/metrics";
-import { unsafeScopeForTests } from "@/lib/dashboard/scope";
+import { resolveScope, unsafeScopeForTests } from "@/lib/dashboard/scope";
+import type { Session } from "@/lib/auth/session";
 import { ROLES } from "@/lib/auth/roles";
 
 /**
@@ -139,14 +141,18 @@ describe("the guard catches a metric that ignores its filter", () => {
     fetch: async (scope, period, source) => {
       // The bug this file exists to catch: reads everything, then filters in
       // memory. Returns the right number and leaked every other row to get it.
-      const rows = await source.read({
-        dataset: "opportunities",
-        locations: scope.locations,
-        uids: "all",
-        period,
-        statuses: "any",
-        timeframe: "in-period",
-      });
+      // unsafeQueryForTests, because the brand now stops the literal this
+      // canary used to write — which is itself the fix working.
+      const rows = await source.read(
+        unsafeQueryForTests({
+          dataset: "opportunities",
+          locations: scope.locations,
+          uids: "all",
+          period,
+          statuses: "any",
+          timeframe: "in-period",
+        }),
+      );
       const mine = scope.uids === "all" ? rows : rows.filter((r) => scope.uids.includes(r.ownerUid ?? ""));
       return { shape: "scalar", value: mine.reduce((t, r) => t + r.value, 0) };
     },
@@ -246,4 +252,71 @@ describe("metrics constrain status and timeframe to match their names", () => {
       expect(query.timeframe).toBe("in-period");
     }
   });
+});
+
+/**
+ * The brand, and who may mint a query.
+ *
+ * ScopeFilter's unique-symbol brand made "forgot to filter" a type error, but
+ * SourceQuery — the thing the adapter actually trusts — was a plain exported
+ * type. Any server file could hand-write one with uids "all" and read through
+ * createMetricSource without ever holding a ScopeFilter, which is the 7.6
+ * guarantee stopping one layer above the data boundary.
+ */
+describe("SourceQuery is unforgeable", () => {
+  it("a hand-written literal does not typecheck", () => {
+    // @ts-expect-error — only scopedQuery (or the test constructor) may mint a SourceQuery
+    const forged: SourceQuery = {
+      dataset: "opportunities",
+      locations: ["loc-a"],
+      uids: "all",
+      period: PERIOD,
+      statuses: "any",
+      timeframe: "in-period",
+    };
+    expect(forged.dataset).toBe("opportunities");
+  });
+
+  it("scopedQuery mints one that downstream accepts", () => {
+    const scope = unsafeScopeForTests("tenancy", LOCATIONS, "all");
+    const query = scopedQuery("opportunities", scope, PERIOD, {
+      statuses: ["open"],
+      timeframe: "current",
+    });
+    expect(query.locations).toEqual(LOCATIONS);
+  });
+});
+
+/**
+ * availableFor must only offer a metric to roles whose resolved scope the
+ * adapter can serve. The review found all three metrics advertised to
+ * client_closer (default scope "self") and client_manager ("team") while the
+ * only real adapter throws UnsupportedScopeError for any uids !== "all" — a
+ * closer placing "Open pipeline value" got a permanent error widget. Until
+ * Story 7.8 lands the uid mapping, that means tenancy-resolving roles only,
+ * and this test is what keeps the mismatch from recurring when roles or
+ * datasets change.
+ */
+describe("availableFor offers metrics only to roles the adapter can serve", () => {
+  function sessionFor(role: Session["currentRole"]): Session {
+    return {
+      uid: "user-x",
+      email: "x@test",
+      currentRole: role,
+      availableRoles: [role],
+      locations: [...LOCATIONS],
+    };
+  }
+
+  for (const metric of Object.values(METRIC_REGISTRY)) {
+    it(`${metric.id} is only offered where its fetch can succeed`, () => {
+      for (const role of metric.availableFor) {
+        const resolved = resolveScope(sessionFor(role));
+        expect(
+          resolved.uids,
+          `${metric.id} is offered to ${role}, whose default scope the adapter refuses`,
+        ).toBe("all");
+      }
+    });
+  }
 });

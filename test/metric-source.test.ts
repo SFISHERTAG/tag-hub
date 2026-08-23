@@ -4,7 +4,7 @@ import {
   UnsupportedScopeError,
   type SourcePorts,
 } from "@/lib/sources/metric-source";
-import { METRIC_REGISTRY, type SourceQuery } from "@/lib/dashboard/metrics";
+import { METRIC_REGISTRY, unsafeQueryForTests, type SourceQuery } from "@/lib/dashboard/metrics";
 import { unsafeScopeForTests } from "@/lib/dashboard/scope";
 
 /**
@@ -25,7 +25,7 @@ const DAY = 86_400_000;
 const PERIOD = { from: 1_000_000, to: 1_000_000 + DAY };
 
 function query(overrides: Partial<SourceQuery> = {}): SourceQuery {
-  return {
+  return unsafeQueryForTests({
     dataset: "opportunities",
     locations: ["loc-a"],
     uids: "all",
@@ -33,7 +33,7 @@ function query(overrides: Partial<SourceQuery> = {}): SourceQuery {
     statuses: "any",
     timeframe: "in-period",
     ...overrides,
-  };
+  });
 }
 
 function ports(overrides: Partial<SourcePorts> = {}): SourcePorts {
