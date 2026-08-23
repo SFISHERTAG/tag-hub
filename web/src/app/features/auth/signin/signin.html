@@ -1,100 +1,76 @@
-<main class="signin">
-  <!-- Decorative: the card title already says TAG Hub, so alt="" keeps a screen
-       reader from announcing the same thing twice. width/height are the file's
-       intrinsic size so the box is reserved before the image loads and the form
-       does not jump. -->
-  <img
-    class="signin__mark"
-    src="tag-lockup.png"
-    alt=""
-    width="768"
-    height="512"
-    decoding="async"
-  />
+<main class="door">
+  <!-- Decorative. The tab title and the favicon already name the product, and a
+       screen reader announcing "TAG lion" before the form helps nobody. -->
+  <img class="door__mark" src="lion-mark-lg.png" alt="" width="512" height="512" decoding="async" />
 
-  <mat-card appearance="outlined" class="signin__card">
-    @if (pending()) {
-      <mat-progress-bar mode="indeterminate" aria-label="Working" />
-    }
+  @if (step() === 'email') {
+    <form class="door__form" (ngSubmit)="submitEmail()">
+      <!-- Placeholder, no label: the field asks for one thing and says so. A
+           floating label would put the same word twice on a screen whose whole
+           idea is that nothing is said that need not be.
 
-    <mat-card-header>
-      <mat-card-title>TAG Hub</mat-card-title>
-      <mat-card-subtitle>
-        @if (step() === 'email') {
-          Sign in with your work email.
-        } @else {
-          Enter the {{ codeLength }}-digit code sent to {{ email() }}.
+           No autofocus. @angular-eslint bans it, and the accessible workaround —
+           focusing programmatically on init — is the same behaviour with the
+           linter switched off rather than answered. One field on an otherwise
+           empty page is not hard to find. -->
+      <input
+        class="door__input"
+        type="email"
+        name="email"
+        placeholder="Email"
+        autocomplete="email"
+        inputmode="email"
+        aria-label="Email"
+        required
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+        [disabled]="pending()"
+      />
+
+      <button class="door__quiet" type="submit" [disabled]="!canSubmitEmail()">Knock</button>
+    </form>
+  } @else {
+    <form class="door__form" (ngSubmit)="submitCode()">
+      <!-- Six boxes, one field. The group carries the label and the boxes are
+           hidden from the accessibility tree individually, so a screen reader
+           announces one code entry rather than six unrelated inputs. -->
+      <div class="door__code" role="group" [attr.aria-label]="codeLength + '-digit code'">
+        @for (i of digitIndexes; track i) {
+          <input
+            #digitInput
+            class="door__digit"
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            [attr.autocomplete]="i === 0 ? 'one-time-code' : 'off'"
+            [attr.aria-label]="'Digit ' + (i + 1)"
+            [value]="digitAt(i)"
+            [disabled]="pending()"
+            (input)="onDigitInput(i, $event)"
+            (keydown)="onDigitKeydown(i, $event)"
+            (paste)="onDigitPaste($event)"
+          />
         }
-      </mat-card-subtitle>
-    </mat-card-header>
+      </div>
 
-    <mat-card-content>
-      @if (step() === 'email' && googleEnabled) {
-        <app-google-button (credential)="signInWithGoogle($event)" />
-        <div class="signin__divider"><span>or</span></div>
-      }
+      <button class="door__quiet" type="submit" [disabled]="!canSubmitCode()">Enter</button>
 
-      @if (step() === 'email') {
-        <form (ngSubmit)="submitEmail()">
-          <mat-form-field appearance="outline" class="signin__field">
-            <mat-label>Email</mat-label>
-            <input
-              matInput
-              type="email"
-              name="email"
-              autocomplete="email"
-              inputmode="email"
-              required
-              [ngModel]="email()"
-              (ngModelChange)="email.set($event)"
-              [disabled]="pending()"
-            />
-          </mat-form-field>
+      <div class="door__aside">
+        <button class="door__whisper" type="button" (click)="resend()" [disabled]="!canResend()">
+          @if (cooldownSeconds() > 0) {
+            Resend in {{ cooldownSeconds() }}s
+          } @else {
+            Resend code
+          }
+        </button>
+        <button class="door__whisper" type="button" (click)="backToEmail()">
+          Different email
+        </button>
+      </div>
+    </form>
+  }
 
-          <button matButton="filled" type="submit" [disabled]="!canSubmitEmail()">
-            Send code
-          </button>
-        </form>
-      } @else {
-        <form (ngSubmit)="submitCode()">
-          <mat-form-field appearance="outline" class="signin__field">
-            <mat-label>{{ codeLength }}-digit code</mat-label>
-            <input
-              matInput
-              type="text"
-              name="code"
-              autocomplete="one-time-code"
-              inputmode="numeric"
-              [attr.maxlength]="codeLength"
-              required
-              [ngModel]="code()"
-              (ngModelChange)="code.set($event)"
-              [disabled]="pending()"
-            />
-          </mat-form-field>
-
-          <div class="signin__actions">
-            <button matButton="filled" type="submit" [disabled]="!canSubmitCode()">
-              Sign in
-            </button>
-            <button matButton type="button" (click)="resend()" [disabled]="!canResend()">
-              @if (cooldownSeconds() > 0) {
-                Resend in {{ cooldownSeconds() }}s
-              } @else {
-                Resend code
-              }
-            </button>
-          </div>
-
-          <button matButton type="button" class="signin__back" (click)="backToEmail()">
-            Use a different email
-          </button>
-        </form>
-      }
-
-      @if (error(); as message) {
-        <p class="signin__error" role="alert">{{ message }}</p>
-      }
-    </mat-card-content>
-  </mat-card>
+  @if (error(); as message) {
+    <p class="door__error" role="alert">{{ message }}</p>
+  }
 </main>
