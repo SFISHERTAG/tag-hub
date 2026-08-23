@@ -1,5 +1,10 @@
 <mat-toolbar>
   <span class="app-title">{{ title() }}</span>
+  <!-- Pushes the account control to the trailing edge. One control, both
+       layouts — the toolbar is shared, so there is no second implementation to
+       drift. -->
+  <span class="toolbar-spacer"></span>
+  <app-user-menu />
 </mat-toolbar>
 
 <mat-sidenav-container class="shell">

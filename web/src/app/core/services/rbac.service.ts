@@ -31,6 +31,21 @@ export interface RbacService {
   switchRole(role: Role): Promise<ApiResult<Session>>;
 
   /**
+   * Ends the session and clears it.
+   *
+   * Here rather than on the auth feature's service because `layout/` needs it
+   * and must not know which features exist — the boundary in
+   * web/eslint.config.js, and CLAUDE.md's architecture isolation rule. Signing
+   * out is a session operation, and this is the session authority, so it is not
+   * a workaround for the boundary; it is the right home.
+   *
+   * Rejects on failure rather than resolving quietly. The endpoint sits behind
+   * the CSRF origin guard, and a swallowed 403 leaves someone believing they
+   * signed out when they did not.
+   */
+  signOut(): Promise<void>;
+
+  /**
    * Replaces the session from a payload another service already fetched, so a
    * sign-in or an impersonation change does not need a second round trip to be
    * reflected. Pass null to clear.

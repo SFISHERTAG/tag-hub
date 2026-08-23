@@ -54,6 +54,7 @@ function setup(initialRole: Role) {
         next ? { data: next, error: null } : { data: null, error: { message: 'no session', context: 'test' } },
       );
     },
+    signOut: () => Promise.resolve(),
     applySession: (value) => session.set(value),
   };
 
@@ -117,6 +118,7 @@ describe('HasPermissionDirective', () => {
       load: () => Promise.resolve(),
       switchRole: () =>
         Promise.resolve({ data: null, error: { message: 'stub', context: 'test' } }),
+      signOut: () => Promise.resolve(),
       applySession: () => undefined,
     };
     TestBed.configureTestingModule({
@@ -143,6 +145,7 @@ describe('PermissionService', () => {
       load: () => Promise.resolve(),
       switchRole: () =>
         Promise.resolve({ data: null, error: { message: 'stub', context: 'test' } }),
+      signOut: () => Promise.resolve(),
       applySession: () => undefined,
     };
     TestBed.configureTestingModule({

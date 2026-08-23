@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { NAV_ITEMS } from '../nav/nav-items';
+import { UserMenu } from '../user-menu/user-menu';
 import { map } from 'rxjs';
 
 /**
@@ -39,6 +40,7 @@ const SIDENAV_BREAKPOINT = '(min-width: 840px)';
     MatIconModule,
     MatButtonModule,
     HasPermissionDirective,
+    UserMenu,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',

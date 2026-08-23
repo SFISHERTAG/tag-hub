@@ -9,6 +9,7 @@ import type { RbacService } from './rbac.service';
 /** Kept in step with the routes in app/api/. */
 const SESSION_URL = '/api/auth/session';
 const ROLE_URL = '/api/session/role';
+const SIGNOUT_URL = '/api/auth/signout';
 
 /**
  * The real session source.
@@ -48,6 +49,16 @@ export class HttpRbacService implements RbacService {
     if (!result.error) this._session.set(result.data);
 
     return result;
+  }
+
+  /**
+   * Ends the session. Clears locally only after the server accepts, so a
+   * refused sign-out leaves the UI honest about still being signed in.
+   */
+  async signOut(): Promise<void> {
+    const result = await firstValueFrom(this.api.post<{ ok: true }>(SIGNOUT_URL, {}));
+    if (result.error) throw new Error(result.error.message);
+    this.applySession(null);
   }
 
   applySession(session: Session | null): void {

@@ -53,6 +53,11 @@ export class MockRbacService implements RbacService {
     return Promise.resolve(ok(next));
   }
 
+  /** Clears the mock session, same as the real one does on success. */
+  async signOut(): Promise<void> {
+    this.applySession(null);
+  }
+
   applySession(session: Session | null): void {
     this._session.set(session);
   }

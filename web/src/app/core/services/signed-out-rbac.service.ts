@@ -31,6 +31,11 @@ export class SignedOutRbacService implements RbacService {
     });
   }
 
+  /** Already signed out; nothing to end. */
+  async signOut(): Promise<void> {
+    return;
+  }
+
   applySession(): void {
     // Nothing to apply: this implementation is signed out by definition.
   }
