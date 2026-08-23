@@ -60,6 +60,11 @@ run_check "check:agent-isolation" scripts/check-agent-isolation.mjs
 run_check "check:branch-freshness"  scripts/check-branch-freshness.mjs
 run_check "check:secret-scan"      scripts/check-secret-scan.mjs
 run_check "check:story-status"    scripts/check-story-status.mjs
+# Reads two versions of a story, where check:story-status reads one. A commit
+# that unchecks completed tasks or deletes a Dev Agent Record is perfectly
+# self-consistent, so the single-version check passes it — which is how story
+# 10.3 lost its record on 2026-08-23.
+run_check "check:story-regression" scripts/check-story-regression.mjs
 run_check "check:role-parity"     scripts/check-role-parity.mjs
 
 # The Angular gate only runs when the commit actually touches web/. It is the
