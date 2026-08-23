@@ -1,0 +1,24 @@
+# What `gcloud builds submit` uploads to Cloud Build.
+#
+# This is not .dockerignore. That one filters the build context *after* the
+# upload, so anything listed only there is still paid for in upload time on
+# every deploy. Before this file existed a submit was 4.1 GiB and 192,089
+# files, most of which Docker then discarded.
+#
+# Creating this file also disables gcloud's auto-generation from .gitignore,
+# which is why the include directive below is mandatory rather than tidy.
+
+.git
+.gitignore
+
+#!include:.gitignore
+
+# Other Claude sessions' git worktrees. Each carries its own node_modules and
+# build output. 3.4 GiB at the time of writing, and .dockerignore drops the
+# whole .claude tree from the image regardless. The tracked part of .claude
+# (skills, launch.json) is not needed to build either, but is small and stays
+# so that this file has one job.
+.claude/worktrees/
+
+# Angular's local build cache. Regenerated in the image.
+.angular/
