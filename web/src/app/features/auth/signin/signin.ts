@@ -2,20 +2,16 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   inject,
   signal,
+  viewChildren,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AuthService } from '../services/auth.service';
-import { GoogleButton } from '../google-button/google-button';
-import { APP_CONFIG } from '../../../core/config/app-config';
 import { safeNext } from '../services/safe-next';
 
 type Step = 'email' | 'code';
@@ -39,11 +35,6 @@ const RESEND_COOLDOWN_SECONDS = 60;
   imports: [
     FormsModule,
     MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressBarModule,
-    GoogleButton,
   ],
   templateUrl: './signin.html',
   styleUrl: './signin.scss',
@@ -52,10 +43,6 @@ export class Signin {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly config = inject(APP_CONFIG);
-
-  /** Google sign-in renders only when an OAuth client id is configured. */
-  protected readonly googleEnabled = this.config.googleClientId !== '';
 
   protected readonly step = signal<Step>('email');
   protected readonly email = signal('');
@@ -73,6 +60,68 @@ export class Signin {
   protected readonly canSubmitCode = computed(
     () => !this.pending() && this.code().trim().length === CODE_LENGTH,
   );
+
+  /** `[0,1,2,3,4,5]`, so the template can `@for` over the boxes. */
+  protected readonly digitIndexes = Array.from({ length: CODE_LENGTH }, (_, i) => i);
+
+  private readonly digitInputs = viewChildren<ElementRef<HTMLInputElement>>('digitInput');
+
+  protected digitAt(index: number): string {
+    return this.code()[index] ?? '';
+  }
+
+  private setDigit(index: number, value: string): void {
+    const chars = this.code().padEnd(CODE_LENGTH, ' ').split('');
+    chars[index] = value;
+    this.code.set(chars.join('').trimEnd());
+  }
+
+  private focusBox(index: number): void {
+    this.digitInputs()[index]?.nativeElement.focus();
+  }
+
+  /**
+   * One box per digit. Everything here exists because a six-box code entry that
+   * only handles typing is worse than a single field: people paste these codes
+   * out of an email far more often than they type them.
+   */
+  protected onDigitInput(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    // Take the LAST character, not the first. Typing into a box that already
+    // holds a digit should replace it rather than be ignored.
+    const digit = input.value.replace(/\D/g, '').slice(-1);
+    input.value = digit;
+    this.setDigit(index, digit);
+    if (digit && index < CODE_LENGTH - 1) this.focusBox(index + 1);
+  }
+
+  protected onDigitKeydown(index: number, event: KeyboardEvent): void {
+    if (event.key === 'Backspace' && !this.digitAt(index) && index > 0) {
+      // Backspace in an empty box steps back and clears, which is what the
+      // key appears to do when the boxes read as one field.
+      event.preventDefault();
+      this.setDigit(index - 1, '');
+      this.focusBox(index - 1);
+      return;
+    }
+    if (event.key === 'ArrowLeft' && index > 0) {
+      event.preventDefault();
+      this.focusBox(index - 1);
+    }
+    if (event.key === 'ArrowRight' && index < CODE_LENGTH - 1) {
+      event.preventDefault();
+      this.focusBox(index + 1);
+    }
+  }
+
+  /** A pasted code fills every box, wherever it was pasted. */
+  protected onDigitPaste(event: ClipboardEvent): void {
+    const pasted = event.clipboardData?.getData('text')?.replace(/\D/g, '') ?? '';
+    if (!pasted) return;
+    event.preventDefault();
+    this.code.set(pasted.slice(0, CODE_LENGTH));
+    this.focusBox(Math.min(pasted.length, CODE_LENGTH - 1));
+  }
 
   protected readonly canResend = computed(() => !this.pending() && this.cooldownSeconds() === 0);
 
@@ -136,21 +185,6 @@ export class Signin {
     await this.router.navigateByUrl(safeNext(this.route.snapshot.queryParamMap.get('next')));
   }
 
-  protected async signInWithGoogle(credential: string): Promise<void> {
-    this.pending.set(true);
-    this.error.set(null);
-
-    const result = await this.auth.signInWithGoogle(credential);
-
-    if (result.error) {
-      this.pending.set(false);
-      this.error.set(result.error.message);
-      return;
-    }
-
-    this.stopCooldown();
-    await this.router.navigateByUrl(safeNext(this.route.snapshot.queryParamMap.get('next')));
-  }
 
   protected async resend(): Promise<void> {
     if (!this.canResend()) return;

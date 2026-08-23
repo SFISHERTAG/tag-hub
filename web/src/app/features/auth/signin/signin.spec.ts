@@ -212,42 +212,100 @@ describe('Signin', () => {
     expect(v.cooldownSeconds()).toBe(0);
   });
 
-  it('hides the Google button when no client id is configured', () => {
-    const { component, fixture } = setup(null, '');
+  /**
+   * The four Google sign-in tests that stood here were removed 2026-08-23 with
+   * the button itself. Google is no longer rendered on this screen — a product
+   * decision, not a regression: the OTP path is the primary one, and the button
+   * was the loudest element on a page whose point is that it says very little.
+   *
+   * AuthService.signInWithGoogle and the GoogleButton component both remain in
+   * the codebase, tested where they live. Only this screen stopped calling them.
+   */
+});
 
-    expect(view(component).googleEnabled).toBe(false);
-    expect((fixture.nativeElement as HTMLElement).querySelector('app-google-button')).toBeNull();
+/**
+ * The six-box code entry, added 2026-08-23.
+ *
+ * These exist because a box-per-digit that only handles typing is worse than
+ * the single field it replaced: people paste these codes out of an email far
+ * more often than they type them, and a paste that fills one box and drops five
+ * digits is a dead end with no error message.
+ */
+describe('Signin — six-box code entry', () => {
+  async function atCodeStep() {
+    const ctx = setup();
+    const cmp = ctx.fixture.componentInstance as unknown as {
+      email: { set(v: string): void };
+      submitEmail(): Promise<void>;
+      code(): string;
+      digitAt(i: number): string;
+      onDigitPaste(e: ClipboardEvent): void;
+      onDigitInput(i: number, e: Event): void;
+      onDigitKeydown(i: number, e: KeyboardEvent): void;
+    };
+    cmp.email.set('a@test');
+    await cmp.submitEmail();
+    ctx.fixture.detectChanges();
+    return { ...ctx, cmp };
+  }
+
+  function pasteEvent(text: string): ClipboardEvent {
+    return {
+      clipboardData: { getData: () => text },
+      preventDefault: () => undefined,
+    } as unknown as ClipboardEvent;
+  }
+
+  function inputEvent(value: string): Event {
+    return { target: { value } } as unknown as Event;
+  }
+
+  it('renders one box per digit', async () => {
+    const { fixture } = await atCodeStep();
+    expect(fixture.nativeElement.querySelectorAll('.door__digit')).toHaveLength(6);
   });
 
-  it('shows the Google button when a client id is configured', () => {
-    const { component, fixture } = setup(null, 'abc.apps.googleusercontent.com');
-
-    expect(view(component).googleEnabled).toBe(true);
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('app-google-button'),
-    ).not.toBeNull();
+  it('fills every box from a pasted code', async () => {
+    const { cmp } = await atCodeStep();
+    cmp.onDigitPaste(pasteEvent('123456'));
+    expect(cmp.code()).toBe('123456');
   });
 
-  it('navigates to a safe destination after Google sign-in', async () => {
-    const { component, navigateByUrl } = setup('https://evil.example.com', 'abc.apps.googleusercontent.com');
-
-    await view(component).signInWithGoogle('a.b.c');
-
-    // The `next` sanitisation has to cover this path too, not just the code one.
-    expect(signInWithGoogle).toHaveBeenCalledWith('a.b.c');
-    expect(navigateByUrl).toHaveBeenCalledWith('/');
+  it('strips whatever came along with the paste', async () => {
+    const { cmp } = await atCodeStep();
+    // Codes get pasted out of an email with spaces, dashes and stray words.
+    cmp.onDigitPaste(pasteEvent('Your code is 12 34-56'));
+    expect(cmp.code()).toBe('123456');
   });
 
-  it('surfaces a Google sign-in failure without navigating', async () => {
-    signInWithGoogle.mockResolvedValue({
-      data: null,
-      error: { message: 'This account is not set up for TAG Hub.', context: 'x', status: 401 },
-    });
-    const { component, navigateByUrl } = setup(null, 'abc.apps.googleusercontent.com');
+  it('ignores a paste that carries no digits', async () => {
+    const { cmp } = await atCodeStep();
+    cmp.onDigitPaste(pasteEvent('no digits here'));
+    expect(cmp.code()).toBe('');
+  });
 
-    await view(component).signInWithGoogle('a.b.c');
+  it('takes the last character typed, so a box can be corrected in place', async () => {
+    const { cmp } = await atCodeStep();
+    cmp.onDigitInput(0, inputEvent('7'));
+    // Typing into a box that already holds a digit replaces it rather than
+    // being swallowed, which is what it looks like the key should do.
+    cmp.onDigitInput(0, inputEvent('79'));
+    expect(cmp.digitAt(0)).toBe('9');
+  });
 
-    expect(view(component).error()).toBe('This account is not set up for TAG Hub.');
-    expect(navigateByUrl).not.toHaveBeenCalled();
+  it('refuses a non-digit', async () => {
+    const { cmp } = await atCodeStep();
+    cmp.onDigitInput(0, inputEvent('a'));
+    expect(cmp.digitAt(0)).toBe('');
+  });
+
+  it('backspace in an empty box clears the one before it', async () => {
+    const { cmp } = await atCodeStep();
+    cmp.onDigitPaste(pasteEvent('12'));
+    cmp.onDigitKeydown(2, {
+      key: 'Backspace',
+      preventDefault: () => undefined,
+    } as unknown as KeyboardEvent);
+    expect(cmp.code()).toBe('1');
   });
 });

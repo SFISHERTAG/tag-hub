@@ -1,73 +1,158 @@
-// Every colour comes from an M3 system token. No raw hex anywhere, per the
-// theme contract: the token system carries elevation, and a hand-picked
-// near-black on black is invisible on a phone in daylight.
+// The door.
+//
+// No card, no toolbar, no title. A mark, a field, and a way through. Every
+// colour is an M3 system token — no raw hex anywhere, per the theme contract.
+//
+// The inputs here are bare rather than mat-form-field, and that is a deliberate
+// deviation worth naming. A Material form field always renders its own outline,
+// label track and subscript; making it look like this means fighting those
+// styles, which CLAUDE.md explicitly says not to do ("if a visual result can't
+// be achieved via M3 tokens, stop and say so instead of forcing it"). So these
+// are plain inputs coloured entirely from tokens. Material still provides every
+// component on this screen that Material has one for; it has no six-box code
+// entry, and it has no chrome-less field.
 
-.signin {
+.door {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
+  gap: 2.5rem;
   min-block-size: 100dvh;
   padding: 1.5rem;
 }
 
-// The full lockup, not the bare mark. Sign-in is the one screen with room for
-// it and the one moment the product should say its whole name, so it is the
-// only place the wordmark and tagline are legible at all — everywhere else the
-// mark alone does the work.
-//
-// RGB with a baked-in black background, so it belongs on the true-black body
-// the theme contract mandates and nowhere lighter, or the rectangle shows.
-.signin__mark {
-  inline-size: min(20rem, 80vw);
+// 9.9rem is 7rem + 41%, set from looking at it rather than derived from
+// anything. The vw cap scales with it so the ratio holds on a narrow phone,
+// where the mark is what stops the page reading as an empty box.
+.door__mark {
+  inline-size: min(9.9rem, 42vw);
   block-size: auto;
 }
 
-.signin__card {
-  inline-size: 100%;
-  max-inline-size: 24rem;
-}
-
-.signin__field {
-  inline-size: 100%;
-}
-
-.signin__actions {
+.door__form {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  inline-size: 100%;
+  max-inline-size: 20rem;
+}
+
+// One hairline. The field is found by the line under it, not by a box around
+// it — the same reasoning the theme uses for panels, where elevation is carried
+// by an outline rather than a fill.
+.door__input {
+  inline-size: 100%;
+  padding: 0.75rem 0.25rem;
+  border: none;
+  border-block-end: 1px solid var(--mat-sys-outline-variant);
+  background: transparent;
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-large);
+  text-align: center;
+}
+
+.door__input::placeholder {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.door__input:focus {
+  outline: none;
+  border-block-end-color: var(--mat-sys-primary);
+}
+
+.door__code {
+  display: flex;
   gap: 0.5rem;
-  align-items: center;
+  justify-content: center;
 }
 
-.signin__back {
-  margin-block-start: 0.75rem;
+.door__digit {
+  inline-size: 2.5rem;
+  block-size: 3rem;
+  padding: 0;
+  border: none;
+  border-block-end: 1px solid var(--mat-sys-outline-variant);
+  background: transparent;
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-headline-small);
+  text-align: center;
+  // Tabular figures stop the boxes twitching as digits land: a 1 is narrower
+  // than a 0 in the default face, and six of them shifting is very visible.
+  font-variant-numeric: tabular-nums;
 }
 
-.signin__error {
-  margin-block-start: 1rem;
-  margin-block-end: 0;
-  color: var(--mat-sys-error);
-  font: var(--mat-sys-body-medium);
+.door__digit:focus {
+  outline: none;
+  border-block-end-color: var(--mat-sys-primary);
 }
 
-// Hairline rule with a centred label. Colour comes from the outline token so it
-// reads correctly on the true-black surface without eyeballing a hex value.
-.signin__divider {
+// The quiet control. Present, reachable, and not competing with anything.
+//
+// "Invisible" was the original brief and this is deliberately one step back
+// from it: a control nobody can see is one a keyboard user cannot find either,
+// and Enter already submits for anyone typing. So it recedes rather than
+// vanishes, and it comes forward on hover and focus.
+.door__quiet {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 120ms ease, color 120ms ease;
+}
+
+.door__quiet:hover:not(:disabled),
+.door__quiet:focus-visible {
+  opacity: 1;
+  color: var(--mat-sys-primary);
+}
+
+.door__quiet:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.door__aside {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-block: 1.25rem;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+// Quieter still, and the same treatment rather than a different one — resend
+// and "different email" are the same kind of thing as the submit, just further
+// down the order of what anyone came here to do.
+.door__whisper {
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-label-small);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity 120ms ease;
 }
 
-.signin__divider::before,
-.signin__divider::after {
-  content: '';
-  flex: 1;
-  block-size: 1px;
-  background: var(--mat-sys-outline-variant);
+.door__whisper:hover:not(:disabled),
+.door__whisper:focus-visible {
+  opacity: 0.9;
+}
+
+.door__whisper:disabled {
+  opacity: 0.18;
+  cursor: default;
+}
+
+// The one thing on this screen allowed to be loud, and only when it happens.
+.door__error {
+  margin: 0;
+  max-inline-size: 20rem;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
+  text-align: center;
 }
