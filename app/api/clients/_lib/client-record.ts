@@ -5,7 +5,7 @@
    is the migration marker: move the data path into lib/dashboard/metrics.ts
    and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
@@ -41,12 +41,11 @@ function asString(value: unknown): string | null {
 
 export async function getClientRecord(clientId: string): Promise<ApiResult<ClientRecord | null>> {
   return withErrorHandling(`getClientRecord(${clientId})`, async () => {
-    const doc = await firestore().collection("clients").doc(clientId).get();
-    if (!doc.exists) return null;
+    const data = await repository().clients.doc(clientId).get();
+    if (!data) return null;
 
-    const data = doc.data() ?? {};
     return {
-      id: doc.id,
+      id: clientId,
       name: asString(data.name) ?? "Unknown Client",
       ghlLocationId: asString(data.ghl_location_id),
       metaAdAccountId: asString(data.meta_ad_account_id),

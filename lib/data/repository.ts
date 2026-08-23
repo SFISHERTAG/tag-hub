@@ -67,6 +67,29 @@ export type StoredBugReport = Omit<BugReport, "id">;
 export type StoredGroup = Omit<Group, "id">;
 
 /**
+ * What a `clients/{id}` document actually stores.
+ *
+ * NOT `ClientData`. That is the view model `lib/dashboard/csm-clients.ts`
+ * BUILDS: `health`, `escalation` and `alert_count` are computed per request
+ * from health scoring, the audit log and the alerts subcollection, and no
+ * document holds any of them. Typing the collection as `ClientData` was my
+ * error and it surfaced immediately, because `app/api/clients/_lib/client-record.ts`
+ * reads two stored fields the view model does not declare.
+ *
+ * This is the third collection whose declared type was narrower than what it
+ * holds, after `locations` and `auditLog`. In each case the type described what
+ * one reader wanted rather than what the writers put there.
+ */
+export type StoredClient = {
+  readonly name?: string;
+  readonly ghl_location_id?: string;
+  readonly csm_assigned?: string;
+  readonly meta_ad_account_id?: string;
+  readonly active?: boolean;
+  readonly upsell_attempted?: boolean;
+};
+
+/**
  * What `locations/{id}` actually holds, which is more than `Tenant` declares.
  *
  * `functions/src/firestore.ts#saveTenantResources` writes five fields the
@@ -134,7 +157,7 @@ export interface Repository {
   readonly authCodeCooldowns: CollectionRef<AuthCodeCooldown>;
   readonly groups: CollectionRef<StoredGroup>;
   readonly csm: CollectionRef<CsmRecord>;
-  readonly clients: CollectionRef<ClientData>;
+  readonly clients: CollectionRef<StoredClient>;
   /** Stored shape: the doc id is the id, so it is not a field. */
   readonly bugReports: CollectionRef<StoredBugReport>;
   readonly manualPages: CollectionRef<ManualPageFields>;

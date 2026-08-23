@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 import { getContact, type Attribution, type Contact } from "@/lib/ghl/contacts";
 
 /**
@@ -79,10 +79,17 @@ export type ConversionLogEntry = {
   alertedAt?: number;
 };
 
-export function conversionLogDoc(locationId: string, entry: Pick<ConversionLogEntry, "eventType" | "entityId">) {
+/**
+ * Document id within the location's conversion log.
+ *
+ * Was `conversionLogDoc`, which built the full Firestore path. The location is
+ * now the accessor's parameter, so only the id is built here. No other module
+ * used the exported path form.
+ */
+export function conversionLogId(entry: Pick<ConversionLogEntry, "eventType" | "entityId">) {
   // Prefixed by eventType so a "showed" appointmentId and a "closed_won"
   // opportunityId can never collide on the same doc id within one location.
-  return `locations/${locationId}/metaConversionLog/${entry.eventType}_${entry.entityId}`;
+  return `${entry.eventType}_${entry.entityId}`;
 }
 
 async function writeLog(
@@ -91,8 +98,9 @@ async function writeLog(
 ): Promise<void> {
   try {
     const now = Date.now();
-    await firestore()
-      .doc(conversionLogDoc(locationId, entry))
+    await repository()
+      .metaConversionLog(locationId)
+      .doc(conversionLogId(entry))
       .set({ ...entry, createdAt: entry.createdAt ?? now }, { merge: true });
   } catch (error) {
     // The dispatch already happened (or didn't) by the time logging fails;

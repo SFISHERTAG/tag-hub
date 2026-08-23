@@ -20,6 +20,7 @@ import type {
   Repository,
   StoredAuditRecord,
   StoredBugReport,
+  StoredClient,
   StoredGroup,
   StoredLocation,
 } from "./repository";
@@ -358,7 +359,7 @@ export function fakeRepository(store: FakeStore = new FakeStore()): {
       return collection<CsmRecord>("csm");
     },
     get clients() {
-      return collection<ClientData>("clients");
+      return collection<StoredClient>("clients");
     },
     get bugReports() {
       return collection<StoredBugReport>("bugReports");

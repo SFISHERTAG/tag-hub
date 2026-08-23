@@ -8,27 +8,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * "marking showed," which is the one thing that must always work.
  */
 
-type FakeDoc = { data: Record<string, unknown> | undefined };
+import { FakeStore, fakeRepository } from "@/lib/data/fake-repository";
 
-function makeFakeFirestore() {
-  const docs = new Map<string, FakeDoc>();
-  return {
-    docs,
-    doc(path: string) {
-      return {
-        async set(data: Record<string, unknown>) {
-          docs.set(path, { data });
-        },
-      };
-    },
-  };
-}
+/*
+ * Uses the repository seam's own in-memory fake rather than a hand-rolled
+ * Firestore stub (story 14.1). The stub here implemented `.doc(path).set()`
+ * and nothing else, so it broke the moment the call site moved to a
+ * parent-scoped accessor — which is the point: a stub that mirrors one
+ * caller's usage silently encodes that usage as the contract.
+ *
+ * FakeStore keys documents by full path, same as the stub did, so the
+ * assertions below still read the exact path they always did.
+ */
+const store = new FakeStore();
+const { repository } = fakeRepository(store);
 
-const fakeFirestore = makeFakeFirestore();
-
-vi.mock("@/lib/firestore", () => ({
-  firestore: () => fakeFirestore,
-}));
+vi.mock("@/lib/data", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/data")>("@/lib/data");
+  return { ...actual, repository: () => repository };
+});
 
 vi.mock("@/lib/ghl/contacts", () => ({
   getContact: vi.fn(async (_locationId: string, contactId: string) => ({
@@ -44,7 +42,7 @@ vi.mock("@/lib/ghl/contacts", () => ({
 }));
 
 beforeEach(() => {
-  fakeFirestore.docs.clear();
+  for (const path of Object.keys(store.snapshot())) store.remove(path);
   vi.stubEnv("META_PIXEL_ID", "test-pixel");
   vi.stubEnv("META_SYSTEM_USER_TOKEN", "test-token");
 });
@@ -64,10 +62,10 @@ describe("dispatchShowed", () => {
       dispatchShowed("loc123", "appt456", "contact789"),
     ).resolves.toBeUndefined();
 
-    const logged = fakeFirestore.docs.get(
+    const logged = store.read(
       "locations/loc123/metaConversionLog/showed_appt456",
     );
-    expect(logged?.data?.status).toBe("failed");
+    expect(logged?.status).toBe("failed");
   });
 
   it("never throws when the Meta API returns a non-2xx response", async () => {
@@ -86,10 +84,10 @@ describe("dispatchShowed", () => {
       dispatchShowed("loc123", "appt789", "contact789"),
     ).resolves.toBeUndefined();
 
-    const logged = fakeFirestore.docs.get(
+    const logged = store.read(
       "locations/loc123/metaConversionLog/showed_appt789",
     );
-    expect(logged?.data?.status).toBe("failed");
+    expect(logged?.status).toBe("failed");
   });
 
   it("logs a sent event and calls Meta with hashed identifiers on success", async () => {
@@ -113,9 +111,9 @@ describe("dispatchShowed", () => {
     expect(JSON.stringify(body)).not.toContain("prospect@example.com");
     expect(body.data[0].user_data.em[0]).toMatch(/^[a-f0-9]{64}$/);
 
-    const logged = fakeFirestore.docs.get(
+    const logged = store.read(
       "locations/loc123/metaConversionLog/showed_appt999",
     );
-    expect(logged?.data?.status).toBe("sent");
+    expect(logged?.status).toBe("sent");
   });
 });

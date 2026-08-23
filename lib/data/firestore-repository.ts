@@ -51,6 +51,7 @@ import type {
   Repository,
   StoredAuditRecord,
   StoredBugReport,
+  StoredClient,
   StoredGroup,
   StoredLocation,
 } from "./repository";
@@ -292,7 +293,7 @@ export function firestoreRepository(): Repository {
       return collection<CsmRecord>("csm");
     },
     get clients() {
-      return collection<ClientData>("clients");
+      return collection<StoredClient>("clients");
     },
     get bugReports() {
       return collection<StoredBugReport>("bugReports", bugReportCodec);
