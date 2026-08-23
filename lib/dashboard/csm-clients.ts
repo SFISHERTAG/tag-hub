@@ -1,10 +1,17 @@
-/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
-   Queries directly instead of going through a scoped metric fetch. Not a leak
-   today (nothing here is per-user), but it is the pattern the zone exists to
-   stop, so this comment is the migration marker: move the data path into
-   lib/dashboard/metrics.ts and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
+/*
+ * The `import/no-restricted-paths` disable that stood here is gone: the data
+ * path now runs through the `lib/data` repository seam (story 14.1), so the
+ * zone no longer fires and eslint reported the directive as unused. Sixth and
+ * last of these across the migration.
+ *
+ * The concern it recorded is NOT resolved and is kept deliberately. This still
+ * queries directly instead of going through a scoped metric fetch, which is the
+ * pattern the zone exists to stop. The remaining move is into
+ * lib/dashboard/metrics.ts. See docs/ROLE_SCOPE_MODEL.md.
+ */
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
+import type { StoredClient, Where } from "@/lib/data";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 import { calculateHealthScore, getStatusFromScore, type ClientHealth, type HealthMetrics } from "./health-scoring";
 import { getMockMetrics } from "./mock-metrics";
@@ -13,7 +20,6 @@ import { evaluateRules } from "@/lib/rules/engine";
 import { escalationRules } from "@/lib/rules/configs/escalation.config";
 import { daysSinceLastAction } from "@/lib/audit/store";
 import type { ClientData, ClientAlert, EscalationBucket } from "./csm-clients-types";
-import type { CollectionReference, DocumentSnapshot, Query, QueryDocumentSnapshot } from "@google-cloud/firestore";
 
 export type { ClientData, ClientAlert };
 
@@ -41,7 +47,16 @@ async function computeEscalation(
 ): Promise<ClientData["escalation"]> {
   // No audit entries means the CSM has never entered this tenant yet, i.e. fresh
   // onboarding — treated as "not stale" rather than infinitely stale (see Dev notes).
-  const daysSinceLastCheckIn = await daysSinceLastAction(locationId, "impersonation");
+  //
+  // A client with no ghl_location_id skips the lookup entirely. It used to be
+  // called with whatever the document held, so a missing location produced the
+  // path `locations/undefined/auditLog`: a valid path that matches nothing, so
+  // the answer looked like "never checked in" rather than "cannot tell". An
+  // empty string is worse still, since `locations//auditLog` has an empty
+  // segment and is rejected outright. Neither is a check-in history.
+  const daysSinceLastCheckIn = locationId
+    ? await daysSinceLastAction(locationId, "impersonation")
+    : null;
 
   const evaluation = evaluateRules(escalationRules, {
     daysSinceLastCheckIn: daysSinceLastCheckIn ?? undefined,
@@ -58,11 +73,10 @@ async function computeEscalation(
 }
 
 async function buildClientData(
-  doc: QueryDocumentSnapshot | DocumentSnapshot,
+  clientId: string,
+  data: StoredClient | null,
 ): Promise<ClientData | null> {
-  const data = doc.data();
   if (!data) return null;
-  const clientId = doc.id;
 
   const metrics = getMockMetrics(clientId);
   const health = calculateHealthScore(metrics);
@@ -76,8 +90,16 @@ async function buildClientData(
   const alerts = alertsResult.data ?? [];
   health.alert_count = alerts.filter((a) => !a.resolved_at).length;
 
+  // These two were passed straight through from an untyped snapshot, so a
+  // client document missing either produced `undefined` in a field the view
+  // model declares as a string, and every consumer downstream believed it.
+  // Typing the collection surfaced it. computeEscalation now skips its audit
+  // lookup when the location is absent rather than querying a malformed path.
+  const ghlLocationId = data.ghl_location_id ?? "";
+  const csmAssigned = data.csm_assigned ?? "";
+
   const escalation = await computeEscalation(
-    data.ghl_location_id,
+    ghlLocationId,
     Boolean(data.upsell_attempted),
     health.status,
   );
@@ -85,8 +107,8 @@ async function buildClientData(
   return {
     id: clientId,
     name: data.name || "Unknown Client",
-    ghl_location_id: data.ghl_location_id,
-    csm_assigned: data.csm_assigned,
+    ghl_location_id: ghlLocationId,
+    csm_assigned: csmAssigned,
     health,
     alert_count: health.alert_count,
     metrics,
@@ -100,12 +122,16 @@ async function buildClientData(
  * coverage lookup) so the per-client computation lives in exactly one place.
  */
 async function fetchClients(
-  query: Query | CollectionReference,
+  where: readonly Where<StoredClient>[],
 ): Promise<ClientData[]> {
-  const snapshot = await query.get();
-  const clients = (await Promise.all(snapshot.docs.map((doc) => buildClientData(doc)))).filter(
-    (c): c is ClientData => c !== null,
-  );
+  // Takes a filter, not a query object. This function used to accept a
+  // Firestore `Query | CollectionReference`, so a Firestore type was in the
+  // signature of the one function every CSM scope goes through, and four
+  // Firestore types were imported at the top of this file.
+  const found = await repository().clients.list({ where });
+  const clients = (
+    await Promise.all(found.map(({ id, data }) => buildClientData(id, data)))
+  ).filter((c): c is ClientData => c !== null);
 
   return clients.sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -115,12 +141,10 @@ async function fetchClients(
  */
 export async function getAssignedClients(csmEmail: string): Promise<ApiResult<ClientData[]>> {
   return withErrorHandling(`getAssignedClients(${csmEmail})`, () =>
-    fetchClients(
-      firestore()
-        .collection("clients")
-        .where("csm_assigned", "==", csmEmail)
-        .where("active", "==", true),
-    ),
+    fetchClients([
+      { field: "csm_assigned", op: "==", value: csmEmail },
+      { field: "active", op: "==", value: true },
+    ]),
   );
 }
 
@@ -141,12 +165,10 @@ export async function getTeamClients(csdEmail: string): Promise<ApiResult<Client
 
     const results = await Promise.all(
       batches.map((batch) =>
-        fetchClients(
-          firestore()
-            .collection("clients")
-            .where("csm_assigned", "in", batch)
-            .where("active", "==", true),
-        ),
+        fetchClients([
+          { field: "csm_assigned", op: "in", value: batch },
+          { field: "active", op: "==", value: true },
+        ]),
       ),
     );
 
@@ -161,7 +183,7 @@ export async function getTeamClients(csdEmail: string): Promise<ApiResult<Client
  */
 export async function getDepartmentClients(): Promise<ApiResult<ClientData[]>> {
   return withErrorHandling("getDepartmentClients()", () =>
-    fetchClients(firestore().collection("clients").where("active", "==", true)),
+    fetchClients([{ field: "active", op: "==", value: true }]),
   );
 }
 
@@ -181,21 +203,18 @@ export async function getClientsForCsm(targetEmail: string): Promise<ApiResult<C
  */
 export async function getClientAlerts(clientId: string): Promise<ApiResult<ClientAlert[]>> {
   return withErrorHandling(`getClientAlerts(${clientId})`, async () => {
-    const snapshot = await firestore()
-      .collection("clients")
-      .doc(clientId)
-      .collection("alerts")
-      .orderBy("created_at", "desc")
-      .limit(50)
-      .get();
+    const found = await repository().clientAlerts(clientId).list({
+      orderBy: { field: "created_at", direction: "desc" },
+      limit: 50,
+    });
 
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      type: doc.data().type,
-      title: doc.data().title,
-      message: doc.data().message,
-      created_at: doc.data().created_at,
-      resolved_at: doc.data().resolved_at,
+    return found.map(({ id, data }) => ({
+      id,
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      created_at: data.created_at,
+      resolved_at: data.resolved_at,
     }));
   });
 }
@@ -205,9 +224,9 @@ export async function getClientAlerts(clientId: string): Promise<ApiResult<Clien
  */
 export async function getClientDetail(clientId: string): Promise<ApiResult<ClientData | null>> {
   return withErrorHandling(`getClientDetail(${clientId})`, async () => {
-    const doc = await firestore().collection("clients").doc(clientId).get();
-    if (!doc.exists) return null;
-    return await buildClientData(doc);
+    const data = await repository().clients.doc(clientId).get();
+    if (!data) return null;
+    return await buildClientData(clientId, data);
   });
 }
 
@@ -218,5 +237,5 @@ export async function getClientDetail(clientId: string): Promise<ApiResult<Clien
  * automatically once an activity log exists.
  */
 export async function setUpsellAttempted(clientId: string, attempted: boolean): Promise<void> {
-  await firestore().collection("clients").doc(clientId).set({ upsell_attempted: attempted }, { merge: true });
+  await repository().clients.doc(clientId).set({ upsell_attempted: attempted }, { merge: true });
 }

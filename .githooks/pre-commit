@@ -56,6 +56,12 @@ run_check() {
   fi
 }
 
+# Ownership of main, checked first: if this session should not be writing to
+# main at all, none of the other gates matter. Note that git does NOT run this
+# hook for a merge — .githooks/pre-merge-commit and .githooks/pre-push cover
+# the two paths that never come through here, and the merge path is the one
+# that actually moved main on 2026-08-23.
+run_check "check:main-ownership"   scripts/check-main-ownership.mjs
 run_check "check:agent-isolation" scripts/check-agent-isolation.mjs
 run_check "check:branch-freshness"  scripts/check-branch-freshness.mjs
 run_check "check:secret-scan"      scripts/check-secret-scan.mjs
@@ -66,6 +72,12 @@ run_check "check:story-status"    scripts/check-story-status.mjs
 # 10.3 lost its record on 2026-08-23.
 run_check "check:story-regression" scripts/check-story-regression.mjs
 run_check "check:role-parity"     scripts/check-role-parity.mjs
+
+# Story 14.1: Firestore is reachable from one module only. The ESLint rule
+# says the same thing better, but root `npm run lint` is not part of this
+# hook, so that rule is a gate you have to remember to run and this is the
+# one that runs itself.
+run_check "check:firestore-seam"  scripts/check-firestore-seam.mjs
 
 # The Angular gate only runs when the commit actually touches web/. It is the
 # slowest check here and irrelevant to a backend-only commit.

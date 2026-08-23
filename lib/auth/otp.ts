@@ -1,7 +1,6 @@
 import "server-only";
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
-import { Timestamp } from "@google-cloud/firestore";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 
 /**
  * Six-digit email one-time passcodes.
@@ -33,7 +32,7 @@ function hashCode(email: string, code: string): string {
 }
 
 function doc(email: string) {
-  return firestore().doc(`authCodes/${key(email)}`);
+  return repository().authCodes.doc(key(email));
 }
 
 /**
@@ -42,7 +41,7 @@ function doc(email: string) {
  * Keyed by the same hash, so it reveals no address either.
  */
 function cooldownDoc(email: string) {
-  return firestore().doc(`authCodeCooldowns/${key(email)}`);
+  return repository().authCodeCooldowns.doc(key(email));
 }
 
 export type RequestOutcome =
@@ -61,11 +60,12 @@ export type CooldownState = { blocked: true; retryAfterMs: number } | { blocked:
  * window, and only a real one answered with `cooldown: true`.
  */
 export async function checkCooldown(email: string): Promise<CooldownState> {
-  const snapshot = await cooldownDoc(email).get();
-  if (!snapshot.exists) return { blocked: false };
+  const cooldown = await cooldownDoc(email).get();
+  if (!cooldown) return { blocked: false };
 
-  const lastIssuedAt = (snapshot.data()?.lastIssuedAt as Timestamp | undefined)?.toMillis() ?? 0;
-  const sinceLast = Date.now() - lastIssuedAt;
+  // The repository normalises the stored Timestamp to epoch millis, so the
+  // cast-and-toMillis that used to live here is gone.
+  const sinceLast = Date.now() - (cooldown.lastIssuedAt ?? 0);
   if (sinceLast >= RESEND_COOLDOWN_MS) return { blocked: false };
 
   return { blocked: true, retryAfterMs: RESEND_COOLDOWN_MS - sinceLast };
@@ -79,7 +79,10 @@ export async function checkCooldown(email: string): Promise<CooldownState> {
  * oracle from the other direction.
  */
 export async function recordCooldown(email: string): Promise<void> {
-  await cooldownDoc(email).set({ lastIssuedAt: Timestamp.now() });
+  // Date.now() rather than Timestamp.now(): both read this process's clock,
+  // and the codec writes the Timestamp. Not a server-assigned time in either
+  // version, which is why the cooldown is advisory and the attempt cap is not.
+  await cooldownDoc(email).set({ lastIssuedAt: Date.now() });
 }
 
 /**
@@ -106,8 +109,8 @@ export async function issueCode(email: string): Promise<RequestOutcome> {
 
   await ref.set({
     codeHash: hashCode(email, code),
-    expiresAt: Timestamp.fromMillis(expiresAt),
-    issuedAt: Timestamp.now(),
+    expiresAt,
+    issuedAt: Date.now(),
     attempts: 0,
   });
   await recordCooldown(email);
@@ -137,38 +140,36 @@ export async function verifyCode(
 ): Promise<VerifyOutcome> {
   const ref = doc(email);
 
-  return firestore().runTransaction(async (tx): Promise<VerifyOutcome> => {
-    const snapshot = await tx.get(ref);
-    if (!snapshot.exists) return { ok: false, reason: "invalid" };
-
-    const data = snapshot.data();
+  return repository().transaction(async (tx): Promise<VerifyOutcome> => {
+    const data = await ref.get(tx);
     if (!data) return { ok: false, reason: "invalid" };
 
-    const attempts = (data.attempts as number) ?? 0;
-    const expiresAt = (data.expiresAt as Timestamp).toMillis();
+    const attempts = data.attempts ?? 0;
+    // Already epoch millis: the codec normalised it on read.
+    const expiresAt = data.expiresAt;
 
     if (attempts >= MAX_ATTEMPTS) {
-      tx.delete(ref);
+      await ref.delete(tx);
       return { ok: false, reason: "too-many-attempts" };
     }
 
     if (Date.now() > expiresAt) {
-      tx.delete(ref);
+      await ref.delete(tx);
       return { ok: false, reason: "expired" };
     }
 
-    const expected = Buffer.from(data.codeHash as string);
+    const expected = Buffer.from(data.codeHash);
     const actual = Buffer.from(hashCode(email, code.trim()));
     const matches =
       expected.length === actual.length && timingSafeEqual(expected, actual);
 
     if (!matches) {
-      tx.update(ref, { attempts: attempts + 1 });
+      await ref.update({ attempts: attempts + 1 }, tx);
       return { ok: false, reason: "invalid" };
     }
 
     // Single use. Deleting on success prevents replay of an intercepted code.
-    tx.delete(ref);
+    await ref.delete(tx);
     return { ok: true };
   });
 }

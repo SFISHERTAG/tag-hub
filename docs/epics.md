@@ -553,27 +553,62 @@ nothing depends on realtime; no `firestore.rules`, so no authorization to port;
 no Firebase reference in `web/src`, so the swap happens behind an unchanged HTTP
 contract; three transaction call sites in total.
 
+**Story titles re-cut 2026-08-23 against code.** Five of the ten named
+collections that do not exist. `orgs`, `users` and `flow_scripts` have no
+Firestore reader or writer anywhere, `functions/` and `scripts/` included;
+`bug_reports` is `bugReports`; there is no top-level `creatives`. Those stories
+were unbuildable as written. Evidence, with line numbers, in
+`docs/14.1-firestore-audit.md`.
+
 | ID | Story | Status |
 | --- | --- | --- |
 | 14.1 | Repository seam over every collection | Draft |
 | 14.2 | Local Postgres and the migration runner | Draft |
 | 14.3 | `authCodes`, `authCodeCooldowns` (+ the missing TTL) | Draft |
-| 14.4 | `orgs`, `locations`, `users` | Draft |
-| 14.5 | `bug_reports`, `creatives` | Draft |
-| 14.6 | `auditLog` — copy and verify, never move | Draft |
-| 14.7 | `manual_pages` and versions | Draft |
-| 14.8 | `flow_scripts`: resolve the two-store split | Draft |
+| 14.4 | `locations` — the tenant registry, and the `clients` subtree | Draft — was "`orgs`, `locations`, `users`" |
+| 14.5 | `bugReports`, `groups`, `csm` | Draft — was "`bug_reports`, `creatives`" |
+| 14.6 | `locations/{id}/auditLog` — copy and verify, never move | Draft — subcollection, not top-level |
+| 14.7 | `manual_pages` and `manual_pages/{id}/versions` | Draft |
+| 14.8 | The per-location subtree: outcomes, conversion log, fetch log, checklists, launches, follow-up settings | Draft — replaces "`flow_scripts`: resolve the two-store split" |
 | 14.9 | GHL agency tokens — Postgres or Secret Manager | Draft |
+| 14.A | Fold `functions/` into `app/api` | Draft — new, blocks 14.10 |
 | 14.10 | Delete `lib/firestore.ts` and drop the SDK | Draft |
+
+**What changed and why.**
+
+- **14.4** loses `orgs` and `users`. Neither has a call site. Identity lives in
+  Firebase Auth custom claims, which this epic explicitly does not move. What
+  the story actually has to carry is `clients` and its two subcollections,
+  `alerts` and `meta_creatives`, which had no story at all.
+- **14.5** loses `creatives` and gains `groups` and `csm`, two live collections
+  no story covered.
+- **14.8** is not a two-store split. `flow_scripts` has no Firestore call site;
+  the live editor content is the Postgres table. The real 14.8-shaped work is
+  the six paths under `locations/{id}`, which no story covered.
+- **14.A is new and it blocks 14.10.** `functions/` has its own Firestore
+  client and its own `@google-cloud/firestore` major (^7 against root's ^8).
+  The SDK cannot be dropped while it is there. Folding it into `app/api` also
+  collapses the duplicated idempotency, GHL, Slack, Drive and Postgres modules,
+  including two hand-synced copies of `idempotency.ts` whose headers each name
+  the other authoritative.
+- **`webhookDeadLetter` and `webhookEventsProcessed`** are live and still have
+  no story. Assign them before 14.10.
+
+**Known blocker for 14.2.** Migration `010` is on disk and not applied: it needs
+owner privileges `tag_app_user` does not have. The migration runner has to
+handle an unappliable migration rather than assume the ledger can advance.
 
 **Story 11.6 was the pilot and is done** (Review, 2026-08-23). It proved the
 sequence — dual-write, backfill, verify by count, cut over, delete the old path
 — on a collection whose worst failure is a missing training video rather than a
 missing audit record.
 
-**The actual work is 14.1.** 21 files import `@/lib/firestore` directly across
-12 directories. Until each collection is reachable through one module, every
-later story is a scattered edit instead of a swap.
+**The actual work is 14.1.** 20 files call `firestore()` across `lib/**` and
+`app/api/**`, reaching 21 document paths, ten of them parent-scoped
+subcollections. (This previously said 21 files across 12 directories, counting
+two `functions/` files that do not touch this seam and missing both `app/api`
+call sites.) Until each path is reachable through one module, every later story
+is a scattered edit instead of a swap.
 
 **14.9 is last and is a separate decision.** Those are live OAuth refresh tokens
 for every sub-account. Losing them is a whole-portfolio outage with no error

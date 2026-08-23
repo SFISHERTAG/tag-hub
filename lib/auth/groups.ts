@@ -1,5 +1,5 @@
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 import { setUserClaims } from "./admin";
 import type { ScopeLevel } from "./grants";
 import { isValidLocationId } from "@/lib/ghl/tenants";
@@ -34,9 +34,9 @@ export type Group = {
   updatedAt: number;
 };
 
-const GROUPS_COLLECTION = "groups";
+const groups = () => repository().groups;
 
-function fromDoc(id: string, data: FirebaseFirestore.DocumentData): Group {
+function fromDoc(id: string, data: Omit<Group, "id">): Group {
   return {
     id,
     name: typeof data.name === "string" ? data.name : id,
@@ -49,15 +49,15 @@ function fromDoc(id: string, data: FirebaseFirestore.DocumentData): Group {
 }
 
 export async function listGroups(): Promise<Group[]> {
-  const snapshot = await firestore().collection(GROUPS_COLLECTION).get();
-  return snapshot.docs
-    .map((d) => fromDoc(d.id, d.data()))
+  const found = await groups().list();
+  return found
+    .map(({ id, data }) => fromDoc(id, data))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getGroup(id: string): Promise<Group | null> {
-  const doc = await firestore().collection(GROUPS_COLLECTION).doc(id).get();
-  return doc.exists ? fromDoc(doc.id, doc.data()!) : null;
+  const data = await groups().doc(id).get();
+  return data ? fromDoc(id, data) : null;
 }
 
 /**
@@ -67,25 +67,21 @@ export async function getGroup(id: string): Promise<Group | null> {
  * "which group" has to live on the group side and be searched for.
  */
 export async function findMemberGroup(uid: string): Promise<Group | null> {
-  const snapshot = await firestore()
-    .collection(GROUPS_COLLECTION)
-    .where("memberUids", "array-contains", uid)
-    .limit(1)
-    .get();
-  return snapshot.empty ? null : fromDoc(snapshot.docs[0].id, snapshot.docs[0].data());
+  const [found] = await groups().list({
+    where: [{ field: "memberUids", op: "array-contains", value: uid }],
+    limit: 1,
+  });
+  return found ? fromDoc(found.id, found.data) : null;
 }
 
 /** Removes a user from whatever group currently lists them, if any. Firestore-only — does not touch their claims. */
 async function detachFromCurrentGroup(uid: string): Promise<void> {
   const current = await findMemberGroup(uid);
   if (!current) return;
-  await firestore()
-    .collection(GROUPS_COLLECTION)
-    .doc(current.id)
-    .update({
-      memberUids: current.memberUids.filter((id) => id !== uid),
-      updatedAt: Date.now(),
-    });
+  await groups().doc(current.id).update({
+    memberUids: current.memberUids.filter((id) => id !== uid),
+    updatedAt: Date.now(),
+  });
 }
 
 export class InvalidLocationError extends Error {
@@ -108,7 +104,7 @@ export async function createGroup(
 ): Promise<Group> {
   validateLocations(locations);
   const now = Date.now();
-  const ref = firestore().collection(GROUPS_COLLECTION).doc();
+  const ref = groups().doc(groups().newId());
   await ref.set({ name, role, locations, memberUids: [], createdAt: now, updatedAt: now });
   return { id: ref.id, name, role, locations, memberUids: [], createdAt: now, updatedAt: now };
 }
@@ -129,10 +125,7 @@ export async function updateGroupRole(
   const group = await getGroup(id);
   if (!group) throw new Error(`Group ${id} not found.`);
 
-  await firestore()
-    .collection(GROUPS_COLLECTION)
-    .doc(id)
-    .update({ role, locations, updatedAt: Date.now() });
+  await groups().doc(id).update({ role, locations, updatedAt: Date.now() });
 
   await Promise.all(
     group.memberUids.map((uid) => setUserClaims(uid, [{ role, locations }])),
@@ -148,7 +141,7 @@ export async function updateGroupRole(
  * dangerous one.
  */
 export async function deleteGroup(id: string): Promise<void> {
-  await firestore().collection(GROUPS_COLLECTION).doc(id).delete();
+  await groups().doc(id).delete();
 }
 
 export async function addMemberToGroup(groupId: string, uid: string): Promise<void> {
@@ -156,13 +149,10 @@ export async function addMemberToGroup(groupId: string, uid: string): Promise<vo
   if (!group) throw new Error(`Group ${groupId} not found.`);
 
   await detachFromCurrentGroup(uid);
-  await firestore()
-    .collection(GROUPS_COLLECTION)
-    .doc(groupId)
-    .update({
-      memberUids: [...new Set([...group.memberUids, uid])],
-      updatedAt: Date.now(),
-    });
+  await groups().doc(groupId).update({
+    memberUids: [...new Set([...group.memberUids, uid])],
+    updatedAt: Date.now(),
+  });
   await setUserClaims(uid, [{ role: group.role, locations: group.locations }]);
 }
 
@@ -170,13 +160,10 @@ export async function addMemberToGroup(groupId: string, uid: string): Promise<vo
 export async function removeMemberFromGroup(groupId: string, uid: string): Promise<void> {
   const group = await getGroup(groupId);
   if (!group) return;
-  await firestore()
-    .collection(GROUPS_COLLECTION)
-    .doc(groupId)
-    .update({
-      memberUids: group.memberUids.filter((id) => id !== uid),
-      updatedAt: Date.now(),
-    });
+  await groups().doc(groupId).update({
+    memberUids: group.memberUids.filter((id) => id !== uid),
+    updatedAt: Date.now(),
+  });
 }
 
 /**

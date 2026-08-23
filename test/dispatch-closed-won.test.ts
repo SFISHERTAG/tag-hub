@@ -8,27 +8,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * broke closing a deal, which is the closer's actual work.
  */
 
-type FakeDoc = { data: Record<string, unknown> | undefined };
+import { FakeStore, fakeRepository } from "@/lib/data/fake-repository";
 
-function makeFakeFirestore() {
-  const docs = new Map<string, FakeDoc>();
-  return {
-    docs,
-    doc(path: string) {
-      return {
-        async set(data: Record<string, unknown>) {
-          docs.set(path, { data });
-        },
-      };
-    },
-  };
-}
+/*
+ * Uses the repository seam's own in-memory fake rather than a hand-rolled
+ * Firestore stub (story 14.1). The stub here implemented `.doc(path).set()`
+ * and nothing else, so it broke the moment the call site moved to a
+ * parent-scoped accessor — which is the point: a stub that mirrors one
+ * caller's usage silently encodes that usage as the contract.
+ *
+ * FakeStore keys documents by full path, same as the stub did, so the
+ * assertions below still read the exact path they always did.
+ */
+const store = new FakeStore();
+const { repository } = fakeRepository(store);
 
-const fakeFirestore = makeFakeFirestore();
-
-vi.mock("@/lib/firestore", () => ({
-  firestore: () => fakeFirestore,
-}));
+vi.mock("@/lib/data", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/data")>("@/lib/data");
+  return { ...actual, repository: () => repository };
+});
 
 vi.mock("@/lib/ghl/contacts", () => ({
   getContact: vi.fn(async (_locationId: string, contactId: string) => ({
@@ -55,7 +53,7 @@ const contact = {
 };
 
 beforeEach(() => {
-  fakeFirestore.docs.clear();
+  for (const path of Object.keys(store.snapshot())) store.remove(path);
   vi.stubEnv("META_PIXEL_ID", "test-pixel");
   vi.stubEnv("META_SYSTEM_USER_TOKEN", "test-token");
 });
@@ -75,10 +73,10 @@ describe("dispatchClosedWon", () => {
       dispatchClosedWon("loc123", "opp456", contact as never, 18000),
     ).resolves.toBeUndefined();
 
-    const logged = fakeFirestore.docs.get(
+    const logged = store.read(
       "locations/loc123/metaConversionLog/closed_won_opp456",
     );
-    expect(logged?.data?.status).toBe("failed");
+    expect(logged?.status).toBe("failed");
   });
 
   it("never throws when the Meta API returns a non-2xx response", async () => {
@@ -97,10 +95,10 @@ describe("dispatchClosedWon", () => {
       dispatchClosedWon("loc123", "opp789", contact as never, 18000),
     ).resolves.toBeUndefined();
 
-    const logged = fakeFirestore.docs.get(
+    const logged = store.read(
       "locations/loc123/metaConversionLog/closed_won_opp789",
     );
-    expect(logged?.data?.status).toBe("failed");
+    expect(logged?.status).toBe("failed");
   });
 
   it("logs a sent event and calls Meta with hashed identifiers and value on success", async () => {
@@ -127,10 +125,10 @@ describe("dispatchClosedWon", () => {
     expect(JSON.stringify(body)).not.toContain("prospect@example.com");
     expect(body.data[0].user_data.em[0]).toMatch(/^[a-f0-9]{64}$/);
 
-    const logged = fakeFirestore.docs.get(
+    const logged = store.read(
       "locations/loc123/metaConversionLog/closed_won_opp999",
     );
-    expect(logged?.data?.status).toBe("sent");
+    expect(logged?.status).toBe("sent");
   });
 
   it("still sends value: 0 when the deal closed won with no value entered", async () => {
@@ -148,11 +146,11 @@ describe("dispatchClosedWon", () => {
     const body = JSON.parse(call[1].body as string);
     expect(body.data[0].custom_data.value).toBe(0);
 
-    const logged = fakeFirestore.docs.get(
+    const logged = store.read(
       "locations/loc123/metaConversionLog/closed_won_opp000",
     );
-    expect(logged?.data?.status).toBe("sent");
-    expect(logged?.data?.value).toBe(0);
+    expect(logged?.status).toBe("sent");
+    expect(logged?.value).toBe(0);
   });
 
   it("skips (does not call Meta) and logs when value is negative", async () => {
@@ -163,9 +161,9 @@ describe("dispatchClosedWon", () => {
     await dispatchClosedWon("loc123", "opp111", contact as never, -50);
 
     expect(fetchMock).not.toHaveBeenCalled();
-    const logged = fakeFirestore.docs.get(
+    const logged = store.read(
       "locations/loc123/metaConversionLog/closed_won_opp111",
     );
-    expect(logged?.data?.status).toBe("skipped");
+    expect(logged?.status).toBe("skipped");
   });
 });

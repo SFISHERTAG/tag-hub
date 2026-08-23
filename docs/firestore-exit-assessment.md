@@ -2,6 +2,35 @@
 
 Assessment written 2026-08-22, from the code rather than from principle.
 
+> **Correction, 2026-08-23.** The reasoning in this document holds; the
+> collection inventory does not. "What has to move" below was not derived from
+> call sites, and five of its thirteen collections have no code behind them:
+> `orgs`, `users` and `flow_scripts` have no Firestore reader or writer anywhere
+> (`functions/` and `scripts/` included), `bug_reports` is `bugReports` in the
+> code, and there is no top-level `creatives` — only `clients/{id}/creatives`,
+> seeded by two scripts and read by nothing, since creatives render from Google
+> Drive. There is also no `tenants` collection: `lib/ghl/tenants.ts:24` sets
+> `TENANTS_COLLECTION = "locations"`. The real surface is 20 call sites and 21
+> document paths, ten of them parent-scoped subcollections, which is a different
+> shape from thirteen flat collections. "The method" below also says 21 files
+> across 12 directories; that count included two `functions/` files that do not
+> touch this seam and missed both `app/api` call sites.
+>
+> The four tractability findings were re-checked and all four hold, including
+> "three transaction call sites" — there are exactly two `runTransaction` and
+> one `batch`.
+>
+> Verified inventory with line numbers: `docs/14.1-firestore-audit.md`. Story
+> titles in `docs/epics.md` were re-cut against it.
+>
+> **The cause, which is the part worth carrying forward.** This inventory was
+> built from `docs/data-model.md`, not from call sites. `data-model.md`
+> describes intent; it was read as a description of reality. The four
+> tractability findings in the next section were derived from code and all four
+> held. Same document, same author, same day — the half built from a document
+> was wrong and the half built from code was right. A doc is not evidence for
+> what the code does, including this one.
+
 ## The short version
 
 This is a tractable migration, and it is smaller than it looks. The three things

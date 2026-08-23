@@ -1,11 +1,14 @@
-/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
-   Reads the meta_creatives subcollection directly for campaign-link badges.
-   Not a leak today (the query is rooted at a clientId gateClient has already
-   authorised), but it is the pattern the zone exists to stop, so this comment
-   is the migration marker: move the data path into lib/dashboard/metrics.ts
-   and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
+/*
+ * The `import/no-restricted-paths` disable that stood here is gone: the data
+ * path now runs through the `lib/data` repository seam (story 14.1), so the
+ * zone no longer fires and eslint reported the directive as unused.
+ *
+ * The concern it recorded is NOT resolved and is kept deliberately. This still
+ * reads the meta_creatives subcollection directly for campaign-link badges, which is the pattern the zone exists to stop. The remaining move is
+ * into lib/dashboard/metrics.ts. See docs/ROLE_SCOPE_MODEL.md.
+ */
 import { NextResponse } from "next/server";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 import { fetchCreatives, type CreativeForDisplay } from "@/lib/dashboard/data-fetchers";
 import { handle, unwrap } from "../../../dashboard/_lib/http";
 import { gateClient } from "../../_lib/gate";
@@ -82,14 +85,10 @@ export async function GET(
     const links = new Map<string, CampaignRef[]>();
     let campaignLinksIncluded = true;
     try {
-      const snapshot = await firestore()
-        .collection("clients")
-        .doc(clientId)
-        .collection("meta_creatives")
-        .get();
-      for (const doc of snapshot.docs) {
-        const campaigns = doc.data().campaigns_using;
-        if (Array.isArray(campaigns)) links.set(doc.id, campaigns as CampaignRef[]);
+      const found = await repository().clientMetaCreatives(clientId).list();
+      for (const { id, data } of found) {
+        const campaigns = data.campaigns_using;
+        if (Array.isArray(campaigns)) links.set(id, campaigns as CampaignRef[]);
       }
     } catch (error) {
       console.error(`[GET /api/clients/${clientId}/creatives] campaign links unavailable:`, error);

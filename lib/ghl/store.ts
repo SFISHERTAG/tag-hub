@@ -1,5 +1,5 @@
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 
 /**
  * Persistence for OAuth credentials.
@@ -29,8 +29,6 @@ import { firestore } from "@/lib/firestore";
  * root. The primary is what mints for a location whose owning agency is not
  * recorded, which is every location stored before this change.
  */
-
-export { firestore };
 
 /**
  * Legacy single-token document, now the root that records which company is
@@ -70,8 +68,7 @@ export class InvalidCompanyIdError extends Error {
 }
 
 async function readRoot(): Promise<AgencyRoot | null> {
-  const snapshot = await firestore().doc(AGENCY_ROOT).get();
-  return snapshot.exists ? (snapshot.data() as AgencyRoot) : null;
+  return repository().ghlAgencyRoot.get();
 }
 
 /** The company whose token serves locations with no recorded owner. */
@@ -92,13 +89,14 @@ export async function saveAgencyToken(token: StoredAgencyToken): Promise<void> {
     throw new InvalidCompanyIdError(token.companyId);
   }
 
-  await firestore().doc(agencyDoc(token.companyId)).set(token);
+  await repository().ghlCompanyTokens.doc(token.companyId).set(token);
 
   const primary = await loadPrimaryCompanyId();
   if (!primary) {
-    await firestore()
-      .doc(AGENCY_ROOT)
-      .set({ primaryCompanyId: token.companyId }, { merge: true });
+    await repository().ghlAgencyRoot.set(
+      { primaryCompanyId: token.companyId },
+      { merge: true },
+    );
   }
 }
 
@@ -116,8 +114,8 @@ export async function loadAgencyToken(
   const wanted = companyId ?? root?.primaryCompanyId ?? root?.companyId;
   if (!wanted || !isValidCompanyId(wanted)) return null;
 
-  const snapshot = await firestore().doc(agencyDoc(wanted)).get();
-  if (snapshot.exists) return snapshot.data() as StoredAgencyToken;
+  const stored = await repository().ghlCompanyTokens.doc(wanted).get();
+  if (stored) return stored;
 
   // Legacy: the root still holds the token itself. Copy it down, then record
   // it as primary so the next read takes the path above.
@@ -129,10 +127,8 @@ export async function loadAgencyToken(
       expiresAt: root.expiresAt ?? 0,
       updatedAt: root.updatedAt ?? 0,
     };
-    await firestore().doc(agencyDoc(wanted)).set(migrated);
-    await firestore()
-      .doc(AGENCY_ROOT)
-      .set({ primaryCompanyId: wanted }, { merge: true });
+    await repository().ghlCompanyTokens.doc(wanted).set(migrated);
+    await repository().ghlAgencyRoot.set({ primaryCompanyId: wanted }, { merge: true });
     return migrated;
   }
 
@@ -141,10 +137,7 @@ export async function loadAgencyToken(
 
 /** Every agency that has completed an install, primary first. */
 export async function listAgencyCompanyIds(): Promise<string[]> {
-  const docs = await firestore()
-    .collection("ghl/agency/companies")
-    .listDocuments();
-  return docs.map((doc) => doc.id);
+  return repository().ghlCompanyTokens.listIds();
 }
 
 export type StoredLocationToken = {
@@ -169,22 +162,18 @@ export async function saveLocationToken(
   locationId: string,
   token: StoredLocationToken,
 ): Promise<void> {
-  await firestore().doc(locationDoc(locationId)).set(token);
+  await repository().ghlLocationTokens.doc(locationId).set(token);
 }
 
 export async function loadLocationToken(
   locationId: string,
 ): Promise<StoredLocationToken | null> {
-  const snapshot = await firestore().doc(locationDoc(locationId)).get();
-  return snapshot.exists ? (snapshot.data() as StoredLocationToken) : null;
+  return repository().ghlLocationTokens.doc(locationId).get();
 }
 
 /** Locations with a stored credential, whatever its source. */
 export async function listStoredLocationIds(): Promise<string[]> {
-  const snapshot = await firestore()
-    .collection("ghl/agency/locations")
-    .listDocuments();
-  return snapshot.map((doc) => doc.id);
+  return repository().ghlLocationTokens.listIds();
 }
 
 /* ------------------------------------------------------------------ */
@@ -237,9 +226,7 @@ export async function saveAppointmentOutcome(
   appointmentId: string,
   outcome: AppointmentOutcome,
 ): Promise<void> {
-  await firestore()
-    .doc(`locations/${locationId}/appointmentOutcomes/${appointmentId}`)
-    .set(outcome);
+  await repository().appointmentOutcomes(locationId).doc(appointmentId).set(outcome);
 }
 
 export async function loadAppointmentOutcomes(
@@ -249,16 +236,9 @@ export async function loadAppointmentOutcomes(
   const found = new Map<string, AppointmentOutcome>();
   if (appointmentIds.length === 0) return found;
 
-  const refs = appointmentIds.map((id) =>
-    firestore().doc(`locations/${locationId}/appointmentOutcomes/${id}`),
-  );
-
-  const snapshots = await firestore().getAll(...refs);
-  for (const snapshot of snapshots) {
-    if (snapshot.exists) {
-      found.set(snapshot.id, snapshot.data() as AppointmentOutcome);
-    }
-  }
+  // One round trip, not N: getAll takes the whole id list.
+  const stored = await repository().appointmentOutcomes(locationId).getAll(appointmentIds);
+  for (const { id, data } of stored) found.set(id, data);
   return found;
 }
 
@@ -288,18 +268,16 @@ export type FollowUpCandidate = {
 export async function getFollowUpCandidates(
   locationId: string,
 ): Promise<FollowUpCandidate[]> {
-  const outcomes = await firestore()
-    .collection(`locations/${locationId}/appointmentOutcomes`)
-    .orderBy("markedAt", "desc")
-    .limit(1000) // reasonable recent window
-    .get();
+  const outcomes = await repository().appointmentOutcomes(locationId).list({
+    orderBy: { field: "markedAt", direction: "desc" },
+    limit: 1000, // reasonable recent window
+  });
 
   const latestByContact = new Map<string, FollowUpCandidate>();
   const attemptsByContact = new Map<string, number>();
 
   // Docs arrive newest-first, so the first hit per contact is the latest outcome.
-  for (const doc of outcomes.docs) {
-    const outcome = doc.data() as AppointmentOutcome;
+  for (const { id: appointmentDocId, data: outcome } of outcomes) {
     if (outcome.status !== "noshow" && outcome.status !== "invalid") continue;
     const contactId = outcome.contactId;
     if (!contactId) continue; // pre-2.8 records carry no contactId; nothing to key on
@@ -308,7 +286,7 @@ export async function getFollowUpCandidates(
     if (latestByContact.has(contactId)) continue; // already have this contact's newest outcome
 
     latestByContact.set(contactId, {
-      appointmentId: doc.id,
+      appointmentId: appointmentDocId,
       contactId,
       contactName: outcome.contactName ?? "Unnamed",
       appointmentTitle: outcome.appointmentTitle ?? "Untitled",
@@ -344,15 +322,14 @@ export const DEFAULT_FOLLOW_UP_CONFIG: FollowUpConfig = {
 };
 
 function followUpConfigDoc(locationId: string) {
-  return firestore().doc(`locations/${locationId}/settings/followUp`);
+  return repository().followUpConfig(locationId);
 }
 
 export async function getFollowUpConfig(
   locationId: string,
 ): Promise<FollowUpConfig> {
-  const snapshot = await followUpConfigDoc(locationId).get();
-  if (!snapshot.exists) return DEFAULT_FOLLOW_UP_CONFIG;
-  const data = snapshot.data() as Partial<FollowUpConfig>;
+  const data = await followUpConfigDoc(locationId).get();
+  if (!data) return DEFAULT_FOLLOW_UP_CONFIG;
   if (
     (data.mode === "attempts" || data.mode === "days") &&
     typeof data.value === "number" &&

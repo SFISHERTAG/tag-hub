@@ -1,5 +1,6 @@
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
+import type { StoredDoc } from "@/lib/data";
 import { getContact } from "@/lib/ghl/contacts";
 import { recordFailure, flagForReview } from "@/lib/webhooks/deadLetterQueue";
 import { slackConfigured, postAlert } from "@/lib/slack";
@@ -44,9 +45,14 @@ function locationIdFromDocPath(path: string): string {
   return parts[idx + 1];
 }
 
-async function retryOne(doc: FirebaseFirestore.QueryDocumentSnapshot): Promise<"sent" | "failed" | "escalated" | "skipped"> {
-  const entry = doc.data() as ConversionLogEntry;
-  const locationId = entry.locationId ?? locationIdFromDocPath(doc.ref.path);
+async function retryOne(
+  record: StoredDoc<ConversionLogEntry>,
+): Promise<"sent" | "failed" | "escalated" | "skipped"> {
+  const entry = record.data;
+  // The scan is cross-location, so the parent id has to come back out of the
+  // path when the entry does not carry it. StoredDoc keeps `path` for exactly
+  // this: a collection-group hit is meaningless without knowing whose it is.
+  const locationId = entry.locationId ?? locationIdFromDocPath(record.path);
   const now = Date.now();
 
   if (entry.status !== "failed") return "skipped";
@@ -152,16 +158,17 @@ export async function runMetaRetryJob(): Promise<RetryRunSummary> {
   const summary: RetryRunSummary = { scanned: 0, retried: 0, succeeded: 0, stillFailed: 0, escalated: 0 };
   const cutoff = Date.now() - WINDOW_MS;
 
-  const snapshot = await firestore()
-    .collectionGroup("metaConversionLog")
-    .where("status", "==", "failed")
-    .where("timestamp", ">=", cutoff)
-    .get();
+  const failed = await repository().collectionGroup<ConversionLogEntry>("metaConversionLog", {
+    where: [
+      { field: "status", op: "==", value: "failed" },
+      { field: "timestamp", op: ">=", value: cutoff },
+    ],
+  });
 
-  summary.scanned = snapshot.size;
+  summary.scanned = failed.length;
 
-  for (const doc of snapshot.docs) {
-    const outcome = await retryOne(doc);
+  for (const record of failed) {
+    const outcome = await retryOne(record);
     if (outcome === "skipped") continue;
     summary.retried += 1;
     if (outcome === "sent") summary.succeeded += 1;

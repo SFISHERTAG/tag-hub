@@ -1,11 +1,14 @@
-/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
-   Queries directly instead of going through a scoped metric fetch. Not a leak
-   today (every read is keyed on a clientId that gateClient has already
-   authorised), but it is the pattern the zone exists to stop, so this comment
-   is the migration marker: move the data path into lib/dashboard/metrics.ts
-   and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
+/*
+ * The `import/no-restricted-paths` disable that stood here is gone: the data
+ * path now runs through the `lib/data` repository seam (story 14.1), so the
+ * zone no longer fires and eslint reported the directive as unused.
+ *
+ * The concern it recorded is NOT resolved and is kept deliberately. This still
+ * queries directly instead of going through a scoped metric fetch, which is the pattern the zone exists to stop. The remaining move is
+ * into lib/dashboard/metrics.ts. See docs/ROLE_SCOPE_MODEL.md.
+ */
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 import { withErrorHandling, type ApiResult } from "@/lib/api/errorInterceptor";
 
 /**
@@ -41,12 +44,11 @@ function asString(value: unknown): string | null {
 
 export async function getClientRecord(clientId: string): Promise<ApiResult<ClientRecord | null>> {
   return withErrorHandling(`getClientRecord(${clientId})`, async () => {
-    const doc = await firestore().collection("clients").doc(clientId).get();
-    if (!doc.exists) return null;
+    const data = await repository().clients.doc(clientId).get();
+    if (!data) return null;
 
-    const data = doc.data() ?? {};
     return {
-      id: doc.id,
+      id: clientId,
       name: asString(data.name) ?? "Unknown Client",
       ghlLocationId: asString(data.ghl_location_id),
       metaAdAccountId: asString(data.meta_ad_account_id),

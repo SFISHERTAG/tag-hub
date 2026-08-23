@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FakeStore, fakeRepository } from "@/lib/data/fake-repository";
+
 /**
  * Story 6.5 AC6: an intentional failure must actually exercise the retry
  * path end to end — not just prove the logging shape is right. This test
@@ -11,103 +13,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type StoredDoc = Record<string, unknown>;
 
-class FakeFirestore {
-  store = new Map<string, StoredDoc>();
+/*
+ * Uses the repository seam's in-memory fake (story 14.1).
+ *
+ * What stood here was ~90 lines re-implementing Firestore: a document store, a
+ * query builder, and a hand-written collectionGroup that matched on the
+ * second-to-last path segment and re-implemented == and >= comparisons. All of
+ * that now lives in lib/data/fake-repository.ts, tested in its own right, and
+ * shared with every other test rather than reinvented per file.
+ *
+ * The old fake was also the reason this test could pass while being wrong: it
+ * encoded one caller's usage as the contract, so it would not have noticed the
+ * call site changing shape underneath it.
+ */
+const store = new FakeStore();
+const { repository } = fakeRepository(store);
 
-  doc(path: string) {
-    const store = this.store;
-    return {
-      async set(data: StoredDoc, opts?: { merge?: boolean }) {
-        const existing = opts?.merge ? (store.get(path) ?? {}) : {};
-        store.set(path, { ...existing, ...data });
-      },
-      async update(data: StoredDoc) {
-        const existing = store.get(path) ?? {};
-        store.set(path, { ...existing, ...data });
-      },
-      async get() {
-        const data = store.get(path);
-        return { exists: Boolean(data), data: () => data };
-      },
-    };
-  }
-
-  collection(name: string) {
-    const store = this.store;
-    let counter = 0;
-    return {
-      async add(data: StoredDoc) {
-        const id = `auto_${counter++}_${Date.now()}`;
-        store.set(`${name}/${id}`, { ...data });
-        return { id };
-      },
-      doc(id: string) {
-        return this.parentDoc(`${name}/${id}`);
-      },
-      parentDoc(path: string) {
-        return {
-          async update(data: StoredDoc) {
-            const existing = store.get(path) ?? {};
-            store.set(path, { ...existing, ...data });
-          },
-        };
-      },
-      where() {
-        return this;
-      },
-      orderBy() {
-        return this;
-      },
-      limit() {
-        return this;
-      },
-      async get() {
-        const docs = [...store.entries()]
-          .filter(([path]) => path.startsWith(`${name}/`))
-          .map(([path, data]) => ({ id: path.split("/").pop()!, ...data }));
-        return docs;
-      },
-    };
-  }
-
-  collectionGroup(name: string) {
-    const store = this.store;
-    type Filter = { field: string; op: string; value: unknown };
-    const filters: Filter[] = [];
-
-    const query = {
-      where(field: string, op: string, value: unknown) {
-        filters.push({ field, op, value });
-        return query;
-      },
-      async get() {
-        const docs = [...store.entries()]
-          .filter(([path]) => {
-            const segments = path.split("/");
-            return segments[segments.length - 2] === name;
-          })
-          .filter(([, data]) =>
-            filters.every((f) => {
-              const actual = data[f.field] as number | string | undefined;
-              if (f.op === "==") return actual === f.value;
-              if (f.op === ">=") return typeof actual === "number" && actual >= (f.value as number);
-              return true;
-            }),
-          )
-          .map(([path, data]) => ({
-            ref: { path, parent: { parent: { id: path.split("/")[1] } } },
-            data: () => data,
-          }));
-        return { docs, size: docs.length };
-      },
-    };
-    return query;
-  }
-}
-
-const fake = new FakeFirestore();
-
-vi.mock("@/lib/firestore", () => ({ firestore: () => fake }));
+vi.mock("@/lib/data", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/data")>("@/lib/data");
+  return { ...actual, repository: () => repository };
+});
 
 const getContactMock = vi.fn();
 vi.mock("@/lib/ghl/contacts", () => ({ getContact: (...args: unknown[]) => getContactMock(...args) }));
@@ -143,7 +68,7 @@ function mockFetchSequence(responses: Array<{ ok: boolean; body: unknown }>) {
 }
 
 beforeEach(() => {
-  fake.store.clear();
+  for (const path of Object.keys(store.snapshot())) store.remove(path);
   getContactMock.mockReset();
   getContactMock.mockResolvedValue(CONTACT);
   postAlertMock.mockReset();
@@ -163,7 +88,7 @@ describe("Story 6.5 retry path (AC6)", () => {
     const { dispatchShowed } = await import("@/lib/meta/conversions");
     await dispatchShowed("loc_1", "appt_1", "contact_1");
 
-    const failedDoc = fake.store.get("locations/loc_1/metaConversionLog/showed_appt_1");
+    const failedDoc = store.read("locations/loc_1/metaConversionLog/showed_appt_1");
     expect(failedDoc?.status).toBe("failed");
     expect(failedDoc?.attemptCount).toBe(1);
     expect(failedDoc?.eventId).toBe("appt_1");
@@ -171,7 +96,7 @@ describe("Story 6.5 retry path (AC6)", () => {
     expect(originalNextRetryAt).toBeGreaterThan(Date.now());
 
     // Force the backoff window open so the retry job picks it up now.
-    fake.store.set("locations/loc_1/metaConversionLog/showed_appt_1", {
+    store.write("locations/loc_1/metaConversionLog/showed_appt_1", {
       ...failedDoc,
       nextRetryAt: Date.now() - 1,
     });
@@ -186,7 +111,7 @@ describe("Story 6.5 retry path (AC6)", () => {
     expect(summary.retried).toBe(1);
     expect(summary.succeeded).toBe(1);
 
-    const finalDoc = fake.store.get("locations/loc_1/metaConversionLog/showed_appt_1");
+    const finalDoc = store.read("locations/loc_1/metaConversionLog/showed_appt_1");
     expect(finalDoc?.status).toBe("sent");
     expect(finalDoc?.attemptCount).toBe(2);
     // Idempotency: the retry must reuse the exact same event_id as the
@@ -195,7 +120,7 @@ describe("Story 6.5 retry path (AC6)", () => {
   });
 
   it("does not retry a failure whose backoff window hasn't elapsed yet", async () => {
-    fake.store.set("locations/loc_1/metaConversionLog/showed_appt_2", {
+    store.write("locations/loc_1/metaConversionLog/showed_appt_2", {
       locationId: "loc_1",
       eventType: "showed",
       entityId: "appt_2",
@@ -220,7 +145,7 @@ describe("Story 6.5 retry path (AC6)", () => {
   });
 
   it("escalates to the dead-letter queue and alerts after MAX_ATTEMPTS is reached", async () => {
-    fake.store.set("locations/loc_1/metaConversionLog/showed_appt_3", {
+    store.write("locations/loc_1/metaConversionLog/showed_appt_3", {
       locationId: "loc_1",
       eventType: "showed",
       entityId: "appt_3",
@@ -243,12 +168,12 @@ describe("Story 6.5 retry path (AC6)", () => {
 
     expect(summary.escalated).toBe(1);
 
-    const finalDoc = fake.store.get("locations/loc_1/metaConversionLog/showed_appt_3");
+    const finalDoc = store.read("locations/loc_1/metaConversionLog/showed_appt_3");
     expect(finalDoc?.attemptCount).toBe(4);
     expect(finalDoc?.alertedAt).toBeTruthy();
     expect(finalDoc?.nextRetryAt).toBeUndefined();
 
-    const dlqEntries = [...fake.store.entries()].filter(([path]) => path.startsWith("webhookDeadLetter/"));
+    const dlqEntries = Object.entries(store.snapshot()).filter(([path]) => path.startsWith("webhookDeadLetter/"));
     expect(dlqEntries).toHaveLength(1);
     expect(dlqEntries[0][1].flagged).toBe(true);
 

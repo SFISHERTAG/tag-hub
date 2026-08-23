@@ -15,22 +15,69 @@ uses this same shared client rather than constructing its own.
 
 ### Collections
 
-| Collection | Purpose | Primary key | Replicated to Postgres? |
+Re-verified against code 2026-08-23 (story 14.1, at `635e14e`). Every row below
+names the module that reads or writes it. Four rows that previously appeared
+here had no code behind them and are recorded under "Documented but not
+code-backed" instead of being left to look live.
+
+**App-side** (`lib/**`, `app/api/**`). Full call-site map with line numbers in
+`docs/14.1-firestore-audit.md`.
+
+| Path | Purpose | Primary key | Owner |
 |---|---|---|---|
-| `orgs` | Organizations and their tenants | doc ID | No |
-| `locations` | Client sub-accounts within an org | doc ID | No |
-| `users` | Sign-in identities and session auth | doc ID (Firebase UID) | No |
-| `authCodes` | Hashed 6-digit sign-in codes | sha256 of the lowercased email | **No TTL policy configured** |
-| `authCodeCooldowns` | Resend rate limit, one doc per address | sha256 of the lowercased email | **No TTL policy configured** |
-| `locations/{id}/auditLog` | Immutable record of sensitive actions, per tenant | doc ID (auto) | No |
-| `flow_scripts` | FLOW automation editor content | doc ID | No |
-| `creatives` | Campaign creative assets | doc ID | No |
-| `bug_reports` | Client-submitted bugs and feedback | doc ID | No |
-| `manual_pages` | Knowledge base (TAG CSM Operating Manual) content, viewable in-app | doc ID (`p0`–`p13`, matches `_archive/manual-content.json`) | No |
-| `manual_pages/{id}/versions` | Version history for one knowledge base page — full prior snapshot + author + timestamp, written before every admin edit | doc ID (auto) | No |
-| `ghl/agency` | Root of GHL credential storage. Records `primaryCompanyId`, the agency whose token serves locations with no recorded owner | fixed doc ID | No |
-| `ghl/agency/companies/{companyId}` | One agency OAuth token per installing company | GHL company ID | No |
-| `ghl/agency/locations/{locationId}` | Per-location tokens, minted from an agency token or obtained by direct install | GHL location ID | No |
+| `authCodes/{sha256(email)}` | Hashed 6-digit sign-in codes | sha256 of lowercased email | `lib/auth/otp.ts` |
+| `authCodeCooldowns/{sha256(email)}` | Resend rate limit, one doc per address | sha256 of lowercased email | `lib/auth/otp.ts` |
+| `groups/{id}` | Named groups of users | doc ID | `lib/auth/groups.ts` |
+| `csm/{email}` | CS org reporting lines | email | `lib/dashboard/csm-directory.ts` |
+| `clients/{clientId}` | Denormalised client summary | doc ID | `lib/dashboard/csm-clients.ts`, `app/api/clients/_lib/client-record.ts` |
+| `clients/{clientId}/alerts` | Per-client health alerts | doc ID | `lib/dashboard/csm-clients.ts` |
+| `clients/{clientId}/meta_creatives` | Campaign-link badges for a creative | creative ID | `app/api/clients/[clientId]/creatives/route.ts` |
+| `bugReports/{id}` | Client-submitted bugs and feedback | doc ID (auto) | `lib/bug-reports.ts` |
+| `manual_pages/{pageId}` | Knowledge base content | `p0`–`p13` | `lib/knowledge-base/db.ts` |
+| `manual_pages/{pageId}/versions/{versionId}` | Version history, full prior snapshot | doc ID (auto) | `lib/knowledge-base/db.ts` |
+| `webhookDeadLetter/{id}` | Failed webhook deliveries awaiting review | doc ID (auto) | `lib/webhooks/deadLetterQueue.ts` |
+| `webhookEventsProcessed/{source}:{eventId}` | Exactly-once webhook claim | `source:eventId` | `functions/src/lib/webhooks/idempotency.ts` (live); `lib/webhooks/idempotency.ts` is an unimported mirror |
+| `locations/{locationId}` | Client sub-accounts, the tenant registry | GHL location ID | `lib/ghl/tenants.ts`, `lib/dashboard/location-config.ts` |
+| `locations/{locationId}/auditLog` | Immutable record of sensitive actions | doc ID (auto) | `lib/audit/store.ts` |
+| `locations/{locationId}/appointmentOutcomes/{appointmentId}` | Outcome and timing per appointment | GHL appointment ID | `lib/ghl/store.ts`, `lib/dashboard/freshness.ts` |
+| `locations/{locationId}/settings/followUp` | Follow-up queue thresholds | fixed doc ID | `lib/ghl/store.ts` |
+| `locations/{locationId}/metaConversionLog/{eventType}_{entityId}` | Meta CAPI send log and retry state | eventType-prefixed entity ID | `lib/meta/conversions.ts`, `lib/meta/retry.ts` |
+| `locations/{locationId}/metaFetchLog/latest` | Last Meta fetch timestamp | fixed doc ID | `lib/meta/fetch-log.ts` |
+| `locations/{locationId}/onboardingChecklists/{opportunityId}` | Onboarding step completion | GHL opportunity ID | `lib/onboarding/store.ts` |
+| `locations/{locationId}/campaignLaunches/{key}` | Campaign launch state | launch key | `lib/onboarding/campaign-launch-store.ts` |
+| `ghl/agency` | Root; records `primaryCompanyId` | fixed doc ID | `lib/ghl/store.ts` |
+| `ghl/agency/companies/{companyId}` | One agency OAuth token per installing company | GHL company ID | `lib/ghl/store.ts` |
+| `ghl/agency/locations/{locationId}` | Per-location tokens | GHL location ID | `lib/ghl/store.ts` |
+
+None of these are replicated to Postgres.
+
+**Functions-side** (`functions/src/firestore.ts`). A separate workspace with its
+own Firestore client and its own `@google-cloud/firestore` major. Folding it
+into `app/api` is a decided but unstarted piece of work; see Epic 14.
+
+| Path | Purpose | Primary key | Owner |
+|---|---|---|---|
+| `auth/otpWhitelist` | Addresses cleared to receive a sign-in code | fixed doc ID | `functions/src/firestore.ts` |
+| `locations/{locationId}` | Written at provisioning; read app-side as the tenant registry | GHL location ID | `functions/src/firestore.ts` |
+| `locations/{locationId}/provisioningLog` | Provisioning event trail | doc ID (auto) | `functions/src/firestore.ts` |
+| `locations/{locationId}/intakeData/latest` | Latest intake form submission | fixed doc ID | `functions/src/firestore.ts` |
+
+**Documented but not code-backed.** These four had rows here and no reader or
+writer anywhere in the repo, `functions/` and `scripts/` included. Whether
+documents still exist in the live database is not established by this audit;
+what is established is that no code path reaches them. They are listed so the
+next person does not re-add them from this file.
+
+| Previously listed | Finding |
+|---|---|
+| `orgs` | No call site. Epic 14.4 is named after it. |
+| `users` | No call site. Sign-in identity lives in Firebase Auth custom claims, not a collection; `lib/auth/groups.ts` uses `groups`. |
+| `flow_scripts` | No Firestore call site. The live editor content is the Postgres table of the same name, below. |
+| `creatives` | No top-level collection. `scripts/setup-test-data.mjs` and `scripts/setup-csm-test-data.ts` seed `clients/{id}/creatives`, which nothing reads: creatives render from Google Drive via `fetchCreatives`, and `clients/{id}/meta_creatives` supplies only campaign badges. Stale seed data. |
+
+Naming is not uniform and this file previously smoothed that over: the code has
+`bugReports` in camelCase next to `manual_pages` and `flow_scripts` in
+snake_case. Rows above match the code, not a convention.
 
 **GHL agency tokens are keyed by company, not shared.** They previously lived in
 one document at `ghl/agency`. Any agency completing a company-level install
@@ -86,7 +133,7 @@ account.
 
 | Table | Purpose | Sync source | Backfill done? | Notes |
 |---|---|---|---|---|
-| `clients` | Denormalized client summary (FLOW health, metrics) | Firestore `locations` | Partial | See backfill note below |
+| `clients` | **Not in use.** Created by `003`, never queried. The live client data is the Firestore `clients` collection read by `lib/dashboard/csm-clients.ts` | — | N/A | Same name, different store. See the dead-table note below |
 | `appointments` | Show/DQ/booked appointments from GHL | GHL API → Cloud Functions → this table | Yes | Includes timing (pre-call vs. on-call DQ) |
 | `courses` | Course catalog and structure | Migrating from Firestore | **NO — BLOCKED** | See migration status |
 | `course_progress` | Per-user completion tracking | **Postgres is authoritative** (story 11.6, 2026-08-23) | N/A | Was a split-brain: schema here, live data in Firestore. Firestore path deleted; backfill verified by count |
@@ -108,7 +155,7 @@ be able to open a course to fix it.
 | `flow_scripts` | FLOW card script content (versioned) | App writes directly | N/A | Also see `flow_scripts` in Firestore table above — same name, different store; Postgres is the live editor content, Firestore's is not currently synced from it |
 | `flow_audit_log` | FLOW change history, revert-capable | App writes directly | N/A | Written by `lib/flow/db.ts#logChange` |
 | `flow_script_suggestions` | Closer-submitted script edit suggestions, pending sales-manager review | App writes directly | N/A | Added Phase 2 item 2.5 fast-follow; approving one creates a new `flow_scripts` row and writes `flow_audit_log`, all inside one transaction |
-| `csm` | CS org reporting lines (who a CSM reports to) | Firestore `csm/{email}` | N/A | Keyed by email to match `clients.csm_assigned`. Migration 004 briefly created the same table as `csm_directory`; 006 consolidates the two |
+| `csm` | **Not in use.** Created by `003`, renamed by `006`, never queried. The live source is the Firestore `csm/{email}` collection read by `lib/dashboard/csm-directory.ts:30` | — | N/A | Wrong the same way the `clients` row was. Migration 004 briefly created it as `csm_directory`; 006 consolidated the two, and nothing has read either since |
 
 **Table grants.** Every table in `public` is read and written by
 `tag_app_user`, granted by 003's blanket
@@ -161,9 +208,27 @@ requirement on these reads.
 
 ### Backfill Status
 
-**Clients table:** `locations` snapshot was loaded once. New locations are sync'd
-via Cloud Functions on onboarding. Updates to location names/metadata are NOT
-sync'd from Firestore—check schema for stale data policy.
+**Clients table: nothing reads it.** This previously described a live
+denormalised table with a partial backfill and a stale-data policy. Verified
+2026-08-23 against code: there is no SQL against `clients` anywhere in `lib/`,
+`app/` or `functions/src`. The client data the app actually serves comes from
+the **Firestore** collection of the same name, via
+`lib/dashboard/csm-clients.ts` at four call sites.
+
+The shared name is why the old text read as plausible. Anyone checking whether
+`clients` is used finds that it is, in Firestore, and stops there. A dead
+Postgres table beside a live Firestore collection of the same name is worse than
+an obviously unused one.
+
+It is one of fourteen such tables. `003` creates seventeen and only three —
+`csm`, `dashboard_configs`, `course_progress` — are ever queried. The rest are
+schemas written months ago for a migration that did not finish, and they are
+listed in `docs/14.1-firestore-audit.md`.
+
+Treat them as unproven rather than as a head start. A stale schema that nearly
+fits is more dangerous than none, because it invites a cutover onto columns
+nobody re-examined. Stories 14.4 through 14.9 each read their table in `003` and
+make an explicit adopt-or-replace call before writing a backfill.
 
 **Courses:** split by half, not by store. Corrected 2026-08-22; the previous
 text here claimed Firestore was authoritative and that code still read from it,
@@ -261,7 +326,8 @@ re-runnable.
 
 **There is no project-wide move off Firestore.** Firestore remains the primary
 system of record, including the sign-in path (`lib/auth/otp.ts`), tenants, audit,
-onboarding, and GHL credentials. 29 modules call `firestore()`. Courses is one
+onboarding, and GHL credentials. 20 modules call `firestore()` (re-counted
+2026-08-23; this said 29). Courses is one
 feature mid-migration, not the leading edge of a general one. Recorded here
 because the half-finished state above reads like evidence of a direction that
 does not exist.

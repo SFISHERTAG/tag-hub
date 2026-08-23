@@ -1,10 +1,14 @@
-/* eslint-disable import/no-restricted-paths -- Predates the metric registry.
-   Queries directly instead of going through a scoped metric fetch. Not a leak
-   today (nothing here is per-user), but it is the pattern the zone exists to
-   stop, so this comment is the migration marker: move the data path into
-   lib/dashboard/metrics.ts and delete this line. See docs/ROLE_SCOPE_MODEL.md. */
+/*
+ * The `import/no-restricted-paths` disable that stood here is gone: the data
+ * path now runs through the `lib/data` repository seam (story 14.1), so the
+ * zone no longer fires and eslint reported the directive as unused.
+ *
+ * The concern it recorded is NOT resolved and is kept deliberately. This still
+ * queries directly instead of going through a scoped metric fetch, which is the pattern the zone exists to stop. The remaining move is
+ * into lib/dashboard/metrics.ts. See docs/ROLE_SCOPE_MODEL.md.
+ */
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 import { searchContacts } from "@/lib/ghl/contacts";
 import { getLastMetaFetch } from "@/lib/meta/fetch-log";
 
@@ -25,15 +29,11 @@ export type LastUpdated = {
 };
 
 async function getLastOutcomeMarkedAt(locationId: string): Promise<number | null> {
-  const snapshot = await firestore()
-    .collection(`locations/${locationId}/appointmentOutcomes`)
-    .orderBy("markedAt", "desc")
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) return null;
-  const outcome = snapshot.docs[0].data() as { markedAt: number };
-  return outcome.markedAt;
+  const [latest] = await repository().appointmentOutcomes(locationId).list({
+    orderBy: { field: "markedAt", direction: "desc" },
+    limit: 1,
+  });
+  return latest?.data.markedAt ?? null;
 }
 
 async function getLastContactAddedAt(locationId: string): Promise<number | null> {

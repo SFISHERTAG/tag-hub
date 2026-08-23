@@ -1,0 +1,53 @@
+#!/bin/sh
+# tag-agent-hooks v2 — installed into .git/hooks by scripts/install-hooks.mjs.
+# Edit this file, not the installed copy, then run: npm run hooks:install
+#
+# git does NOT run pre-commit for a merge. Every check wired only into
+# pre-commit is therefore absent from the merge path, which is how main moved
+# twice on 2026-08-23 past a guard that existed, and how a merge that regresses
+# a story document would walk straight through check-story-regression.
+#
+# This hook is the merge-path counterpart. It runs the cheap, high-value checks
+# only. The Angular gate is deliberately not here: it is slow, a merge of
+# already-gated branches has run it once per side, and a hook people learn to
+# bypass for slowness protects nothing.
+#
+# Same manifest logic as pre-commit, for the same reason: a check declared in
+# package.json but missing from the tree means a stale or partial branch, and
+# must fail loudly rather than skip silently.
+
+run_check() {
+  key="$1"
+  script="$2"
+
+  if grep -q "\"${key}\"" package.json 2>/dev/null; then
+    if [ ! -f "${script}" ]; then
+      echo "" >&2
+      echo "pre-merge-commit: BRANCH DRIFT — refusing to merge." >&2
+      echo "  package.json declares \"${key}\" but ${script} is missing." >&2
+      echo "  The tree contradicts its own config. Rebase or restore the script." >&2
+      echo "" >&2
+      exit 1
+    fi
+    node "${script}" || exit 1
+  fi
+}
+
+# First: if this session should not be writing to main at all, nothing else
+# matters. This is the check that would have caught 2026-08-23.
+run_check "check:main-ownership"    scripts/check-main-ownership.mjs
+
+# A merge can regress a story document exactly as a commit can, and until now
+# nothing looked. Story 10.3 lost five completed checkboxes and its Dev Agent
+# Record to a commit; the merge path had no equivalent guard at all.
+run_check "check:story-status"      scripts/check-story-status.mjs
+run_check "check:story-regression"  scripts/check-story-regression.mjs
+
+run_check "check:secret-scan"       scripts/check-secret-scan.mjs
+run_check "check:role-parity"       scripts/check-role-parity.mjs
+
+# Story 14.1: Firestore is reachable from one module only. The ESLint rule
+# says the same thing better, but root `npm run lint` is not part of this
+# hook, so that rule is a gate you have to remember to run and this is the
+# one that runs itself.
+run_check "check:firestore-seam"  scripts/check-firestore-seam.mjs

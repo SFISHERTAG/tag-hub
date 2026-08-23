@@ -18,8 +18,14 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { compareStory } from "./lib/story-regression.mjs";
 
-function git(args) {
-  return execFileSync("git", args, { encoding: "utf8" });
+function git(args, { quiet = false } = {}) {
+  return execFileSync("git", args, {
+    encoding: "utf8",
+    // A new story has no committed version, and `git show` says so on stderr.
+    // That is the expected path, not a problem, so it must not print "fatal:"
+    // into hook output — output nobody reads is a gate nobody checks.
+    stdio: quiet ? ["ignore", "pipe", "ignore"] : undefined,
+  });
 }
 
 function stagedStories() {
@@ -31,7 +37,7 @@ function stagedStories() {
 /** The committed version, or null if the file is new. */
 function committed(path) {
   try {
-    return git(["show", `HEAD:${path}`]);
+    return git(["show", `HEAD:${path}`], { quiet: true });
   } catch {
     return null;
   }

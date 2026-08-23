@@ -1,5 +1,5 @@
 import "server-only";
-import { firestore } from "@/lib/firestore";
+import { repository } from "@/lib/data";
 
 export type Service = "vslFunnel" | "adManagement" | "closingTeam" | "website" | "salesEnablement";
 
@@ -21,7 +21,6 @@ export type Tenant = {
   ownerGhlUserId?: string;
 };
 
-const TENANTS_COLLECTION = "locations";
 
 /**
  * Whether a string is safe to use as a Firestore document id for this
@@ -30,16 +29,24 @@ const TENANTS_COLLECTION = "locations";
  * or pasted id from ever addressing something other than a flat document
  * under `locations/`.
  */
+/*
+ * This module is named for "tenants" and the collection is `locations`. It held
+ * a `TENANTS_COLLECTION = "locations"` constant saying so, now unused because
+ * the path lives in the repository seam. Keeping the note: the Postgres table
+ * in migration 003 is `tenants`, the Firestore collection is `locations`, and
+ * this file is named for the first while reading the second. Three names, one
+ * entity. Story 14.4 has to settle it rather than inherit it.
+ */
+
 export function isValidLocationId(value: string): boolean {
   return /^[A-Za-z0-9_-]{1,128}$/.test(value);
 }
 
 /** Get a tenant by location ID. Returns defaults if document missing (fail closed). */
 export async function getTenant(locationId: string): Promise<Tenant> {
-  const db = firestore();
-  const doc = await db.collection(TENANTS_COLLECTION).doc(locationId).get();
+  const data = await repository().locations.doc(locationId).get();
 
-  if (!doc.exists) {
+  if (!data) {
     // Fail closed: no services if document missing
     return {
       locationId,
@@ -55,7 +62,6 @@ export async function getTenant(locationId: string): Promise<Tenant> {
     };
   }
 
-  const data = doc.data() as Partial<Tenant>;
   return {
     locationId,
     name: data.name ?? `Tenant ${locationId}`,
@@ -80,22 +86,21 @@ export async function getTenant(locationId: string): Promise<Tenant> {
  * a real one whose fields happen to match the placeholder values.
  */
 export async function tenantDocExists(locationId: string): Promise<boolean> {
-  const db = firestore();
-  const doc = await db.collection(TENANTS_COLLECTION).doc(locationId).get();
-  return doc.exists;
+  return (await repository().locations.doc(locationId).get()) !== null;
 }
 
 /** Save/update a tenant. Admin operation. */
 export async function saveTenant(tenant: Tenant): Promise<void> {
-  const db = firestore();
-  await db.collection(TENANTS_COLLECTION).doc(tenant.locationId).set(tenant, { merge: true });
+  await repository().locations.doc(tenant.locationId).set(tenant, { merge: true });
 }
 
 /** List all tenant IDs. Used for tag_exec to get all locations. */
 export async function listAllLocationIds(): Promise<string[]> {
-  const db = firestore();
-  const snapshot = await db.collection(TENANTS_COLLECTION).select("locationId").get();
-  return snapshot.docs.map((doc) => doc.id);
+  // The projection is load-bearing, not a tidy-up: this reads one field across
+  // every location, and dropping it turns a key scan into a full read of the
+  // whole tenant registry.
+  const found = await repository().locations.list({ select: ["locationId"] });
+  return found.map(({ id }) => id);
 }
 
 /** Check if a tenant has a service. */

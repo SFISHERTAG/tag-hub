@@ -1,6 +1,5 @@
 import "server-only";
-import { firestore } from "@/lib/firestore";
-import { FieldValue } from "@google-cloud/firestore";
+import { repository, serverTimestamp } from "@/lib/data";
 
 /**
  * User-facing bug reports — separate from server error logs on purpose.
@@ -35,33 +34,33 @@ export async function submitBugReport(input: {
   stepsToReproduce?: string;
   pageArea?: string;
 }): Promise<void> {
-  await firestore().collection("bugReports").add({
+  await repository().bugReports.add({
     ...input,
     status: "submitted" as BugReportStatus,
-    createdAt: FieldValue.serverTimestamp(),
+    // Assigned by the store, not this process: a report's time is when it
+    // landed, not when a caller's clock said so.
+    createdAt: serverTimestamp(),
   });
 }
 
 export async function getMyBugReports(userId: string): Promise<BugReport[]> {
-  const snapshot = await firestore()
-    .collection("bugReports")
-    .where("userId", "==", userId)
-    .orderBy("createdAt", "desc")
-    .limit(20)
-    .get();
-
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      userId: data.userId,
-      userEmail: data.userEmail,
-      title: data.title,
-      description: data.description,
-      stepsToReproduce: data.stepsToReproduce,
-      pageArea: data.pageArea,
-      status: data.status ?? "submitted",
-      createdAt: data.createdAt?.toMillis?.() ?? 0,
-    };
+  const found = await repository().bugReports.list({
+    where: [{ field: "userId", op: "==", value: userId }],
+    orderBy: { field: "createdAt", direction: "desc" },
+    limit: 20,
   });
+
+  return found.map(({ id, data }) => ({
+    id,
+    userId: data.userId,
+    userEmail: data.userEmail,
+    title: data.title,
+    description: data.description,
+    stepsToReproduce: data.stepsToReproduce,
+    pageArea: data.pageArea,
+    status: data.status ?? "submitted",
+    // The repository normalises Timestamp to epoch millis, so the
+    // `?.toMillis?.() ?? 0` dance that used to live here is gone.
+    createdAt: data.createdAt ?? 0,
+  }));
 }
