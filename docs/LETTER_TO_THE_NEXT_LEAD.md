@@ -1,7 +1,7 @@
 # Letter to whoever leads this next
 
-Written 2026-08-23, at the end of a day that shipped four stories and produced
-about a dozen documents, four of which were wrong.
+Written 2026-08-23, at the end of a day that shipped four stories, deployed two
+of them, and produced about a dozen documents, four of which were wrong.
 
 `docs/SESSION_HANDOFF_2026-08-23.md` has the facts: what landed, what is open,
 who owns what. This is the other thing — what I got wrong, and what I would tell
@@ -167,6 +167,65 @@ Silence reads as completion. An explicit "not done, and here is why" is worth
 more than a clean-looking summary.
 
 ---
+
+## 12. Source code is not evidence about production either.
+
+I extended rule 1 the wrong way. "A document is not evidence" made me trust the
+code instead — and the code is a document about intent, not a statement about
+what is running.
+
+I read `checkWebhookSecret`, saw it returns `void` and never blocks, saw
+`--allow-unauthenticated` in the deploy script, and told Sam repeatedly that
+client provisioning had a live unauthenticated back door. It was the most urgent
+item on my list for three hours.
+
+Then I ran `gcloud`. **Phases 2 and 3 are not deployed at all.** The only
+deployed function returns 401 to anonymous callers. There was no exposure.
+
+The same day I caught the identical error in the opposite direction: the deploy
+note said production ran `d5795ae`; `gcloud` said `635e14e`. I checked that one
+and it saved us from computing a 241-commit deploy instead of the real 44.
+
+So: **check the artefact.** For production that means the running revision, the
+image repo, the IAM policy, `gcloud`. Reading the source tells you what would
+happen if it ran.
+
+## 13. "The repo" and "my worktree" are different places, and the gap bites everyone.
+
+Four incidents in one day, all the same shape:
+
+- A monitoring session committed to `main` from the shared checkout.
+- The Secretary wrote its handoff onto `hold/main-parked`, 19 commits behind
+  `main`, where nobody would find a document written to be found.
+- Two sessions held 747 lines of untracked work between them and neither knew.
+- **I edited `AGENT_COORDINATION.md` and `epics.md` in the main checkout instead
+  of my own branch**, because `cd /Users/home/projects/TAG` goes somewhere
+  different from where I had been working. I only noticed because my new §11
+  landed at the line number where §9 should be — that stale branch has neither
+  §9 nor §10.
+
+`cd` into the repo root is not a neutral act. Check `git rev-parse
+--abbrev-ref HEAD` after it, every time, and prefer relative paths inside your
+own worktree.
+
+## 14. Ask what a thing IS before deciding what to do with it.
+
+Sam asked where phases 2 and 3 sat and admitted he was not sure what they were.
+That question was worth more than anything I proposed that hour.
+
+Reading them: phase 2 turns an intake form into a seeded brief. Phase 3 **does
+not wire up Meta** — zero references to the Graph API. It emails the client
+asking for access and pings Slack; a human grants it afterwards. The name said
+"Meta Ad Account Setup" and implied automation that does not exist, which had
+misled the person who owns the system.
+
+Both were dead. Neither had a story. Nothing could tell you, because every guard
+here watches `docs/stories/*.md` and a phase gives them nothing to watch.
+
+That produced `AGENT_COORDINATION.md` §11 — if it can run, it needs a story —
+and three backlog stories for other shipped work no epic owned. The general
+lesson is smaller than the rule: when someone asks what something is and the
+honest answer is "let me read it", read it. Do not answer from the name.
 
 ## The one thing I would tell you if you only read a sentence
 
