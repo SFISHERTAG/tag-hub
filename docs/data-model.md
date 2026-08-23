@@ -15,22 +15,69 @@ uses this same shared client rather than constructing its own.
 
 ### Collections
 
-| Collection | Purpose | Primary key | Replicated to Postgres? |
+Re-verified against code 2026-08-23 (story 14.1, at `635e14e`). Every row below
+names the module that reads or writes it. Four rows that previously appeared
+here had no code behind them and are recorded under "Documented but not
+code-backed" instead of being left to look live.
+
+**App-side** (`lib/**`, `app/api/**`). Full call-site map with line numbers in
+`docs/14.1-firestore-audit.md`.
+
+| Path | Purpose | Primary key | Owner |
 |---|---|---|---|
-| `orgs` | Organizations and their tenants | doc ID | No |
-| `locations` | Client sub-accounts within an org | doc ID | No |
-| `users` | Sign-in identities and session auth | doc ID (Firebase UID) | No |
-| `authCodes` | Hashed 6-digit sign-in codes | sha256 of the lowercased email | **No TTL policy configured** |
-| `authCodeCooldowns` | Resend rate limit, one doc per address | sha256 of the lowercased email | **No TTL policy configured** |
-| `locations/{id}/auditLog` | Immutable record of sensitive actions, per tenant | doc ID (auto) | No |
-| `flow_scripts` | FLOW automation editor content | doc ID | No |
-| `creatives` | Campaign creative assets | doc ID | No |
-| `bug_reports` | Client-submitted bugs and feedback | doc ID | No |
-| `manual_pages` | Knowledge base (TAG CSM Operating Manual) content, viewable in-app | doc ID (`p0`–`p13`, matches `_archive/manual-content.json`) | No |
-| `manual_pages/{id}/versions` | Version history for one knowledge base page — full prior snapshot + author + timestamp, written before every admin edit | doc ID (auto) | No |
-| `ghl/agency` | Root of GHL credential storage. Records `primaryCompanyId`, the agency whose token serves locations with no recorded owner | fixed doc ID | No |
-| `ghl/agency/companies/{companyId}` | One agency OAuth token per installing company | GHL company ID | No |
-| `ghl/agency/locations/{locationId}` | Per-location tokens, minted from an agency token or obtained by direct install | GHL location ID | No |
+| `authCodes/{sha256(email)}` | Hashed 6-digit sign-in codes | sha256 of lowercased email | `lib/auth/otp.ts` |
+| `authCodeCooldowns/{sha256(email)}` | Resend rate limit, one doc per address | sha256 of lowercased email | `lib/auth/otp.ts` |
+| `groups/{id}` | Named groups of users | doc ID | `lib/auth/groups.ts` |
+| `csm/{email}` | CS org reporting lines | email | `lib/dashboard/csm-directory.ts` |
+| `clients/{clientId}` | Denormalised client summary | doc ID | `lib/dashboard/csm-clients.ts`, `app/api/clients/_lib/client-record.ts` |
+| `clients/{clientId}/alerts` | Per-client health alerts | doc ID | `lib/dashboard/csm-clients.ts` |
+| `clients/{clientId}/meta_creatives` | Campaign-link badges for a creative | creative ID | `app/api/clients/[clientId]/creatives/route.ts` |
+| `bugReports/{id}` | Client-submitted bugs and feedback | doc ID (auto) | `lib/bug-reports.ts` |
+| `manual_pages/{pageId}` | Knowledge base content | `p0`–`p13` | `lib/knowledge-base/db.ts` |
+| `manual_pages/{pageId}/versions/{versionId}` | Version history, full prior snapshot | doc ID (auto) | `lib/knowledge-base/db.ts` |
+| `webhookDeadLetter/{id}` | Failed webhook deliveries awaiting review | doc ID (auto) | `lib/webhooks/deadLetterQueue.ts` |
+| `webhookEventsProcessed/{source}:{eventId}` | Exactly-once webhook claim | `source:eventId` | `functions/src/lib/webhooks/idempotency.ts` (live); `lib/webhooks/idempotency.ts` is an unimported mirror |
+| `locations/{locationId}` | Client sub-accounts, the tenant registry | GHL location ID | `lib/ghl/tenants.ts`, `lib/dashboard/location-config.ts` |
+| `locations/{locationId}/auditLog` | Immutable record of sensitive actions | doc ID (auto) | `lib/audit/store.ts` |
+| `locations/{locationId}/appointmentOutcomes/{appointmentId}` | Outcome and timing per appointment | GHL appointment ID | `lib/ghl/store.ts`, `lib/dashboard/freshness.ts` |
+| `locations/{locationId}/settings/followUp` | Follow-up queue thresholds | fixed doc ID | `lib/ghl/store.ts` |
+| `locations/{locationId}/metaConversionLog/{eventType}_{entityId}` | Meta CAPI send log and retry state | eventType-prefixed entity ID | `lib/meta/conversions.ts`, `lib/meta/retry.ts` |
+| `locations/{locationId}/metaFetchLog/latest` | Last Meta fetch timestamp | fixed doc ID | `lib/meta/fetch-log.ts` |
+| `locations/{locationId}/onboardingChecklists/{opportunityId}` | Onboarding step completion | GHL opportunity ID | `lib/onboarding/store.ts` |
+| `locations/{locationId}/campaignLaunches/{key}` | Campaign launch state | launch key | `lib/onboarding/campaign-launch-store.ts` |
+| `ghl/agency` | Root; records `primaryCompanyId` | fixed doc ID | `lib/ghl/store.ts` |
+| `ghl/agency/companies/{companyId}` | One agency OAuth token per installing company | GHL company ID | `lib/ghl/store.ts` |
+| `ghl/agency/locations/{locationId}` | Per-location tokens | GHL location ID | `lib/ghl/store.ts` |
+
+None of these are replicated to Postgres.
+
+**Functions-side** (`functions/src/firestore.ts`). A separate workspace with its
+own Firestore client and its own `@google-cloud/firestore` major. Folding it
+into `app/api` is a decided but unstarted piece of work; see Epic 14.
+
+| Path | Purpose | Primary key | Owner |
+|---|---|---|---|
+| `auth/otpWhitelist` | Addresses cleared to receive a sign-in code | fixed doc ID | `functions/src/firestore.ts` |
+| `locations/{locationId}` | Written at provisioning; read app-side as the tenant registry | GHL location ID | `functions/src/firestore.ts` |
+| `locations/{locationId}/provisioningLog` | Provisioning event trail | doc ID (auto) | `functions/src/firestore.ts` |
+| `locations/{locationId}/intakeData/latest` | Latest intake form submission | fixed doc ID | `functions/src/firestore.ts` |
+
+**Documented but not code-backed.** These four had rows here and no reader or
+writer anywhere in the repo, `functions/` and `scripts/` included. Whether
+documents still exist in the live database is not established by this audit;
+what is established is that no code path reaches them. They are listed so the
+next person does not re-add them from this file.
+
+| Previously listed | Finding |
+|---|---|
+| `orgs` | No call site. Epic 14.4 is named after it. |
+| `users` | No call site. Sign-in identity lives in Firebase Auth custom claims, not a collection; `lib/auth/groups.ts` uses `groups`. |
+| `flow_scripts` | No Firestore call site. The live editor content is the Postgres table of the same name, below. |
+| `creatives` | No top-level collection. `scripts/setup-test-data.mjs` and `scripts/setup-csm-test-data.ts` seed `clients/{id}/creatives`, which nothing reads: creatives render from Google Drive via `fetchCreatives`, and `clients/{id}/meta_creatives` supplies only campaign badges. Stale seed data. |
+
+Naming is not uniform and this file previously smoothed that over: the code has
+`bugReports` in camelCase next to `manual_pages` and `flow_scripts` in
+snake_case. Rows above match the code, not a convention.
 
 **GHL agency tokens are keyed by company, not shared.** They previously lived in
 one document at `ghl/agency`. Any agency completing a company-level install
@@ -261,7 +308,8 @@ re-runnable.
 
 **There is no project-wide move off Firestore.** Firestore remains the primary
 system of record, including the sign-in path (`lib/auth/otp.ts`), tenants, audit,
-onboarding, and GHL credentials. 29 modules call `firestore()`. Courses is one
+onboarding, and GHL credentials. 20 modules call `firestore()` (re-counted
+2026-08-23; this said 29). Courses is one
 feature mid-migration, not the leading edge of a general one. Recorded here
 because the half-finished state above reads like evidence of a direction that
 does not exist.
