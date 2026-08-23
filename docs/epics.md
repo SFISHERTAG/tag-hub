@@ -101,6 +101,16 @@ one auditable action.
 | 5.4 | Create paused via Marketing API | Done |
 | 5.5 | Explicit activation, advancing to `AP 2 - Ads Launched` | Done |
 | 5.6 | Budget ceilings and idempotency | In progress — implemented and unit-tested, held from Done pending live Meta verification |
+| 5.7 | Stage SLA deadlines | Draft |
+| 5.8 | SLA breach sweep and escalation | Draft |
+| 5.9 | Adjustable stage SLA baselines | Draft |
+| 5.10 | Opportunity custom fields in the GHL client | Draft — blocks 5.7/5.8 |
+
+**Architecture note:** 5.7–5.10 are built on
+`docs/fulfillment-pipeline-architecture.md`, which re-draws the Fulfillment
+stages as ownership handoffs and moves onboarding milestones onto dated
+opportunity custom fields. 5.1's stage model is superseded; see its own note.
+Sequence is 5.10, then 5.7, then 5.8, then 5.9.
 
 **Blocker:** 5.6's double-submit test passes against a mocked Meta client and an
 in-memory Firestore, not a real ad account. It stays out of Done until that same
