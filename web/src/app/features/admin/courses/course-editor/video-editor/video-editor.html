@@ -1,0 +1,57 @@
+<form class="video-editor" [formGroup]="form" (ngSubmit)="save()">
+  <mat-form-field appearance="outline" class="video-editor__provider" subscriptSizing="dynamic">
+    <mat-label>Provider</mat-label>
+    <mat-select formControlName="provider">
+      @for (provider of providers; track provider.value) {
+        <mat-option [value]="provider.value">{{ provider.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="video-editor__link" subscriptSizing="dynamic">
+    <mat-label>Share URL or id</mat-label>
+    <input matInput formControlName="link" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="video-editor__label" subscriptSizing="dynamic">
+    <mat-label>Label (optional)</mat-label>
+    <input matInput formControlName="label" />
+  </mat-form-field>
+
+  <button matButton type="submit" [disabled]="pending()">Save</button>
+
+  <button
+    matIconButton
+    type="button"
+    [disabled]="pending() || first()"
+    aria-label="Move video up"
+    (click)="move.emit(-1)"
+  >
+    <mat-icon>arrow_upward</mat-icon>
+  </button>
+
+  <button
+    matIconButton
+    type="button"
+    [disabled]="pending() || last()"
+    aria-label="Move video down"
+    (click)="move.emit(1)"
+  >
+    <mat-icon>arrow_downward</mat-icon>
+  </button>
+
+  <button
+    matIconButton
+    type="button"
+    class="video-editor__danger"
+    [disabled]="pending()"
+    aria-label="Remove video"
+    (click)="remove()"
+  >
+    <mat-icon>delete_outline</mat-icon>
+  </button>
+
+  @if (error(); as message) {
+    <p class="video-editor__error" role="alert">{{ message }}</p>
+  }
+</form>

@@ -48,6 +48,48 @@
   border: 0;
 }
 
+.player__videos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.player__video-title {
+  margin: 0 0 0.375rem;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// A closed recording is one full-width row, so a 35-item lesson reads as a
+// list rather than as a wall of players.
+.player__video-open {
+  inline-size: 100%;
+  justify-content: flex-start;
+  text-align: start;
+}
+
+.player__video-open-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player__docs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0 0 0.75rem;
+  padding-inline-start: 1.125rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.player__docs a {
+  color: var(--mat-sys-primary);
+}
+
 .player__checklist {
   display: flex;
   flex-direction: column;

@@ -7,9 +7,13 @@ import type {
   CourseDetail,
   CourseSummaryList,
   CreatedCheckbox,
+  CreatedDoc,
   CreatedSection,
   CreatedSubsection,
+  CreatedVideo,
+  DocWrite,
   SubsectionUpdate,
+  VideoWrite,
 } from './admin-courses.model';
 
 const COURSES_URL = '/api/admin/courses';
@@ -108,6 +112,81 @@ export class AdminCoursesService {
       this.api.delete<Acknowledged>(
         `${COURSES_URL}/${seg(courseId)}/subsections/${seg(subsectionId)}`,
       ),
+    );
+  }
+
+  createVideo(
+    courseId: string,
+    subsectionId: string,
+    write: VideoWrite,
+  ): Promise<ApiResult<CreatedVideo>> {
+    return firstValueFrom(
+      this.api.post<CreatedVideo>(
+        `${COURSES_URL}/${seg(courseId)}/subsections/${seg(subsectionId)}/videos`,
+        { link: write.link, provider: write.provider, label: write.label },
+      ),
+    );
+  }
+
+  updateVideo(
+    courseId: string,
+    videoId: string,
+    write: VideoWrite,
+  ): Promise<ApiResult<Acknowledged>> {
+    return firstValueFrom(
+      this.api.patch<Acknowledged>(`${COURSES_URL}/${seg(courseId)}/videos/${seg(videoId)}`, {
+        link: write.link,
+        provider: write.provider,
+        label: write.label,
+      }),
+    );
+  }
+
+  deleteVideo(courseId: string, videoId: string): Promise<ApiResult<Acknowledged>> {
+    return firstValueFrom(
+      this.api.delete<Acknowledged>(`${COURSES_URL}/${seg(courseId)}/videos/${seg(videoId)}`),
+    );
+  }
+
+  /** The whole order at once — see `reorderVideos` in `lib/course/db.ts` for why. */
+  reorderVideos(
+    courseId: string,
+    subsectionId: string,
+    orderedIds: readonly string[],
+  ): Promise<ApiResult<Acknowledged>> {
+    return firstValueFrom(
+      this.api.patch<Acknowledged>(
+        `${COURSES_URL}/${seg(courseId)}/subsections/${seg(subsectionId)}/videos`,
+        { orderedIds },
+      ),
+    );
+  }
+
+  createDoc(
+    courseId: string,
+    subsectionId: string,
+    write: DocWrite,
+  ): Promise<ApiResult<CreatedDoc>> {
+    return firstValueFrom(
+      this.api.post<CreatedDoc>(
+        `${COURSES_URL}/${seg(courseId)}/subsections/${seg(subsectionId)}/docs`,
+        { label: write.label, url: write.url },
+      ),
+    );
+  }
+
+  updateDoc(courseId: string, docId: string, write: DocWrite): Promise<ApiResult<Acknowledged>> {
+    return firstValueFrom(
+      this.api.patch<Acknowledged>(`${COURSES_URL}/${seg(courseId)}/docs/${seg(docId)}`, {
+        label: write.label,
+        url: write.url,
+      }),
+    );
+  }
+
+  deleteDoc(courseId: string, docId: string): Promise<ApiResult<Acknowledged>> {
+    return firstValueFrom(
+      this.api.delete<Acknowledged>(`${COURSES_URL}/${seg(courseId)}/docs/${seg(docId)}`),
     );
   }
 

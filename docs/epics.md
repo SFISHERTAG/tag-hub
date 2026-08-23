@@ -399,8 +399,18 @@ and their internal cross-references moved with them.
 | --- | --- | --- | --- |
 | 12.1 | Knowledge Base view — read-only, TAG-side staff | Ready | `12.1-knowledge-base-view.md` |
 | 12.2 | Knowledge Base admin edit — versioned, not overwritten | Ready | `12.2-knowledge-base-admin-edit.md` |
+| 12.3 | Course multi-video and doc links — schema plus Angular player and editor | Ready | `12.3-course-multi-video-and-doc-links.md` |
+| 12.4 | Legacy Skool course import — 4 courses, post-consolidation shape | Ready | `12.4-legacy-skool-course-import.md` |
+| 12.5 | CSM course authored lessons — the 5 with no Skool source | Ready | `12.5-csm-course-authored-lessons.md` |
 
-**Both read Ready while the code has shipped** (commits 64be44e, 430c517). That
+**12.3 through 12.5 are the legacy Skool training migration.** 12.3 is the
+schema and UI change that makes multi-video lessons possible, 12.4 imports the
+content that exists in Skool, and 12.5 authors the five lessons the course
+update outline calls for that have no Skool source. They run strictly in that
+order. The split between 12.4 and 12.5 is deliberate: a mechanical import
+should not be blocked behind an authoring and review cycle.
+
+**12.1 and 12.2 read Ready while the code has shipped** (commits 64be44e, 430c517). That
 is not drift: each story has exactly one unchecked task, and it is the same task
 — browser verification of the authorized and unauthorized role paths, which this
 environment cannot run because it has no test-auth credentials. The status is

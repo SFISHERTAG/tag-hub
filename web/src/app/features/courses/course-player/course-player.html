@@ -36,16 +36,63 @@
               </mat-panel-description>
             </mat-expansion-panel-header>
 
-            @if (subsection.loomId; as loomId) {
-              <div class="player__video">
-                <iframe
-                  class="player__iframe"
-                  [src]="loomUrl(loomId)"
-                  [title]="subsection.title + ' video'"
-                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                ></iframe>
-              </div>
+            @let videos = videosFor(subsection);
+            @if (videos.length > 0) {
+              <ul class="player__videos">
+                @for (video of videos; track video.id; let index = $index) {
+                  <li class="player__video-item">
+                    @if (isVideoOpen(video, videos.length)) {
+                      @if (videos.length > 1) {
+                        <p class="player__video-title">
+                          {{ videoLabel(video, index, videos.length) }}
+                        </p>
+                      }
+                      <div class="player__video">
+                        <iframe
+                          class="player__iframe"
+                          [src]="videoUrl(video)"
+                          [title]="videoLabel(video, index, videos.length)"
+                          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowfullscreen
+                        ></iframe>
+                      </div>
+                    } @else if (canPlayInline(video)) {
+                      <button
+                        matButton
+                        type="button"
+                        class="player__video-open"
+                        (click)="openVideo(video)"
+                      >
+                        <span class="player__video-open-label">
+                          {{ videoLabel(video, index, videos.length) }}
+                        </span>
+                      </button>
+                    } @else {
+                      <a
+                        matButton
+                        class="player__video-open"
+                        [href]="videoShareLink(video)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span class="player__video-open-label">
+                          {{ videoLabel(video, index, videos.length) }} (opens in a new tab)
+                        </span>
+                      </a>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (subsection.docs.length > 0) {
+              <ul class="player__docs">
+                @for (doc of subsection.docs; track doc.id) {
+                  <li>
+                    <a [href]="doc.url" target="_blank" rel="noopener noreferrer">{{ doc.label }}</a>
+                  </li>
+                }
+              </ul>
             }
 
             @if (subsection.checkboxes.length > 0) {

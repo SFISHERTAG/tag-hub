@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireApiSession } from "@/lib/auth/api-session";
 import { getCourse } from "@/lib/course/data";
+import { canSeeCourse, canSeeSubsection } from "@/lib/course/visibility";
 import { getCourseProgress } from "@/lib/course/firestore";
 import { handle, notFound } from "../../admin/_lib/http";
 
@@ -43,6 +44,25 @@ export async function GET(
     const course = await getCourse(courseId);
     if (!course) throw notFound("Course not found.");
 
+    // 404 rather than 403 on a course this hat is not an audience for. A 403
+    // would confirm the course exists, and "CSM Training exists and you may not
+    // read it" is not information a client's session needs.
+    const role = gate.session.currentRole;
+    if (!canSeeCourse(role, course.visibleToRoles)) throw notFound("Course not found.");
+
+    // Restricted lessons are removed from the tree, not hidden client-side.
+    // The Angular player renders what it is given, so a lesson filtered here is
+    // one whose video ids and body text never reached the browser at all.
+    const visible = {
+      ...course,
+      sections: course.sections.map((section) => ({
+        ...section,
+        subsections: section.subsections.filter((subsection) =>
+          canSeeSubsection(role, subsection.visibleToRoles),
+        ),
+      })),
+    };
+
     // A Firestore failure here must not read as "nothing completed" — that is
     // the same class of bug as the rollback that deleted a checkbox entry. It
     // is logged and re-thrown so the caller sees a failure, not a blank
@@ -50,7 +70,7 @@ export async function GET(
     const progress = await getCourseProgress(gate.session.uid, course.id);
 
     return NextResponse.json({
-      course,
+      course: visible,
       progress: Object.fromEntries(progress),
     });
   });

@@ -11,10 +11,34 @@ export interface CourseCheckbox {
   readonly label: string;
 }
 
+/** Mirrors the CHECK constraint on `course_subsection_videos.provider`. */
+export type VideoProvider = 'loom' | 'fathom' | 'drive';
+
+export interface CourseVideo {
+  readonly id: string;
+  readonly provider: VideoProvider;
+  /** Provider-native id, already parsed server-side. Never a URL. */
+  readonly externalId: string;
+  readonly label?: string;
+}
+
+export interface CourseDoc {
+  readonly id: string;
+  readonly label: string;
+  readonly url: string;
+}
+
 export interface CourseSubsection {
   readonly id: string;
   readonly title: string;
+  /**
+   * The single-Loom fast path from the original schema. Rendered only when
+   * `videos` is empty — every course seeded before story 12.3 has this and no
+   * video rows, and dropping the fallback would blank all of them.
+   */
   readonly loomId?: string;
+  readonly videos: readonly CourseVideo[];
+  readonly docs: readonly CourseDoc[];
   readonly checkboxes: readonly CourseCheckbox[];
   readonly content: string;
 }
