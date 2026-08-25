@@ -1,0 +1,205 @@
+# generated: 2026-08-21
+# last_updated: 2026-08-21
+# project: hub
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file, or its story doc is still Draft
+#   - ready-for-dev: Story doc written and ready to pick up
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# LOCAL DEVIATIONS FROM THE BMAD DEFAULTS:
+# ========================================
+# 1. Story keys use the epic table's story title; the story FILES are named
+#    `{epic}.{story}-{slug}.md`, so the key and the filename do not match character
+#    for character. Match on the leading `{epic}-{story}` instead.
+# 2. `Blocked` is not a legal status in the BMAD state machine, so blocked stories sit
+#    at their true development status and the reason is recorded under `blocked:` below.
+#    A blocked story is not the same as an unstarted one and must not be read as one.
+# 3. A story doc whose Status is `Draft` maps to `backlog`, not `ready-for-dev`: the
+#    file exists but is not something a developer can pick up.
+#
+# This file lives at {implementation_artifacts}/sprint-status.yaml, which is where every
+# BMAD skill resolves it. That path was _bmad-output/implementation-artifacts until
+# 2026-08-21; the directory never existed, so bmad-dev-story, bmad-create-story,
+# bmad-sprint-status, bmad-code-review, bmad-quick-dev and bmad-retrospective were all
+# reading into an empty tree. _bmad/bmm/config.yaml and _bmad/config.toml now point at
+# docs/ and docs/stories/, where the artifacts actually are.
+#
+# Statuses are derived from each story's own `**Status:**` line, per Story 11.3 and the
+# header of docs/epics.md. Regenerate by re-reading those, not by editing this by hand.
+
+generated: 2026-08-21
+last_updated: 2026-08-21
+project: hub
+project_key: NOKEY
+tracking_system: file-system
+story_location: docs/stories
+
+development_status:
+  epic-1:                                                      in-progress
+  1-1-token-resolution-seam:                                   done
+  1-2-agency-oauth-install:                                    backlog          # blocked, see below
+  1-3-identity-platform-sign-in:                               done
+  1-4-role-and-location-claims:                                done
+  1-5-location-scoped-routing:                                 done
+  1-6-tenant-registry-and-entitlements:                        in-progress      # 3 of 6 tasks open
+  1-7-deploy-to-cloud-run:                                     ready-for-dev    # 8 of 8 tasks open, but see note
+  1-8-provision-the-clients-hub-user-at-phase-1:               done
+  epic-1-retrospective:                                        optional
+  epic-2:                                                      in-progress
+  2-1-pipeline-board:                                          done
+  2-2-day-view-with-outcomes:                                  done
+  2-3-outcome-timing-capture:                                  done
+  2-4-contacts-list-and-detail-with-notes:                     done
+  2-5-move-a-deal-between-stages:                              ready-for-dev
+  2-6-mark-won-lost-with-value:                                done
+  2-7-call-preparation-panel:                                  ready-for-dev
+  2-8-follow-up-queue:                                         ready-for-dev
+  epic-2-retrospective:                                        optional
+  epic-3:                                                      in-progress
+  3-1-portfolio-list-with-process-stage:                       in-progress      # Phase 1 complete, 4 tasks open
+  3-2-client-health-signals:                                   in-progress      # Phase 1 complete, 5 tasks open
+  3-3-enter-a-client-tenant:                                   done
+  3-4-impersonation-banner-and-read-only-default:              done
+  3-5-audit-log-of-tenant-access:                              done
+  3-6-escalation-view-ascension-and-risk:                      review           # AC3/AC5 pending live GHL data
+  epic-3-retrospective:                                        optional
+  epic-4:                                                      in-progress
+  4-1-meta-system-user-and-ad-account-access:                  in-progress      # status reads "Unblocked", not a legal state
+  4-2-spend-and-delivery-by-ad:                                backlog          # blocked, see below
+  4-3-funnel-counts-leads-booked-showed-closed:                done
+  4-4-roas-joined-on-utmadid:                                  done
+  4-5-as-of-freshness-indicator:                               done
+  4-6-owners-own-calendar-view:                                done
+  epic-4-retrospective:                                        optional
+  epic-5:                                                      in-progress
+  5-1-onboarding-checklist-from-fulfillment-stages:            done
+  5-2-campaign-template-per-offer:                             done
+  5-3-launch-preview:                                          ready-for-dev
+  5-4-create-paused-via-marketing-api:                         done
+  5-5-explicit-activation-advancing-to-ap-2-ads-launched:      done
+  5-6-budget-ceilings-and-idempotency:                         in-progress      # code complete, 1 task open: live Meta verification
+  epic-5-retrospective:                                        optional
+  epic-6:                                                      in-progress
+  6-1-per-tenant-duplicate-conversion-audit:                   backlog          # blocked, see below
+  6-2-conversion-dispatch-on-showed:                           done             # DO NOT DEPLOY before 6.1
+  6-3-conversion-dispatch-on-closed-won-with-value:            done             # DO NOT DEPLOY before 6.1
+  6-4-pre-call-vs-on-call-dq-in-show-rate-maths:               done
+  6-5-delivery-monitoring-and-retry:                           done
+  epic-6-retrospective:                                        optional
+  epic-7:                                                      in-progress
+  7-1-client-success-aggregate-view:                           backlog          # no story doc
+  7-2-field-catalog-and-per-role-defaults:                     backlog          # no story doc
+  7-3-dashboard-configuration-ui:                              backlog          # no story doc
+  7-4-client-visibility-allowlist-at-the-query-layer:          in-progress      # 2 tasks open, launch gate
+  7-5-sales-enablement-upgrade-lever:                          backlog          # no story doc
+  7-6-data-scope-at-the-query-layer:                           in-progress      # 3 tasks open, launch gate
+  epic-7-retrospective:                                        optional
+  epic-8:                                                      backlog
+  8-1-error-log-searchable-filterable:                         backlog          # no story doc
+  8-2-per-client-integration-health:                           backlog          # no story doc
+  8-3-attribution-drift-monitor:                               backlog          # no story doc
+  8-4-in-app-bug-reporting:                                    backlog          # no story doc
+  epic-8-retrospective:                                        optional
+  epic-9:                                                      backlog
+  9-1-channel-deep-link-on-the-client-record:                  backlog          # no story doc
+  9-2-slack-app-bot-install-per-channel-membership:            backlog          # no story doc
+  9-3-awaiting-reply-queue-and-response-sla:                   backlog          # no story doc
+  9-4-response-signal-feeds-client-health:                     backlog          # no story doc
+  9-5-read-only-recent-thread-staff-views-only:                backlog          # no story doc
+  epic-9-retrospective:                                        optional
+  epic-10:                                                     in-progress
+  10-1-contract-hardening-and-boundary-enforcement:            done
+  10-2-real-session-wiring-and-the-auth-surface:               in-progress      # 1 task open
+  10-3-responsive-shell-and-navigation:                        in-progress      # 6 tasks open
+  10-4-shared-m3-primitives-portfolio-and-bug-reports:         backlog          # split resolved, see below
+  10-5-ghl-integration-module:                                 backlog
+  10-6-widget-dashboard-and-the-clients-book:                  backlog
+  10-7-remaining-feature-modules:                              backlog
+  10-8-legacy-removal:                                         backlog          # split out of 10.7, the sweep was unowned
+  10-9-production-hardening-and-release:                       backlog          # was 10.4, then 10.8
+  epic-10-retrospective:                                       optional
+  epic-11:                                                     in-progress
+  11-1-runnable-angular-gate:                                  done
+  11-2-story-isolation-and-merge-discipline:                   backlog
+  11-3-verified-doc-claims:                                    in-progress      # 6 tasks open
+  11-4-calibration-instrumentation-on-10-4:                    backlog
+  11-5-endpoint-inventory-ahead-of-each-feature-story:         backlog
+  epic-11-retrospective:                                       optional
+  epic-12:                                                     in-progress
+  12-1-knowledge-base-view:                                    ready-for-dev    # code shipped, 1 verification task open
+  12-2-knowledge-base-admin-edit:                              ready-for-dev    # code shipped, 1 verification task open
+  epic-12-retrospective:                                       optional
+
+# Stories whose development status above understates why they are not moving.
+blocked:
+  1-2-agency-oauth-install:
+    reason: >-
+      GHL account consolidation. The OAuth install itself completed 2026-08-09;
+      what is outstanding is the account merge, which is not a code task.
+    owner: needs a human with GHL account access
+    unblocks: onboarding new sub-accounts at scale rather than one at a time
+  4-2-spend-and-delivery-by-ad:
+    reason: >-
+      No META_SYSTEM_USER_TOKEN / META_BUSINESS_ID in this environment. The Meta
+      System User and client ad account assignments went live 2026-08-16 (Story
+      4.1); the credentials never reached the deploy environment.
+    owner: needs a human with GCP Secret Manager access
+    unblocks: 4.2, and the last open task on 5.6
+  6-1-per-tenant-duplicate-conversion-audit:
+    reason: >-
+      A manual per-client, per-pixel audit that must happen before 6.2 and 6.3
+      deploy. Both are code-complete and sitting undeployed behind it.
+    owner: needs a human with Meta Events Manager access per client
+    unblocks: deploying the entire acquisition loop
+
+# Contradictions found while generating this file. Each needs a decision, not a guess.
+open_questions:
+  10-4-id-collision:
+    detail: >-
+      RESOLVED, but not on this branch. Commit 40e9aa6 on `epic-10-4-split` splits
+      it the opposite way from what this file first recommended: the FEATURE story
+      keeps 10.4 (shared M3 primitives, portfolio, bug reports) and the release
+      story moves to 10.8. That is the correct call, because Story 11.4 calibrates
+      off the first feature shipped end to end and can now point at 10.4 without
+      a redirect. The rows above follow the split. `docs/epics.md` on this branch
+      does not yet, it still shows 10.4 as "Unresolved" and has no 10.8 row.
+  unmerged-work-already-covering-this-plan:
+    detail: >-
+      Two branches carry work that overlaps anything sequenced from here, and
+      neither is merged into main (verified with `git branch --contains`).
+      `epic-10-4-split` is 17 commits ahead of main and contains the 10.4/10.8
+      split (40e9aa6), Story 11.5's endpoint inventory (74cdbeb), a full Angular
+      rebuild (198c768) and a commit retiring every Next surface (c5d1b75) -
+      572 files, +37341 lines. `ci/github-actions` carries the CI half of Story
+      11.2 (08954cf, 5f0caf9). Read both before starting any story that touches
+      the same ground; building it again is this project's documented failure
+      mode, not a hypothetical one.
+  1-7-task-list-is-stale:
+    detail: >-
+      Story 1.7 reads Ready with all 8 tasks unchecked, but Dockerfile and
+      cloudbuild.yaml both exist at the repo root and the deploy runbooks
+      describe deploys that have actually happened. The story understates
+      reality. Reconcile it before using its task list to size the deploy.
+  4-1-status-is-not-a-status:
+    detail: >-
+      Story 4.1's Status line reads "Unblocked", which is a statement about its
+      dependencies rather than about the story. The underlying work (System User,
+      token, ad account assignment) appears complete as of 2026-08-16. Should
+      most likely be Done.
