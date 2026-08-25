@@ -143,6 +143,35 @@ fallback to production project ID silently when a dev deploys without
 Seed scripts (`scripts/setup-*.ts`) detect `NODE_ENV` and the target GCP project before any
 `.set()` write. No exceptions.
 
+## Loop discipline (open one, close one)
+
+Every branch is a promise, and this repo accumulated 30 open ones in 19 days because
+nothing in the workflow ever merged, deleted, or declared them dead. The cost is not
+disk: it is that "what is the state of this repo" stops being answerable from refs and
+starts requiring a transcript archaeology dig, which is exactly how work gets redone.
+
+- **A session ends by closing its own loop, and saying which.** Merge it, delete the
+  branch, push it, or rename it `keep/<reason>`. Four outcomes, no fifth. "Left it on the
+  branch" is not a close, and neither is a summary that says the work is ready.
+- **`keep/` is the only way to hold a branch open.** The prefix is the declaration, and
+  the reason in the name is the point: `keep/awaiting-sam-phase2-call` closes the loop by
+  naming who it is waiting on. An undeclared branch older than three days is drift.
+- **Never report a loop closed without the ref to prove it.** Name the branch and the SHA,
+  and state which of the four outcomes happened. This is the same rule as
+  "only green output counts", applied to git rather than to the build.
+- **Status is generated, never written.** `npm run loops` prints open branches, stale ones,
+  local-only ones, detached and dirty worktrees, read from refs alone. Do not create
+  `MERGE_STATUS_<date>.md` or any dated status doc; a file named `-FINAL` next to one named
+  `-UPDATED` is the failure this replaces. `npm run check:loops` is the same check with a
+  non-zero exit, for CI or a hard session gate.
+- **A branch you did not open is not yours to close.** Surface it, per
+  `docs/AGENT_COORDINATION.md`. Rescuing work nobody was losing still adds a branch.
+
+The Stop hook in `.claude/settings.json` prints the open-loop report at the end of every
+session. It is advisory by design: a check that blocks a commit over some *other* branch's
+age trains you to bypass hooks, and that habit would eventually be taken into
+`check-secret-scan`. The gate is that you read it before you say you are done.
+
 ## Story discipline (BMAD)
 - A story's code and its `docs/stories/*.md` Status/Tasks are one unit of work. Never land
   the code in a commit without updating Status and checking off Tasks in the same commit,
