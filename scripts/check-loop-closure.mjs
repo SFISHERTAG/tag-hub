@@ -33,6 +33,25 @@ const STALE_DAYS = Number(process.env.TAG_LOOP_STALE_DAYS ?? 3);
 const BASE = process.env.TAG_BASE_REF ?? "origin/main";
 const STRICT = process.argv.includes("--strict") || process.env.TAG_LOOPS_STRICT === "1";
 
+/**
+ * Which branches count as loops, and for whom.
+ *
+ * Local (default) reads `refs/heads`: the branches on THIS machine, which is what a
+ * session should answer for at its own start and end.
+ *
+ * Remote (`--remote`) reads `refs/remotes/origin`: the branches the TEAM can see, which
+ * is what `main` should gate on. This mode exists because the CI step was very nearly
+ * shipped reading `refs/heads`, where it would have been decorative: a GitHub Actions
+ * checkout has exactly one local branch, so the check would have passed trivially and
+ * forever while reporting that it was guarding something. Measured on 2026-08-25: 67
+ * local branches, 30 on origin, 1 in CI.
+ *
+ * The split is also the honest one. A local-only branch is your own business. A branch
+ * you pushed is a promise to everyone else.
+ */
+const REMOTE = process.argv.includes("--remote") || process.env.TAG_LOOPS_REMOTE === "1";
+const NS = REMOTE ? "refs/remotes/origin" : "refs/heads";
+
 // Branch-name prefixes that declare an intent, so the report can say what a
 // branch is FOR rather than only how old it is. `keep/` is the escape hatch:
 // it means "open on purpose, stop asking".
@@ -55,7 +74,7 @@ const days = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / 86_400
 
 function branches() {
   const raw = git(
-    "for-each-ref --format='%(refname:short)\t%(committerdate:iso8601)\t%(upstream:short)' refs/heads",
+    `for-each-ref --format='%(refname:short)\t%(committerdate:iso8601)\t%(upstream:short)' ${NS}`,
   );
   if (!raw) return [];
 
@@ -65,12 +84,22 @@ function branches() {
     .filter(Boolean)
     .map((line) => {
       const [name, date, upstream] = line.split("\t");
+      // In remote mode the namespace itself contains the base ref and git's own
+      // origin/HEAD pointer. Neither is a loop, and counting the base against itself
+      // would report main as permanently unmerged into main.
+      if (REMOTE && (name === BASE || name === "origin/HEAD" || name.endsWith("/HEAD"))) {
+        return null;
+      }
       // A branch with no unique commits is not an open loop — it is a label on
       // work that already landed, and reporting it as unfinished would bury the
       // branches that genuinely hold something.
       const ahead = Number(git(`rev-list --count --no-merges ${BASE}..${name}`) ?? 0);
-      return { name, age: days(date), upstream: upstream || null, ahead };
-    });
+      // In remote mode every branch is by definition pushed, so `upstream` carries no
+      // information and the local-only tally below is meaningless. Report it as pushed
+      // rather than letting an empty upstream field read as "exists only on this machine".
+      return { name, age: days(date), upstream: REMOTE ? name : upstream || null, ahead };
+    })
+    .filter(Boolean);
 }
 
 function worktrees() {
@@ -111,9 +140,15 @@ function main() {
   }
 
   const all = branches();
-  const open = all.filter(
-    (b) => b.ahead > 0 && !DECLARED.some((p) => b.name === p || b.name.startsWith(p)),
-  );
+  // `keep/foo` arrives as `origin/keep/foo` in remote mode, which starts with neither
+  // "keep/" nor "hold/". Comparing the raw name would silently re-flag every branch that
+  // had correctly declared itself, which is the fastest way to teach people the escape
+  // hatch does not work.
+  const declared = (name) => {
+    const bare = REMOTE ? name.replace(/^origin\//, "") : name;
+    return DECLARED.some((p) => bare === p || bare.startsWith(p));
+  };
+  const open = all.filter((b) => b.ahead > 0 && !declared(b.name));
   const stale = open.filter((b) => b.age > STALE_DAYS);
   const unpushed = open.filter((b) => b.upstream === null);
   const trees = worktrees();
@@ -121,10 +156,14 @@ function main() {
   const dirty = trees.filter((w) => w.dirty > 0);
   const gone = trees.filter((w) => w.gone);
 
-  console.log(`\n  OPEN LOOPS  (against ${BASE}, stale after ${STALE_DAYS}d)\n`);
+  console.log(
+    `\n  OPEN LOOPS  (${REMOTE ? "on origin" : "local"}, against ${BASE}, stale after ${STALE_DAYS}d)\n`,
+  );
   console.log(`  ${String(open.length).padStart(3)}  branches with unmerged work`);
   console.log(`  ${String(stale.length).padStart(3)}  of those untouched for more than ${STALE_DAYS} days`);
-  console.log(`  ${String(unpushed.length).padStart(3)}  of those existing only on this machine`);
+  if (!REMOTE) {
+    console.log(`  ${String(unpushed.length).padStart(3)}  of those existing only on this machine`);
+  }
   console.log(`  ${String(detached.length).padStart(3)}  worktrees on a detached HEAD`);
   console.log(`  ${String(dirty.length).padStart(3)}  worktrees with uncommitted files`);
   if (gone.length) console.log(`  ${String(gone.length).padStart(3)}  worktree registrations whose directory is gone`);

@@ -17,7 +17,7 @@
     "check:main-ownership": "node scripts/check-main-ownership.mjs",
     "check:branch-freshness": "node scripts/check-branch-freshness.mjs",
     "loops": "node scripts/check-loop-closure.mjs",
-    "check:loops": "node scripts/check-loop-closure.mjs --strict",
+    "check:loops": "node scripts/check-loop-closure.mjs --strict --remote",
     "check:secret-scan": "node scripts/check-secret-scan.mjs",
     "check:role-parity": "node scripts/check-role-parity.mjs",
     "check:role-strings": "node scripts/check-role-strings.mjs",
