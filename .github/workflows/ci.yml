@@ -33,6 +33,24 @@ jobs:
       - name: Story status and architecture constraints
         run: npm run check:story-status
 
+      # Aggregate repo state, not this change's state. Deliberately here and not in
+      # pre-commit: blocking a commit because some *other* branch is stale trains people
+      # to bypass hooks, and that habit would eventually be carried into the secret scan.
+      # Blocking a merge to main is the right altitude, because open loops are exactly
+      # what main should be clean of. Needs fetch-depth: 0 above to see the branches.
+      #
+      # continue-on-error is TEMPORARY and has a defined removal condition. On 2026-08-25
+      # origin carried 14 stale branches, so making this blocking on day one would paint
+      # main red immediately, and a permanently-red check is one people learn to ignore or
+      # delete. That would cost more than the drift it polices.
+      #
+      # REMOVE THIS LINE once `npm run check:loops` exits 0 locally. The report still
+      # prints in the CI log every run, so the backlog stays visible while it shrinks
+      # rather than being hidden behind a green tick.
+      - name: Open loops
+        continue-on-error: true
+        run: npm run check:loops
+
   next:
     name: Next app
     runs-on: ubuntu-latest

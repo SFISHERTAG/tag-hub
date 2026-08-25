@@ -143,6 +143,60 @@ fallback to production project ID silently when a dev deploys without
 Seed scripts (`scripts/setup-*.ts`) detect `NODE_ENV` and the target GCP project before any
 `.set()` write. No exceptions.
 
+## Loop discipline (open one, close one)
+
+Every branch is a promise, and this repo accumulated enough open ones that nothing in
+the workflow ever merged, deleted, or declared them dead. Run `npm run loops` for the
+current count rather than trusting a number written here; an earlier draft of this
+paragraph hardcoded "30", which its own generator already disagreed with. The cost is
+not disk: it is that "what is the state of this repo" stops being answerable from refs
+and starts requiring a transcript archaeology dig, which is exactly how work gets redone.
+
+- **A session ends by closing its own loop, and saying which.** Merge it, delete the
+  branch, push it, or rename it `keep/<reason>`. Four outcomes, no fifth. "Left it on the
+  branch" is not a close, and neither is a summary that says the work is ready.
+- **`keep/` is the only way to hold a branch open.** The prefix is the declaration, and
+  the reason in the name is the point: `keep/awaiting-sam-phase2-call` closes the loop by
+  naming who it is waiting on. An undeclared branch older than three days is drift.
+- **Never report a loop closed without the ref to prove it.** Name the branch and the SHA,
+  and state which of the four outcomes happened. This is the same rule as
+  "only green output counts", applied to git rather than to the build.
+- **Status is generated, never written.** `npm run loops` prints open branches, stale ones,
+  local-only ones, detached and dirty worktrees, read from refs alone. Do not create
+  `MERGE_STATUS_<date>.md` or any dated status doc; a file named `-FINAL` next to one named
+  `-UPDATED` is the failure this replaces. `npm run check:loops` is the same check with a
+  non-zero exit, for CI or a hard session gate.
+- **A branch you did not open is not yours to close.** Surface it, per
+  `docs/AGENT_COORDINATION.md`. Rescuing work nobody was losing still adds a branch.
+- **Infrastructure lands alone, and lands immediately.** A change to `CLAUDE.md`, a hook,
+  `.claude/settings.json`, or `scripts/check-*.mjs` goes to `main` as its own commit in the
+  session that writes it. Never bundled with feature work, never parked on a branch that
+  lives for days. **A rule that is not on `main` does not exist**, and it is inert exactly
+  when it would have helped. This check was itself written on a feature branch and sat
+  unmerged, so the thing built to police unclosed loops was an unclosed loop. The precedent
+  to copy is commit `9ed822b`, where a `check-story-status` fix found mid-story was split
+  into its own commit rather than riding along.
+
+## Where the loop report is actually read
+
+**At the start of a session, not the end.** `.claude/settings.json` has a Stop hook that
+prints the report, and that is a convenience, not the gate. A Stop hook only fires when a
+session stops cleanly. It does not fire on a crash, a kill, a context exhaustion, or a
+usage limit — and those are precisely the sessions that strand work. On 2026-08-24 a
+session lost two running workflows to a hard usage limit mid-flight; no Stop hook ran.
+Relying on it means the report reaches every session that was going to be tidy anyway and
+misses every session that actually created the mess.
+
+So a session **begins** by running `npm run loops` and naming what it inherited. A session
+start always happens. Reading it at both ends is fine; reading it only at the end is the
+failure mode this paragraph exists to prevent.
+
+**`--strict` belongs in CI, not in `pre-commit`.** `npm run check:loops` exits non-zero and
+runs in the Contracts job. Blocking a *commit* because some other branch is old trains you
+to bypass hooks, and that habit would eventually be carried into `check-secret-scan`.
+Blocking a *merge to `main`* is different: aggregate repo state is exactly what `main`
+should gate on.
+
 ## Story discipline (BMAD)
 - A story's code and its `docs/stories/*.md` Status/Tasks are one unit of work. Never land
   the code in a commit without updating Status and checking off Tasks in the same commit,

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/check-loop-closure.mjs || true",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
