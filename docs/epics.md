@@ -10,6 +10,12 @@ Status values: `Done` · `In progress` · `In review` · `Ready` · `Blocked` ·
 `docs/stories/`, the `**Status:**` line in that file wins and the table below is
 a summary of it. Reconciled against the story docs on 2026-08-21.
 
+Ideas raised mid-build that are not yet promoted into an epic live in
+[`docs/scope-creep-queue.md`](scope-creep-queue.md). Nothing enters the table
+below from that queue until it is argued and given a disposition. Check it
+before opening a new epic, so a queued idea is not rebuilt from scratch or
+re-litigated.
+
 ---
 
 ## Epic 1 — Foundation and access
