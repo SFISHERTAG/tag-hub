@@ -98,6 +98,58 @@ The account entity is what gives `listAllLocationIds()` something to filter on. 
 correct fix without it. This is also why the UI-gating rule in `CLAUDE.md` matters here:
 hiding a location picker would not touch any of the three functions above.
 
+#### What arms it, sharpened after a second session tried to refute this
+
+Independently re-checked against source on 2026-08-26 by another session, which
+attempted to refute the chain above and could not. Three of the four escape hatches are
+closed:
+
+- **No upstream tenancy filter.** `repository().locations.list()` applies only what the
+  caller passes, and `listAllLocationIds` passes `{select: ["locationId"]}`, which is a
+  *projection*, not a filter. Nothing narrows by tenancy anywhere on that path.
+- **Nothing re-checks downstream.** `requireLocationAccess` delegates to `ownsLocation`;
+  that is the gate, and there is no second one before the GHL client mints a token.
+- **`session.ts:305` is an unconditional early return.** `if (!locationId) return false;`
+  then `if (isGlobalRole(...)) return true;`. `session.locations` is never reached.
+
+The fourth changes the risk profile, and it cuts both ways. Record both halves:
+
+**Mitigating.** No automatic path hands a customer a global role.
+`functions/src/auth.ts:52` `clientOwnerGrants()` issues exactly five roles, every one of
+them client-scoped and carrying `locations: [locationId]`. Provisioning a client owner
+cannot produce a global role. It takes a deliberate administrative act.
+
+**Aggravating, and this is the likelier trigger.** `ROLES.ADMIN` is in `GLOBAL_ROLES`
+(`lib/auth/grants.ts:58`). So the leak does not need a second marketplace customer to
+arm. It needs one plausible product decision: the obvious future feature of letting a
+client admin manage their own team hands that client the entire registry the moment
+someone implements it by granting `ROLES.ADMIN`, believing that to be routine.
+
+That reframing matters for how this gets prioritised. "Arms when a second account exists"
+is a future event that is easy to discount. "Arms when someone ships client team
+management without reading `grants.ts:58`" is a decision that could be made next week.
+
+Note the existing comment above `GLOBAL_ROLES`: reach was deliberately centralised there
+so that an empty `locations: []` from a blank admin textarea keeps failing closed. That
+centralisation is what makes the fix tractable, and it is also why `ADMIN` sitting in that
+list is easy to miss.
+
+#### This is Story 15.B. Do not mint a new number
+
+`docs/epics.md:704` already carries **15.B, "Per-location entitlement; close the
+cross-tenant leak"**, Draft. Fold this finding into that story rather than opening a new
+one; a duplicate story number cost a morning yesterday.
+
+Respect the existing sequencing: `docs/epics.md:703` records that **15.C was deliberately
+moved ahead of 15.B**, because 15.B removes the client's only location source four stories
+before its replacement exists. A removal goes after its replacement. Anything fixing this
+inherits that ordering.
+
+Also inherited from that epic: **do not change the claim shape.** Retyping `locations`
+makes `parseRoleGrants` drop every entry, which `resolveSession` reads as signed out, so a
+rollback would sign out every migrated user. Same keys, same types. This is why the
+sequence above adds `accountId` alongside `RoleGrant.locations` rather than replacing it.
+
 #### Why this is cheap: the seams already exist
 
 Three seams funnel every location-scoped access, and that work is already done:
