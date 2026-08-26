@@ -417,7 +417,7 @@ is measurable or guesswork.
 | 11.1 | Runnable Angular gate — Node floor pinned and enforced | Done | `11.1-runnable-angular-gate.md` |
 | 11.2 | Story isolation and merge discipline | Draft | `11.2-story-isolation-and-merge-discipline.md` |
 | 11.3 | Verified doc claims — checks over prose | In Progress | `11.3-verified-doc-claims.md` |
-| 11.4 | Calibration instrumentation on 10.4 | Draft | `11.4-calibration-instrumentation-on-10.4.md` |
+| 11.4 | Calibration instrumentation on 10.4 | **Retired 2026-08-25 — no timeline to defend** | `11.4-calibration-instrumentation-on-10.4.md` |
 | 11.5 | Endpoint inventory ahead of each feature story | Review — re-run 2026-08-23, metric reached zero |
 | 11.6 | Resolve the courses store split | Ready — Option A decided 2026-08-22 | `11.6-resolve-the-courses-store-split.md` |
 | 11.7 | The root build script masks a failure | Draft | `11.7-the-root-build-script-masks-a-failure.md` |
@@ -451,12 +451,30 @@ a live vulnerability, and no test would have caught it because nothing tested it
 the assertion goes in a spec. Where it asserts current behaviour and cannot be
 tested, it is dated. `app.config.spec.ts` is the first of these.
 
-**11.4 is what makes a date possible.** No feature has gone end to end, so there
-is no per-feature cost, so any estimate is arithmetic on a guess — including a
-confident-sounding one. 10.4 is the calibration story: it records endpoint hours,
-screen hours, one-time primitive cost, and post-gate defects. Subtract the
-one-time cost and the remainder multiplies across 10.5–10.7. **No completion date
-is committed before those four numbers exist.**
+**11.4 is retired, 2026-08-25, and the rule it protected is withdrawn with it.**
+
+It existed to make a date defensible. No feature had gone end to end, so there
+was no per-feature cost, so any estimate was arithmetic on a guess. 10.4 was to
+be the calibration story, recording endpoint hours, screen hours, one-time
+primitive cost and post-gate defects; subtract the one-time cost and the
+remainder multiplies across 10.5-10.7. The rule was: **no completion date is
+committed before those four numbers exist.**
+
+Two things killed it. 10.4 shipped un-instrumented, so the story could not run as
+written. And when that was put to Sam, his answer was the more fundamental one:
+*there is no timeline*. Nobody is owed a date for this project.
+
+**So the rule was guarding a promise nobody makes.** That is a subtler version of
+the same failure as Epic 15's "live bug" and story 5.11's "months in production":
+a constraint that reads as discipline, is expensive to satisfy, and protects
+against something that cannot happen here. It survived precisely because it
+sounded rigorous.
+
+What is worth keeping is much smaller than 11.4 described. Knowing whether the
+migration is going faster or slower **than it was going** is a steering signal,
+and it needs a rough note of how long each story took, not four measured
+quantities and a story to collect them. Record it as a trend if anyone wants it;
+do not rebuild the apparatus.
 
 **11.5 is the estimate's largest unknown.** Epic 10's count — 41 Server Actions
 with no HTTP equivalent, all 33 data-reading pages importing `lib/` inside a
@@ -713,15 +731,26 @@ as story 5.11, which claimed a service had been "running in production for
 months" in a repository seventeen days old, and both survived review because the
 surrounding technical detail was accurate.
 
-**Five other documents still assert the old framing, and this note does not fix
-them.** Verified 2026-08-25, twelve occurrences across six files including this
-one: `ROLES_AND_GRANTS_PLAN.md` (3), `stories/15.A-grants-on-the-session.md`
-(3), `no-hats-sequence.md` (2), `CONSOLIDATION_STATUS_2026-08-23.md` (1),
-`BMAD_LEGENDARIUM_FRAMEWORK.md:281` (1). **15.A is the one to fix first**: it
-uses "live" to justify sequencing, so a reader who opens it before this file
-inherits the ranking this correction exists to undo. Naming them here rather
-than silently correcting one copy, because a correction that leaves five stale
-siblings is worse than none.
+**The stale claim is "founders exist in production", not the word "live".** That
+distinction matters for anyone chasing the remaining copies: grepping for "live
+bug" finds six files and misses two of the worst, because the same false premise
+is asserted in other words. Searching for the label rather than the thing is how
+this correction nearly shipped incomplete.
+
+Documents still carrying it, verified 2026-08-25 by searching the premise:
+
+| Document | Why it matters |
+| --- | --- |
+| `ROLES_AND_GRANTS_PLAN.md:83` | "Every client founder in production holds five roles" — the origin of the claim |
+| `reviews/2026-08-22-no-hats-design-full.md:820, :1025` | **`:1025` reasons *from* the premise** to justify §9.3 refusing to guess on tab adoption. A design decision rests on it |
+| `stories/15.A-grants-on-the-session.md` | Corrected 2026-08-25 alongside this note |
+| `no-hats-sequence.md` (2) · `CONSOLIDATION_STATUS_2026-08-23.md:222` · `BMAD_LEGENDARIUM_FRAMEWORK.md:281` | Phrase-level repeats, no reasoning built on them |
+
+Two further uses of "in production today" are **flagged, not findings**:
+`stories/14.A-fold-functions-into-app-api.md:55` and
+`stories/4.4-roas-joined-on-utmadid.md:61`. Both make a different claim about
+production and may be entirely true. They are listed only because "in production
+today" is the pattern that just proved unreliable, and nobody has checked them.
 
 | ID | Story | Status |
 | --- | --- | --- |
