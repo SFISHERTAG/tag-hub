@@ -417,7 +417,7 @@ is measurable or guesswork.
 | 11.1 | Runnable Angular gate — Node floor pinned and enforced | Done | `11.1-runnable-angular-gate.md` |
 | 11.2 | Story isolation and merge discipline | Draft | `11.2-story-isolation-and-merge-discipline.md` |
 | 11.3 | Verified doc claims — checks over prose | In Progress | `11.3-verified-doc-claims.md` |
-| 11.4 | Calibration instrumentation on 10.4 | **Retired 2026-08-25 — no timeline to defend** | `11.4-calibration-instrumentation-on-10.4.md` |
+| 11.4 | Calibration instrumentation on 10.4 | **Retired 2026-08-26 — no timeline to defend** | `11.4-calibration-instrumentation-on-10.4.md` |
 | 11.5 | Endpoint inventory ahead of each feature story | Review — re-run 2026-08-23, metric reached zero |
 | 11.6 | Resolve the courses store split | Ready — Option A decided 2026-08-22 | `11.6-resolve-the-courses-store-split.md` |
 | 11.7 | The root build script masks a failure | Draft | `11.7-the-root-build-script-masks-a-failure.md` |
@@ -451,7 +451,13 @@ a live vulnerability, and no test would have caught it because nothing tested it
 the assertion goes in a spec. Where it asserts current behaviour and cannot be
 tested, it is dated. `app.config.spec.ts` is the first of these.
 
-**11.4 is retired, 2026-08-25, and the rule it protected is withdrawn with it.**
+**11.4 is retired, 2026-08-26, and the rule it protected is withdrawn with it.**
+
+*A note on the two dates in this section and the ones above.* Sam's decisions
+were taken on the evening of 2026-08-25; the corrections and verifications
+recording them were performed after midnight, on 2026-08-26. Both dates are
+correct and the session simply spanned midnight, so a future reader should not
+read the pair as a typo.
 
 It existed to make a date defensible. No feature had gone end to end, so there
 was no per-feature cost, so any estimate was arithmetic on a guess. 10.4 was to
@@ -713,7 +719,7 @@ Confirmed 2026-08-23 from the other end: granting one account all thirteen roles
 produced an account stuck on `admin`, which is deliberately without widgets, with
 no way to move.
 
-**Corrected 2026-08-25.** This paragraph previously opened "the live bug this
+**Corrected 2026-08-26.** This paragraph previously opened "the live bug this
 exists to fix" and said the founders were "in production". Sam confirmed the
 client-founder accounts holding those grants were created for setup and testing,
 have never signed in, and are not in use. So nobody has experienced this. The
@@ -737,14 +743,49 @@ bug" finds six files and misses two of the worst, because the same false premise
 is asserted in other words. Searching for the label rather than the thing is how
 this correction nearly shipped incomplete.
 
-Documents still carrying it, verified 2026-08-25 by searching the premise:
+**The test is whether a line asserts those founders EXIST, not whether it
+mentions them.** This distinction was arrived at on 2026-08-26 by searching for the premise's
+consequences rather than its wording, and it exonerates two passages that a
+cruder sweep would have "corrected" into inaccuracy:
 
-| Document | Why it matters |
+- `reviews/…-design-full.md:27` and `:806` say founders *provisioned by
+  `clientOwnerGrants`* hold five grants and reach one. That is a fact about what
+  the provisioning code issues. It is true whether or not anyone has ever signed
+  in, and it must not be softened.
+- `:820` and `:1025` say "for every founder **in production today**". That
+  asserts existence, and is stale.
+
+Documents carrying the stale assertion, verified 2026-08-26:
+
+**Decisions rest on these three. Fix them first.**
+
+| Document | What rests on it |
+| --- | --- |
+| `ROLES_AND_GRANTS_PLAN.md:268` and `no-hats-sequence.md:51` | The **outcome column of the dependency table**, stating step D's payoff as "the live bug is fixed" / "dies here". If the defect is latent, D's payoff is weaker — "a latent defect becomes unreachable" — and that could legitimately move D's position or the epic's priority. Two documents currently promise a step D that pays off an outage nobody is having |
+| `reviews/2026-08-22-no-hats-design-full.md:1025` | §9.3's refusal to guess on tab adoption reasons from "every founder in production today has exactly one candidate" |
+
+**These merely assert it.**
+
+| Document | Note |
 | --- | --- |
 | `ROLES_AND_GRANTS_PLAN.md:83` | "Every client founder in production holds five roles" — the origin of the claim |
-| `reviews/2026-08-22-no-hats-design-full.md:820, :1025` | **`:1025` reasons *from* the premise** to justify §9.3 refusing to guess on tab adoption. A design decision rests on it |
-| `stories/15.A-grants-on-the-session.md` | Corrected 2026-08-25 alongside this note |
-| `no-hats-sequence.md` (2) · `CONSOLIDATION_STATUS_2026-08-23.md:222` · `BMAD_LEGENDARIUM_FRAMEWORK.md:281` | Phrase-level repeats, no reasoning built on them |
+| `reviews/2026-08-22-no-hats-design-full.md:820` | Restates it; no decision hangs off this line |
+| `stories/15.A-grants-on-the-session.md` | Corrected 2026-08-26 alongside this note |
+| `CONSOLIDATION_STATUS_2026-08-23.md:222` · `BMAD_LEGENDARIUM_FRAMEWORK.md:281` | Phrase-level repeats |
+
+`PLAN:268` and `SEQ:51` were in the second group in the first draft of this note,
+on the assumption they were prose. They are table rows, and the table is the one
+that decides what order Epic 15 is built in. Misfiling them was the exact error
+this two-part split exists to prevent, and it was caught by the other session
+reading the lines rather than the summary.
+
+**This table's coverage is not guaranteed complete.** It was built from two
+searches: one for the phrase, and one for known consequences of the premise
+("reaches exactly one", "candidate set", "no current occupants", "holds five").
+A passage that reasons from founders existing without using any of that
+vocabulary would not appear here. `:1025` was originally found by accident rather
+than by design, which is the reason for saying this out loud: a tidy table
+invites the reader to assume it is exhaustive, and this one is not.
 
 Two further uses of "in production today" are **flagged, not findings**:
 `stories/14.A-fold-functions-into-app-api.md:55` and
