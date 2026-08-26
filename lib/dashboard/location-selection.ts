@@ -31,6 +31,34 @@ const CLIENT_DASHBOARD_ROLES: readonly Role[] = [
  * - Client users: Use their assigned sub-account from session.locations[0]
  */
 
+/**
+ * Why this failure is typed rather than a bare Error.
+ *
+ * Both branches below throw, and until 2026-08-25 the only caller caught both
+ * with `catch { return null }` and substituted sample data. That collapsed two
+ * conditions that deserve opposite responses:
+ *
+ *   "config"     -- GHL_LOCATION_ID_TAG_GROWTH is unset. A deploy fault. Every
+ *                   internal user's live funnel silently becomes a fixture, and
+ *                   nobody operating the system is told.
+ *   "unassigned" -- a client role holds no location. A data state, not a deploy
+ *                   fault, and sample data is a defensible answer to it.
+ *
+ * Matching on the message string would work and would break the first time
+ * someone rewords it, so the discriminant is a field.
+ */
+export type LocationFaultKind = "config" | "unassigned";
+
+export class DashboardLocationError extends Error {
+  readonly kind: LocationFaultKind;
+
+  constructor(kind: LocationFaultKind, message: string) {
+    super(message);
+    this.name = "DashboardLocationError";
+    this.kind = kind;
+  }
+}
+
 export function getLocationForDashboard(session: Session): string {
   const { currentRole, locations } = session;
 
@@ -38,7 +66,8 @@ export function getLocationForDashboard(session: Session): string {
   if (isInternalUser(currentRole)) {
     const tagGrowthId = process.env.GHL_LOCATION_ID_TAG_GROWTH;
     if (!tagGrowthId) {
-      throw new Error(
+      throw new DashboardLocationError(
+        "config",
         "GHL_LOCATION_ID_TAG_GROWTH not configured in environment",
       );
     }
@@ -48,7 +77,7 @@ export function getLocationForDashboard(session: Session): string {
   // Client roles: use their assigned location
   if (isClientUser(currentRole)) {
     if (!locations[0]) {
-      throw new Error("Client has no assigned location");
+      throw new DashboardLocationError("unassigned", "Client has no assigned location");
     }
     return locations[0];
   }
