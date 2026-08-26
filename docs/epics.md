@@ -321,7 +321,16 @@ Angular, so a screen exists in exactly one place and no defect gets fixed twice.
 | 10.6 | Widget dashboard and the clients book | Draft | `10.6-widget-dashboard-and-clients-book.md` |
 | 10.7 | Remaining feature modules | Draft | `10.7-remaining-feature-modules.md` |
 | 10.8 | Legacy removal | Draft | `10.8-legacy-removal.md` |
-| 10.9 | Production hardening and release | Draft | `10.9-production-hardening-and-release.md` |
+| 10.9 | User menu and sign-out | Review — implemented 2026-08-23 | `10.9-user-menu-and-sign-out.md` |
+| 10.13 | Production hardening and release | Draft | `10.13-production-hardening-and-release.md` |
+
+**10.10 to 10.12 are taken, and the gap above is deliberate.** They are the
+drag-and-drop stories (Kanban, dashboard widget reorder, dashboard widget
+resize), committed on `claude/new-session-prompt-ed972a` and not yet landed on
+`main`. They are listed here without a `Doc` link precisely because the file is
+not on `main` yet; a row pointing at a file that does not exist is how this
+table drifted in the first place. Do not reuse these numbers, and add the rows
+properly when that branch lands.
 
 **Statuses above are taken from the story files, which are authoritative.** This
 table previously had 10.1 as In Progress while its story said Done, and 10.2 as
@@ -335,9 +344,22 @@ a deploy-and-soak story. Both were real work with different prerequisites.
 
 10.4 is now the feature story, which is also what Story 11.4 calibrates its
 estimates against. The release story moved to the end of the work it releases,
-first to 10.8 and then to **10.9** when legacy removal took 10.8. Its premise
-had also gone stale: it was written when the work was 22 unmerged commits, and
-those are merged.
+first to 10.8, then to 10.9 when legacy removal took 10.8, and finally to
+**10.13**. Its premise had also gone stale: it was written when the work was 22
+unmerged commits, and those are merged.
+
+**That last move was a bug fix, and the bug is worth naming.** 10.9 was already
+taken by "User menu and sign-out", implemented 2026-08-23. The release story was
+renumbered onto it and landed on `main` at `1d8c25a`, giving Epic 10 two 10.9
+stories at once. Nothing caught it: the tests were green because it is a
+documentation collision, and `check-story-status` compares a Status against its
+own Tasks rather than checking that story numbers are unique.
+
+The reason it slipped is the useful part. `10.9-user-menu-and-sign-out.md`
+existed as a file but had no row in this table and no key in
+`sprint-status.yaml`, so every renumber that walked up the list saw 10.9 as free.
+A story that is invisible in the index is a number nobody defends. Both records
+now carry it.
 
 **10.8 exists because the legacy sweep was owned by nobody.** Story 10.7 was
 titled "Remaining feature modules and legacy removal" and its body contained no

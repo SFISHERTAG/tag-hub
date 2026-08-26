@@ -133,7 +133,10 @@ development_status:
   10-6-widget-dashboard-and-the-clients-book:                  backlog
   10-7-remaining-feature-modules:                              backlog
   10-8-legacy-removal:                                         backlog          # split out of 10.7, the sweep was unowned
-  10-9-production-hardening-and-release:                       backlog          # was 10.4, then 10.8
+  10-9-user-menu-and-sign-out:                                 review           # implemented 2026-08-23, had no key at all
+  # 10-10 / 10-11 / 10-12 are the drag-and-drop stories on
+  # claude/new-session-prompt-ed972a. Numbers reserved, not free.
+  10-13-production-hardening-and-release:                      backlog          # was 10.4, then 10.8, then 10.9 until it collided
   epic-10-retrospective:                                       optional
   epic-11:                                                     in-progress
   11-1-runnable-angular-gate:                                  done
