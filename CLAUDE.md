@@ -223,10 +223,21 @@ Frontend: a phase is not done until `ng build --configuration production && ng l
 test --watch=false` all pass. Backend/`functions/`: unchanged — `npm run build && npm run
 test --watch=false && npm run lint` (run from `functions/`) must pass.
 
-The root `npm run build` is `next build`, which never compiles `functions/src`. A green root
-gate therefore proves nothing about functions-side code — Story 1.8 landed auth code that way,
-which is why this is called out rather than left implied. `npm run check:functions` runs the
-functions workspace's own `tsc` and `eslint` in one command.
+The root `npm run build` is **`npm run web:build && stage-angular-bundle && next build`**, not
+`next build` alone — corrected 2026-08-26, this paragraph said the latter and the wrong reading
+turned CI red. Two consequences, and the second is the one that bit:
+
+- It **never compiles `functions/src`**, so a green root gate proves nothing about functions-side
+  code. Story 1.8 landed auth code that way, which is why this is called out rather than left
+  implied. `npm run check:functions` runs the functions workspace's own `tsc` and `eslint`.
+- It **shells into the `web` workspace first**, so it needs `web/node_modules`. Running it after a
+  root-only `npm ci` fails with `ng: not found`. Any job or script invoking the root build must
+  install the web workspace's dependencies too.
+
+`functions/` is a separate workspace with its own lockfile and its own `vitest.config.ts`. Without
+that local config, `vitest` walks up to the root `vitest.config.mts` and cannot resolve
+`vitest/config` from `functions/node_modules` — a resolution error that reads as broken tooling
+rather than wrong config.
 
 Do not report progress based on reading the code. Do not say "this should work." Only green
 output counts. If the build fails, the phase is not done. This prevents the audit's
