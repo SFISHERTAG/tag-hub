@@ -683,17 +683,45 @@ and six adversarial reviews, reviewed and marked "not implemented". Sequenced by
 `docs/no-hats-sequence.md`, which re-cuts the plan's story order against a
 dependency graph as §9 of the plan instructs.
 
-**The live bug this exists to fix.** Every client founder in production holds
-five grants and can reach exactly one of them, permanently.
-`functions/src/auth.ts` issues all five; `resolveSession` falls back to
-`availableRoles[0]` because `requestedRole` is always undefined; and the UI to
+**The defect this exists to fix — real in code, and latent rather than live.**
+Every client founder account holds five grants and can reach exactly one of them,
+permanently. `functions/src/auth.ts` issues all five; `resolveSession` falls back
+to `availableRoles[0]` because `requestedRole` is always undefined; and the UI to
 change it never shipped. `switchRole` exists in the `RbacService` interface and
 its three implementations and is called by no component. A CEO who also closes
-already holds the closer grant and cannot get to it.
+would already hold the closer grant and could not get to it.
 
-Confirmed still live 2026-08-23, from the other end: granting one account all
-thirteen roles produced an account stuck on `admin`, which is deliberately
-without widgets, with no way to move.
+Confirmed 2026-08-23 from the other end: granting one account all thirteen roles
+produced an account stuck on `admin`, which is deliberately without widgets, with
+no way to move.
+
+**Corrected 2026-08-25.** This paragraph previously opened "the live bug this
+exists to fix" and said the founders were "in production". Sam confirmed the
+client-founder accounts holding those grants were created for setup and testing,
+have never signed in, and are not in use. So nobody has experienced this. The
+defect is genuine and the code is exactly as described; the word doing the
+damage was **live**.
+
+**Latent describes reachability, not severity.** The code defect is real and
+unfixed, and the moment a real founder signs in it is live with no code change
+required. What was wrong was the word "live", not the diagnosis.
+
+That distinction changed two decisions in one day. It put Epic 15 ahead of other
+work on the strength of an outage nobody was having, and it made §4's rollback
+constraint look permanently binding when it is currently suspended. Same failure
+as story 5.11, which claimed a service had been "running in production for
+months" in a repository seventeen days old, and both survived review because the
+surrounding technical detail was accurate.
+
+**Five other documents still assert the old framing, and this note does not fix
+them.** Verified 2026-08-25, twelve occurrences across six files including this
+one: `ROLES_AND_GRANTS_PLAN.md` (3), `stories/15.A-grants-on-the-session.md`
+(3), `no-hats-sequence.md` (2), `CONSOLIDATION_STATUS_2026-08-23.md` (1),
+`BMAD_LEGENDARIUM_FRAMEWORK.md:281` (1). **15.A is the one to fix first**: it
+uses "live" to justify sequencing, so a reader who opens it before this file
+inherits the ranking this correction exists to undo. Naming them here rather
+than silently correcting one copy, because a correction that leaves five stale
+siblings is worse than none.
 
 | ID | Story | Status |
 | --- | --- | --- |
@@ -717,10 +745,67 @@ findings say "Story B removes the client's only location source four stories
 before its replacement." B is the removal, C is the replacement. A removal goes
 after its replacement exists. This is the re-cut §9 asked for.
 
-**Do not touch the claim shape.** §4 of the plan is the load-bearing decision:
-retyping `locations` makes `parseRoleGrants` drop every entry, which
-`resolveSession` reads as signed out. A rollback would sign out every migrated
-user. Same keys, same types.
+**The claim shape: §4 has three justifications. One is in abeyance; two still
+bind.** Read them separately, because a 2026-08-25 finding suspends the first
+and touches neither of the others.
+
+*Rollback safety — in abeyance, and it re-arms.* Retyping `locations` makes
+`parseRoleGrants` drop every entry, which `resolveSession` reads as signed out,
+so §4 argues a rollback would sign out 100% of migrated users. Sam confirmed on
+2026-08-25 that no such users exist: the client-founder accounts were setup and
+testing artifacts and have never signed in. So this cost is currently zero.
+**Not void — suspended.** It re-arms at the first real sign-in after any shape
+change, and a rollback past that point costs exactly what §4 says. Writing
+"void" into a durable document would hand the next reader a permanent-sounding
+permission for a temporary condition, which is the same failure as calling a
+latent defect "live".
+
+*Fail-closed semantics — permanently binding.* `locations: []` must mean **no
+locations**, never "all". This has nothing to do with users or rollback:
+`app/api/admin/users/_locations.ts:24` returns `[]` for a blank admin textarea
+(verified: both the undefined path and the blank-string `trim`/`filter(Boolean)`
+path yield `[]`) and `validateLocations([])` is a bare for-loop over an empty
+array at `lib/auth/groups.ts:94-98`, so it is a genuine no-op. Any design
+expressing the wildcard as `locations: []` turns an ordinary admin typo into
+"reaches every tenant". Global reach comes from the role via `GLOBAL_ROLES`, not
+from the claim. **Do not relax this, whatever else changes.**
+
+*Size — permanently binding, and the one most easily missed.* §4:155-159 budgets
+900 bytes against Firebase's ~1000-byte claim cap, and every figure in it is
+measured against the current shape: 417 bytes for today's founder claim, 251 for
+three grants at one tenant, 140 for a closer at three. The overflow strategy
+compacts same-role grants and then **truncates to a prefix**, setting
+`grantsTruncated` with the authoritative set in Firestore, which degrades to
+fewer grants and therefore fails closed. Taking a prefix requires the shape to
+be a flat array. So a discriminated shape such as `tenancy: {all:true}` does not
+merely break the parser — it invalidates the byte arithmetic and the degradation
+path at once. `grantsTruncated` is also live elsewhere: it is finding M3 in
+`docs/reviews/2026-08-22-no-hats-design-full.md`, and
+`CONSOLIDATION_STATUS_2026-08-23.md:155` still records "Claim budget unsettled"
+as open. **A claim-shape change is therefore not free even with nobody signed
+in.**
+
+**What is actually on the table** is narrower than "change the claim shape". The
+one change decided on is dropping `team`, per the 7.7 decision below, and that is
+not blocked by rollback risk — it is blocked by needing a queryable grant store,
+which is 15.I. Removing `team` before that store exists breaks every team-scoped
+query with nothing to replace it. What the open window buys is that when 15.I
+lands, `team` can go in a single commit with no deprecation, no dual-write, and
+no waiting for old claims to age out.
+
+**7.7 decided 2026-08-25: a team is a business, and membership is derived from
+location grants rather than stored.** Sam's framing: one closer might work
+businesses 1 and 3 while another works 2, 3 and 4; each business is a team; the
+owner is on their own business's team. So "my team" for a location is everyone
+holding a grant on that location, seen from the location's side. This makes 15.I
+*more* necessary, not less: custom claims are per-user and cannot be queried
+across users, so "who else holds a grant on location X" is unanswerable from
+claims alone. 15.I's reconciler stops existing to keep stale `team` lists fresh
+and starts existing as the authoritative record of who works where.
+
+**7.9 decided 2026-08-25: 15.I absorbs the admin surface that shipped without a
+story.** That surface is the prototype; 15.I replaces it and it is deleted in the
+same release. One admin surface, one model, rather than two that drift.
 
 **15.0 first, and not only for this epic.** Nothing records which migrations
 have been applied; 006 already failed once on a clean deploy. This epic adds two
