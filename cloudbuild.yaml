@@ -225,7 +225,18 @@ steps:
       # there is no staff session and no configured secret — it fails closed
       # rather than falling open, so deploying without these takes GHL's
       # intake webhook offline instead of leaving it unauthenticated.
-      - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest,SLACK_BOT_TOKEN=slack-bot-token:latest,DB_PASSWORD=tag-postgres-password:latest,PHASE2_WEBHOOK_SECRET=phase2-webhook-secret:latest,PHASE3_WEBHOOK_SECRET=phase3-webhook-secret:latest
+      #
+      # META_SYSTEM_USER_TOKEN: the non-expiring System User token from Story
+      # 4.1. lib/meta/client.ts and lib/meta/conversions.ts both read it and
+      # fail closed without it, so every Meta read and every Meta write is
+      # dead in production until it is mounted here. It cannot be set on the
+      # service by hand: the --set-env-vars line below replaces the whole set
+      # on each deploy, which is the same trap PUBLIC_BASE_URL fell into on
+      # 2026-08-22. Create the secret once, from a terminal, never through a
+      # session transcript:
+      #   gcloud secrets create meta-system-user-token --replication-policy=automatic
+      #   printf %s "$TOKEN" | gcloud secrets versions add meta-system-user-token --data-file=-
+      - --set-secrets=GHL_CLIENT_SECRET=ghl-client-secret:latest,SLACK_BOT_TOKEN=slack-bot-token:latest,DB_PASSWORD=tag-postgres-password:latest,PHASE2_WEBHOOK_SECRET=phase2-webhook-secret:latest,PHASE3_WEBHOOK_SECRET=phase3-webhook-secret:latest,META_SYSTEM_USER_TOKEN=meta-system-user-token:latest
       # GHL_LOCATION_ID_TAG_GROWTH is the same sub-account as GHL_LOCATION_ID
       # above, under a second name: lib/dashboard/location-selection.ts reads
       # it separately to route internal roles (exec/CSM/sales) to TAG's own
