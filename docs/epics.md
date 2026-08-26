@@ -902,6 +902,10 @@ Opened 2026-08-23. Phases 1–3 (provisioning, intake+Gemini copy, Meta setup) a
 | 17.6 | Scheduling (Mon-Thu-Sun + Thursday copy) | Blocked on 17.1 |
 | 17.7 | KPI monitoring + budget scaling + escalations | Blocked on 17.1 |
 
+**Meta writes go through Epic 19's verb layer.** 17.5 and 17.7 call the same typed service layer and the same audit path as an operator action. The orchestration layer supplies the decision, never a second Meta client. This is the `functions/src/ghl.ts` versus `lib/ghl/` duplicate-client lesson applied before the duplicate exists rather than after, in the integration where drift spends real money. Automated writes still audit, with `actorId` set to the orchestrator rather than a user.
+
+Recorded 2026-08-26: Epic 17 is automated, Epics 18-20 are operator-driven, and both are the product. Automation is a layer over the operator verbs, not a parallel implementation of them.
+
 **Design questions (17.1 interview, when 10.4 lands):**
 1. Where do actor videos live and how do they flow to editor?
 2. How does editor hand off processed video back into the workflow?
@@ -910,3 +914,82 @@ Opened 2026-08-23. Phases 1–3 (provisioning, intake+Gemini copy, Meta setup) a
 5. How does scheduling work (Cloud Scheduler, Pub/Sub, Firestore triggers)?
 6. Which KPIs trigger alerts, and to whom?
 7. What signal drives budget scaling (ROAS, daily spend trend, cost-per-lead)?
+8. Every operator write confirms before firing (`docs/action-contract.md`). What does an automated write confirm against, and who reviews it?
+
+## Epic 18 — GHL full operation
+
+**Goal:** every routine GHL action a closer or CSM performs is performable from the Hub. No tab-switch to GoHighLevel for the daily loop.
+
+Opened 2026-08-26, from the positioning decision: one surface for GHL, Meta, Google and Slack, reported on and operated without leaving the app. The differentiator is the verb. Reporting alone is the dashboard category. The write contract is `docs/action-contract.md`.
+
+**Scope coverage, verified in code.** 18.3 to 18.6 are covered by scopes the agency install already holds: `contacts.write`, `opportunities.write`, `calendars/events.write` (`lib/ghl/oauth.ts:17-28`). No story in this epic requires new consent from any installed location. Messaging does, which is why it is Epic 21 and not a story here.
+
+**Prerequisites, none of them optional.** The Angular widget layer cannot currently carry a write. 18.1 and 18.2 are those prerequisites made explicit rather than discovered at implementation. They are deliberately narrow: Epic 18 does not need all of 10.4, it needs a write path and a parity guard.
+
+**Story count is a first cut and unsized.**
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 18.1 | Widget registry parity guard: `web/src/app/shared/widgets/widget.model.ts` is a hand-kept port of `lib/dashboard/widget-definitions.ts` with no mechanised check | Draft |
+| 18.2 | Write path in the Angular widget layer: `WidgetHost` is read-only end to end and has no action handling | Draft |
+| 18.3 | Action contract implementation: `WidgetAction` on both registries, confirm step, audit wiring, server-side re-check | Draft |
+| 18.4 | Retrofit the four existing verbs: `contacts.ts:207`, `opportunities.ts:91`, `opportunities.ts:111`, `appointments.ts:106` | Draft |
+| 18.5 | Create and update contact | Draft |
+| 18.6 | Create opportunity | Draft |
+| 18.7 | Book and reschedule appointment | Draft |
+| 18.8 | Add and remove contact tag | Draft |
+
+**Why 18.1 exists.** `widget.model.ts` opens with "Port of lib/dashboard/widget-definitions.ts — keep in sync with that file." Two `WidgetDefinition` types, synchronised by memory. `scripts/` has eleven check scripts and none compares them. Roles learned this lesson already: two hand-kept role lists drifted, and `check-role-parity.mjs` now fires on every commit. Same failure shape, one has a guard. Adding `actions` to one registry and not the other is the next instance, and it fails quietly because `widget-loaders.ts` renders a "not built yet" tile rather than throwing.
+
+**Honest state of the layer 18.2 targets.** Four widget ids have registered loaders (`portfolio`, `client_health`, `team_health_rollup`, `department_overview`) and two of those serve mock data. Story 10.4 is Draft with one of eleven tasks checked, though 10.4 was flagged as understated in the 2026-08-25 audit, so treat both that status and that ratio as a floor rather than a measurement.
+
+## Epic 19 — Meta campaign control
+
+**Goal:** an operator adjusts live Meta spend from the Hub without opening Ads Manager.
+
+**Prerequisite, hard.** `META_SYSTEM_USER_TOKEN` must be deployed. `cloudbuild.yaml` now mounts it (commit `ca4032c`); the `meta-system-user-token` Secret Manager entry still has to be created from a terminal. Until both are true, every story here is verifiable only against a mock. **No story in Epic 19 may be marked Done on mock evidence.** `lib/meta/client.ts:51` and `lib/meta/conversions.ts:120` fail closed without the token, so a green test suite proves nothing about production.
+
+**Every verb here is irreversible blast radius.** 19.3 moves real money on a live client account, and its confirm must restate the current and the new value rather than asking yes or no.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 19.0 | Remove the six `process.env` non-null assertions in `lib/meta`, fail loudly on missing config | Draft |
+| 19.1 | Pause campaign, and retrofit `unpauseCampaign` (`lib/meta/campaigns.ts:229`) onto the action contract | Draft |
+| 19.2 | Pause and unpause an individual ad | Draft |
+| 19.3 | Set campaign and ad set budget | Draft |
+| 19.4 | Budget-change guardrails: bounds and irreversible-class confirm | Draft |
+
+**Why 19.0 is first.** `lib/meta/client.ts:64-67` and `lib/meta/conversions.ts:157-158` assert six env vars non-null. `conversions.ts:119-120` validates two of those same keys thirty lines above where it asserts them, so the file ignores its own check. Those six are the only `process.env` non-null assertions in tracked code, which makes this a contained fix rather than the first slice of a migration. They are also the precise mechanism by which a Meta write passes a mock and puts `undefined` into a Graph API path in production, which is what this epic's Done-criteria exist to prevent. Everything else in 19 builds on that client.
+
+## Epic 20 — Cross-tool composition
+
+**Goal:** one action spans tools. This is the actual payoff of "never leave the app", as opposed to four adjacent panels that each require a different tab.
+
+**Blocked by 18 and 19.** It cannot ship first. The promise is absolute and fails on the first verb a user cannot reach.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 20.1 | Composition at the API route: multi-integration actions with no cross-integration import | Draft |
+| 20.2 | Meta campaign to GHL opportunity attribution actions | Draft |
+| 20.3 | Slack posting as the acting user rather than as the app | Draft |
+
+**20.4 is a decision, not a story, and it is not in the table until it is answered.** `lib/google/drive.ts` is read-only end to end, zero write verbs. "Every tool on one surface" currently ships a tool with no write surface at all. Either Drive gets one or the claim gets a footnote. That is a product call.
+
+## Epic 21 — GHL messaging from the Hub
+
+**Goal:** send SMS and email to a contact without leaving the Hub.
+
+**This is not a story inside Epic 18, and the separation is the point.** Buried in 18 it reads as a week of work. It is an OAuth scope change plus a coordinated re-authorisation across every live install.
+
+**Blocked by two things, neither of which is engineering work in this epic:**
+1. **Scope.** `lib/ghl/oauth.ts:17-28` requests ten scopes and none is messaging-shaped. There is no `conversations` scope anywhere in `lib/ghl` or the OAuth routes. Adding one does not grant it to existing tokens: every already-installed location must re-consent.
+2. **Story 1.2**, the agency OAuth install, is itself Blocked on GHL account consolidation. A scope change would land on an install that is not settled.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 21.1 | Decide the scope set and the re-consent sequence for live installs | Blocked on 1.2 |
+| 21.2 | Add scopes, re-consent pass across live installs | Blocked on 21.1 |
+| 21.3 | Send SMS to contact | Blocked on 21.2 |
+| 21.4 | Send email to contact | Blocked on 21.2 |
+
+**Not scheduled against 18 or 19.** It unblocks when 1.2 does.

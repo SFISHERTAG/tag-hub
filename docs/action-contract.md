@@ -67,6 +67,21 @@ surfaces the error to the user and logs it. Never silent-catch-to-empty, and
 never an optimistic UI that shows a stage moved when the API refused. The user's
 trust in "I do not have to leave the app" dies on the first write that lied.
 
+## Known tension: confirm habituation
+
+Every write confirms. That is the ruling and this document does not reopen it.
+
+It has a real cost, and the cost is not friction. An operator who confirms forty
+trivial notes a day learns to dismiss the dialog unread, and carries that
+trained reflex into a live budget change on a real ad account. Uniform confirms
+protect the trivial write by degrading the confirm on the one that matters.
+
+Tripwire: if operators ask to disable confirms, that is the signal to revisit
+the uniform rule deliberately. It is not licence to add a quiet opt-out. An
+opt-out added under friction pressure lands on exactly the verbs that were
+confirmed too often, which are the ones where habituation already did the
+damage.
+
 ## Verb inventory
 
 What the service layer can do today, and what "full operation" of GHL and Meta
