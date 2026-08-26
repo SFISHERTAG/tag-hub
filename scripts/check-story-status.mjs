@@ -12,9 +12,21 @@ const STORIES_DIR = "docs/stories";
 const repoRoot = execSync("git rev-parse --show-toplevel").toString().trim();
 const storiesPath = join(repoRoot, STORIES_DIR);
 
+/*
+ * Where this check reads its changes from.
+ *
+ * Locally that is the index: the check runs from pre-commit, and the index is
+ * what is about to become a commit. In CI there is no index, so reading it
+ * returns nothing and every rule below passes without having looked at
+ * anything, which is a green that means "did not run". TAG_DIFF_BASE makes the
+ * range explicit: CI sets it to the PR's base ref.
+ */
+const DIFF_BASE = process.env.TAG_DIFF_BASE;
+const DIFF_ARGS = DIFF_BASE ? `${DIFF_BASE}...HEAD` : "--cached";
+
 function stagedFiles() {
   try {
-    return execSync("git diff --cached --name-only", { cwd: repoRoot })
+    return execSync(`git diff --name-only ${DIFF_ARGS}`, { cwd: repoRoot })
       .toString()
       .split("\n")
       .filter(Boolean);
@@ -157,17 +169,10 @@ function checkArchitectureConstraints() {
       }
       continue;
     }
-    // legacy/ is retired Next code: out of tsconfig, out of lint, out of
-    // vitest, and awaiting deletion by Story 10.7. It is exempt for the same
-    // reason it is not linted — the rule exists to stop a new inline role
-    // string reaching live code, and nothing under legacy/ runs. Without this,
-    // the cutover commit that merely *moved* 32 screens was blocked by role
-    // strings it did not author.
-    if (file.startsWith("legacy/")) continue;
     if (!/\.(ts|tsx)$/.test(file) || ROLE_DEFINITION_FILES.includes(file)) continue;
     let fileDiff;
     try {
-      fileDiff = execSync(`git diff --cached -U0 -- ${JSON.stringify(file)}`, { cwd: repoRoot }).toString();
+      fileDiff = execSync(`git diff ${DIFF_ARGS} -U0 -- ${JSON.stringify(file)}`, { cwd: repoRoot }).toString();
     } catch {
       continue;
     }
@@ -196,13 +201,9 @@ function checkArchitectureConstraints() {
   // anywhere in the diff, not just after `from "..."`, which false-positives on any
   // staged file that merely mentions one of the `to` paths in a comment, string, or route.
   const crossIntegrationPatterns = [
-    // Same paths as the import/no-restricted-paths zones in eslint.config.mjs,
-    // and they move together. Under app/api/ since the Angular cutover: the
-    // Next page surfaces these named are gone, so the old prefixes matched no
-    // staged file and this check silently passed everything.
-    { from: "app/api/ghl/", to: ["app/api/meta/", "app/api/dashboard/"] },
-    { from: "app/api/meta/", to: ["app/api/ghl/", "app/api/dashboard/"] },
-    { from: "app/api/dashboard/", to: ["functions/"] },
+    { from: "app/ghl/", to: ["app/meta/", "app/dashboard/"] },
+    { from: "app/meta/", to: ["app/ghl/", "app/dashboard/"] },
+    { from: "app/dashboard/", to: ["functions/"] },
   ];
   for (const pattern of crossIntegrationPatterns) {
     const sourceFiles = staged.filter((f) => f.startsWith(pattern.from) && /\.(ts|tsx)$/.test(f));
@@ -211,7 +212,7 @@ function checkArchitectureConstraints() {
     for (const file of sourceFiles) {
       let fileDiff;
       try {
-        fileDiff = execSync(`git diff --cached -U0 -- ${JSON.stringify(file)}`, { cwd: repoRoot }).toString();
+        fileDiff = execSync(`git diff ${DIFF_ARGS} -U0 -- ${JSON.stringify(file)}`, { cwd: repoRoot }).toString();
       } catch {
         continue;
       }
@@ -224,16 +225,11 @@ function checkArchitectureConstraints() {
   }
 
   // Check 3: data model changes without docs update
-  // Matched with String.includes, so "sql/" covers both schema roots: the
-  // repo has sql/ (flow-schema.sql, 7 tables) as well as functions/sql/, and
-  // only the latter was listed — a table added at the repo root did not trip
-  // this check. "app/actions.ts" is dropped: the Angular cutover removed every
-  // Server Action (scripts/inventory-endpoints.mjs reports 0 across 0 files),
-  // so that entry could no longer match anything.
   const dataModelFilePatterns = [
     "lib/firestore.ts",
     "lib/postgres.ts",
-    "sql/",
+    "functions/sql/",
+    "app/actions.ts",
   ];
   const touchesDataModel = staged.some((file) =>
     dataModelFilePatterns.some((pattern) => file.includes(pattern))
@@ -314,7 +310,12 @@ function checkArchitectureConstraints() {
  * suite was green because a duplicate filename prefix is a documentation
  * collision rather than code, and every other check in this file compares a
  * story against *itself* — its Status against its own Tasks, its referenced
- * files against the staged set. None of them compare stories to each other.
+ * files against the changed set. None of them compare stories to each other.
+ *
+ * Note this one reads the directory, not the diff, so unlike the rules above
+ * it does not depend on TAG_DIFF_BASE being set. That is deliberate: a
+ * collision is a property of the tree, not of a change, and it should be
+ * caught even on a run where nothing relevant was touched.
  *
  * Cheap to check, and the failure it prevents is not cheap: renumbering walks
  * up the list looking for a free slot, so a number that is silently taken

@@ -27,26 +27,50 @@ jobs:
 
       - run: npm ci
 
+      - name: Resolve the diff base
+        # check:story-status and check:secret-scan read `git diff --cached` by
+        # default, which is correct from pre-commit and empty on a runner. Both
+        # were therefore passing here without reading a single file. TAG_DIFF_BASE
+        # points them at the range this event actually introduces, and this step
+        # fails rather than letting the range silently resolve to nothing.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+          fi
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="$(git rev-parse HEAD~1)"
+          fi
+          git cat-file -e "$BASE^{commit}" || { echo "::error::diff base $BASE is not a commit in this clone"; exit 1; }
+          echo "TAG_DIFF_BASE=$BASE" >> "$GITHUB_ENV"
+          echo "Scanning $BASE...HEAD ($(git diff --name-only "$BASE...HEAD" | wc -l | tr -d ' ') files)"
+
       - name: Role list parity
         run: npm run check:role-parity
 
       - name: Story status and architecture constraints
         run: npm run check:story-status
 
-      # Aggregate repo state, not this change's state. Deliberately here and not in
-      # pre-commit: blocking a commit because some *other* branch is stale trains people
-      # to bypass hooks, and that habit would eventually be carried into the secret scan.
-      # Blocking a merge to main is the right altitude, because open loops are exactly
-      # what main should be clean of. Needs fetch-depth: 0 above to see the branches.
+      - name: Secret scan
+        run: npm run check:secret-scan
+
+      # Aggregate repo state, not this change's state, which is why it does not
+      # use TAG_DIFF_BASE like the two steps above. Deliberately here and not in
+      # pre-commit: blocking a commit because some *other* branch is stale trains
+      # people to bypass hooks, and that habit would eventually be carried into
+      # the secret scan directly above. Blocking a merge to main is the right
+      # altitude, because open loops are exactly what main should be clean of.
       #
-      # continue-on-error is TEMPORARY and has a defined removal condition. On 2026-08-25
-      # origin carried 14 stale branches, so making this blocking on day one would paint
-      # main red immediately, and a permanently-red check is one people learn to ignore or
-      # delete. That would cost more than the drift it polices.
+      # Reads origin refs (--remote), not refs/heads, because a runner checkout
+      # has exactly one local branch. Reading refs/heads here would be green
+      # forever while guarding nothing, which is the same failure the diff-base
+      # step above exists to fix.
       #
-      # REMOVE THIS LINE once `npm run check:loops` exits 0 locally. The report still
-      # prints in the CI log every run, so the backlog stays visible while it shrinks
-      # rather than being hidden behind a green tick.
+      # continue-on-error is TEMPORARY and has a defined removal condition.
+      # REMOVE THIS LINE once `npm run check:loops` exits 0. Origin carried 14
+      # stale branches on 2026-08-25 and 2 by the end of that day, so this is
+      # close. A check that is red on day one is one people learn to delete.
       - name: Open loops
         continue-on-error: true
         run: npm run check:loops
@@ -65,11 +89,19 @@ jobs:
         run: npx tsc --noEmit -p tsconfig.json
       - name: Tests
         run: npm test
-      # `npm run lint` is deliberately absent. It has 47 pre-existing errors in
-      # real source (45 of them no-explicit-any), which predate the Angular
-      # migration. Adding it here would make CI red on day one and teach
-      # everyone to ignore it. It goes in once those are cleared; the story for
-      # that is tracked separately.
+      # Lint was held out of this job because it had 47 pre-existing errors and
+      # would have made CI red on day one. Commit 0c76cc2 cleared them, so it is
+      # in now: 0 errors, 64 warnings. Warnings do not fail the run.
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        # lib/config.ts validates required keys at import, by design, so the
+        # build cannot run without one. This value is a syntactic placeholder;
+        # it authenticates nothing and reaches no service. Real secrets must not
+        # go here, because a fork's pull request would be able to read them.
+        env:
+          FIREBASE_API_KEY: ci-placeholder-not-a-real-key
+        run: npm run build
 
   angular:
     name: Angular gate
@@ -90,3 +122,27 @@ jobs:
         run: npm run web:lint
       - name: Test
         run: npm run web:test
+
+  functions:
+    name: Functions
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      # functions/ has its own tsconfig, lockfile and test suite, and the root
+      # `next build` never compiles it. CLAUDE.md calls this out because story
+      # 1.8 landed auth code through a green root gate that had never seen it.
+      - name: Build
+        run: npm run build
+      - name: Lint
+        run: npm run lint
+      - name: Tests
+        run: npm test
