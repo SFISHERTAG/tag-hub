@@ -656,6 +656,7 @@ were unbuildable as written. Evidence, with line numbers, in
 | 14.8 | The per-location subtree: outcomes, conversion log, fetch log, checklists, launches, follow-up settings | Draft — replaces "`flow_scripts`: resolve the two-store split" |
 | 14.9 | GHL agency tokens — Postgres or Secret Manager | Draft |
 | 14.A | Fold `functions/` into `app/api` | Draft — new, blocks 14.10 |
+| 14.B | Inline role string audit and periodic scanner | Review — implemented 2026-08-23, 8 violations fixed, scanner enforcing |
 | 14.10 | Delete `lib/firestore.ts` and drop the SDK | Draft |
 
 **What changed and why.**
