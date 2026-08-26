@@ -42,6 +42,46 @@ export type WidgetAction = {
 
 `WidgetDefinition` gains `actions?: WidgetAction[]`.
 
+### How a declared action reaches the control that renders it
+
+The declaration lives in the registry. The button has to be drawn somewhere,
+and those are not the same place, so the channel between them is a design
+decision rather than plumbing.
+
+`WidgetHost` renders a widget through `*ngComponentOutlet` and passes it
+**nothing**. Its template is one line, no inputs bound. Widgets are
+self-sufficient: each injects a typed service and fetches its own data in its
+own constructor. So there is no existing read channel through the host that a
+write channel would parallel.
+
+Three ways to close that gap:
+
+- **(a) Metadata only.** The registry declaration carries permission and audit
+  identity, and each widget hardcodes its own buttons. No host change, but the
+  declaration and the rendering drift apart, which is the same two-sources-of-
+  truth shape the registry parity guard exists to prevent.
+- **(b) The host passes the definition down.** `*ngComponentOutlet` accepts
+  inputs. Keeps the declaration authoritative, but makes the host a data
+  conduit for the first time and every widget must accept an input it does not
+  have today.
+- **(c) A shared action bar renders alongside the widget**, reading the
+  definition the host already holds. Widgets stay ignorant of actions
+  entirely, and the confirm step lives in exactly one component.
+
+**(c) is the choice, and it costs almost nothing.** `WidgetHost` already
+computes `definition()` from the registry and already reads `title` and
+`description` off it. The verbs are on the same object, in hand, at the point
+where the tile is drawn. An action bar is a sibling element inside the existing
+`mat-card`, not a new data path.
+
+It also puts the confirm where the blast-radius rule wants it. One component
+owns the dialog, so `irreversible` renders the same way for every verb in the
+product, and no widget can author its own weaker confirm.
+
+The widget still performs the write, through its own typed service, exactly as
+it performs a read today. The bar decides *whether* the call happens. The
+widget makes it.
+
 ## The four rules
 
 1. **Every write confirms before it fires.** No exceptions by verb, by role, or

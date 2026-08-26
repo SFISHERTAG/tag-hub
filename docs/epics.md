@@ -924,14 +924,14 @@ Opened 2026-08-26, from the positioning decision: one surface for GHL, Meta, Goo
 
 **Scope coverage, verified in code.** 18.3 to 18.6 are covered by scopes the agency install already holds: `contacts.write`, `opportunities.write`, `calendars/events.write` (`lib/ghl/oauth.ts:17-28`). No story in this epic requires new consent from any installed location. Messaging does, which is why it is Epic 21 and not a story here.
 
-**Prerequisites, none of them optional.** The Angular widget layer cannot currently carry a write. 18.1 and 18.2 are those prerequisites made explicit rather than discovered at implementation. They are deliberately narrow: Epic 18 does not need all of 10.4, it needs a write path and a parity guard.
+**Prerequisites, and they are smaller than the first draft claimed.** Epic 18 does not need 10.4 finished, and it does not need a write path built. `WidgetHost` is a resolver, not a data conduit: it passes nothing to the widget it renders, and every widget already fetches its own data through a typed service. A widget performing a write is architecturally identical to one performing a read. What is genuinely missing is the channel from a registry-declared verb to the control that draws it, which `docs/action-contract.md` now settles as a shared action bar reading the definition the host already computes.
 
 **Story count is a first cut and unsized.**
 
 | ID | Story | Status |
 | --- | --- | --- |
 | 18.1 | Widget registry parity guard: `web/src/app/shared/widgets/widget.model.ts` is a hand-kept port of `lib/dashboard/widget-definitions.ts` with no mechanised check | Draft |
-| 18.2 | Write path in the Angular widget layer: `WidgetHost` is read-only end to end and has no action handling | Draft |
+| 18.2 | Shared action bar: render declared verbs from the definition `WidgetHost` already holds, and own the confirm dialog | Draft |
 | 18.3 | Action contract implementation: `WidgetAction` on both registries, confirm step, audit wiring, server-side re-check | Draft |
 | 18.4 | Retrofit the four existing verbs: `contacts.ts:207`, `opportunities.ts:91`, `opportunities.ts:111`, `appointments.ts:106` | Draft |
 | 18.5 | Create and update contact | Draft |
@@ -941,7 +941,7 @@ Opened 2026-08-26, from the positioning decision: one surface for GHL, Meta, Goo
 
 **Why 18.1 exists.** `widget.model.ts` opens with "Port of lib/dashboard/widget-definitions.ts — keep in sync with that file." Two `WidgetDefinition` types, synchronised by memory. `scripts/` has eleven check scripts and none compares them. Roles learned this lesson already: two hand-kept role lists drifted, and `check-role-parity.mjs` now fires on every commit. Same failure shape, one has a guard. Adding `actions` to one registry and not the other is the next instance, and it fails quietly because `widget-loaders.ts` renders a "not built yet" tile rather than throwing.
 
-**Honest state of the layer 18.2 targets.** Four widget ids have registered loaders (`portfolio`, `client_health`, `team_health_rollup`, `department_overview`) and two of those serve mock data. Story 10.4 is Draft with one of eleven tasks checked, though 10.4 was flagged as understated in the 2026-08-25 audit, so treat both that status and that ratio as a floor rather than a measurement.
+**Honest state of the widget layer.** Four widget ids have registered loaders (`portfolio`, `client_health`, `team_health_rollup`, `department_overview`) and two of those serve mock data. Story 10.4 is Draft with one of eleven tasks checked, though 10.4 was flagged as understated in the 2026-08-25 audit, so treat both that status and that ratio as a floor rather than a measurement.
 
 ## Epic 19 — Meta campaign control
 
