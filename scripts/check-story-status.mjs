@@ -305,8 +305,54 @@ function checkArchitectureConstraints() {
   return constraintIssues;
 }
 
+/**
+ * Two stories may not share a number.
+ *
+ * Added after Epic 10 carried two stories numbered 10.9 on `main` at once
+ * (`1d8c25a`): "Production hardening and release" was renumbered onto 10.9,
+ * which "User menu and sign-out" already held. Nothing caught it. The test
+ * suite was green because a duplicate filename prefix is a documentation
+ * collision rather than code, and every other check in this file compares a
+ * story against *itself* — its Status against its own Tasks, its referenced
+ * files against the staged set. None of them compare stories to each other.
+ *
+ * Cheap to check, and the failure it prevents is not cheap: renumbering walks
+ * up the list looking for a free slot, so a number that is silently taken
+ * twice sends the *next* renumber into the same hole. The 10.9 collision was
+ * itself the third move of that story, 10.4 to 10.8 to 10.9.
+ */
+function checkDuplicateStoryNumbers() {
+  const byNumber = new Map();
+
+  for (const f of files) {
+    const base = f.replace(repoRoot + "/" + STORIES_DIR + "/", "");
+    // Story files are `<epic>.<num>-<slug>.md`. `<num>` is not always numeric:
+    // Epic 14 and 15 use 14.A, 15.A2 and similar, and those collide with each
+    // other exactly as digits do, so match the token rather than assuming an int.
+    const m = base.match(/^(\d+)\.([0-9A-Za-z]+)-/);
+    if (!m) continue;
+    const id = `${m[1]}.${m[2]}`;
+    if (!byNumber.has(id)) byNumber.set(id, []);
+    byNumber.get(id).push(base);
+  }
+
+  const dupIssues = [];
+  for (const [id, owners] of byNumber) {
+    if (owners.length > 1) {
+      dupIssues.push(
+        `Story number ${id} is used by ${owners.length} files: ${owners.join(", ")}. ` +
+          `Renumber one of them to a slot nothing else holds, and give it a row in ` +
+          `docs/epics.md and a key in docs/stories/sprint-status.yaml so the next ` +
+          `renumber can see that it is taken.`,
+      );
+    }
+  }
+  return dupIssues;
+}
+
 const archIssues = checkArchitectureConstraints();
 problems.push(...archIssues);
+problems.push(...checkDuplicateStoryNumbers());
 
 if (problems.length) {
   console.error("\n❌ Pre-commit checks failed:\n");
