@@ -128,7 +128,7 @@ development_status:
   10-1-contract-hardening-and-boundary-enforcement:            done
   10-2-real-session-wiring-and-the-auth-surface:               in-progress      # 1 task open
   10-3-responsive-shell-and-navigation:                        in-progress      # 6 tasks open
-  10-4-shared-m3-primitives-portfolio-and-bug-reports:         backlog          # split resolved, see below
+  10-4-shared-m3-primitives-portfolio-and-bug-reports:         in-progress      # split resolved, see below; ACs adjudicated 2026-08-27, AC5/AC7 unmet, AC9 withdrawn
   10-5-ghl-integration-module:                                 in-progress      # ACs adjudicated 2026-08-27; AC1/AC5/AC7 unmet
   10-6-widget-dashboard-and-the-clients-book:                  backlog
   10-7-remaining-feature-modules:                              backlog
