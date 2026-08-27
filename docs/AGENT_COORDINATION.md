@@ -108,6 +108,35 @@ routable and is not, where a role word at least read as "look up the address".
 
 Sam's ruling, 2026-08-27, replacing the deferred paragraph this section used to carry.
 
+**This is not a naming preference. It is the addressing layer the protocols in
+`PEER_SESSION_PROMPT.md` already presuppose, and which nobody installed.**
+
+That document runs end to end on aviation and submarine crew resource management,
+and says so: backbrief, closed-loop communication with verbatim readback,
+questioning attitude, forceful backup, BLUF, pre-flight, after-action review.
+Every one is borrowed intact from a field that pays for communication failures in
+lives. **Every one of them also assumes the participants can address each other
+unambiguously.** That is the substrate they run on, and it was the only part of
+the doctrine left out.
+
+The distinction matters for whether this rule survives. A rule justified as
+"names were confusing" gets relaxed the first time someone finds it inconvenient.
+A rule justified as "the protocols do not function without it" does not.
+
+**The cost of the missing layer, all of it on 2026-08-27 and all of it inside one
+hour:** two sessions both answering to `REVIEWER`; a Lead whose address was the
+role word `LEAD`, so no session could tell the seat from the session; three
+sessions renamed to worktree basenames that routed to nothing; the rule inverted
+twice; and one address assigned by an event nobody has been able to identify.
+None of that was carelessness. It is what happens when a protocol set that
+presumes addressing is deployed without it.
+
+**The test any scheme has to pass, and it is the whole requirement:** *"Tell BRAVO
+to pick up #16."* Unambiguous to say aloud, to type, and to route, with no lookup.
+Twenty-six is more than any concurrent fleet here has needed, and the phonetic
+alphabet is engineered so that no two entries survive garbling as each other.
+Measure any alternative against that sentence.
+
 The address is derived from the worktree name at spawn. Four of four observed
 sessions match `<worktreeName>-<2 hex>`, which is why the worktree name is the only
 moment the address is choosable.
