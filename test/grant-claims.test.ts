@@ -120,28 +120,50 @@ describe("claim size ceiling", () => {
 });
 
 describe("team members must resolve to real users", () => {
-  const known = new Set(["uid-b", "uid-c"]);
-  const userExists = vi.fn(async (uid: string) => known.has(uid));
+  // The resolver reports which of the asked-about uids do NOT exist, in one
+  // batch. It must only answer that question — a transient failure is not an
+  // answer, and the old per-uid try/catch turned an Auth outage into "these
+  // users do not exist".
+  const missingOf = vi.fn(async (uids: readonly string[]) =>
+    uids.filter((uid) => !["uid-b", "uid-c"].includes(uid)),
+  );
 
   it("passes when every member resolves", async () => {
     const grants = normaliseGrants(SUBJECT, [grant({ scope: "team", team: ["uid-b", "uid-c"] })]);
-    await expect(assertTeamUidsExist(grants, userExists)).resolves.toBeUndefined();
+    await expect(assertTeamUidsExist(grants, missingOf)).resolves.toBeUndefined();
+  });
+
+  it("asks in one batch, not one call per member", async () => {
+    missingOf.mockClear();
+    const grants = normaliseGrants(SUBJECT, [grant({ scope: "team", team: ["uid-b", "uid-c"] })]);
+    await assertTeamUidsExist(grants, missingOf);
+    expect(missingOf).toHaveBeenCalledTimes(1);
+    expect([...missingOf.mock.calls[0][0]].sort()).toEqual(["uid-b", "uid-c"]);
   });
 
   it("fails the whole write when one member does not resolve", async () => {
     const grants = normaliseGrants(SUBJECT, [grant({ scope: "team", team: ["uid-b", "uid-ghost"] })]);
-    await expect(assertTeamUidsExist(grants, userExists)).rejects.toBeInstanceOf(
+    await expect(assertTeamUidsExist(grants, missingOf)).rejects.toBeInstanceOf(
       GrantValidationError,
     );
   });
 
   it("names the uid that could not be resolved", async () => {
     const grants = normaliseGrants(SUBJECT, [grant({ scope: "team", team: ["uid-ghost"] })]);
-    await expect(assertTeamUidsExist(grants, userExists)).rejects.toThrow(/uid-ghost/);
+    await expect(assertTeamUidsExist(grants, missingOf)).rejects.toThrow(/uid-ghost/);
+  });
+
+  it("lets a transient resolver failure through as itself, never as 'user missing'", async () => {
+    const outage = new Error("ECONNRESET talking to Firebase");
+    const failing = vi.fn(async () => {
+      throw outage;
+    });
+    const grants = normaliseGrants(SUBJECT, [grant({ scope: "team", team: ["uid-b"] })]);
+    await expect(assertTeamUidsExist(grants, failing)).rejects.toBe(outage);
   });
 
   it("checks nothing on grants that carry no team", async () => {
-    const checked = vi.fn(async () => true);
+    const checked = vi.fn(async () => []);
     await assertTeamUidsExist(normaliseGrants(SUBJECT, [grant({ scope: "tenancy" })]), checked);
     expect(checked).not.toHaveBeenCalled();
   });
@@ -206,5 +228,15 @@ describe("what is written survives being read", () => {
     // DEFAULT_SCOPE_BY_ROLE says "team" for a sales manager, and an empty team
     // narrows to self. Unchanged by this story, and asserted so it stays that way.
     expect(resolveScope(session).level).toBe("self");
+  });
+});
+
+describe("legacy single-role claims still resolve", () => {
+  // user-directory.ts now reads claims through parseRoleGrants, so this branch
+  // is what keeps pre-migration users visible in the admin screen — not just
+  // signed in.
+  it("parses the old { role, locations } shape into a grant", () => {
+    const [grant] = parseRoleGrants({ role: ROLES.TAG_CSM, locations: ["loc-a"] });
+    expect(grant).toEqual({ role: ROLES.TAG_CSM, locations: ["loc-a"] });
   });
 });

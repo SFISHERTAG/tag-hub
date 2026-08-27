@@ -4,7 +4,7 @@ import {
   UnsupportedScopeError,
   type SourcePorts,
 } from "@/lib/sources/metric-source";
-import { METRIC_REGISTRY, type SourceQuery } from "@/lib/dashboard/metrics";
+import { METRIC_REGISTRY, unsafeQueryForTests, type SourceQuery } from "@/lib/dashboard/metrics";
 import { unsafeScopeForTests } from "@/lib/dashboard/scope";
 
 /**
@@ -25,13 +25,15 @@ const DAY = 86_400_000;
 const PERIOD = { from: 1_000_000, to: 1_000_000 + DAY };
 
 function query(overrides: Partial<SourceQuery> = {}): SourceQuery {
-  return {
+  return unsafeQueryForTests({
     dataset: "opportunities",
     locations: ["loc-a"],
     uids: "all",
     period: PERIOD,
+    statuses: "any",
+    timeframe: "in-period",
     ...overrides,
-  };
+  });
 }
 
 function ports(overrides: Partial<SourcePorts> = {}): SourcePorts {
@@ -39,19 +41,43 @@ function ports(overrides: Partial<SourcePorts> = {}): SourcePorts {
     getPipelines: vi.fn(async () => [
       { id: "pipe-1", name: "Sales", stages: [{ id: "st-1", name: "New", position: 0 }] },
     ]),
-    getOpportunities: vi.fn(async () => [
-      {
-        id: "opp-1",
-        name: "Deal one",
-        pipelineId: "pipe-1",
-        pipelineStageId: "st-1",
-        status: "open" as const,
-        monetaryValue: 250,
-        createdAt: new Date(PERIOD.from + 10).toISOString(),
-        updatedAt: new Date(PERIOD.from + 10).toISOString(),
-        assignedTo: "ghl-user-9",
-      },
-    ]),
+    getOpportunities: vi.fn(async (_loc: string, _pipe: string, options?: { status?: string }) => {
+      const all = [
+        {
+          id: "opp-1",
+          name: "Deal one",
+          pipelineId: "pipe-1",
+          pipelineStageId: "st-1",
+          status: "open" as const,
+          monetaryValue: 250,
+          createdAt: new Date(PERIOD.from + 10).toISOString(),
+          updatedAt: new Date(PERIOD.from + 10).toISOString(),
+          assignedTo: "ghl-user-9",
+        },
+        {
+          id: "opp-won",
+          name: "Closed won",
+          pipelineId: "pipe-1",
+          pipelineStageId: "st-1",
+          status: "won" as const,
+          monetaryValue: 900,
+          createdAt: new Date(PERIOD.from + 11).toISOString(),
+          updatedAt: new Date(PERIOD.from + 11).toISOString(),
+        },
+        {
+          id: "opp-dead",
+          name: "Abandoned",
+          pipelineId: "pipe-1",
+          pipelineStageId: "st-1",
+          status: "abandoned" as const,
+          monetaryValue: 400,
+          createdAt: new Date(PERIOD.from + 12).toISOString(),
+          updatedAt: new Date(PERIOD.from + 12).toISOString(),
+        },
+      ];
+      const status = options?.status ?? "open";
+      return status === "all" ? all : all.filter((o) => o.status === status);
+    }),
     getAppointments: vi.fn(async () => [
       {
         id: "appt-1",
@@ -61,6 +87,20 @@ function ports(overrides: Partial<SourcePorts> = {}): SourcePorts {
         endTime: new Date(PERIOD.from + 30).toISOString(),
         status: "showed" as const,
       },
+      {
+        id: "appt-cancelled",
+        calendarId: "cal-1",
+        startTime: new Date(PERIOD.from + 40).toISOString(),
+        endTime: new Date(PERIOD.from + 50).toISOString(),
+        status: "cancelled" as const,
+      },
+      {
+        id: "appt-noshow",
+        calendarId: "cal-1",
+        startTime: new Date(PERIOD.from + 60).toISOString(),
+        endTime: new Date(PERIOD.from + 70).toISOString(),
+        status: "noshow" as const,
+      },
     ]),
     getTenant: vi.fn(async () => ({
       locationId: "loc-a",
@@ -69,7 +109,7 @@ function ports(overrides: Partial<SourcePorts> = {}): SourcePorts {
       ownerModel: "client" as const,
       metaAdAccountId: "act_1",
     })),
-    getAdSpend: vi.fn(async () => [{ adId: "ad-1", adName: "Creative A", spend: 120, spend7d: 30 }]),
+    getAdSpendForRange: vi.fn(async () => [{ adId: "ad-1", adName: "Creative A", spend: 120 }]),
     ...overrides,
   } as SourcePorts;
 }
@@ -105,7 +145,7 @@ describe("scope it cannot honour", () => {
 
 describe("opportunities", () => {
   it("labels each row with its stage name, not its stage id", async () => {
-    const rows = await createMetricSource(ports()).read(query());
+    const rows = await createMetricSource(ports()).read(query({ statuses: ["open"] }));
     expect(rows).toEqual([
       {
         locationId: "loc-a",
@@ -173,7 +213,9 @@ describe("opportunities", () => {
 
 describe("appointments", () => {
   it("counts one per appointment and keeps the status as the bucket", async () => {
-    const rows = await createMetricSource(ports()).read(query({ dataset: "appointments" }));
+    const rows = await createMetricSource(ports()).read(
+      query({ dataset: "appointments", statuses: ["showed"] }),
+    );
     expect(rows).toEqual([
       { locationId: "loc-a", ownerUid: null, at: PERIOD.from + 20, value: 1, bucket: "showed" },
     ]);
@@ -200,7 +242,7 @@ describe("ad spend", () => {
       })),
     });
     expect(await createMetricSource(p).read(query({ dataset: "ad_spend" }))).toEqual([]);
-    expect(p.getAdSpend).not.toHaveBeenCalled();
+    expect(p.getAdSpendForRange).not.toHaveBeenCalled();
   });
 
   it("buckets spend by ad name", async () => {
@@ -234,10 +276,32 @@ describe("the uid join that does not exist", () => {
 describe("a registered metric through the real adapter", () => {
   const tenancy = unsafeScopeForTests("tenancy", ["loc-a"], "all");
 
-  it("sums open pipeline value", async () => {
+  it("sums only OPEN deals into open pipeline value, never won or abandoned ones", async () => {
+    // The fixture carries an open deal (250), a won one (900) and an abandoned
+    // one (400) in the same stage. 1550 here means the metric is summing dead
+    // and closed deals under the title "Open pipeline value".
     const source = createMetricSource(ports());
     const data = await METRIC_REGISTRY.pipeline_open_value.fetch(tenancy, PERIOD, source);
     expect(data).toEqual({ shape: "scalar", value: 250, unit: "USD" });
+  });
+
+  it("includes an open deal created before the period: open value is a stock, not a flow", async () => {
+    const p = ports({
+      getOpportunities: vi.fn(async () => [
+        {
+          id: "opp-old",
+          name: "Old but live",
+          pipelineId: "pipe-1",
+          pipelineStageId: "st-1",
+          status: "open" as const,
+          monetaryValue: 5000,
+          createdAt: new Date(PERIOD.from - 90 * 86_400_000).toISOString(),
+          updatedAt: new Date(PERIOD.from - 90 * 86_400_000).toISOString(),
+        },
+      ]),
+    });
+    const data = await METRIC_REGISTRY.pipeline_open_value.fetch(tenancy, PERIOD, createMetricSource(p));
+    expect(data).toEqual({ shape: "scalar", value: 5000, unit: "USD" });
   });
 
   it("groups pipeline by stage name", async () => {
@@ -246,10 +310,12 @@ describe("a registered metric through the real adapter", () => {
     expect(data).toEqual({ shape: "categorical", buckets: [{ label: "New", value: 250 }] });
   });
 
-  it("counts appointments", async () => {
+  it("counts booked appointments, excluding cancelled and invalid but keeping no-shows", async () => {
+    // A no-show WAS a booked appointment; a cancelled one stopped being one.
+    // The fixture holds showed + cancelled + noshow, so the right answer is 2.
     const source = createMetricSource(ports());
     const data = await METRIC_REGISTRY.appointments_booked.fetch(tenancy, PERIOD, source);
-    expect(data).toEqual({ shape: "scalar", value: 1 });
+    expect(data).toEqual({ shape: "scalar", value: 2 });
   });
 
   it("refuses every metric under a self scope, rather than one of them leaking", async () => {
@@ -261,5 +327,55 @@ describe("a registered metric through the real adapter", () => {
         `${metric.id} should refuse a scope the adapter cannot honour`,
       ).rejects.toBeInstanceOf(UnsupportedScopeError);
     }
+  });
+});
+
+describe("ad spend honours the period's position, not just its length", () => {
+  it("passes the query period itself to the range fetch", async () => {
+    const p = ports();
+    await createMetricSource(p).read(query({ dataset: "ad_spend" }));
+    expect(p.getAdSpendForRange).toHaveBeenCalledWith("act_1", {
+      fromMs: PERIOD.from,
+      toMs: PERIOD.to,
+    });
+  });
+
+  it("fetches a shared ad account once, not once per location", async () => {
+    const sharedTenant = vi.fn(async (locationId: string) => ({
+      locationId,
+      name: `Client ${locationId}`,
+      services: {} as never,
+      ownerModel: "client" as const,
+      metaAdAccountId: "act_shared",
+    }));
+    const p = ports({ getTenant: sharedTenant as never });
+    const rows = await createMetricSource(p).read(
+      query({ dataset: "ad_spend", locations: ["loc-a", "loc-b"] }),
+    );
+    expect(p.getAdSpendForRange).toHaveBeenCalledTimes(1);
+    // The account's spend appears once in the sum, not once per location.
+    expect(rows.reduce((t, r) => t + r.value, 0)).toBe(120);
+  });
+});
+
+describe("a row with an unparseable timestamp fails loudly", () => {
+  it("throws rather than silently dropping the row from the sum", async () => {
+    const p = ports({
+      getOpportunities: vi.fn(async () => [
+        {
+          id: "opp-bad-date",
+          name: "No created date",
+          pipelineId: "pipe-1",
+          pipelineStageId: "st-1",
+          status: "open" as const,
+          monetaryValue: 10,
+          createdAt: "not-a-date",
+          updatedAt: "not-a-date",
+        },
+      ]),
+    });
+    await expect(createMetricSource(p).read(query({ statuses: ["open"] }))).rejects.toThrow(
+      /opp-bad-date/,
+    );
   });
 });

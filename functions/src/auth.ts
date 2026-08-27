@@ -18,6 +18,8 @@ export type RoleGrant = {
   role: string;
   locations: string[];
   scope?: "self" | "team" | "tenancy";
+  /** Team uids when `scope` is "team". Written by the admin UI, never by provisioning. */
+  team?: string[];
 };
 
 function auth() {
@@ -110,8 +112,18 @@ export function mergeGrants(
     const match = merged.findIndex(
       (g) => g.role === grant.role && (g.locations ?? []).includes(target),
     );
-    if (match === -1) merged.push({ ...grant });
-    else merged[match] = { ...grant };
+    if (match === -1) {
+      merged.push({ ...grant });
+    } else {
+      // The existing grant wins. Provisioning defaults must not undo what an
+      // admin set by hand: replacing wholesale here deleted admin-set scope
+      // and team on every webhook retry, and narrowed a multi-tenancy grant's
+      // locations to the one being re-provisioned. The only thing incoming
+      // may contribute to a matched grant is a scope for a grant so old it
+      // has none.
+      const current = merged[match];
+      merged[match] = { ...current, scope: current.scope ?? grant.scope };
+    }
   }
 
   return merged;

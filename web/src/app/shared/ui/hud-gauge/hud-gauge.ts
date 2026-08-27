@@ -42,6 +42,12 @@ export class HudGauge {
   readonly label = input.required<string>();
   /** Suffix on the reading, e.g. '%'. Empty renders nothing. */
   readonly unit = input('');
+  /**
+   * Optional qualitative tone for the arc. The department dial replaced a
+   * tile whose colour said good/warn/bad at a glance; a dial rendering 23 and
+   * 95 identically dropped that signal. Null keeps the theme's default arc.
+   */
+  readonly tone = input<'positive' | 'caution' | 'negative' | null>(null);
 
   protected readonly centre = CENTRE;
   protected readonly radius = RADIUS;
@@ -68,6 +74,20 @@ export class HudGauge {
     () => `${this.fraction() * SWEEP * CIRCUMFERENCE} ${CIRCUMFERENCE}`,
   );
 
+  /**
+   * Whether to render the value arc at all. Absent beats zero-length: the
+   * round linecap renders a zero-length dash as a dot at the start angle, so
+   * an "empty" dial showed a phantom reading for 0, negative and NaN inputs.
+   */
+  protected readonly showArc = computed(() => this.fraction() > 0);
+
+  /** A number worth printing. NaN rendered as the literal text "NaN%". */
+  protected readonly hasReading = computed(() => Number.isFinite(this.value()));
+
   /** Screen-reader text: the dial is decorative, this sentence is the content. */
-  protected readonly readout = computed(() => `${this.label()}: ${this.value()}${this.unit()}`);
+  protected readonly readout = computed(() =>
+    this.hasReading()
+      ? `${this.label()}: ${this.value()}${this.unit()}`
+      : `${this.label()}: no reading`,
+  );
 }

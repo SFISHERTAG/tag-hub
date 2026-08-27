@@ -73,10 +73,13 @@ export class UserRow {
     role: new FormControl<Role>(ROLES.CLIENT_CLOSER, { nonNullable: true }),
     locationsRaw: new FormControl('', { nonNullable: true }),
     managerEmail: new FormControl('', { nonNullable: true }),
-    // '' is "role default", which is a real choice rather than an absent one:
-    // clearing an override is how an admin undoes it without knowing what the
-    // default is.
-    scope: new FormControl<ScopeLevel | ''>('', { nonNullable: true }),
+    // null is "role default", which is a real choice rather than an absent
+    // one: clearing an override is how an admin undoes it without knowing what
+    // the default is. null (not '') so the form holds exactly what the API
+    // model holds — the '' sentinel forced a translation at both edges, and
+    // the endpoint's tolerance for it doubled as a silent destructive clear
+    // for any caller that forgot the conversion.
+    scope: new FormControl<ScopeLevel | null>(null),
     team: new FormControl<string[]>([], { nonNullable: true }),
   });
 
@@ -95,6 +98,19 @@ export class UserRow {
   protected readonly teamOptions = computed(() =>
     this.peers().filter((peer) => peer.uid !== this.user().uid),
   );
+
+  /**
+   * Stored team uids that no longer resolve to a directory user — usually a
+   * deleted account. Rendered as their own labelled options so they can be
+   * DESELECTED: without this, a ghost uid was invisible (the select only
+   * showed live directory options) yet still in the control's value, so every
+   * save round-tripped it and the endpoint 400ed naming a uid the screen
+   * never displayed.
+   */
+  protected readonly ghostTeam = computed(() => {
+    const known = new Set(this.peers().map((peer) => peer.uid));
+    return this.user().team.filter((uid) => !known.has(uid));
+  });
 
   protected readonly reportsToCsd = computed(() => {
     const role = this.value().role;
@@ -124,7 +140,7 @@ export class UserRow {
       role: user.role ?? ROLES.CLIENT_CLOSER,
       locationsRaw: user.locations.join(', '),
       managerEmail: this.managerEmail() ?? '',
-      scope: user.scope ?? '',
+      scope: user.scope,
       team: [...user.team],
     });
     this.error.set(null);
@@ -149,7 +165,7 @@ export class UserRow {
       // does not exist.
       email: this.user().email,
       managerEmail: REPORTS_TO_CSD.includes(raw.role) && manager ? manager : null,
-      scope: raw.scope === '' ? null : raw.scope,
+      scope: raw.scope,
       // Sent only alongside a team scope. The endpoint refuses a team without
       // one, and sending a stale list the server would reject turns an
       // unrelated role change into an error.
