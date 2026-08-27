@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -216,8 +216,21 @@ describe("check-story-regression, invoked from pre-merge-commit", () => {
     git(hookRepo, ["commit", "-q", "--no-verify", "-m", "stale: unrelated work"]);
 
     // The real invocation: git runs this with cwd at the worktree root.
+    // The sentinel is not decoration. Without it this test asserts only that the
+    // merge succeeded, which is also what happens when the hook never runs at
+    // all: if `core.hooksPath` is set, git ignores .git/hooks entirely, the hook
+    // written here is installed nowhere git looks, the merge sails through and
+    // every assertion below passes while proving nothing. This repo has met that
+    // exact configuration before, which is why .githooks/pre-commit:5 records
+    // that core.hooksPath "is an approach this repo's worktree config silently
+    // defeats". So the test asserts the guard was CONSULTED, not merely that the
+    // merge worked.
     const hook = path.join(hookRepo, ".git", "hooks", "pre-merge-commit");
-    writeFileSync(hook, `#!/bin/sh\nexec "${process.execPath}" "${GUARD}"\n`, { mode: 0o755 });
+    writeFileSync(
+      hook,
+      `#!/bin/sh\ntouch "$(git rev-parse --git-dir)/HOOK_RAN"\nexec "${process.execPath}" "${GUARD}"\n`,
+      { mode: 0o755 },
+    );
   });
 
   afterAll(() => {
@@ -241,6 +254,10 @@ describe("check-story-regression, invoked from pre-merge-commit", () => {
 
     expect(output).not.toContain("going backwards");
     expect(code).toBe(0);
+
+    // The guard was actually consulted. Without this the test cannot tell a
+    // passing guard from an uninstalled hook.
+    expect(existsSync(path.join(hookRepo, ".git", "HOOK_RAN"))).toBe(true);
 
     // And it really merged, rather than stopping somewhere quiet.
     expect(git(hookRepo, ["rev-list", "--count", "HEAD..main"])).toBe("0");

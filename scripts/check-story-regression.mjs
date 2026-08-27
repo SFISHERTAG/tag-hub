@@ -91,7 +91,12 @@ function mergeHead() {
     // Not a stopped merge. Fall through to the pre-merge-commit signal.
   }
 
-  const heads = Object.keys(process.env).filter((k) => /^GITHEAD_[0-9a-f]{40}$/.test(k));
+  // {40,64} rather than {40}: this repo is sha1 today (`git rev-parse
+  // --show-object-format`), but on a sha256 repo a {40} pattern matches nothing,
+  // `heads` comes back empty, and the guard silently reverts to single-parent.
+  // That fails strict rather than lenient, so nothing is wrongly permitted, but
+  // it fails SILENTLY, which is the property that has cost this repo the most.
+  const heads = Object.keys(process.env).filter((k) => /^GITHEAD_[0-9a-f]{40,64}$/.test(k));
   return heads.length === 1 ? heads[0].slice("GITHEAD_".length) : null;
 }
 
