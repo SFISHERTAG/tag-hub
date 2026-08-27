@@ -1,5 +1,5 @@
 import "server-only";
-import { DEFAULT_TIME_ZONE, startOfDayInZone, zonedDateParts } from "../time/zone";
+import { DEFAULT_TIME_ZONE, endOfDayInZone, startOfDayInZone, zonedDateParts } from "../time/zone";
 import { ghl } from "./client";
 
 /** GHL's calendar endpoints are pinned to an older API version than the rest. */
@@ -134,9 +134,15 @@ export function dayRange(
 ): { startMs: number; endMs: number } {
   const now = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000);
   const { year, month, day } = zonedDateParts(now, timeZone);
-  const startMs = startOfDayInZone(year, month, day, timeZone);
 
-  return { startMs, endMs: startMs + 24 * 60 * 60 * 1000 - 1 };
+  // Both ends go through the zone. Deriving the end as start + 24h assumed
+  // every day is 24 hours, which is the assumption this function exists to
+  // remove: it closed the 25-hour day an hour early and ran the 23-hour day
+  // into the next morning.
+  return {
+    startMs: startOfDayInZone(year, month, day, timeZone),
+    endMs: endOfDayInZone(year, month, day, timeZone),
+  };
 }
 
 export { formatTime } from "./format";

@@ -23,8 +23,6 @@
  */
 export const DEFAULT_TIME_ZONE = "America/Chicago";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 /** The wall-clock time in `timeZone`, formatted so Date.parse reads it as UTC. */
 function zonedIsoString(instant: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -89,12 +87,23 @@ export function startOfDayInZone(
   return guess + offsetMs;
 }
 
-/** Last millisecond of a calendar date in `timeZone`. */
+/**
+ * Last millisecond of a calendar date in `timeZone`.
+ *
+ * Derived from when the NEXT day starts, not from a 24-hour assumption, which
+ * is wrong on the two days a year this module exists for: 2026-11-01 in Central
+ * is 25 hours long and 2026-03-08 is 23. Adding a fixed day ended the long one
+ * an hour early, hiding an 11:30 PM call from "today" with no error, and ran the
+ * short one into 00:59 the following morning.
+ *
+ * `Date.UTC` normalises the day overflow inside `startOfDayInZone`, so the last
+ * day of a month and 31 December need no special case.
+ */
 export function endOfDayInZone(
   year: number,
   month: number,
   day: number,
   timeZone: string = DEFAULT_TIME_ZONE,
 ): number {
-  return startOfDayInZone(year, month, day, timeZone) + DAY_MS - 1;
+  return startOfDayInZone(year, month, day + 1, timeZone) - 1;
 }

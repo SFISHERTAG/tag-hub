@@ -150,10 +150,17 @@ describe("the grid itself", () => {
     expect(new Set(days.map((d) => d.date)).size).toBe(days.length);
   });
 
-  it("survives both daylight-saving transitions", async () => {
-    // The fix must not merely be present, it must be right. Stepping 24h
-    // through a NAMED zone rather than through civil dates repeats a date in
-    // November and skips one in March, which a single-month test never sees.
+  it("stays a contiguous civil sequence in a month containing a transition", async () => {
+    // NAMED HONESTLY: these properties are true BY CONSTRUCTION, because the
+    // cells are UTC-anchored and UTC has no daylight saving. This is a guard
+    // against a future refactor that "simplifies" the civil anchor into zone
+    // stepping — which would repeat 1 November and skip 8 March — and it is NOT
+    // a test of daylight-saving behaviour. An earlier version of this case was
+    // named "survives both daylight-saving transitions" and could not fail for
+    // a daylight-saving bug, which is worse than no test.
+    //
+    // The zone-sensitive code is `lib/time/zone.ts`. It is tested in
+    // `test/zone.test.ts`, against the two days a year that are not 24h long.
     for (const iso of ["2026-03-15T12:00:00.000Z", "2026-11-15T12:00:00.000Z"]) {
       at(iso);
       const { days } = await calendar();
@@ -164,11 +171,47 @@ describe("the grid itself", () => {
         const curr = Date.parse(`${days[i].date}T00:00:00Z`);
         expect(curr - prev).toBe(DAY_MS);
       }
-      expect(days.map((d) => d.dayOfMonth)).toEqual(
-        days.map((d) => new Date(`${d.date}T00:00:00Z`).getUTCDate()),
-      );
       vi.useRealTimers();
     }
+  });
+
+  it("buckets across a daylight-saving transition by the zone, and can fail", async () => {
+    // This one IS zone-sensitive, and no single fixed offset can pass it.
+    // 2026-11-01 is the fall-back: Central is UTC-5 before 07:00Z and UTC-6
+    // after. These two instants are exactly 24h apart and BOTH fall on the
+    // Central 1st — the first at 00:30, the second at 23:30 — because the day
+    // is 25 hours long.
+    //
+    //   assume UTC-5 throughout → the second lands on 2026-11-02
+    //   assume UTC-6 throughout → the first lands on 2026-10-31
+    //
+    // Only asking the zone at each instant puts them both on the 1st.
+    at("2026-11-01T18:00:00.000Z");
+    getAppointments.mockResolvedValue([
+      {
+        id: "before",
+        title: "Just after midnight, CDT",
+        startTime: "2026-11-01T05:30:00.000Z",
+        endTime: "2026-11-01T06:30:00.000Z",
+        status: "confirmed",
+      },
+      {
+        id: "after",
+        title: "Just before midnight, CST",
+        startTime: "2026-11-02T05:30:00.000Z",
+        endTime: "2026-11-02T06:30:00.000Z",
+        status: "confirmed",
+      },
+    ]);
+
+    const { days } = await calendar();
+    const on = (date: string) => days.find((d) => d.date === date)?.appointments.map((a) => a.id);
+
+    expect(on("2026-11-01")).toEqual(["before", "after"]);
+    expect(on("2026-11-02")).toEqual([]);
+    // The grid starts on Sunday 2026-11-01, so a misbucketed "before" would
+    // fall outside it entirely and simply vanish rather than move.
+    expect(days[0].date).toBe("2026-11-01");
   });
 });
 
