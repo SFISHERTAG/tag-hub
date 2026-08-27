@@ -36,6 +36,16 @@ run_check() {
 # First: if this session should not be writing to main at all, nothing else
 # matters. This is the check that would have caught 2026-08-23.
 run_check "check:main-ownership"    scripts/check-main-ownership.mjs
+# Added 2026-08-27. A clean catch-up merge now concludes here rather than
+# being refused and falling through to `git commit`, so this hook is the only
+# place agent-isolation still gets a chance to run on it. Before the merge
+# guards were fixed, every catch-up was bounced to pre-commit and this fired
+# there by accident. Its own header records commit b800aa5 committing four
+# files belonging to a different session, which is what it exists to stop.
+#
+# check:branch-freshness is deliberately NOT here. Merging main in is the
+# un-staling, and refusing it is the deadlock that made this change necessary.
+run_check "check:agent-isolation"   scripts/check-agent-isolation.mjs
 
 # A merge can regress a story document exactly as a commit can, and until now
 # nothing looked. Story 10.3 lost five completed checkboxes and its Dev Agent
