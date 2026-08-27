@@ -13,6 +13,20 @@
  * are legitimate and this must not block them, so:
  *
  *   TAG_STORY_REOPEN_OK=1 git commit ...
+ *
+ * Mid-merge, "the committed one" is not HEAD alone. HEAD is the pre-merge tip,
+ * so on a branch catching up, every deliberate correction main has made since
+ * the branch was cut reads here as that branch going backwards. It refused
+ * fix/alert-on-config-fault's catch-up on 2026-08-27 over
+ * docs/stories/4.4-roas-joined-on-utmadid.md, whose Status main had corrected
+ * from "done" to "ready" precisely because it was not done. The correction was
+ * right, the branch was stale, and the message printed below told it to run the
+ * merge this check was refusing.
+ *
+ * So on a merge a finding only counts if it holds against BOTH parents. Content
+ * taken verbatim from the other side is that side's decision, already reviewed
+ * where it landed, and not something this commit invented. A resolution that
+ * produces a regression present on neither parent is still refused.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -34,10 +48,19 @@ function stagedStories() {
     .filter((p) => /^docs\/stories\/.+\.md$/.test(p));
 }
 
-/** The committed version, or null if the file is new. */
-function committed(path) {
+/** The version at a ref, or null if the file does not exist there. */
+function versionAt(ref, path) {
   try {
-    return git(["show", `HEAD:${path}`], { quiet: true });
+    return git(["show", `${ref}:${path}`], { quiet: true });
+  } catch {
+    return null;
+  }
+}
+
+/** The commit being merged in, or null when this is an ordinary commit. */
+function mergeHead() {
+  try {
+    return git(["rev-parse", "--verify", "--quiet", "MERGE_HEAD"], { quiet: true }).trim() || null;
   } catch {
     return null;
   }
@@ -51,13 +74,24 @@ if (process.env.TAG_STORY_REOPEN_OK === "1") {
 const stories = stagedStories();
 if (stories.length === 0) process.exit(0);
 
+const other = mergeHead();
+const parents = other ? ["HEAD", other] : ["HEAD"];
+
 const problems = [];
 for (const path of stories) {
-  const before = committed(path);
-  if (before === null) continue;
   const after = readFileSync(path, "utf8");
-  const { ok, findings } = compareStory(before, after);
-  if (!ok) problems.push({ path, findings });
+  const results = parents
+    .map((ref) => versionAt(ref, path))
+    .filter((before) => before !== null)
+    .map((before) => compareStory(before, after));
+
+  // New on every parent: nothing to walk backwards from.
+  if (results.length === 0) continue;
+  // Clean against at least one parent, so this content exists on a side that
+  // was reviewed where it landed. Only the resolution's own inventions remain.
+  if (results.some((r) => r.ok)) continue;
+
+  problems.push({ path, findings: results[0].findings });
 }
 
 if (problems.length === 0) process.exit(0);
