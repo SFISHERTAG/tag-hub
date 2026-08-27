@@ -114,11 +114,17 @@ Draft a prompt that carries out the **first task in your plan**. Write it as
 carefully as you would write code, because it is the only thing that session
 will ever know about how to behave here.
 
-Put the file somewhere durable and tell Sam the absolute path. A scratchpad
-path works for pasting but is invisible to the session that receives it: on the
-same night, a spawned session went looking for its own brief by filename, found
-nothing on any ref, and stalled. Either paste the content or give a full path,
-and never refer to the brief by bare filename.
+**Start from `docs/PEER_SESSION_PROMPT.md`**, which is the brief with its durable
+half already written: the protocols, the values, the permission boundary, and
+what the Reviewer must not touch. Rewrite its Step 2 for your task, derive that
+step's facts with §1's commands, and hand Sam the path.
+
+Do not leave the brief in a scratchpad. A scratchpad path works for pasting but
+is invisible to the session receiving it: on 2026-08-26 a spawned session went
+looking for its own brief by filename, found nothing on any ref, and stalled.
+And never write a session address into it. The same brief carried a hardcoded
+`SendMessage` target that was dead before it was read, because the Lead had been
+renamed mid-flight; the Reviewer would have messaged nobody and waited.
 
 It must contain, at minimum:
 
