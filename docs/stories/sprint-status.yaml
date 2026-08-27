@@ -130,7 +130,7 @@ development_status:
   10-3-responsive-shell-and-navigation:                        in-progress      # 6 tasks open
   10-4-shared-m3-primitives-portfolio-and-bug-reports:         in-progress      # split resolved, see below; ACs adjudicated 2026-08-27, AC5/AC7 unmet, AC9 withdrawn
   10-5-ghl-integration-module:                                 in-progress      # ACs adjudicated 2026-08-27; AC1/AC5/AC7 unmet
-  10-6-widget-dashboard-and-the-clients-book:                  backlog
+  10-6-widget-dashboard-and-the-clients-book:                  in-progress      # ACs adjudicated 2026-08-27; only AC7 unmet
   10-7-remaining-feature-modules:                              backlog
   10-8-legacy-removal:                                         backlog          # split out of 10.7, the sweep was unowned
   10-9-user-menu-and-sign-out:                                 review           # implemented 2026-08-23, had no key at all
