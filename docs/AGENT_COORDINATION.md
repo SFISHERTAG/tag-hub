@@ -137,9 +137,11 @@ Twenty-six is more than any concurrent fleet here has needed, and the phonetic
 alphabet is engineered so that no two entries survive garbling as each other.
 Measure any alternative against that sentence.
 
-The address is derived from the worktree name at spawn. Four of four observed
-sessions match `<worktreeName>-<2 hex>`, which is why the worktree name is the only
-moment the address is choosable.
+The address is derived from the worktree name at spawn. **Every address observed
+at spawn matches `<worktreeName>-<2 hex>`. One has since been rewritten by the
+unidentified event above, which is why rule 4 exists.** Run `ListAgents` and you
+will find that exception rather than a clean five-for-five, and the exception is
+evidence for the rule, not against it.
 
 1. **Source: the NATO phonetic alphabet, official spellings.** ALFA, BRAVO, CHARLIE,
    DELTA, ECHO, FOXTROT, GOLF, HOTEL, INDIA, JULIETT, KILO, LIMA, MIKE, NOVEMBER,
@@ -148,7 +150,12 @@ moment the address is choosable.
    them.** The alphabet exists so that no two entries are confusable when garbled,
    which is the property an address typed under time pressure needs.
 2. **Chosen at `EnterWorktree({name})` and nowhere else**, because that is the only
-   moment the address is writable at all.
+   moment a session can *choose* it. Not the only moment it can be written: the
+   paragraph above records an address rewritten after spawn by something nobody
+   has identified. An earlier draft of this clause said "the only moment the
+   address is writable at all", which contradicted that paragraph nineteen lines
+   above it and was caught by a second reader rather than by either of the two
+   people who wrote it.
 3. **Assign the first callsign not currently visible in `ListAgents`.** Derived, not
    remembered.
 4. **Retire, never recycle.** A callsign stays dead until its address has stopped
