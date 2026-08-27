@@ -353,16 +353,21 @@ describe("the invariant the design rests on", () => {
         const start = events.find(
           (e) => e.type === "phase1_started" && e.opportunityId === done.eventId,
         );
-        expect(start).toBeDefined();
-        expect(start!.ts).not.toBeNull();
+        // Narrowed rather than asserted. The `no-non-null-assertion` rule is
+        // scoped to web/ and does not reach test/, but CLAUDE.md bans `!`
+        // outright and a rule that happens not to be enforced here is a bad
+        // reason to write the thing it bans.
+        if (!start || start.ts === null) {
+          throw new Error(`complete claim ${done.eventId} has no timestamped start`);
+        }
+        const startTs = start.ts;
 
         const establishing = events.filter(
           (e) =>
             e.locationId === done.locationId &&
             e.type === "phase1_complete" &&
             e.ts !== null &&
-            start!.ts !== null &&
-            e.ts >= start!.ts,
+            e.ts >= startTs,
         );
         expect(establishing.length).toBeGreaterThan(0);
       }
