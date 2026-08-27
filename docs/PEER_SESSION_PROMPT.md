@@ -259,12 +259,25 @@ read it, including the ones nobody has thought of yet. That is not staleness
 that can be fixed by rewriting it more carefully next time. It is a document
 doing a job only a live sender can do.
 
-The same paragraph also cited `lib/auth/admin.ts:157-160` for a defect that is at
-`:161-163`. The cited range ended one line before the bare `catch` it was
-describing, so a Reviewer following the citation would have read the happy path
-and found nothing. It was caught only because that Reviewer read the source
-instead of the citation. That is the one-line-off failure this whole method
-exists to catch, sitting inside the document that teaches it.
+The same paragraph also carried a **line-number citation for a defect in
+`lib/auth/admin.ts`**, and the cited range ended one line before the bare `catch`
+it was describing, so a Reviewer following it read the happy path and found
+nothing. It was caught only because that Reviewer read the source instead of the
+citation.
+
+**And then the record of that catch went stale in exactly the same way, which is
+why no line numbers survive here either.** The corrected range was accurate when
+written. The defect was then fixed: the per-uid lookup it described was replaced
+by a batch call, so the bare `catch` does not exist at all any more, and the
+lines the correction named now hold unrelated code. A third Reviewer followed the
+corrected citation, found a batch lookup, and reported the correction itself as
+wrong. It was not wrong. It was stale, which is indistinguishable from wrong to
+everyone downstream.
+
+So the incident is recorded by **shape** and not by coordinates: a range that
+stopped one line short of the failure path it described. A reader who wants the
+code finds it by searching for the shape, which is the habit this section is
+teaching anyway.
 
 Both failures have one cause: perishable facts written into a durable document.
 
