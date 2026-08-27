@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/http/api.service';
 import type { ApiResult } from '../../../core/models/api-result.model';
-import type { LeadsFunnelResponse } from './ghl-widgets.model';
+import type { DayViewResponse, LeadsFunnelResponse } from './ghl-widgets.model';
 
 const WIDGETS_URL = '/api/dashboard/widgets';
 
@@ -47,5 +47,16 @@ export class GhlWidgetsService {
         days === undefined ? undefined : { days },
       ),
     );
+  }
+
+  /**
+   * Today's appointments in the tenant's zone.
+   *
+   * Takes no day key, unlike `TodayService.day()`. The dashboard tile is
+   * always today; yesterday and tomorrow belong to the full-page view, and
+   * adding a parameter the endpoint does not accept would be inventing an API.
+   */
+  getDayView(): Promise<ApiResult<DayViewResponse>> {
+    return firstValueFrom(this.api.get<DayViewResponse>(`${WIDGETS_URL}/day-view`));
   }
 }

@@ -1,0 +1,72 @@
+// M3 tokens only. No raw hex, no !important, no deep selectors.
+:host {
+  display: block;
+}
+
+// In the flow, above whatever it qualifies. `no_location` arrives alongside an
+// error and is the half that says what to do about it.
+.day__warning {
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-label-small);
+}
+
+.day__calls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day__call {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.625rem;
+  align-items: baseline;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  font: var(--mat-sys-body-small);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.day__time {
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface);
+}
+
+.day__who {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.day__status {
+  font: var(--mat-sys-label-small);
+  text-transform: capitalize;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Only the two states that need to stand out get a colour. The rest stay
+// neutral: colouring every status turns the tile into a legend nobody reads.
+.day__status--showed {
+  color: var(--mat-sys-primary);
+}
+
+.day__status--noshow,
+.day__status--cancelled {
+  color: var(--mat-sys-error);
+}
+
+.day__more {
+  margin: 0.5rem 0 0;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}

@@ -84,3 +84,50 @@ export type LeadsFunnelResponse =
       readonly sampleData: SampleDataDisclosure;
       readonly warnings: readonly WidgetWarning[];
     };
+
+/**
+ * One appointment, mirrored from `CallForDisplay` in
+ * `lib/dashboard/data-fetchers.ts`.
+ *
+ * `startTimeFormatted` / `endTimeFormatted` are formatted **server-side, in the
+ * tenant's zone**, and they are the only times that may be rendered. The raw
+ * `startTime` / `endTime` ISO strings are carried for ordering and keys, never
+ * for display: formatting them in the browser produces the viewer's midnight
+ * rather than the client's, so an evening appointment lands on the wrong day
+ * for anyone east or west of the tenant. `TodayService` documents the same
+ * constraint for the same reason on the full-page view.
+ */
+export interface CallForDisplay {
+  readonly id: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly startTimeFormatted: string;
+  readonly endTimeFormatted: string;
+  readonly booked: boolean;
+  readonly attendee?: string;
+  readonly topic?: string;
+  readonly callType: 'discovery' | 'strategy' | 'optimization' | 'follow-up' | 'other';
+  readonly status: 'new' | 'confirmed' | 'showed' | 'noshow' | 'cancelled' | 'invalid';
+  readonly contactId?: string;
+  readonly assignedUserId?: string;
+}
+
+/**
+ * Mirrors `DayViewResult` in `lib/dashboard/day-view.ts`.
+ *
+ * Same `ok: false`-inside-a-200 hazard as `FunnelCountsResult`, and the route
+ * makes it routine rather than exceptional: the no-location case returns
+ * `{ ok: false }` *plus* `NO_LOCATION_WARNING`, so a caller that only reads the
+ * transport shows an empty schedule to every account that has not finished
+ * setup. The route's own comment draws the line this union enforces: "an empty
+ * schedule and an unreachable calendar are different states".
+ */
+export type DayViewResult =
+  | { readonly ok: true; readonly calls: readonly CallForDisplay[] }
+  | { readonly ok: false; readonly message: string };
+
+/** Mirrors `DayViewResponse` in `app/api/dashboard/widgets/day-view/route.ts`. */
+export interface DayViewResponse {
+  readonly dayView: DayViewResult;
+  readonly warnings: readonly WidgetWarning[];
+}
