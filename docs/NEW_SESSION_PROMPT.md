@@ -10,10 +10,23 @@ Budget fifteen minutes on this page. Do not skim §0.
 
 ## §0. The staleness contract — read this before you trust a single line below
 
-**v1 of this document was proven stale the same day it was written.** So was
-`LETTER_TO_THE_NEXT_LEAD.md`. Both were accurate when authored and wrong within
-hours, and both were believed because they were tidy. That is the failure this
-version is built around.
+**v1 of this document was proven stale the same day it was written**, and it was
+believed because it was tidy. That is the failure this version is built around.
+
+`LETTER_TO_THE_NEXT_LEAD.md` was named here as the same case, and **that was too
+broad. Corrected 2026-08-27, after a Reviewer measured it instead of repeating
+it.** Its rules held: four of four claims checked against the tree were correct,
+and twelve of its fourteen sections are the origin evidence for standing orders
+that are still in force. What had rotted was one pointer, at line 6, to a handoff
+whose own first fact is 151 commits behind, and one production claim this
+repository cannot settle in either direction.
+
+So it is not an example of a document that went wrong within hours. It is the
+more common and more dangerous case: **a document that is mostly right, with a
+stale pointer near the top.** That is harder to distrust, not easier, which is an
+argument for more caution than the original sentence gave and not less. The
+correction is recorded rather than quietly applied because §0 is the section that
+tells you to distrust §0.
 
 So this document is split, and the split is load-bearing:
 
