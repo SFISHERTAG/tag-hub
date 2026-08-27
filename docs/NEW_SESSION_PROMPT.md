@@ -62,6 +62,51 @@ Sam, and which worktrees belong to sessions that are still alive.
 
 ---
 
+## §1b. Take command from the outgoing session, then close it
+
+Added 2026-08-26. Sessions here are consumable: they exhaust their context and
+get replaced mid-task. Everything durable a session learns is supposed to reach
+`main`, and most of it does. **Intent does not.** Why a PR was built rather than
+abandoned, what was deliberately left undone, which of its own claims it stopped
+trusting: none of that is in a diff, and all of it dies when the context ends.
+
+So before the outgoing session is archived, check in with it. `ListAgents`, find
+its row, `SendMessage`. It is still there until someone closes it.
+
+**Ask for intent. Never for state.** This is the whole discipline of the step and
+it is easy to get backwards. §0 exists because a predecessor's tidy account of
+the repository was believed and was wrong within hours. An outgoing session's
+account is worse than a document's: it is older than its own last action and it
+cannot run a command to check itself. Four questions worth asking, none of which
+a command can answer:
+
+- **What did you deliberately not do, and why?** The most valuable answer here is
+  usually a thing that looks unfinished and was a decision.
+- **What were you wrong about?** Not the corrected version, the error itself.
+  Anything caught late tells you where the next one is likely to be.
+- **Which of your findings has nobody independently checked?** Standing order 9.
+  A finding produced and verified by one party is unverified, however confident
+  its author sounded.
+- **What is unowned right now?** Branches, worktrees, half-finished merges,
+  things nobody has claimed. This is the answer that gets lost most reliably.
+
+**Everything else you derive yourself, with §1's commands.** If the outgoing
+session tells you where `main` is, how many PRs are open, or what is green, treat
+that as a claim about the past and go and check. It will be wrong more often than
+it expects to be, and it will sound certain either way.
+
+Then close it, per §6's four outcomes. Archive the session and settle its branch:
+merged, deleted, pushed, or renamed `keep/<reason>`. A well-run session closes
+its own loop before it ends, so this is often already done, and a session that
+left one open is exactly the one worth checking.
+
+**When there is no outgoing session to ask** (it crashed, hit a usage limit, was
+killed) you have lost the intent and you should say so rather than reconstruct
+it. Those are precisely the sessions that strand work, which is the same reason
+§6 says the loop report is read at the start of a session and not only the end.
+
+---
+
 ## §2. Plan — then hold the plan to the same standard as the code
 
 Produce a plan to finish. Not a task list: a **sequence with a stated tiebreaker**.
