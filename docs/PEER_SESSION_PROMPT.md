@@ -259,12 +259,25 @@ read it, including the ones nobody has thought of yet. That is not staleness
 that can be fixed by rewriting it more carefully next time. It is a document
 doing a job only a live sender can do.
 
-The same paragraph also cited `lib/auth/admin.ts:157-160` for a defect that is at
-`:161-163`. The cited range ended one line before the bare `catch` it was
-describing, so a Reviewer following the citation would have read the happy path
-and found nothing. It was caught only because that Reviewer read the source
-instead of the citation. That is the one-line-off failure this whole method
-exists to catch, sitting inside the document that teaches it.
+The same paragraph also carried a **line-number citation for a defect in
+`lib/auth/admin.ts`**, and the cited range ended one line before the bare `catch`
+it was describing, so a Reviewer following it read the happy path and found
+nothing. It was caught only because that Reviewer read the source instead of the
+citation.
+
+**And then the record of that catch went stale in exactly the same way, which is
+why no line numbers survive here either.** The corrected range was accurate when
+written. The defect was then fixed: the per-uid lookup it described was replaced
+by a batch call, so the bare `catch` does not exist at all any more, and the
+lines the correction named now hold unrelated code. A third Reviewer followed the
+corrected citation, found a batch lookup, and reported the correction itself as
+wrong. It was not wrong. It was stale, which is indistinguishable from wrong to
+everyone downstream.
+
+So the incident is recorded by **shape** and not by coordinates: a range that
+stopped one line short of the failure path it described. A reader who wants the
+code finds it by searching for the shape, which is the habit this section is
+teaching anyway.
 
 Both failures have one cause: perishable facts written into a durable document.
 
@@ -424,17 +437,25 @@ refuse is refused, and you say so, out loud, to both it and Sam.
 
 ## Step 7: first check-in
 
-Message the Lead when **PR #17** is done, before you open #16. Do not wait until
-all four are finished.
+**Shape only. No identifiers here, for the same reason Step 2 carries none.**
+This section named two specific PRs and "all four", and both were false within
+the hour: the PRs merged and the count was wrong when it was written. A Reviewer
+obeying it verbatim reviews closed work and reports on an unknown set. Caught
+2026-08-27 by a Reviewer who read it, checked, and refused to act on it, which is
+the behaviour to copy.
 
-Give it: the SHA you reviewed, your breaks, what held, and, named explicitly,
-the one thing you are least sure of.
+**Message the Lead at your first completed unit of work, before you open the
+next.** Not when everything is finished. What "a unit" is comes from the Lead's
+message, not from here.
 
-If #17 is clean, say so and list what you attacked to establish it. "Clean" with
-the attacks named is a finding. "Clean" alone is not.
+Give it: the SHA you reviewed, your breaks, what held, and, named explicitly, the
+one thing you are least sure of.
 
-One more thing about #17 specifically. If your independent re-derivation shows
-either defect is **not** live on main, say so immediately and stop reviewing the
-rest of it. That would mean the whole PR is built on a false premise, and it is
-worth more to the Lead in the first ten minutes than a complete review an hour
-later. Do not soften it because the Lead wrote the PR.
+**"Clean" with the attacks named is a finding. "Clean" alone is not.** If a unit
+is clean, say so and list what you attacked to establish it.
+
+**If a premise fails, stop and say so in the first ten minutes.** When your
+independent re-derivation shows the defect a piece of work was built to fix is
+not live, that is worth more immediately than a complete review an hour later,
+because everything downstream of it is answering the wrong question. Do not
+soften it because the Lead wrote the thing.
