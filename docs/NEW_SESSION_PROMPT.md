@@ -139,17 +139,24 @@ Your plan must name, explicitly:
 
 ---
 
-## §3. Spawn the assistant — the prompt is the deliverable
+## §3. Spawn the assistant — one line, then a message
 
-**Read this paragraph before the list. It is the part that has already been got
-wrong.** "Draft a prompt" means exactly that: you write a document, you hand it
-to Sam, and *he* pastes it into a fresh session. You do not spawn the pair
-yourself. A subagent is not a pair: it cannot commit, it holds no authorization
-of its own, it dies when your turn ends, and it can only report back to you
-rather than argue with you as an equal party in front of Sam. On 2026-08-26 a
-lead session read this section, understood it correctly, and spawned two
-subagents anyway. Sam had to correct it. The work was not wasted, but it was not
-a pair either.
+**Read this paragraph first. It is the part that has already been got wrong,
+twice, in opposite directions.**
+
+**You do not spawn the pair yourself.** Sam pastes one line into a fresh session
+and that session reports in to you. A subagent is not a pair: it cannot commit,
+it holds no authorization of its own, it dies when your turn ends, and it can
+only report back to you rather than argue with you as an equal party in front of
+Sam. On 2026-08-26 a lead session read this section, understood it correctly, and
+spawned two subagents anyway. Sam had to correct it. The work was not wasted, but
+it was not a pair either.
+
+**And this paragraph used to say "draft a prompt means you write a document".**
+It does not any more, for the reason the rest of this section gives, and the
+sentence is removed rather than left standing: an instruction repealed twenty
+lines below its own definition is worse than one never written, because a reader
+told to read the definition *first* learns the repealed model as the correct one.
 
 Subagents are still useful, as **Specialists**: bounded, disposable
 investigators you send at one question and dissolve. Use them freely. Just do
@@ -187,24 +194,45 @@ is to run `ListAgents`, message the Lead, and wait. Your reply is the only place
 its task exists, and that is the right place: you can see who is already inside
 what, and a document cannot. Send it, at minimum:
 
-1. **The task, and the definition of done for it** — including which gate must be
+1. **Your own address, verbatim from `ListAgents` line 1.** First, and before the
+   task. Step 0 tells the Reviewer to read the Lead's row, and **`ListAgents`
+   prints addresses, never roles, so there is no Lead row to read.** On 2026-08-27
+   four Reviewers each had to infer the Lead from session age and PR ownership,
+   said so plainly, and happened to be right. Under the model in this section the
+   task exists in exactly one place, your reply, so a Reviewer who infers wrong
+   has no task, no fallback and no way to know. Stating your address costs one
+   line and is the only thing standing between Step 0 and a silent dead end.
+2. **The task, and the definition of done for it** — including which gate must be
    green and what "green" means for that gate specifically.
-2. **A named first check-in point** — a specific artefact or moment, not "when
+3. **A named first check-in point** — a specific artefact or moment, not "when
    you're done".
-3. **What it must not touch beyond the standing list in the brief** — whatever is
+4. **What it must not touch beyond the standing list in the brief** — whatever is
    live at this moment, which only you know.
-4. **An explicit instruction to attack your work.**
 
-Everything the old list also demanded — the orientation commands, the permission
-boundary verbatim, the pair protocol, the §4b protocols — is already in the brief
-on `main` and stays there. Copying it into a message is how one rule comes to
-exist in two places and go stale in one of them.
+Everything else the old list demanded is already in the brief on `main` and stays
+there: the orientation commands, the permission boundary verbatim, the pair
+protocol, the §4b protocols, **and the instruction to attack the Lead, which is an
+entire titled step of that document and says it harder than a message line will.**
+Copying any of it into a message is how one rule comes to exist in two places and
+goes stale in one of them.
+
+**The old list had seven items and this one has four, which does not subtract.**
+One old item carried a durable half and a per-task half and was split, so the
+arithmetic only closes if you count that item twice. Said here because a reader
+who checks it and finds it wrong stops trusting the paragraph.
 
 **Never write a session address into anything durable, and never into a brief.**
 One carried a hardcoded `SendMessage` target that was dead before it was read,
 because the Lead had been renamed mid-flight; the Reviewer would have messaged
 nobody and then waited. Addresses are derived from `ListAgents` at the moment of
 sending, every time.
+
+**Whatever you put in that message, it will be believed.** The old §3 said "do
+not put facts in it that §1's commands would produce, you will get them wrong and
+it will believe you." The first half died with the durable brief, because a live
+message is exactly where perishable facts belong now. The second half did not:
+being believed is a property of the receiver, not of the medium. Derive anything
+you state, and mark anything you did not.
 
 **If your findings are going into that message, say who produced them.** Standing
 order 9 says whoever produced a finding does not verify it. Handing over
