@@ -130,7 +130,10 @@ and that is what makes it reach anyone.** **The route, named because a session a
 Moment 5 is out of context and is the last person who will invent one:** commit it
 on your own branch, push that branch, open a PR, and tell the Lead. Step 6 forbids
 you touching `main` or any shared ref, and push-then-PR is one of its four
-legitimate closes. One rolling file, no date in the name,
+legitimate closes; the pull request is additional to that enumeration rather than
+a member of it. Step 6 forbids you to merge, close, approve or comment on a PR.
+**Opening one is not among those four**, which is what makes this route available
+to you at all. One rolling file, no date in the name,
 because three dated handoff documents already sit in `docs/` and a reader facing
 three does not know which is current. Promote anything reusable up into *The
 standing traps* so the next session reads it in Step 1 without reading your

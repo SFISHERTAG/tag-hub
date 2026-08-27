@@ -24,7 +24,7 @@ it rests on, not weaker.
 A ninth was about to be written, which is what prompted this file. `CLAUDE.md`
 bans exactly this accumulation for status docs and names `MERGE_STATUS_<date>.md`
 as the shape; the last two above are that shape with the date left off. A reader
-facing eight does not know which is current, so they read none, and every lesson
+facing nine does not know which is current, so they read none, and every lesson
 paid for in them is lost.
 
 It also exists because a debrief nobody reads is not a loop. `PEER_SESSION_PROMPT.md`
@@ -178,10 +178,22 @@ same day it was written, and it names it by **bare filename, never by path**.
 Corrected 2026-08-27: this trap said "by path", so a session applying the trap's
 own instruction greps `docs/LETTER_TO_THE_NEXT_LEAD.md`, gets zero hits, and
 concludes there is no warning at all. The trap defeated itself on its own check.
-Two sessions produced that same "by path" wording independently, from the same
-sentence, with no transmission between them, so treat the miscitation as
-reproducible rather than as one person's slip. `LETTER_TO_THE_NEXT_SESSION.md` sits beside it
-and is referenced by **nothing** on `main`. A session that reads §0 carefully
+On the Lead's account, which is the only source for it and cannot be checked from
+the repository, two sessions produced that same "by path" wording independently
+from the same sentence with no transmission between them. If that account holds,
+the miscitation is reproducible rather than one person's slip.
+
+**A second correction in the same trap, 2026-08-27, and it is the reason a
+correction stamp is dangerous.** This trap also said the sibling document "sits
+beside it". It does not: it is now at
+`_archive/session-letters/LETTER_TO_THE_NEXT_SESSION-2026-08-23.md`. The first
+correction above stamped this trap as corrected while leaving that false, which
+turns latent staleness into a warranted falsehood, and the warrant is worse than
+the error. **Fixing one cell in a table with several wrong entries invites the
+next reader to assume the rest were checked** — which is the argument in the
+entry below, made by Sam, when he declined a one-line correction for exactly this
+reason. The sibling is still referenced by **nothing** on `main`; only its
+location was wrong. A session that reads §0 carefully
 learns to distrust exactly one of two identically shaped documents, and trusts the
 other *because* the warning was specific. That is worse than no warning. *Check:*
 when a caution names one file by path, look for its siblings before concluding the
