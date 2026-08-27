@@ -24,7 +24,7 @@ it rests on, not weaker.
 A ninth was about to be written, which is what prompted this file. `CLAUDE.md`
 bans exactly this accumulation for status docs and names `MERGE_STATUS_<date>.md`
 as the shape; the last two above are that shape with the date left off. A reader
-facing nine does not know which is current, so they read none, and every lesson
+facing eight does not know which is current, so they read none, and every lesson
 paid for in them is lost.
 
 It also exists because a debrief nobody reads is not a loop. `PEER_SESSION_PROMPT.md`
@@ -193,11 +193,18 @@ the error. **Fixing one cell in a table with several wrong entries invites the
 next reader to assume the rest were checked** — which is the argument in the
 entry below, made by Sam, when he declined a one-line correction for exactly this
 reason. The sibling is still referenced by **nothing** on `main`; only its
-location was wrong. A session that reads §0 carefully
-learns to distrust exactly one of two identically shaped documents, and trusts the
-other *because* the warning was specific. That is worse than no warning. *Check:*
-when a caution names one file by path, look for its siblings before concluding the
-caution is exhaustive. Same root as trap 7: the label was searched, not the thing.
+location was wrong. **As written, this described a live condition. It no longer is, and the trap is
+kept as history rather than deleted.** For a time a session reading §0 carefully
+learned to distrust exactly one of two identically shaped documents and trusted
+the other *because* the warning was specific, which is worse than no warning.
+`#28` closed that instance: the sibling now opens with `> **ARCHIVED 2026-08-27.
+Do not act on this document.**` on its first line. **The lesson survives the
+repair of its own example** — a caution precise about one file still licenses
+trust in its unnamed neighbours, and the next specific warning anyone writes will
+recreate the condition unless it says what it does not cover. *Check:*
+when a caution names one file at all, by path or by bare filename, look for its
+siblings before concluding the caution is exhaustive, and grep for the form it
+actually uses rather than the form you expect. Same root as trap 7: the label was searched, not the thing.
 
 **14. Two conventions in one document.**
 `docs/epics.md` uses three-column tables in Epics 4 and 8 and four-column ones in
