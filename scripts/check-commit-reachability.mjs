@@ -61,12 +61,20 @@ function main() {
   if (branch === null) return;
 
   if (branch !== "HEAD") {
-    // Named branch. The only remaining question is whether it exists anywhere
-    // else. `@{upstream}` fails loudly when there is no tracking ref, which is
-    // the signal we want.
-    if (tryGit("rev-parse --abbrev-ref --symbolic-full-name @{upstream}") === null) {
+    // Named branch. The question is whether this commit's parent exists anywhere
+    // else, and `@{upstream}` does not answer it. A branch can track origin/main,
+    // and so have an upstream, while every commit on it has never been pushed.
+    // That is the stranding case, and the earlier version of this check waved it
+    // through: on 2026-08-27 a branch tracking origin/main held a commit that was
+    // on no remote, and this guard would not have warned even had it been wired
+    // in, which it also was not.
+    //
+    // `branch -r --contains HEAD` answers the question the comment above always
+    // claimed to be asking. Empty means the parent commit is on no remote at all,
+    // whether or not a tracking ref exists.
+    if ((tryGit("branch -r --contains HEAD") ?? "").trim() === "") {
       console.warn(
-        `\n[reachability] ${branch} exists only on this machine.\n\n` +
+        `\n[reachability] ${branch}'s commits exist only on this machine.\n\n` +
           `  This commit will be reachable from nowhere else until you push.\n` +
           `  Push at birth, not at completion:\n\n` +
           `    git push -u origin ${branch}\n`,

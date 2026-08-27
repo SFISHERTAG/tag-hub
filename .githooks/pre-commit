@@ -61,6 +61,13 @@ run_check() {
 # hook for a merge — .githooks/pre-merge-commit and .githooks/pre-push cover
 # the two paths that never come through here, and the merge path is the one
 # that actually moved main on 2026-08-23.
+# Reachability runs FIRST because it is the cheapest and because a commit that
+# lands where nothing can reach it is not fixed by any later check passing.
+# Added 2026-08-27. It was written into scripts/hooks/pre-commit, which
+# core.hooksPath does not point at, so from the day it landed it ran on no
+# commit and in no CI job. Its own commit message said it "runs first in
+# pre-commit, being the cheapest check". That was false as landed.
+run_check "check:reachability"     scripts/check-commit-reachability.mjs
 run_check "check:main-ownership"   scripts/check-main-ownership.mjs
 run_check "check:agent-isolation" scripts/check-agent-isolation.mjs
 run_check "check:branch-freshness"  scripts/check-branch-freshness.mjs
