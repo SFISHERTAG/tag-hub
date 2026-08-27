@@ -96,6 +96,11 @@ Your plan must name, explicitly:
 
 ## §3. Spawn the assistant — the prompt is the deliverable
 
+**Name yourself `Maestro` before you do anything else, and name the session you
+spawn `Apprentice`.** Every other session in this repo is titled for the basename
+of its worktree directory — see `AGENT_COORDINATION.md` §4b, and the forty-two
+nearly-lost commits that produced it.
+
 Draft a prompt that spawns your pair and carries out the **first task in your
 plan**. Write it as carefully as you would write code, because it is the only
 thing that session will ever know about how to behave here.

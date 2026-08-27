@@ -64,6 +64,36 @@ git log --all -- "**/check-branch-freshness.mjs"   # returns nothing — never c
 Stylistic inference is not evidence. Ask, and say plainly that you are asking rather than
 concluding.
 
+## 4b. A session is named for where it sits
+
+**The title of a chat is the basename of its worktree directory.** Two exceptions, and
+only two: the lead is `Maestro`, and the session Maestro spawns is `Apprentice`.
+
+On 2026-08-27, forty-two commits of video-editing work under `tools/rough-cut` were
+nearly lost. The session doing it was titled for one thing, sat in a worktree named
+for a second, and committed to a branch named for a third. No individual name was
+wrong. Finding the work required already knowing all three, and the branch had never
+been pushed. Naming by location makes the common question — *who is in there and what
+are they touching* — answerable from `git worktree list` alone.
+
+- Use the directory name **verbatim, hash suffix included**:
+  `functions-typescript-build-8fa5d4`, not "Functions build". The suffix is what makes
+  it match `git worktree list`, and a tidied name defeats the whole point.
+- A session in the shared checkout at the repo root is `TAG`. There should rarely be
+  one; that checkout is usually parked.
+- **Rename at the start of a session, not at the end.** A title that becomes correct
+  after the work is over solves nothing.
+
+**The known hole, stated rather than hidden.** Worktrees outlive sessions and get
+reused — `functions-typescript-build-8fa5d4` has hosted at least five — so a location
+name is not unique over time. Address the live one by name; if two are live in the
+same directory, disambiguate with the session id, never with an invented nickname.
+Inventing one puts you straight back in the situation this rule exists to prevent.
+
+This is **not mechanised**, and cannot be: no git hook can read a chat title. It is
+therefore a check-in item. When two sessions first make contact, the first thing each
+confirms is that it is named for where it sits.
+
 ## 5. Another session's work is not yours to move
 
 This covers uncommitted files, untracked files, and commits.
