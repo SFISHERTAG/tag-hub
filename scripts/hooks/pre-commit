@@ -14,6 +14,9 @@
 set -e
 
 echo "pre-commit: story status, role parity, architecture constraints"
+# Runs first and is the cheapest check here: if this commit would land somewhere
+# nothing can reach it, the other checks are moot.
+node scripts/check-commit-reachability.mjs
 node scripts/check-story-status.mjs
 node scripts/check-role-parity.mjs
 

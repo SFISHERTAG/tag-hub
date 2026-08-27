@@ -96,8 +96,21 @@ things generalize; the rest is TAG's own content.
    working correctly in one place; the extracted helper should look like `actions.ts:19–24`.
 3. **Optimistic-toggle-with-rollback** — `checklist.tsx:24–47`, a clean reusable interaction.
 
+**Correction, 2026-08-26.** The line below originally read "GHL as the pipeline source of
+truth" as TAG-specific. That was wrong, and it was wrong because this section was written
+from a portability standpoint without asking who installs Hot Path. Both known consumers
+(TAG and CCE) run GHL, and GHL agencies are the stated ICP. GHL is therefore a **core
+product dependency of Hot Path**, not a TAG detail to leave behind. See
+`HOT_PATH_DEV_PROTOCOL_TODO.md` for the decision and its limits.
+
+**Generalizes (added 2026-08-26):**
+4. **GHL as the pipeline source of truth.** Hot Path is a GHL Marketplace app. The agency
+   install that mints short-lived location-scoped tokens on demand (`lib/ghl/oauth.ts`,
+   `lib/ghl/store.ts`) is the multi-tenant spine, not an integration detail.
+
 **Does not generalize (TAG-specific, leave behind):**
-- GHL as the pipeline source of truth; `PR1`–`AP5` stage names; the Fulfillment-opportunity model
+- `PR1`–`AP5` stage names and the Fulfillment-opportunity model. The *stage engine* generalizes;
+  this *stage vocabulary* does not, and in the product it is per-client configuration
 - Meta / Business Manager campaign launch entirely
 - `tag_exec` / `tag_csm` role names
 - The hardcoded MVP `STAGE_TASKS` map — `stage-tasks.ts:29–32` already flags per-client

@@ -28,6 +28,7 @@
  * unreliable. Read-only: this reports, it never moves a ref.
  */
 import { execSync } from "node:child_process";
+import fs from "node:fs";
 
 const STALE_DAYS = Number(process.env.TAG_LOOP_STALE_DAYS ?? 3);
 const BASE = process.env.TAG_BASE_REF ?? "origin/main";
@@ -56,6 +57,36 @@ const NS = REMOTE ? "refs/remotes/origin" : "refs/heads";
 // branch is FOR rather than only how old it is. `keep/` is the escape hatch:
 // it means "open on purpose, stop asking".
 const DECLARED = ["keep/", "hold/", "main"];
+
+/**
+ * The CI runner's own checkout is not an open loop.
+ *
+ * On a `pull_request` event the runner checks out `refs/pull/N/merge`, a commit
+ * that belongs to no branch. This script counted that as a detached worktree
+ * with no containing branch, which is the one condition `--strict` exits 1 on.
+ * So `npm run check:loops` failed on every run for a reason that had nothing to
+ * do with the repository, the CI step was given `continue-on-error: true` to
+ * keep the job green, and the loop-backlog gate has therefore never once fired.
+ *
+ * A runner has exactly one checkout and no session worktrees, so skipping the
+ * workspace loses no signal there. Guarded on GITHUB_ACTIONS so a local run is
+ * completely unaffected.
+ */
+const CI_WORKSPACE =
+  process.env.GITHUB_ACTIONS === "true" && process.env.GITHUB_WORKSPACE
+    ? realpath(process.env.GITHUB_WORKSPACE)
+    : null;
+
+// git prints resolved paths; GITHUB_WORKSPACE can carry a symlink (notably the
+// /private prefix on macOS runners). Comparing the raw strings would silently
+// fail to match and put the bug straight back.
+function realpath(p) {
+  try {
+    return fs.realpathSync(p);
+  } catch {
+    return p;
+  }
+}
 
 function git(args, cwd) {
   try {
@@ -111,6 +142,8 @@ function worktrees() {
     .map((block) => {
       const path = block.match(/^worktree (.+)$/m)?.[1];
       if (!path) return null;
+      // The runner's own checkout, not somebody's open loop. See CI_WORKSPACE.
+      if (CI_WORKSPACE && realpath(path) === CI_WORKSPACE) return null;
       // A worktree whose git dir has gone away (a scratch dir that was cleaned
       // up, a /tmp path the OS reaped) is a stale registration, not a loop.
       if (git("rev-parse --git-dir", path) === null) return { path, gone: true };
