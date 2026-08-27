@@ -32,17 +32,33 @@ const VISIBLE_UPCOMING = 5;
  * viewer's zone, which is the exact defect `DayViewWidget` guards against, and
  * this endpoint offers no server-side alternative to fall back on.
  *
- * So this shows no times. Day-level information is used freely, because every
- * field on `CalendarDay` — `date`, `dayOfMonth`, `isToday`, `isCurrentMonth` —
- * is computed **server-side** (`lib/dashboard/owner-calendar.ts` buckets with
- * `timeZone: DEFAULT_TIME_ZONE`) rather than from the instant in the browser.
+ * So this shows no times. The day-level fields on `CalendarDay` — `date`,
+ * `dayOfMonth`, `isToday`, `isCurrentMonth` — are rendered as the server
+ * computed them, and this component adds no date arithmetic of its own.
  *
- * "Server-side" is the claim, and **not** "in the tenant's zone": that constant
- * is `America/Chicago` for everyone, and `lib/time/zone.ts` records that no
- * per-tenant or per-location zone exists yet. Day bucketing against one zone is
- * right while every location is Central and wrong for a sublocation elsewhere,
- * where a late-evening appointment falls on the next calendar day. That is a
- * server-side correctness question, not one this component can see or fix.
+ * **Those fields carry a known server-side defect. Read this before trusting
+ * the grid.** In `lib/dashboard/owner-calendar.ts`, `DEFAULT_TIME_ZONE` is
+ * applied to exactly one field, `monthLabel` (`:75-79`). Every other date
+ * computation uses process-local `Date` methods with no zone: `toDateKey`
+ * (`:55-58`, `getFullYear`/`getMonth`/`getDate`), `endOfDay` (`:49-53`),
+ * `monthGridRange` (`:62-70`), and the grid loop's `dayOfMonth` / `isToday` /
+ * `isCurrentMonth` (`:127-129`).
+ *
+ * `lib/time/zone.ts:5-9` is the authority on what the process zone is: nothing
+ * sets `TZ` in Cloud Run, so Node defaults to **UTC**. So the buckets are UTC
+ * while the label is Central. A 7:00 PM Central appointment is 01:00 UTC the
+ * next day and lands on tomorrow's cell, and at a month boundary the label and
+ * the grid disagree outright.
+ *
+ * **This is wrong today, for Central, not merely wrong for a future
+ * sublocation** — which is the opposite of the situation for
+ * `startTimeFormatted` on the day-view endpoint, where a named zone is passed
+ * and is simply the wrong one for non-Central locations.
+ *
+ * Deliberately not worked around here. A component re-deriving these fields
+ * would need a zone it does not have, and would put a second date
+ * implementation next to the broken one. The fix is to give
+ * `owner-calendar.ts` the zone the rest of `lib/` already threads.
  *
  * The fix is on the server (add a formatted string the way `CallForDisplay`
  * has one), not here. Rendering a wrong time would be worse than rendering
