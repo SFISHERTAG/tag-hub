@@ -2,7 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/http/api.service';
 import type { ApiResult } from '../../../core/models/api-result.model';
-import type { DayViewResponse, LeadsFunnelResponse } from './ghl-widgets.model';
+import type {
+  DayViewResponse,
+  LeadsFunnelResponse,
+  OwnerCalendarResponse,
+  PipelineBoardResponse,
+} from './ghl-widgets.model';
 
 const WIDGETS_URL = '/api/dashboard/widgets';
 
@@ -58,5 +63,22 @@ export class GhlWidgetsService {
    */
   getDayView(): Promise<ApiResult<DayViewResponse>> {
     return firstValueFrom(this.api.get<DayViewResponse>(`${WIDGETS_URL}/day-view`));
+  }
+
+  /**
+   * Stage rollup of the first open pipeline, or top deals when no location is
+   * configured. The two arms carry different information; see
+   * `PipelineBoardResponse`.
+   */
+  getPipelineBoard(): Promise<ApiResult<PipelineBoardResponse>> {
+    return firstValueFrom(this.api.get<PipelineBoardResponse>(`${WIDGETS_URL}/pipeline-board`));
+  }
+
+  /**
+   * The owner's month, or the whole location's when the tenant has no
+   * `ownerGhlUserId`. That distinction arrives as `calendar.scoped`.
+   */
+  getOwnerCalendar(): Promise<ApiResult<OwnerCalendarResponse>> {
+    return firstValueFrom(this.api.get<OwnerCalendarResponse>(`${WIDGETS_URL}/owner-calendar`));
   }
 }

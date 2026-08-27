@@ -142,7 +142,12 @@ describe('LeadsFunnelWidget', () => {
       warnings: [{ code: 'no_location', message: 'No GHL location is configured.' }],
     });
 
-    expect(host.querySelector('app-sample-data-notice')).not.toBeNull();
+    // `.sample-notice` and not the host element: the host is always rendered and
+    // the notice self-hides inside it, so querying the host would pass even with
+    // no disclosure and prove nothing.
+    expect(host.querySelector('.sample-notice')?.textContent).toContain(
+      'Sample data. These are placeholders.',
+    );
     expect(stageCounts(host)).toEqual(['157', '53', '41', '9']);
   });
 

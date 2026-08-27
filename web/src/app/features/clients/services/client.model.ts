@@ -17,6 +17,10 @@
 
 import type { SampleDataDisclosure } from '../../../shared/ui';
 
+// Re-exported. Declared once in
+// shared/ui/sample-data-notice/sample-data-notice.model.ts. Cite that file, not
+// this one: a re-export declares nothing, and a doc that names the alias sends
+// the next reader grepping for a definition that is not there.
 export type { SampleDataDisclosure };
 
 export type ClientStatus = 'excellent' | 'healthy' | 'at-risk' | 'critical' | 'alert';

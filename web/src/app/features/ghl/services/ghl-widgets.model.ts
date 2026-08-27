@@ -18,6 +18,10 @@
 
 import type { SampleDataDisclosure } from '../../../shared/ui';
 
+// Re-exported. Declared once in
+// shared/ui/sample-data-notice/sample-data-notice.model.ts. Cite that file, not
+// this one: a re-export declares nothing, and a doc that names the alias sends
+// the next reader grepping for a definition that is not there.
 export type { SampleDataDisclosure };
 
 /**
@@ -129,5 +133,109 @@ export type DayViewResult =
 /** Mirrors `DayViewResponse` in `app/api/dashboard/widgets/day-view/route.ts`. */
 export interface DayViewResponse {
   readonly dayView: DayViewResult;
+  readonly warnings: readonly WidgetWarning[];
+}
+
+/** Mirrors `PipelineStageRollup` in `lib/dashboard/pipeline-board.ts`. */
+export interface PipelineStageRollup {
+  readonly id: string;
+  readonly name: string;
+  readonly count: number;
+  readonly value: number;
+}
+
+/** Mirrors `TopDeal` in `app/api/dashboard/widgets/pipeline-board/route.ts`. */
+export interface TopDeal {
+  readonly name: string;
+  readonly value: number;
+  readonly stage: string;
+}
+
+/** Mirrors `PipelineBoardResult` in `lib/dashboard/pipeline-board.ts`. */
+export type PipelineBoardResult =
+  | {
+      readonly ok: true;
+      readonly pipelineName: string;
+      readonly stages: readonly PipelineStageRollup[];
+    }
+  | { readonly ok: false; readonly message: string };
+
+/**
+ * Mirrors `PipelineBoardResponse` in the route.
+ *
+ * **The two arms are not the same information.** `live` carries a stage rollup
+ * (count and value per stage of the first open pipeline); `sample` carries a
+ * list of top deals. This is not a placeholder standing in for the live shape,
+ * it is a different view, inherited from the reference implementation where the
+ * fallback was a separate widget body. So the tile genuinely shows something
+ * else when no location is configured, and the component renders two layouts
+ * rather than one layout over two data sources.
+ */
+export type PipelineBoardResponse =
+  | {
+      readonly source: 'live';
+      readonly pipeline: PipelineBoardResult;
+      readonly warnings: readonly WidgetWarning[];
+    }
+  | {
+      readonly source: 'sample';
+      readonly topDeals: readonly TopDeal[];
+      readonly sampleData: SampleDataDisclosure;
+      readonly warnings: readonly WidgetWarning[];
+    };
+
+/**
+ * Mirrors `OwnerAppointment` in `lib/dashboard/owner-calendar.ts`.
+ *
+ * **Note what is missing: there is no `startTimeFormatted`.** Unlike
+ * `CallForDisplay`, this type carries only the raw ISO instant, and the payload
+ * does not carry the tenant's timezone either, so a clock time cannot be
+ * rendered correctly from it on the client. `DayViewWidget`'s constraint
+ * applies here with no server-side escape hatch, which is why
+ * `OwnerCalendarWidget` shows no times. The day-level fields on `CalendarDay`
+ * are server-computed and are safe.
+ */
+export interface OwnerAppointment {
+  readonly id: string;
+  readonly title: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly status: 'new' | 'confirmed' | 'showed' | 'noshow' | 'cancelled' | 'invalid';
+  readonly isPastOrToday: boolean;
+}
+
+/** Mirrors `CalendarDay`. Every field here is computed in the tenant's zone. */
+export interface CalendarDay {
+  /** ISO date, e.g. "2026-08-18". */
+  readonly date: string;
+  readonly dayOfMonth: number;
+  readonly isToday: boolean;
+  readonly isCurrentMonth: boolean;
+  readonly appointments: readonly OwnerAppointment[];
+}
+
+/**
+ * Mirrors `OwnerCalendarResult`.
+ *
+ * `scoped: false` means the tenant has no `ownerGhlUserId`, so the result is
+ * the **whole location's** calendar rather than one person's. The widget is
+ * titled "My Calendar". The route's own comment says to surface it because it
+ * changes what the view means, and an unsurfaced `scoped: false` is a tile that
+ * lies in its title.
+ */
+export type OwnerCalendarResult =
+  | {
+      readonly ok: true;
+      readonly locationId: string;
+      readonly scoped: boolean;
+      readonly monthLabel: string;
+      readonly days: readonly CalendarDay[];
+      readonly upcoming: readonly OwnerAppointment[];
+    }
+  | { readonly ok: false; readonly message: string };
+
+/** Mirrors `OwnerCalendarResponse` in the route. */
+export interface OwnerCalendarResponse {
+  readonly calendar: OwnerCalendarResult;
   readonly warnings: readonly WidgetWarning[];
 }

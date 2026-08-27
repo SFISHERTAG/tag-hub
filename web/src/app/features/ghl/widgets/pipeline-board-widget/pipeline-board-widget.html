@@ -1,0 +1,47 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="4" label="Loading the pipeline" />
+} @else {
+  <app-sample-data-notice [disclosure]="sampleData()" [compact]="true" />
+
+  @for (warning of warnings(); track warning.code) {
+    <p class="pipeline__warning" role="note">{{ warning.message }}</p>
+  }
+
+  @if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else if (stages()) {
+    @if (pipelineName(); as name) {
+      <p class="pipeline__name">{{ name }}</p>
+    }
+
+    @if (stageRows().length === 0) {
+      <app-empty-state icon="view_column" message="This pipeline has no stages" />
+    } @else {
+      <ul class="pipeline__stages">
+        @for (stage of stageRows(); track stage.id) {
+          <li class="pipeline__stage">
+            <span class="pipeline__stage-name">{{ stage.name }}</span>
+            <span class="pipeline__stage-count">{{ stage.count }}</span>
+            <span class="pipeline__stage-value">{{ stage.value }}</span>
+          </li>
+        }
+      </ul>
+    }
+  } @else if (topDeals()) {
+    <p class="pipeline__name">Top deals</p>
+
+    @if (dealRows().length === 0) {
+      <app-empty-state icon="sell" message="No deals to show" />
+    } @else {
+      <ul class="pipeline__stages">
+        @for (deal of dealRows(); track deal.name) {
+          <li class="pipeline__stage">
+            <span class="pipeline__stage-name">{{ deal.name }}</span>
+            <span class="pipeline__stage-count">{{ deal.stage }}</span>
+            <span class="pipeline__stage-value">{{ deal.value }}</span>
+          </li>
+        }
+      </ul>
+    }
+  }
+}
