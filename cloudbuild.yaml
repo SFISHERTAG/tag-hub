@@ -49,6 +49,12 @@ substitutions:
   # against. Not a stand-in for per-client multi-tenant routing; that is
   # Story 1.2/1.6, still blocked on GHL account consolidation.
   _GHL_LOCATION_ID: rb6hPt8Ue77L4abghRMc
+  # Internal ops escalation channel, for story 8.7's config-fault alert and
+  # story 6.5's retry-exhausted alert. Same reasoning as the group above: a
+  # channel id is not a secret. It names a channel, and posting to it still
+  # requires SLACK_BOT_TOKEN, which is in Secret Manager. Deliberately separate
+  # from the per-client channels, which a client_owner guest can see.
+  _SLACK_OPS_CHANNEL_ID: C0BSP231686
   # The origin this deployment is served from. Pins the CSRF Origin check on
   # every session-minting route to one exact value instead of falling back to
   # comparing Origin against Host. Must be scheme + host, no trailing slash.
@@ -233,7 +239,7 @@ steps:
       # Introduced in code without being added here — every tag_exec/tag_csm/
       # tag_sales/tag_sales_manager hit on /closer/flow 500'd until this line
       # existed.
-      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,APP_ORIGIN=${_APP_ORIGIN},FIREBASE_API_KEY=${_FIREBASE_API_KEY},GOOGLE_SIGNIN_CLIENT_ID=${_GOOGLE_SIGNIN_CLIENT_ID},GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},PUBLIC_BASE_URL=${_PUBLIC_BASE_URL},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER}
+      - --set-env-vars=NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MAIL_PROVIDER=gmail,APP_ORIGIN=${_APP_ORIGIN},FIREBASE_API_KEY=${_FIREBASE_API_KEY},GOOGLE_SIGNIN_CLIENT_ID=${_GOOGLE_SIGNIN_CLIENT_ID},GHL_CLIENT_ID=${_GHL_CLIENT_ID},GHL_LOCATION_ID=${_GHL_LOCATION_ID},GHL_LOCATION_ID_TAG_GROWTH=${_GHL_LOCATION_ID},GHL_REDIRECT_URI=${_GHL_REDIRECT_URI},GMAIL_SENDER=${_GMAIL_SENDER},PUBLIC_BASE_URL=${_PUBLIC_BASE_URL},DB_HOST=/cloudsql/${_CLOUDSQL_CONNECTION_NAME},DB_NAME=${_DB_NAME},DB_USER=${_DB_USER},SLACK_OPS_CHANNEL_ID=${_SLACK_OPS_CHANNEL_ID}
       # GHL_PIT is deliberately absent. It is a single-location development
       # fallback, and leaving it set in production would let a token-resolution
       # bug silently serve one tenant's credential for every other tenant.

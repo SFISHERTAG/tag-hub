@@ -2,7 +2,11 @@ import "server-only";
 import type { Session } from "@/lib/auth/session";
 import { hasAnyRole, ROLES, type Role } from "@/lib/auth/roles";
 import { WIDGET_REGISTRY, type WidgetDefinition } from "@/lib/dashboard/widget-definitions";
-import { getLocationForDashboard } from "@/lib/dashboard/location-selection";
+import {
+  DashboardLocationError,
+  getLocationForDashboard,
+} from "@/lib/dashboard/location-selection";
+import { postAlert, slackConfigured } from "@/lib/slack";
 import { forbidden, notFound } from "./http";
 
 /**
@@ -70,10 +74,60 @@ export function canUseWidget(session: Session, widgetId: string): boolean {
  * location); that degrades to "no location" exactly as
  * legacy/dashboard/page.tsx did, rather than failing the request.
  */
+/**
+ * Alert throttle.
+ *
+ * A config fault fires on every dashboard request from every internal user
+ * across four widget routes, so alerting per occurrence would post hundreds of
+ * identical messages and train everyone to mute the channel. One per fault kind
+ * per window is enough: the condition is a missing environment variable, so it
+ * is either true or false, and repeating it adds nothing.
+ *
+ * Deliberately in-process and not persisted. A restart re-alerting once is the
+ * correct behaviour, since a restart is exactly when a config fault would have
+ * been introduced or fixed.
+ */
+const ALERT_WINDOW_MS = 15 * 60 * 1000;
+const lastAlertedAt = new Map<string, number>();
+
+function shouldAlert(key: string, now: number): boolean {
+  const previous = lastAlertedAt.get(key);
+  if (previous !== undefined && now - previous < ALERT_WINDOW_MS) return false;
+  lastAlertedAt.set(key, now);
+  return true;
+}
+
 export function resolveDashboardLocation(session: Session): string | null {
   try {
     return getLocationForDashboard(session) || null;
-  } catch {
+  } catch (error) {
+    // "unassigned" is a data state a client role can legitimately be in, and
+    // sample data answers it. Anything else means this deployment cannot read
+    // its own configuration, which is not the user's problem and not something
+    // they can see: the response still renders, just with fabricated numbers.
+    // That silence is the harm, and it is why this escalates before returning.
+    const kind = error instanceof DashboardLocationError ? error.kind : "unknown";
+
+    if (kind !== "unassigned") {
+      const detail =
+        kind === "config"
+          ? "GHL_LOCATION_ID_TAG_GROWTH is not set"
+          : `unexpected: ${error instanceof Error ? error.message : String(error)}`;
+
+      console.error("[dashboard] location resolution failed:", detail);
+
+      if (slackConfigured() && shouldAlert(kind, Date.now())) {
+        void postAlert(
+          `Dashboard location resolution is failing (${detail}). Every internal ` +
+            `user's leads-funnel, spend-roas, pipeline-board and kpi-summary tiles ` +
+            `are serving sample data instead of live figures. The tiles disclose ` +
+            `this to the viewer; nothing was alerting TAG until now.`,
+        ).catch(() => {
+          // Alerting must never be the reason a dashboard request fails.
+        });
+      }
+    }
+
     return null;
   }
 }
