@@ -147,60 +147,110 @@ Your plan must name, explicitly:
 
 ---
 
-## §3. Spawn the assistant — the prompt is the deliverable
+## §3. Spawn the assistant — one line, then a message
 
-**Read this paragraph before the list. It is the part that has already been got
-wrong.** "Draft a prompt" means exactly that: you write a document, you hand it
-to Sam, and *he* pastes it into a fresh session. You do not spawn the pair
-yourself. A subagent is not a pair: it cannot commit, it holds no authorization
-of its own, it dies when your turn ends, and it can only report back to you
-rather than argue with you as an equal party in front of Sam. On 2026-08-26 a
-lead session read this section, understood it correctly, and spawned two
-subagents anyway. Sam had to correct it. The work was not wasted, but it was not
-a pair either.
+**Read this paragraph first. It is the part that has already been got wrong,
+twice, in different ways.**
+
+**You do not spawn the pair yourself.** Sam pastes one line into a fresh session
+and that session reports in to you. A subagent is not a pair: it cannot commit,
+it holds no authorization of its own, it dies when your turn ends, and it can
+only report back to you rather than argue with you as an equal party in front of
+Sam. On 2026-08-26 a lead session read this section, understood it correctly, and
+spawned two subagents anyway. Sam had to correct it. The work was not wasted, but
+it was not a pair either.
+
+The paragraph above used to define "draft a prompt" as writing a document. That
+sentence is removed, not lost.
 
 Subagents are still useful, as **Specialists**: bounded, disposable
 investigators you send at one question and dissolve. Use them freely. Just do
 not mistake one for the session that is going to tell you that you are wrong.
 
-Draft a prompt that carries out the **first task in your plan**. Write it as
-carefully as you would write code, because it is the only thing that session
-will ever know about how to behave here.
+**The spawn prompt is one line, and it is the same line for every session.**
+`docs/PEER_SESSION_PROMPT.md` on `main` is the brief, entire: the protocols, the
+values, the permission boundary, the report-in step, and what the Reviewer must
+not touch. Hand Sam this and nothing else:
 
-**Start from `docs/PEER_SESSION_PROMPT.md`**, which is the brief with its durable
-half already written: the protocols, the values, the permission boundary, and
-what the Reviewer must not touch. Rewrite its Step 2 for your task, derive that
-step's facts with §1's commands, and hand Sam the path.
+```
+Read docs/PEER_SESSION_PROMPT.md on main and follow it.
+```
 
-Do not leave the brief in a scratchpad. A scratchpad path works for pasting but
-is invisible to the session receiving it: on 2026-08-26 a spawned session went
-looking for its own brief by filename, found nothing on any ref, and stalled.
-And never write a session address into it. The same brief carried a hardcoded
-`SendMessage` target that was dead before it was read, because the Lead had been
-renamed mid-flight; the Reviewer would have messaged nobody and waited.
+**That path is on `main`, and that is the whole reason it works.** On 2026-08-26
+a Lead left a spawned session's brief in a scratchpad. The path pasted fine and
+was invisible to the session receiving it: it went looking for its own brief by
+filename, found nothing on any ref, and stalled. Anything you hand Sam to paste
+must name a file a fresh session can actually reach.
 
-It must contain, at minimum:
+**Do not write a bespoke brief, and do not rewrite that document's Step 2.** This
+section used to instruct exactly that, and it was wrong in the way that costs
+most: a document cannot know who is working. On 2026-08-27 a brief naming a
+specific PR as "first" spawned three sessions inside ten minutes; all three
+started on the same pull request, while the session already an hour into it went
+unmentioned. Two of the three caught it from `gh pr list` and asked before
+spending anything, which is the behaviour to copy. The collision belonged to the
+document. Step 2 and Step 7 of that brief now forbid carrying a task, a PR
+number, a branch, a SHA or a line number, and this section is being corrected to
+stop contradicting them. **A brief you write tonight assigns tonight's work to
+every session that ever reads it, including the ones nobody has thought of yet.**
 
-1. **The task, and the definition of done for it** — including which gate must be
+**The task goes by message, at Step 0, from you.** A spawned session's first act
+is to run `ListAgents`, message the Lead, and wait. Your reply is the only place
+its task exists, and that is the right place: you can see who is already inside
+what, and a document cannot. Send it, at minimum:
+
+1. **Your own address, verbatim from `ListAgents` line 1.** First, before the task.
+2. **The task, and the definition of done for it** — including which gate must be
    green and what "green" means for that gate specifically.
-2. **The orientation commands from §1**, so it derives state rather than
-   inheriting your summary of it.
-3. **The permission boundary in §5, verbatim.** Not paraphrased.
-4. **The pair protocol in §4**, and an explicit instruction to attack your work.
-5. **What it must NOT touch**: branches it did not open, worktrees it does not
-   own, `main`, and anything Sam has reserved.
-6. **A named first check-in point** — a specific artefact or moment, not "when
+3. **A named first check-in point** — a specific artefact or moment, not "when
    you're done".
-7. **The protocols in §4b**, which is where the behaviour you actually want is
-   written down as triggers rather than as virtues.
+4. **What it must not touch beyond the standing list in the brief** — whatever is
+   live at this moment, which only you know.
 
-Do not put facts in it that §1's commands would produce. You will get them
-wrong, and it will believe you.
+Everything else the old list demanded is already in the brief on `main` and stays
+there: the orientation commands, the permission boundary verbatim, the pair
+protocol, the §4b protocols, **and the instruction to attack the Lead, which is an
+entire titled step of that document and says it harder than a message line will.**
+Copying any of it into a message is how one rule comes to exist in two places and
+goes stale in one of them.
 
-**If your findings are going into that prompt, say who produced them.** Standing
-order 9 says whoever produced a finding does not verify it. A brief that hands
-over conclusions without flagging that the sender both found and confirmed them
-invites agreement instead of a check. Name the load-bearing claims, and tell the
+**Why your address comes first, and why it is not optional.** Step 0 tells the
+Reviewer to read the Lead's row. `AGENT_COORDINATION.md` §4b is the authority on
+what that row can be, and it closes both directions: `ListAgents` has no role
+column, a row's name is an address and nothing more, and one address has been
+the literal word `LEAD` (§4b:83, :98), which made the seat **harder** to
+identify rather than easier (§4b:127-128). §4b's callsign rule 5 (§4b:164) now
+bans role-shaped callsigns, so neither the absence nor the presence of a
+role-looking row tells a Reviewer who you are. **Every Reviewer spawned on
+2026-08-27 had to infer the Lead from session age and branch ownership, and each
+said plainly that it was inference.** Under the model in this section the task
+exists in exactly one place, your reply, so a Reviewer who infers wrong has no
+task, no fallback and no way to know. And §4b records an address changing
+mid-session with no action by that session, so a stated address can go stale
+inside one conversation.
+
+**The old list had seven items and this one has four, which does not subtract.**
+One old item carried a durable half and a per-task half and was split, so the
+arithmetic only closes if you count that item twice. Said here because a reader
+who checks it and finds it wrong stops trusting the paragraph.
+
+**Never write a session address into anything durable, and never into a brief.**
+One carried a hardcoded `SendMessage` target that was dead before it was read,
+because the Lead had been renamed mid-flight; the Reviewer would have messaged
+nobody and then waited. Addresses are derived from `ListAgents` at the moment of
+sending, every time.
+
+**Whatever you put in that message, it will be believed.** The old §3 said "do
+not put facts in it that §1's commands would produce, you will get them wrong and
+it will believe you." The first half died with the durable brief, because a live
+message is exactly where perishable facts belong now. The second half did not:
+being believed is a property of the receiver, not of the medium. Derive anything
+you state, and mark anything you did not.
+
+**If your findings are going into that message, say who produced them.** Standing
+order 9 says whoever produced a finding does not verify it. Handing over
+conclusions without flagging that you both found and confirmed them invites
+agreement instead of a check. Name the load-bearing claims, and tell the
 receiving session to re-derive them from source *before* reading your reasoning.
 
 ---
