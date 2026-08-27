@@ -83,11 +83,19 @@ try {
 console.log(`  uid: ${user.uid}`);
 
 if (role) {
-  await auth.setCustomUserClaims(user.uid, { ...(user.customClaims ?? {}), role });
+  // The roles-array shape setUserClaims writes, not the legacy single `role`
+  // key. The legacy key kept working at sign-in (parseRoleGrants migrates it)
+  // but was invisible to the admin directory, and the next admin edit wiped
+  // it anyway — setUserClaims owns the whole claims object. Empty locations
+  // is the all-tenancies wildcard, matching what this script always meant.
+  const rest = { ...(user.customClaims ?? {}) };
+  delete rest.role;
+  delete rest.locations;
+  await auth.setCustomUserClaims(user.uid, { ...rest, roles: [{ role, locations: [] }] });
   console.log(`  role: ${role}`);
   console.log("\nClaims refresh on next sign-in. Sign out and back in if already signed in.");
-} else if (user.customClaims?.role) {
-  console.log(`  role: ${user.customClaims.role} (unchanged)`);
+} else if (user.customClaims?.roles?.[0]?.role || user.customClaims?.role) {
+  console.log(`  role: ${user.customClaims?.roles?.[0]?.role ?? user.customClaims.role} (unchanged)`);
 } else {
   console.log("  role: none — pass --role to set one");
 }

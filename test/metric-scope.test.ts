@@ -6,12 +6,14 @@ import {
   visualsFor,
   isValidInstance,
   scopedQuery,
+  unsafeQueryForTests,
   type Metric,
   type MetricSource,
   type SourceQuery,
   type SourceRow,
 } from "@/lib/dashboard/metrics";
-import { unsafeScopeForTests } from "@/lib/dashboard/scope";
+import { resolveScope, unsafeScopeForTests } from "@/lib/dashboard/scope";
+import type { Session } from "@/lib/auth/session";
 import { ROLES } from "@/lib/auth/roles";
 
 /**
@@ -139,12 +141,18 @@ describe("the guard catches a metric that ignores its filter", () => {
     fetch: async (scope, period, source) => {
       // The bug this file exists to catch: reads everything, then filters in
       // memory. Returns the right number and leaked every other row to get it.
-      const rows = await source.read({
-        dataset: "opportunities",
-        locations: scope.locations,
-        uids: "all",
-        period,
-      });
+      // unsafeQueryForTests, because the brand now stops the literal this
+      // canary used to write — which is itself the fix working.
+      const rows = await source.read(
+        unsafeQueryForTests({
+          dataset: "opportunities",
+          locations: scope.locations,
+          uids: "all",
+          period,
+          statuses: "any",
+          timeframe: "in-period",
+        }),
+      );
       const mine = scope.uids === "all" ? rows : rows.filter((r) => scope.uids.includes(r.ownerUid ?? ""));
       return { shape: "scalar", value: mine.reduce((t, r) => t + r.value, 0) };
     },
@@ -166,17 +174,23 @@ describe("the guard catches a metric that ignores its filter", () => {
 describe("scopedQuery", () => {
   it("copies the scope's constraints verbatim", () => {
     const scope = unsafeScopeForTests("team", LOCATIONS, ["user-a", "user-b"]);
-    expect(scopedQuery("opportunities", scope, PERIOD)).toEqual({
+    expect(
+      scopedQuery("opportunities", scope, PERIOD, { statuses: ["open"], timeframe: "current" }),
+    ).toEqual({
       dataset: "opportunities",
       locations: LOCATIONS,
       uids: ["user-a", "user-b"],
       period: PERIOD,
+      statuses: ["open"],
+      timeframe: "current",
     });
   });
 
   it("keeps a tenancy scope's 'all' rather than expanding it to a uid list", () => {
     const scope = unsafeScopeForTests("tenancy", LOCATIONS, "all");
-    expect(scopedQuery("appointments", scope, PERIOD).uids).toBe("all");
+    expect(
+      scopedQuery("appointments", scope, PERIOD, { statuses: "any", timeframe: "in-period" }).uids,
+    ).toBe("all");
   });
 });
 
@@ -204,4 +218,111 @@ describe("bundled widget compatibility map", () => {
       expect(isValidInstance(instance), `${widgetId} maps to an invalid pairing`).toBe(true);
     }
   });
+});
+
+/**
+ * Stream-1 pins: the semantic constraints each metric must push down. These
+ * are registry-driven like the scope assertions above, but the expectations
+ * are per-metric because the right statuses are part of what the metric MEANS.
+ */
+describe("metrics constrain status and timeframe to match their names", () => {
+  it("pipeline metrics ask for open deals only, as current state", async () => {
+    for (const id of ["pipeline_open_value", "pipeline_by_stage"] as const) {
+      const { source, queries } = recordingSource([row()]);
+      await METRIC_REGISTRY[id].fetch(unsafeScopeForTests("tenancy", LOCATIONS, "all"), PERIOD, source);
+      for (const query of queries) {
+        expect(query.statuses, `${id} must not fetch closed deals`).toEqual(["open"]);
+        expect(query.timeframe, `${id} is a stock, not a flow`).toBe("current");
+      }
+    }
+  });
+
+  it("appointments_booked excludes cancelled and invalid events", async () => {
+    const { source, queries } = recordingSource([row()]);
+    await METRIC_REGISTRY.appointments_booked.fetch(
+      unsafeScopeForTests("tenancy", LOCATIONS, "all"),
+      PERIOD,
+      source,
+    );
+    for (const query of queries) {
+      expect(query.statuses).not.toBe("any");
+      expect(query.statuses).not.toContain("cancelled");
+      expect(query.statuses).not.toContain("invalid");
+      expect(query.statuses, "a no-show was still a booked appointment").toContain("noshow");
+      expect(query.timeframe).toBe("in-period");
+    }
+  });
+});
+
+/**
+ * The brand, and who may mint a query.
+ *
+ * ScopeFilter's unique-symbol brand made "forgot to filter" a type error, but
+ * SourceQuery — the thing the adapter actually trusts — was a plain exported
+ * type. Any server file could hand-write one with uids "all" and read through
+ * createMetricSource without ever holding a ScopeFilter, which is the 7.6
+ * guarantee stopping one layer above the data boundary.
+ */
+describe("SourceQuery is unforgeable", () => {
+  it("a hand-written literal does not typecheck", () => {
+    // @ts-expect-error — only scopedQuery (or the test constructor) may mint a SourceQuery
+    const forged: SourceQuery = {
+      dataset: "opportunities",
+      locations: ["loc-a"],
+      uids: "all",
+      period: PERIOD,
+      statuses: "any",
+      timeframe: "in-period",
+    };
+    expect(forged.dataset).toBe("opportunities");
+  });
+
+  it("scopedQuery mints one that downstream accepts", () => {
+    const scope = unsafeScopeForTests("tenancy", LOCATIONS, "all");
+    const query = scopedQuery("opportunities", scope, PERIOD, {
+      statuses: ["open"],
+      timeframe: "current",
+    });
+    expect(query.locations).toEqual(LOCATIONS);
+  });
+});
+
+/**
+ * availableFor must only offer a metric to roles whose resolved scope the
+ * adapter can serve. The review found all three metrics advertised to
+ * client_closer (default scope "self") and client_manager ("team") while the
+ * only real adapter throws UnsupportedScopeError for any uids !== "all" — a
+ * closer placing "Open pipeline value" got a permanent error widget. Until
+ * Story 7.8 lands the uid mapping, that means tenancy-resolving roles only,
+ * and this test is what keeps the mismatch from recurring when roles or
+ * datasets change.
+ */
+describe("availableFor offers metrics only to roles the adapter can serve", () => {
+  function sessionFor(role: Session["currentRole"]): Session {
+    return {
+      uid: "user-x",
+      email: "x@test",
+      currentRole: role,
+      availableRoles: [role],
+      locations: [...LOCATIONS],
+      // `grants` arrived on Session with story 15.A, after these review-stream
+      // commits were written. Mirrors the fixture in test/scope-resolver.test.ts:
+      // one grant for the role under test, scoped to the same locations the
+      // session carries, so the adapter sees a consistent session rather than
+      // one whose claim and resolved locations disagree.
+      grants: [{ role, locations: [...LOCATIONS] }],
+    };
+  }
+
+  for (const metric of Object.values(METRIC_REGISTRY)) {
+    it(`${metric.id} is only offered where its fetch can succeed`, () => {
+      for (const role of metric.availableFor) {
+        const resolved = resolveScope(sessionFor(role));
+        expect(
+          resolved.uids,
+          `${metric.id} is offered to ${role}, whose default scope the adapter refuses`,
+        ).toBe("all");
+      }
+    });
+  }
 });

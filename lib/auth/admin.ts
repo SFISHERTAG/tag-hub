@@ -154,13 +154,15 @@ export async function setUserClaims(
   const grants = normaliseGrants(uid, roleGrants);
   const claims = { roles: grants };
   assertWithinClaimLimit(claims);
-  await assertTeamUidsExist(grants, async (memberUid) => {
-    try {
-      await getAdminAuth().getUser(memberUid);
-      return true;
-    } catch {
-      return false;
-    }
+  await assertTeamUidsExist(grants, async (memberUids) => {
+    // One batch lookup; getUsers reports not-found identifiers in the result
+    // rather than throwing, so a transient Admin SDK failure propagates as
+    // itself instead of masquerading as "user does not exist". The 100-id
+    // batch cap is unreachable: the claim byte limit caps a team far below it.
+    const result = await getAdminAuth().getUsers(memberUids.map((uid) => ({ uid })));
+    return result.notFound.map((identifier) =>
+      "uid" in identifier ? identifier.uid : JSON.stringify(identifier),
+    );
   });
 
   await getAdminAuth().setCustomUserClaims(uid, claims);

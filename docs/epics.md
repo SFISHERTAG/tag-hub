@@ -89,6 +89,7 @@ GoHighLevel.
 | 4.5 | "As of" freshness indicator | Done |
 | 4.6 | Owner's own calendar view | Done |
 | 4.7 | Creatives to campaigns linking | **Backlog — shipped without a story** |
+| 4.8 | The client owner dashboard renders nothing it promises | Draft — not started 2026-08-26 |
 
 **Blocker moved.** 4.1 is no longer the gate: the System User and token are live
 and client ad accounts are assigned. What remains is that this environment has no
@@ -221,14 +222,15 @@ remembered, next to the GHL side reps already work from every day.
 **Goal:** when something breaks between GHL, Meta, Google and Slack, TAG sees it
 here before the client does.
 
-| ID | Story | Status |
-| --- | --- | --- |
-| 8.1 | Error log — searchable, filterable | Draft |
-| 8.2 | Per-client integration health | Partly rendered in 7.1 |
-| 8.3 | Attribution drift monitor | Draft |
-| 8.4 | In-app bug reporting | Draft |
-| 8.5 | The rules engine behind health and escalation | **Backlog — shipped without a story** |
+| ID | Story | Status | Doc |
+| --- | --- | --- | --- |
+| 8.1 | Error log — searchable, filterable | Draft | |
+| 8.2 | Per-client integration health | Partly rendered in 7.1 | |
+| 8.3 | Attribution drift monitor | Draft | |
+| 8.4 | In-app bug reporting | Draft | |
+| 8.5 | The rules engine behind health and escalation | **Backlog — shipped without a story** | `8.5-the-rules-engine.md` |
 | 8.6 | A subtle bug affordance, always reachable | Draft — parked 2026-08-25 | `8.6-subtle-bug-affordance.md` |
+| 8.7 | Escalate a config fault instead of silently serving fixtures | Done — 2026-08-25 | `8.7-escalate-the-config-fault.md` |
 
 8.2 is per client, not global, and that distinction is the whole point. One
 client's pixel stops firing and *that* dashboard reports zero conversions while
@@ -418,7 +420,7 @@ is measurable or guesswork.
 | 11.1 | Runnable Angular gate — Node floor pinned and enforced | Done | `11.1-runnable-angular-gate.md` |
 | 11.2 | Story isolation and merge discipline | Draft | `11.2-story-isolation-and-merge-discipline.md` |
 | 11.3 | Verified doc claims — checks over prose | In Progress | `11.3-verified-doc-claims.md` |
-| 11.4 | Calibration instrumentation on 10.4 | Draft | `11.4-calibration-instrumentation-on-10.4.md` |
+| 11.4 | Calibration instrumentation on 10.4 | **Retired 2026-08-26 — no timeline to defend** | `11.4-calibration-instrumentation-on-10.4.md` |
 | 11.5 | Endpoint inventory ahead of each feature story | Review — re-run 2026-08-23, metric reached zero |
 | 11.6 | Resolve the courses store split | Ready — Option A decided 2026-08-22 | `11.6-resolve-the-courses-store-split.md` |
 | 11.7 | The root build script masks a failure | Draft | `11.7-the-root-build-script-masks-a-failure.md` |
@@ -452,12 +454,36 @@ a live vulnerability, and no test would have caught it because nothing tested it
 the assertion goes in a spec. Where it asserts current behaviour and cannot be
 tested, it is dated. `app.config.spec.ts` is the first of these.
 
-**11.4 is what makes a date possible.** No feature has gone end to end, so there
-is no per-feature cost, so any estimate is arithmetic on a guess — including a
-confident-sounding one. 10.4 is the calibration story: it records endpoint hours,
-screen hours, one-time primitive cost, and post-gate defects. Subtract the
-one-time cost and the remainder multiplies across 10.5–10.7. **No completion date
-is committed before those four numbers exist.**
+**11.4 is retired, 2026-08-26, and the rule it protected is withdrawn with it.**
+
+*A note on the two dates in this section and the ones above.* Sam's decisions
+were taken on the evening of 2026-08-25; the corrections and verifications
+recording them were performed after midnight, on 2026-08-26. Both dates are
+correct and the session simply spanned midnight, so a future reader should not
+read the pair as a typo.
+
+It existed to make a date defensible. No feature had gone end to end, so there
+was no per-feature cost, so any estimate was arithmetic on a guess. 10.4 was to
+be the calibration story, recording endpoint hours, screen hours, one-time
+primitive cost and post-gate defects; subtract the one-time cost and the
+remainder multiplies across 10.5-10.7. The rule was: **no completion date is
+committed before those four numbers exist.**
+
+Two things killed it. 10.4 shipped un-instrumented, so the story could not run as
+written. And when that was put to Sam, his answer was the more fundamental one:
+*there is no timeline*. Nobody is owed a date for this project.
+
+**So the rule was guarding a promise nobody makes.** That is a subtler version of
+the same failure as Epic 15's "live bug" and story 5.11's "months in production":
+a constraint that reads as discipline, is expensive to satisfy, and protects
+against something that cannot happen here. It survived precisely because it
+sounded rigorous.
+
+What is worth keeping is much smaller than 11.4 described. Knowing whether the
+migration is going faster or slower **than it was going** is a steering signal,
+and it needs a rough note of how long each story took, not four measured
+quantities and a story to collect them. Record it as a trend if anyone wants it;
+do not rebuild the apparatus.
 
 **11.5 is the estimate's largest unknown.** Epic 10's count — 41 Server Actions
 with no HTTP equivalent, all 33 data-reading pages importing `lib/` inside a
@@ -684,17 +710,91 @@ and six adversarial reviews, reviewed and marked "not implemented". Sequenced by
 `docs/no-hats-sequence.md`, which re-cuts the plan's story order against a
 dependency graph as §9 of the plan instructs.
 
-**The live bug this exists to fix.** Every client founder in production holds
-five grants and can reach exactly one of them, permanently.
-`functions/src/auth.ts` issues all five; `resolveSession` falls back to
-`availableRoles[0]` because `requestedRole` is always undefined; and the UI to
+**The defect this exists to fix — real in code, and latent rather than live.**
+Every client founder account holds five grants and can reach exactly one of them,
+permanently. `functions/src/auth.ts` issues all five; `resolveSession` falls back
+to `availableRoles[0]` because `requestedRole` is always undefined; and the UI to
 change it never shipped. `switchRole` exists in the `RbacService` interface and
 its three implementations and is called by no component. A CEO who also closes
-already holds the closer grant and cannot get to it.
+would already hold the closer grant and could not get to it.
 
-Confirmed still live 2026-08-23, from the other end: granting one account all
-thirteen roles produced an account stuck on `admin`, which is deliberately
-without widgets, with no way to move.
+Confirmed 2026-08-23 from the other end: granting one account all thirteen roles
+produced an account stuck on `admin`, which is deliberately without widgets, with
+no way to move.
+
+**Corrected 2026-08-26.** This paragraph previously opened "the live bug this
+exists to fix" and said the founders were "in production". Sam confirmed the
+client-founder accounts holding those grants were created for setup and testing,
+have never signed in, and are not in use. So nobody has experienced this. The
+defect is genuine and the code is exactly as described; the word doing the
+damage was **live**.
+
+**Latent describes reachability, not severity.** The code defect is real and
+unfixed, and the moment a real founder signs in it is live with no code change
+required. What was wrong was the word "live", not the diagnosis.
+
+That distinction changed two decisions in one day. It put Epic 15 ahead of other
+work on the strength of an outage nobody was having, and it made §4's rollback
+constraint look permanently binding when it is currently suspended. Same failure
+as story 5.11, which claimed a service had been "running in production for
+months" in a repository seventeen days old, and both survived review because the
+surrounding technical detail was accurate.
+
+**The stale claim is "founders exist in production", not the word "live".** That
+distinction matters for anyone chasing the remaining copies: grepping for "live
+bug" finds six files and misses two of the worst, because the same false premise
+is asserted in other words. Searching for the label rather than the thing is how
+this correction nearly shipped incomplete.
+
+**The test is whether a line asserts those founders EXIST, not whether it
+mentions them.** This distinction was arrived at on 2026-08-26 by searching for the premise's
+consequences rather than its wording, and it exonerates two passages that a
+cruder sweep would have "corrected" into inaccuracy:
+
+- `reviews/…-design-full.md:27` and `:806` say founders *provisioned by
+  `clientOwnerGrants`* hold five grants and reach one. That is a fact about what
+  the provisioning code issues. It is true whether or not anyone has ever signed
+  in, and it must not be softened.
+- `:820` and `:1025` say "for every founder **in production today**". That
+  asserts existence, and is stale.
+
+Documents carrying the stale assertion, verified 2026-08-26:
+
+**Decisions rest on these three. Fix them first.**
+
+| Document | What rests on it |
+| --- | --- |
+| `ROLES_AND_GRANTS_PLAN.md:268` and `no-hats-sequence.md:51` | The **outcome column of the dependency table**, stating step D's payoff as "the live bug is fixed" / "dies here". If the defect is latent, D's payoff is weaker — "a latent defect becomes unreachable" — and that could legitimately move D's position or the epic's priority. Two documents currently promise a step D that pays off an outage nobody is having |
+| `reviews/2026-08-22-no-hats-design-full.md:1025` | §9.3's refusal to guess on tab adoption reasons from "every founder in production today has exactly one candidate" |
+
+**These merely assert it.**
+
+| Document | Note |
+| --- | --- |
+| `ROLES_AND_GRANTS_PLAN.md:83` | "Every client founder in production holds five roles" — the origin of the claim |
+| `reviews/2026-08-22-no-hats-design-full.md:820` | Restates it; no decision hangs off this line |
+| `stories/15.A-grants-on-the-session.md` | Corrected 2026-08-26 alongside this note |
+| `CONSOLIDATION_STATUS_2026-08-23.md:222` · `BMAD_LEGENDARIUM_FRAMEWORK.md:281` | Phrase-level repeats |
+
+`PLAN:268` and `SEQ:51` were in the second group in the first draft of this note,
+on the assumption they were prose. They are table rows, and the table is the one
+that decides what order Epic 15 is built in. Misfiling them was the exact error
+this two-part split exists to prevent, and it was caught by the other session
+reading the lines rather than the summary.
+
+**This table's coverage is not guaranteed complete.** It was built from two
+searches: one for the phrase, and one for known consequences of the premise
+("reaches exactly one", "candidate set", "no current occupants", "holds five").
+A passage that reasons from founders existing without using any of that
+vocabulary would not appear here. `:1025` was originally found by accident rather
+than by design, which is the reason for saying this out loud: a tidy table
+invites the reader to assume it is exhaustive, and this one is not.
+
+Two further uses of "in production today" are **flagged, not findings**:
+`stories/14.A-fold-functions-into-app-api.md:55` and
+`stories/4.4-roas-joined-on-utmadid.md:61`. Both make a different claim about
+production and may be entirely true. They are listed only because "in production
+today" is the pattern that just proved unreliable, and nobody has checked them.
 
 | ID | Story | Status |
 | --- | --- | --- |
@@ -718,10 +818,67 @@ findings say "Story B removes the client's only location source four stories
 before its replacement." B is the removal, C is the replacement. A removal goes
 after its replacement exists. This is the re-cut §9 asked for.
 
-**Do not touch the claim shape.** §4 of the plan is the load-bearing decision:
-retyping `locations` makes `parseRoleGrants` drop every entry, which
-`resolveSession` reads as signed out. A rollback would sign out every migrated
-user. Same keys, same types.
+**The claim shape: §4 has three justifications. One is in abeyance; two still
+bind.** Read them separately, because a 2026-08-25 finding suspends the first
+and touches neither of the others.
+
+*Rollback safety — in abeyance, and it re-arms.* Retyping `locations` makes
+`parseRoleGrants` drop every entry, which `resolveSession` reads as signed out,
+so §4 argues a rollback would sign out 100% of migrated users. Sam confirmed on
+2026-08-25 that no such users exist: the client-founder accounts were setup and
+testing artifacts and have never signed in. So this cost is currently zero.
+**Not void — suspended.** It re-arms at the first real sign-in after any shape
+change, and a rollback past that point costs exactly what §4 says. Writing
+"void" into a durable document would hand the next reader a permanent-sounding
+permission for a temporary condition, which is the same failure as calling a
+latent defect "live".
+
+*Fail-closed semantics — permanently binding.* `locations: []` must mean **no
+locations**, never "all". This has nothing to do with users or rollback:
+`app/api/admin/users/_locations.ts:24` returns `[]` for a blank admin textarea
+(verified: both the undefined path and the blank-string `trim`/`filter(Boolean)`
+path yield `[]`) and `validateLocations([])` is a bare for-loop over an empty
+array at `lib/auth/groups.ts:94-98`, so it is a genuine no-op. Any design
+expressing the wildcard as `locations: []` turns an ordinary admin typo into
+"reaches every tenant". Global reach comes from the role via `GLOBAL_ROLES`, not
+from the claim. **Do not relax this, whatever else changes.**
+
+*Size — permanently binding, and the one most easily missed.* §4:155-159 budgets
+900 bytes against Firebase's ~1000-byte claim cap, and every figure in it is
+measured against the current shape: 417 bytes for today's founder claim, 251 for
+three grants at one tenant, 140 for a closer at three. The overflow strategy
+compacts same-role grants and then **truncates to a prefix**, setting
+`grantsTruncated` with the authoritative set in Firestore, which degrades to
+fewer grants and therefore fails closed. Taking a prefix requires the shape to
+be a flat array. So a discriminated shape such as `tenancy: {all:true}` does not
+merely break the parser — it invalidates the byte arithmetic and the degradation
+path at once. `grantsTruncated` is also live elsewhere: it is finding M3 in
+`docs/reviews/2026-08-22-no-hats-design-full.md`, and
+`CONSOLIDATION_STATUS_2026-08-23.md:155` still records "Claim budget unsettled"
+as open. **A claim-shape change is therefore not free even with nobody signed
+in.**
+
+**What is actually on the table** is narrower than "change the claim shape". The
+one change decided on is dropping `team`, per the 7.7 decision below, and that is
+not blocked by rollback risk — it is blocked by needing a queryable grant store,
+which is 15.I. Removing `team` before that store exists breaks every team-scoped
+query with nothing to replace it. What the open window buys is that when 15.I
+lands, `team` can go in a single commit with no deprecation, no dual-write, and
+no waiting for old claims to age out.
+
+**7.7 decided 2026-08-25: a team is a business, and membership is derived from
+location grants rather than stored.** Sam's framing: one closer might work
+businesses 1 and 3 while another works 2, 3 and 4; each business is a team; the
+owner is on their own business's team. So "my team" for a location is everyone
+holding a grant on that location, seen from the location's side. This makes 15.I
+*more* necessary, not less: custom claims are per-user and cannot be queried
+across users, so "who else holds a grant on location X" is unanswerable from
+claims alone. 15.I's reconciler stops existing to keep stale `team` lists fresh
+and starts existing as the authoritative record of who works where.
+
+**7.9 decided 2026-08-25: 15.I absorbs the admin surface that shipped without a
+story.** That surface is the prototype; 15.I replaces it and it is deleted in the
+same release. One admin surface, one model, rather than two that drift.
 
 **15.0 first, and not only for this epic.** Nothing records which migrations
 have been applied; 006 already failed once on a clean deploy. This epic adds two

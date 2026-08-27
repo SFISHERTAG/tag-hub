@@ -64,6 +64,123 @@ git log --all -- "**/check-branch-freshness.mjs"   # returns nothing — never c
 Stylistic inference is not evidence. Ask, and say plainly that you are asking rather than
 concluding.
 
+## 4b. A session is named for where it sits
+
+**A session has two names and only one of them routes.** Get this backwards and every
+rule below reads as solved when it is not.
+
+- The **address** is what `ListAgents` prints on its first line, `This session is
+  <NAME> [<ref>]`. It is what another session must type to reach you. No tool
+  available to a session can write it.
+- The **title** is the sidebar label. `set_session_title` writes it and nothing else.
+
+Established by experiment on 2026-08-27, after three sessions each renamed themselves
+and checked immediately afterwards, which is shared method rather than independent
+confirmation and would have returned the same answer under a caching lag:
+
+```
+set_session_title -> "LEAD-PROBE-1"
+ListAgents        -> This session is LEAD [b09feb]
+(work, delay)
+ListAgents        -> This session is LEAD [b09feb]
+```
+
+Distinct title, delayed second read, address unmoved. **Renaming therefore never
+resolves an address collision, and `[ref]` is the only disambiguator.**
+
+**The title conforms to the address, never the reverse.** The address is the field
+nobody can write, so it is the one everything else follows. Read it from `ListAgents`
+line 1 and set the title to match, verbatim. An earlier version of this rule derived
+the title from the worktree basename instead, and produced three sessions whose
+sidebar labels routed to nothing, which is worse than having no rule.
+
+**The invariant is not self-maintaining, and this is the open hole.** One session's
+address changed from `handoff-review-questions-555acd-3b` to `LEAD` without that
+session doing anything, some time after its predecessor was archived. Its first
+`set_session_title` call reported `(was "LEAD")`, so the field was already written
+before it ever touched it, and the mechanism is not visible from inside a session.
+So some event nobody has identified writes the address. **Re-read `ListAgents` and
+re-conform the title at any handover, archive or adoption event**, not only when
+someone asks for a rename. A stale title is now worse than it used to be: it looks
+routable and is not, where a role word at least read as "look up the address".
+
+### Callsigns: the name is chosen once, at spawn
+
+Sam's ruling, 2026-08-27, replacing the deferred paragraph this section used to carry.
+
+The address is derived from the worktree name at spawn. Four of four observed
+sessions match `<worktreeName>-<2 hex>`, which is why the worktree name is the only
+moment the address is choosable.
+
+1. **Source: the NATO phonetic alphabet, official spellings.** ALFA, BRAVO, CHARLIE,
+   DELTA, ECHO, FOXTROT, GOLF, HOTEL, INDIA, JULIETT, KILO, LIMA, MIKE, NOVEMBER,
+   OSCAR, PAPA, QUEBEC, ROMEO, SIERRA, TANGO, UNIFORM, VICTOR, WHISKEY, XRAY, YANKEE,
+   ZULU. **ALFA, JULIETT and XRAY are spelled that way deliberately; do not correct
+   them.** The alphabet exists so that no two entries are confusable when garbled,
+   which is the property an address typed under time pressure needs.
+2. **Chosen at `EnterWorktree({name})` and nowhere else**, because that is the only
+   moment the address is writable at all.
+3. **Assign the first callsign not currently visible in `ListAgents`.** Derived, not
+   remembered.
+4. **Retire, never recycle.** A callsign stays dead until its address has stopped
+   appearing in `ListAgents`. Given that an unidentified event can already move an
+   address, recycling is how that curiosity becomes a collision.
+5. **Never a role, never a task.** `LEAD` and `REVIEWER` collided on 2026-08-27
+   because roles are seats and seats get reoccupied; a task name goes stale the moment
+   the session is reassigned. A callsign names *which session*, never *what it does*.
+   The seat belongs in the brief, where it changes without renaming anything.
+6. **Sessions predating this are grandfathered until they respawn**, because their
+   addresses cannot be changed from inside.
+
+**Unverified, and the first respawn settles it: whether the address preserves
+uppercase.** Every address observed so far is lowercase, and `EnterWorktree` refuses
+to create a worktree from inside one, so no current session can test it. The first
+session spawned under this rubric reports its address verbatim before anyone writes
+`ALFA` into a document expecting it back.
+
+**This retires the no-role-names rule rather than sitting beside it.** Once the title
+must equal the address, and addresses are unique by construction, role-name collision
+is structurally impossible.
+
+On 2026-08-27, forty-two commits of video-editing work under `tools/rough-cut` took
+an unrelated audit to find. The session doing it was titled for one thing, sat in a
+worktree named for a second, and committed to a branch named for a third. No
+individual name was wrong; answering *who is in there and what are they touching*
+required already knowing all three.
+
+**This rule is about discoverability, not loss.** The loss half is mechanised as of
+`54d08ea`: `check-commit-reachability` refuses a commit on a detached HEAD and warns
+with the exact push command on a branch with no upstream. Naming by location answers a
+different question — *which of a hundred sessions was that* — and no guard can answer
+it, because a chat title is not in the repository. Per standing order 8, the part of a
+norm that duplicates a mechanism is the part that decays, so this rule deliberately
+claims only what no mechanism covers.
+
+- Use the directory name **verbatim, hash suffix included**:
+  `functions-typescript-build-8fa5d4`, not "Functions build". The suffix is what makes
+  it match `git worktree list`, and a tidied name defeats the whole point.
+- A session in the shared checkout at the repo root is `TAG`. There should rarely be
+  one; that checkout is usually parked.
+- **Rename at the start of a session, not at the end.** A title that becomes correct
+  after the work is over solves nothing.
+
+**A second hole, larger than the first.** A plain terminal `claude` session in a
+worktree has no title to set. It does not appear in the session list, its transcript is
+not searchable, and there is nothing to archive or restore — the video-editing session
+above was exactly this, which is why searching the session list for it returned nothing.
+The rule cannot reach those sessions at all. Where work matters, the branch is the
+record that survives, not the chat.
+
+**The known hole, stated rather than hidden.** Worktrees outlive sessions and get
+reused — `functions-typescript-build-8fa5d4` has hosted at least five — so a location
+name is not unique over time. Address the live one by name; if two are live in the
+same directory, disambiguate with the session id, never with an invented nickname.
+Inventing one puts you straight back in the situation this rule exists to prevent.
+
+This is **not mechanised**, and cannot be: no git hook can read a chat title. It is
+therefore a check-in item. When two sessions first make contact, the first thing each
+confirms is that it is named for where it sits.
+
 ## 5. Another session's work is not yours to move
 
 This covers uncommitted files, untracked files, and commits.
@@ -150,6 +267,35 @@ no file, preserves untracked files, and leaves stashes alone. Never park with
 `git checkout --detach`, which is what deleted a tracked file from another session's tree on
 2026-08-20 (§1).
 
+## 9b. Say whether it is safe. Then ask.
+
+Added 2026-08-26, after a session merged a PR on the words "so can you merge
+pr7". That was a question about safety, not an instruction, and it was read as
+one because it was the first thing in three days that sounded like a yes.
+
+**The rule.** For any action on a shared ref -- a merge, a push to `main`, a
+deploy, a branch deletion -- report whether it is safe and then ASK whether to
+proceed. Two separate messages, or one message ending in a question. Never infer
+the instruction from the question.
+
+**Why the phrasing is the trap.** "Can you X" is ambiguous between *are you able*
+and *please do*. So is "should we X", "ready to X", and "is X good to go". Every
+one of them reads as authorisation to a session that has been waiting for
+authorisation, which is exactly when it is least able to tell the difference. The
+longer a session has been correctly declining to act, the more likely it is to
+over-read the first permissive-sounding sentence.
+
+**What safe means here, and it is not a feeling.** Name the checks that ran, the
+commit they ran against, and what is still unverified. "It is safe" without those
+is the same claim as "this should work", which §10 already refuses.
+
+**This is not the ownership rule again.** §9 says who may move `main`. This says
+that even the owner's apparent go-ahead is confirmed before it is acted on,
+because the cost of asking is one line and the cost of a wrong read is a shared
+ref moved without intent.
+
+---
+
 ## 10. Standing orders
 
 Added 2026-08-23. Every one of these came from something that actually went wrong
@@ -224,6 +370,25 @@ where the original recorded one. The missed site reserved a campaign launch key,
 and migrating it faithfully would have let a race loser create a duplicate paid
 Meta campaign with no error anywhere. Reading the original first produces
 agreement, not verification.
+
+**10. `mergedBy` is a credential field, not an actor field.** The repository
+records *that* a shared ref moved and *by whose token*. It records nothing about
+which session did it.
+*Scar:* on 2026-08-27 a session audited who had merged four PRs, ran
+`gh pr view N --json mergedBy`, got `SFISHERTAG` on all four, and reported "no
+session merged anything, boundary intact". Another session had merged all four,
+with Sam's authorisation given in chat. `gh api /user` returns `SFISHERTAG` too:
+every session on this machine holds the same credential, so a merge performed by
+a session is indistinguishable from one performed by Sam in every GitHub field
+there is. The conclusion happened to be right and the evidence could not have
+established it, which is standing order 2 arriving through a field nobody
+suspected.
+The gap is worth naming as a gap: **the only record of which session moved a
+shared ref is the transcript where the authorisation was given, and no such
+record exists in the repository.** Do not fix this by inferring an actor from a
+commit trailer either; `Agent-Worktree:` is stamped by the committing session
+about itself, which answers a different question and is trivially absent on a
+merge made through the GitHub UI or API.
 
 ---
 

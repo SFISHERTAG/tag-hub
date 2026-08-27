@@ -35,13 +35,13 @@ interface RawAdInsightsRow {
 async function fetchAdInsights(
   api: ReturnType<typeof getMetaApi>,
   accountPath: string,
-  days: number,
+  range: { since: string; until: string },
 ): Promise<Map<string, { adName: string; spend: number }>> {
   const response = (
     await api.call<{ data: RawAdInsightsRow[] }>("GET", `/${accountPath}/insights`, {
       level: "ad",
       fields: ["ad_id", "ad_name", "spend"],
-      time_range: timeRange(days),
+      time_range: range,
       limit: 500,
     })
   ).data;
@@ -79,8 +79,8 @@ export async function getAdSpend(adAccountId: string, days = 30): Promise<AdSpen
   let sevenDay: Map<string, { adName: string; spend: number }>;
   try {
     [thirtyDay, sevenDay] = await Promise.all([
-      fetchAdInsights(api, accountPath, days),
-      fetchAdInsights(api, accountPath, 7),
+      fetchAdInsights(api, accountPath, timeRange(days)),
+      fetchAdInsights(api, accountPath, timeRange(7)),
     ]);
   } catch (error) {
     throw new MetaApiError(`/${accountPath}/insights`, error);
@@ -98,4 +98,44 @@ export async function getAdSpend(adAccountId: string, days = 30): Promise<AdSpen
       spend7d: recent?.spend ?? 0,
     };
   });
+}
+
+/** Per-ad spend over one explicit window; no trend figure, no second call. */
+export interface RangeAdSpend {
+  adId: string;
+  adName: string;
+  spend: number;
+}
+
+/**
+ * Fetch spend per ad for an explicit window, anchored where the caller says.
+ *
+ * `getAdSpend` above anchors its window at `new Date()` — right for the
+ * trailing-30-day cards it was built for, and silently wrong for anything
+ * else: the metric adapter used to reduce its period to a day count, so a
+ * query for last month returned this month's spend relabelled. This is the
+ * position-honouring variant. It also makes one insights call, not two: the
+ * trailing-7-day trend figure is getAdSpend's concern, and nothing on this
+ * path uses it.
+ */
+export async function getAdSpendForRange(
+  adAccountId: string,
+  range: { fromMs: number; toMs: number },
+): Promise<RangeAdSpend[]> {
+  if (!isMetaConfigured()) return [];
+
+  const api = getMetaApi();
+  const accountPath = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
+
+  let byAd: Map<string, { adName: string; spend: number }>;
+  try {
+    byAd = await fetchAdInsights(api, accountPath, {
+      since: isoDate(new Date(range.fromMs)),
+      until: isoDate(new Date(range.toMs)),
+    });
+  } catch (error) {
+    throw new MetaApiError(`/${accountPath}/insights`, error);
+  }
+
+  return [...byAd].map(([adId, ad]) => ({ adId, adName: ad.adName, spend: ad.spend }));
 }
