@@ -2,8 +2,8 @@
 
 Several Claude sessions work this repo at once, in the main checkout and in worktrees under
 `.claude/worktrees/`. They share one `.git`, one `main`, and one set of hooks. Every rule below
-was paid for by an incident, dated and cited inline so you can check the claim rather than
-trust it.
+was paid for by an incident, cited inline and most of them dated, so you can check the claim
+rather than trust it.
 
 ---
 
@@ -20,16 +20,14 @@ Re-run the check in the same command as the action, or accept that you are actin
 **And the half that care cannot fix: your report goes stale under its reader.**
 Added 2026-08-27. **A ref is an expiry date; a time-marker only looks like one.**
 
-One session reported "0 behind `origin/main`" three times across an evening, each
-true when sent, while `origin/main` moved `8787c50` to `4ad17c5` under it: run
-`git rev-list --count 8787c50..4ad17c5` and get 7. Another reported "0 ahead, 0
-behind **at spawn**", which is provenance rather than a ref, because no command
-turns "spawn" into a commit. A third verified a pull request from source, named
-the SHA, and had the branch move mid-audit — **and note what had changed there and
+One session reported "0 ahead, 0 behind **at spawn**", which is provenance rather
+than a ref: no command turns "spawn" into a commit, while "0 behind at `8787c50`"
+is checkable in one and reads the same. Another verified a pull request from
+source, named the SHA, and had the branch move mid-audit — **and note what had changed there and
 what had not: the misleading comment it found was corrected, the defect that
 comment described was not.**
 
-**Only the second was preventable.** The remedy for all three is the same and it is
+**Only the first was preventable.** The remedy for all three is the same and it is
 cheap: name the ref in anything you send. Whether a number was still true when the
 message left is usually unestablishable afterwards, and **a reader who can re-run
 it does not need to know.**
@@ -43,10 +41,13 @@ reader to check them the same way.
 prints four: unmerged work, stale branches, detached worktrees, dirty worktrees.
 **Local-only branches print only without `--remote`**, deliberately, since every
 branch is pushed by definition in that mode; a sixth line about vanished worktree
-registrations prints only when there are any. **So the mode this document tells you
-to use shows fewer categories** — read four, conclude there are no local-only
-branches, and you have made standing order 2's mistake through a document rather
-than a matcher. **The number is generated; the sentence around it is not.**
+registrations prints only when there are any. **Which mode you are in decides what silence
+means.** `CLAUDE.md` tells a session to run the plain form, which prints the
+local-only line, so a session following it is not at risk. **The reader who is at
+risk runs `--remote`: CI, and Step 1 of the peer brief.** Read four there,
+conclude there are no local-only branches, and you have made standing order 2's
+mistake through a document rather than a matcher. **The number is generated; the sentence around
+it is not.**
 
 ## 2. Verify against a commit, never against a directory
 
