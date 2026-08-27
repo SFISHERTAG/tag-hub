@@ -2,7 +2,7 @@
 
 Several Claude sessions work this repo at once, in the main checkout and in worktrees under
 `.claude/worktrees/`. They share one `.git`, one `main`, and one set of hooks. Every rule below
-was paid for by an incident on 2026-08-20, cited inline so you can check the claim rather than
+was paid for by an incident, dated and cited inline so you can check the claim rather than
 trust it.
 
 ---
@@ -18,38 +18,35 @@ sound; the state was stale.
 Re-run the check in the same command as the action, or accept that you are acting blind.
 
 **And the half that care cannot fix: your report goes stale under its reader.**
-Added 2026-08-27.
+Added 2026-08-27. **A ref is an expiry date; a time-marker only looks like one.**
 
-**The near-miss first, because it is sharper than a bare number.** A session
-reported its branch "0 ahead, 0 behind **at spawn**". It was trying to qualify the
-claim and it had the SHA in hand. But "at spawn" is *provenance*, and a reader
-cannot resolve it to anything runnable: there is no command that turns "spawn"
-into a commit. "0 behind at `8787c50`" is checkable in one command and reads
-identically. **That is the whole distinction — a ref is an expiry date, a
-time-marker only looks like one.** This half was preventable, and the session that
-did it says so.
+One session reported "0 behind `origin/main`" three times across an evening, each
+true when sent, while `origin/main` moved `8787c50` to `4ad17c5` under it: run
+`git rev-list --count 8787c50..4ad17c5` and get 7. Another reported "0 ahead, 0
+behind **at spawn**", which is provenance rather than a ref, because no command
+turns "spawn" into a commit. A third verified a pull request from source, named
+the SHA, and had the branch move mid-audit — **and note what had changed there and
+what had not: the misleading comment it found was corrected, the defect that
+comment described was not.**
 
-**The half that was not preventable.** A Reviewer auditing a pull request verified
-every claim from source, named the SHA it read them at, and said so. The branch
-moved under it mid-audit, and by the time its message arrived the misleading
-comment it had found was already corrected. Nothing it did was wrong, and the ref
-it named is the only reason anyone could tell. **Note what had and had not
-changed: the comment was fixed, the defect the comment described was not.** That
-distinction is exactly the kind a stale reading destroys.
+**Only the second was preventable.** The remedy for all three is the same and it is
+cheap: name the ref in anything you send. Whether a number was still true when the
+message left is usually unestablishable afterwards, and **a reader who can re-run
+it does not need to know.**
 
-**So: name the ref, in anything you send.** Whether a number was still true at the
-instant it left is usually unestablishable afterwards — no timestamped record ties
-a message to a ref — which is the point. **A reader who can re-run it does not
-need to know.**
+**Two decay directions, needing different remedies.** A stale "0 behind" or "clean
+tree" is *false*, because those states reverse. A stale count of merged work is an
+*undercount*, because merging is monotonic. Treating them as one job teaches a
+reader to check them the same way.
 
-**Two decay directions, and they need different remedies.** A stale "0 behind" or
-"clean tree" is simply *false*, because those states reverse. A stale count of
-merged work is an *undercount*, because merging is monotonic and that number only
-rises. Treating them as one job teaches a reader to check them the same way.
-
-**The generated categories are the ones to distrust in prose:** unmerged work,
-stale branches, local-only branches, detached worktrees, dirty worktrees. `npm run
-loops` prints all five. **The number is generated; the sentence around it is not.**
+**And distrust the categories in prose, not the generator.** `npm run loops` always
+prints four: unmerged work, stale branches, detached worktrees, dirty worktrees.
+**Local-only branches print only without `--remote`**, deliberately, since every
+branch is pushed by definition in that mode; a sixth line about vanished worktree
+registrations prints only when there are any. **So the mode this document tells you
+to use shows fewer categories** — read four, conclude there are no local-only
+branches, and you have made standing order 2's mistake through a document rather
+than a matcher. **The number is generated; the sentence around it is not.**
 
 ## 2. Verify against a commit, never against a directory
 
