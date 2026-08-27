@@ -108,9 +108,40 @@ routable and is not, where a role word at least read as "look up the address".
 
 Sam's ruling, 2026-08-27, replacing the deferred paragraph this section used to carry.
 
-The address is derived from the worktree name at spawn. Four of four observed
-sessions match `<worktreeName>-<2 hex>`, which is why the worktree name is the only
-moment the address is choosable.
+**This is not a naming preference. It is the addressing layer the protocols in
+`PEER_SESSION_PROMPT.md` already presuppose, and which nobody installed.**
+
+That document runs end to end on aviation and submarine crew resource management,
+and says so: backbrief, closed-loop communication with verbatim readback,
+questioning attitude, forceful backup, BLUF, pre-flight, after-action review.
+Every one is borrowed intact from a field that pays for communication failures in
+lives. **Every one of them also assumes the participants can address each other
+unambiguously.** That is the substrate they run on, and it was the only part of
+the doctrine left out.
+
+The distinction matters for whether this rule survives. A rule justified as
+"names were confusing" gets relaxed the first time someone finds it inconvenient.
+A rule justified as "the protocols do not function without it" does not.
+
+**The cost of the missing layer, all of it on 2026-08-27 and all of it inside one
+hour:** two sessions both answering to `REVIEWER`; a Lead whose address was the
+role word `LEAD`, so no session could tell the seat from the session; three
+sessions renamed to worktree basenames that routed to nothing; the rule inverted
+twice; and one address assigned by an event nobody has been able to identify.
+None of that was carelessness. It is what happens when a protocol set that
+presumes addressing is deployed without it.
+
+**The test any scheme has to pass, and it is the whole requirement:** *"Tell BRAVO
+to pick up #16."* Unambiguous to say aloud, to type, and to route, with no lookup.
+Twenty-six is more than any concurrent fleet here has needed, and the phonetic
+alphabet is engineered so that no two entries survive garbling as each other.
+Measure any alternative against that sentence.
+
+The address is derived from the worktree name at spawn. **Every address observed
+at spawn matches `<worktreeName>-<2 hex>`. One has since been rewritten by the
+unidentified event above, which is why rule 4 exists.** Run `ListAgents` and you
+will find that exception rather than a clean five-for-five, and the exception is
+evidence for the rule, not against it.
 
 1. **Source: the NATO phonetic alphabet, official spellings.** ALFA, BRAVO, CHARLIE,
    DELTA, ECHO, FOXTROT, GOLF, HOTEL, INDIA, JULIETT, KILO, LIMA, MIKE, NOVEMBER,
@@ -119,7 +150,12 @@ moment the address is choosable.
    them.** The alphabet exists so that no two entries are confusable when garbled,
    which is the property an address typed under time pressure needs.
 2. **Chosen at `EnterWorktree({name})` and nowhere else**, because that is the only
-   moment the address is writable at all.
+   moment a session can *choose* it. Not the only moment it can be written: the
+   paragraph above records an address rewritten after spawn by something nobody
+   has identified. An earlier draft of this clause said "the only moment the
+   address is writable at all", which contradicted that paragraph nineteen lines
+   above it and was caught by a second reader rather than by either of the two
+   people who wrote it.
 3. **Assign the first callsign not currently visible in `ListAgents`.** Derived, not
    remembered.
 4. **Retire, never recycle.** A callsign stays dead until its address has stopped

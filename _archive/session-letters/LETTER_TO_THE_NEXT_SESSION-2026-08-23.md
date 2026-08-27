@@ -1,3 +1,29 @@
+> **ARCHIVED 2026-08-27. Do not act on this document.**
+>
+> It was written 2026-08-23 and was accurate then. It is kept because its central
+> section is the origin of `AGENT_COORDINATION.md` standing order 4, "a document
+> is not evidence, including this one", and deleting it would lose the evidence
+> that produced the rule. The five worked examples under "the one thing that
+> matters" are that evidence.
+>
+> **What in it is now false, so a reader does not have to find out:**
+>
+> - There is no "Master session" and no apprentice. Session roles are seats, and
+>   a session is addressed by a callsign that is not a role. See
+>   `AGENT_COORDINATION.md` §4b.
+> - "Do not merge to `main`; route merges through Master" describes an ownership
+>   model that no longer exists. `main` has one owner at a time, handed over
+>   explicitly in a message. See §9.
+> - `db89f36` and deployed revision `00025-7zk` are four days stale and were
+>   never re-verified.
+> - The apprentice-model line about which model is running is a fact about one
+>   afternoon and was never true of any later session.
+>
+> **Why it moved rather than being corrected:** it is a letter from a specific
+> session on a specific day. Correcting it would make it a document with no
+> author and no date, which is the shape this repository keeps having to un-write.
+> `docs/DEBRIEF.md` is the rolling replacement.
+
 # Letter to the next session
 
 Written 2026-08-23 by the session that ran the GHL multi-account work, the
