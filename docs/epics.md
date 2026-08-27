@@ -222,13 +222,14 @@ remembered, next to the GHL side reps already work from every day.
 **Goal:** when something breaks between GHL, Meta, Google and Slack, TAG sees it
 here before the client does.
 
-| ID | Story | Status |
-| --- | --- | --- |
-| 8.1 | Error log — searchable, filterable | Draft |
-| 8.2 | Per-client integration health | Partly rendered in 7.1 |
-| 8.3 | Attribution drift monitor | Draft |
-| 8.4 | In-app bug reporting | Draft |
-| 8.5 | The rules engine behind health and escalation | **Backlog — shipped without a story** |
+| ID | Story | Status | Doc |
+| --- | --- | --- | --- |
+| 8.1 | Error log — searchable, filterable | Draft | |
+| 8.2 | Per-client integration health | Partly rendered in 7.1 | |
+| 8.3 | Attribution drift monitor | Draft | |
+| 8.4 | In-app bug reporting | Draft | |
+| 8.5 | The rules engine behind health and escalation | **Backlog — shipped without a story** | `8.5-the-rules-engine.md` |
+| 8.6 | A subtle bug affordance, always reachable | Draft — parked 2026-08-25 | `8.6-subtle-bug-affordance.md` |
 | 8.7 | Escalate a config fault instead of silently serving fixtures | Done — 2026-08-25 | `8.7-escalate-the-config-fault.md` |
 
 8.2 is per client, not global, and that distinction is the whole point. One
