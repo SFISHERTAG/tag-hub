@@ -97,3 +97,39 @@ branch away. A rule that is not on `main` does not exist, and neither does a sto
 | Google Drive: write surface, or a footnote on the one-surface claim | Sam | open |
 | Land `docs/land-tonights-decisions` so its structure is readable to other sessions | peer session | open |
 | Read the GHL v2 API before 18.5-18.8 are sized; every verb assumes one call | next session | open |
+| `npm run check:functions` runs no tests; add `functions` `test` to it or to the DoD | next session | open |
+| Decide what happens to `/private/tmp/tag-deploy-doc`, which is not a worktree and not tracked | Sam | open |
+
+### The two carried over from the 25-26 Aug sessions, verified 2026-08-26
+
+**`check:functions` does not run tests.** `package.json:30` defines it as
+`npm --prefix functions run build && npm --prefix functions run lint`. Build and
+lint, no test, while `functions/` has five test files (`index.test.ts`, three
+webhook tests, `secret.test.ts`) and `functions/package.json:10` defines
+`test: vitest run`.
+
+This matters because of what leans on it. CLAUDE.md's Definition of Done item 4
+is "If the story touches `functions/**`, `npm run check:functions` passes", and
+that command was introduced precisely because the root gate never compiles
+`functions/src`. So the check written to stop functions-side code shipping
+untested runs everything except the tests. Fix it in the command or stop citing
+it in the DoD, but the current pairing reads as coverage it does not provide.
+
+**`/private/tmp/tag-deploy-doc` is not a worktree.** It was described as one and
+it is not: no `.git`, not in `git worktree list`, not prunable, invisible to
+`npm run loops`. It is a detached 90MB copy of the repo, 1391 files, most last
+touched 2026-08-21 and some 2026-08-26.
+
+Two consequences, and the second is the one that matters:
+
+1. Nothing there is recoverable through git. There are no unpushed commits to
+   rescue because there is no repository, but any edit made in it exists in that
+   directory and nowhere else, with no history.
+2. **It contains `.env.local` as a symlink to `/Users/home/projects/TAG/.env.local`.**
+   Real credentials are reachable through a path under `/private/tmp`, which is
+   world-writable with the sticky bit and is periodically purged by the OS.
+
+Not touched, and deliberately: deleting 90MB of someone else's working directory
+is not a call this session gets to make, and per `docs/AGENT_COORDINATION.md` a
+directory you did not create is surfaced, not moved. Recorded here so it is
+findable, since it appears in no ref and no report.
