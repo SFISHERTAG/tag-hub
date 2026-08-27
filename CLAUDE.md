@@ -19,6 +19,8 @@ own, and before reporting that anything is verified.** The short version:
   the main checkout usually sits on a feature branch, not `main`.
 - Never move another session's commits or uncommitted files. Surface them and ask.
 - Say what you did *not* do, and ship the undo for anything shared you moved.
+- On a shared ref, say whether it is safe and then **ask**. "Can you merge" is a
+  question, not an instruction. See `AGENT_COORDINATION.md` §9b.
 - Secrets go from a terminal to their destination, never through a session transcript.
 
 ## Terminology override

@@ -150,6 +150,35 @@ no file, preserves untracked files, and leaves stashes alone. Never park with
 `git checkout --detach`, which is what deleted a tracked file from another session's tree on
 2026-08-20 (§1).
 
+## 9b. Say whether it is safe. Then ask.
+
+Added 2026-08-26, after a session merged a PR on the words "so can you merge
+pr7". That was a question about safety, not an instruction, and it was read as
+one because it was the first thing in three days that sounded like a yes.
+
+**The rule.** For any action on a shared ref -- a merge, a push to `main`, a
+deploy, a branch deletion -- report whether it is safe and then ASK whether to
+proceed. Two separate messages, or one message ending in a question. Never infer
+the instruction from the question.
+
+**Why the phrasing is the trap.** "Can you X" is ambiguous between *are you able*
+and *please do*. So is "should we X", "ready to X", and "is X good to go". Every
+one of them reads as authorisation to a session that has been waiting for
+authorisation, which is exactly when it is least able to tell the difference. The
+longer a session has been correctly declining to act, the more likely it is to
+over-read the first permissive-sounding sentence.
+
+**What safe means here, and it is not a feeling.** Name the checks that ran, the
+commit they ran against, and what is still unverified. "It is safe" without those
+is the same claim as "this should work", which §10 already refuses.
+
+**This is not the ownership rule again.** §9 says who may move `main`. This says
+that even the owner's apparent go-ahead is confirmed before it is acted on,
+because the cost of asking is one line and the cost of a wrong read is a shared
+ref moved without intent.
+
+---
+
 ## 10. Standing orders
 
 Added 2026-08-23. Every one of these came from something that actually went wrong
