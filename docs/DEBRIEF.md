@@ -4,7 +4,7 @@ The rolling debrief. **One file, no date in the name, newest entry first.**
 
 This exists because the alternative was tried and failed in this repo. Counted at
 `092b672`, `docs/` already holds **eight** handoff, status and retrospective
-documents, four of them dated in the filename:
+documents, several of them dated in the filename:
 
     CONSOLIDATION_STATUS_2026-08-23.md      SECRETARY_HANDOFF_2026-08-23.md
     SESSION_HANDOFF_2026-08-23.md           retro-2026-08-25-to-27-session-block.md
@@ -193,7 +193,8 @@ the error. **Fixing one cell in a table with several wrong entries invites the
 next reader to assume the rest were checked** — which is the argument in the
 entry below, made by Sam, when he declined a one-line correction for exactly this
 reason. The sibling is still referenced by **nothing** on `main`; only its
-location was wrong. **As written, this described a live condition. It no longer is, and the trap is
+location was wrong. **As written, this described a live condition. It no longer is,
+and the trap is
 kept as history rather than deleted.** For a time a session reading §0 carefully
 learned to distrust exactly one of two identically shaped documents and trusted
 the other *because* the warning was specific, which is worse than no warning.
@@ -204,7 +205,8 @@ trust in its unnamed neighbours, and the next specific warning anyone writes wil
 recreate the condition unless it says what it does not cover. *Check:*
 when a caution names one file at all, by path or by bare filename, look for its
 siblings before concluding the caution is exhaustive, and grep for the form it
-actually uses rather than the form you expect. Same root as trap 7: the label was searched, not the thing.
+actually uses rather than the form you expect. Same root as trap 7: the label was
+searched, not the thing.
 
 **14. Two conventions in one document.**
 `docs/epics.md` uses three-column tables in Epics 4 and 8 and four-column ones in
