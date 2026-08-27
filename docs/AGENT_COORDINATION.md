@@ -17,6 +17,25 @@ sound; the state was stale.
 
 Re-run the check in the same command as the action, or accept that you are acting blind.
 
+**And the half that care cannot fix: your report goes stale under its reader.** Added
+2026-08-27. A session reported its branch "0 behind `main`" three times in one evening. Each
+was true when it was sent. By the time anyone reused the number it was 7 behind, because
+`main` had moved. Separately, a Reviewer auditing a pull request verified every claim from
+source, named the SHA it read them at, and said so — and the branch moved under it mid-audit,
+so one of its findings was already fixed by the time the message arrived.
+
+**Neither session was careless and neither could have prevented it.** Every other stale-state
+failure in this document was preventable by checking one more thing before acting. This one is
+not: there is no amount of care at the moment of reading that stops a ref moving afterwards.
+That makes it a different failure with a different remedy, and "re-read before you act" does
+not cover it, because the person who has to re-read is the recipient.
+
+**So: name the ref, every time, in anything you send.** Not as provenance, as an expiry date.
+A reader who knows you read it at `8787c50` can tell in one command whether you are current; a
+reader given a bare "0 behind" or "two open PRs" cannot, and will reuse it. **A count of what
+is behind, open, dirty or merged is board state, and board state does not survive in prose.**
+The number is generated; the sentence around it is not.
+
 ## 2. Verify against a commit, never against a directory
 
 `cd`-ing into the repo tells you nothing about which branch you are on. The main checkout at
