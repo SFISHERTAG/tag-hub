@@ -51,6 +51,21 @@ import type {
 export class PipelineBoardWidget {
   private readonly widgets = inject(GhlWidgetsService);
 
+  /**
+   * DECLARED ASSUMPTION: en-US / USD.
+   *
+   * Nothing in the payload says so. `PipelineStageRollup.value` is a bare
+   * number, and neither the response nor the session carries a currency or a
+   * locale, so this is a guess rather than a reading. It is almost certainly
+   * the right guess for a US tax advisory business, and an assumption being
+   * correct is not the same as it being declared.
+   *
+   * Same shape as the missing `startTimeFormatted` on `OwnerAppointment`: the
+   * server knows and does not say. Both are payload gaps, and the fix for both
+   * is on the server rather than here — a component that infers a currency is
+   * a component inventing a fact, which is the class of defect this whole
+   * folder is written against.
+   */
   private readonly money = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
