@@ -99,12 +99,13 @@ export type Session = {
  * multi-role array so a session issued before the migration still resolves.
  */
 /**
- * Exported for Story 7.7's round-trip test, not for callers.
- *
- * The write path in lib/auth/grants.ts and this parser have to agree on which
- * scope values survive: a level written here and dropped there is a grant that
- * looks set in the admin screen and behaves as though it never was. Nothing but
- * the test should import this.
+ * The one reader of the raw claims shape. Exported for Story 7.7's round-trip
+ * test and for `lib/auth/user-directory.ts`, which used to hand-copy this
+ * parsing (tolerances included) and could drift from it — the admin screen and
+ * the session must agree about what a claim says, so they read it through the
+ * same function. The write path in lib/auth/grants.ts and this parser also
+ * have to agree on which scope values survive: a level written there and
+ * dropped here is a grant that looks set and behaves as though it never was.
  */
 export function parseRoleGrants(claims: Record<string, unknown>): RoleGrant[] {
   // New format: roles array with role+locations pairs

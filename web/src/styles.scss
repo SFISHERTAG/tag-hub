@@ -17,3 +17,21 @@ body {
   height: 100%;
 }
 /* You can add global styles to this file, and also import other style files */
+
+// Overlay surfaces must draw their own edge. The elevation model carries
+// discernibility on borders, not fills — the container tiers are 1.06:1 to
+// 1.26:1 against the black canvas by design, and _theme.scss's contract says
+// any surface on them MUST draw a border. Cards and widgets do; Material's
+// overlay panels (select, autocomplete, menu, datepicker, dialog, bottom
+// sheet) render borderless by default and have no M3 border token to
+// override, so the edge is drawn here, globally, from the same token that
+// carries every other border. Class names verified against the installed
+// @angular/material bundles; colours are tokens, per the theme contract.
+.mat-mdc-select-panel,
+.mat-mdc-autocomplete-panel,
+.mat-mdc-menu-panel,
+.mat-datepicker-content,
+.mat-bottom-sheet-container,
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  border: 1px solid var(--mat-sys-outline-variant);
+}

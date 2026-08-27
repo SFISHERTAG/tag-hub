@@ -165,3 +165,86 @@ describe('OverviewTab alerts loading', () => {
     expect(getAlerts.mock.calls[1][0]).toBe('c-2');
   });
 });
+
+describe('OverviewTab alert response ordering (review Stream 4)', () => {
+  it('discards a stale response that lands after a newer client was requested', async () => {
+    // Client A's request is slow; the tab is repointed at client B whose
+    // request is fast. Without an ordering guard, A's late response overwrote
+    // B's alerts — B's page silently showing A's list. Same pattern
+    // clients-book.ts already guards with an incrementing requestId.
+    const resolvers = new Map<string, (value: unknown) => void>();
+    getAlerts.mockReset();
+    getAlerts.mockImplementation(
+      (id: string) =>
+        new Promise<ApiResult<ClientAlertsResponse>>((resolve) => {
+          resolvers.set(id, resolve as (value: unknown) => void);
+        }),
+    );
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [AlertsHost],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ClientsService, useValue: { getAlerts } },
+      ],
+    });
+    const fixture = TestBed.createComponent(AlertsHost);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    fixture.componentInstance.c.set({ ...client(), id: 'c-2' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    // B answers first with one alert; then A's stale empty answer arrives.
+    resolvers.get('c-2')?.(
+      ok({
+        clientId: 'c-2',
+        alerts: [
+          {
+            id: 'al-1',
+            type: 'sla',
+            title: 'SLA breach',
+            message: 'Response overdue',
+            created_at: '2026-08-01T00:00:00.000Z',
+          },
+        ],
+      }),
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+    resolvers.get('c-1')?.(ok({ clientId: 'c-1', alerts: [] }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain('SLA breach');
+    expect(host.querySelector('app-empty-state')).toBeNull();
+  });
+
+  it('does not refetch when the client object is replaced with the same id', async () => {
+    getAlerts.mockReset();
+    getAlerts.mockResolvedValue(ok({ clientId: 'c-1', alerts: [] }));
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [AlertsHost],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ClientsService, useValue: { getAlerts } },
+      ],
+    });
+    const fixture = TestBed.createComponent(AlertsHost);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(getAlerts).toHaveBeenCalledTimes(1);
+
+    // A health refresh hands the tab a NEW object for the SAME client. The
+    // effect must track the id, not the object identity.
+    fixture.componentInstance.c.set({ ...client() });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(getAlerts).toHaveBeenCalledTimes(1);
+  });
+});

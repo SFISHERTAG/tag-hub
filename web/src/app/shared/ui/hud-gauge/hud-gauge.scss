@@ -67,3 +67,18 @@
     transition: none;
   }
 }
+
+// Tone -> M3 token, mirroring health-badge's mapping one component over:
+// positive rides the theme primary (the untoned default), caution tertiary,
+// negative error. Strokes only; no raw colour may enter this file.
+.hud-gauge__value--positive {
+  stroke: var(--mat-sys-primary);
+}
+
+.hud-gauge__value--caution {
+  stroke: var(--mat-sys-tertiary);
+}
+
+.hud-gauge__value--negative {
+  stroke: var(--mat-sys-error);
+}

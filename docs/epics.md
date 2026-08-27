@@ -89,6 +89,7 @@ GoHighLevel.
 | 4.5 | "As of" freshness indicator | Done |
 | 4.6 | Owner's own calendar view | Done |
 | 4.7 | Creatives to campaigns linking | **Backlog — shipped without a story** |
+| 4.8 | The client owner dashboard renders nothing it promises | Draft — not started 2026-08-26 |
 
 **Blocker moved.** 4.1 is no longer the gate: the System User and token are live
 and client ad accounts are assigned. What remains is that this environment has no
@@ -228,6 +229,7 @@ here before the client does.
 | 8.3 | Attribution drift monitor | Draft |
 | 8.4 | In-app bug reporting | Draft |
 | 8.5 | The rules engine behind health and escalation | **Backlog — shipped without a story** |
+| 8.7 | Escalate a config fault instead of silently serving fixtures | Done — 2026-08-25 | `8.7-escalate-the-config-fault.md` |
 
 8.2 is per client, not global, and that distinction is the whole point. One
 client's pixel stops firing and *that* dashboard reports zero conversions while
