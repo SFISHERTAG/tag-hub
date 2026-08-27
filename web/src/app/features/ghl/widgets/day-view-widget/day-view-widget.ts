@@ -12,11 +12,21 @@ const VISIBLE_CALLS = 4;
  * ## Times are rendered, never computed
  *
  * Only `startTimeFormatted` is displayed. The raw ISO `startTime` is used for
- * the `@for` key and nothing else. Formatting it here would use the viewer's
- * timezone rather than the tenant's, so an evening appointment would render on
- * the wrong day for anyone east or west of the client. The server already
- * resolved the day window in the tenant's zone, which is the whole reason the
- * formatted strings are on the wire at all.
+ * the `@for` key and nothing else. Formatting it here would use the **viewer's**
+ * timezone, so an evening appointment would render on the wrong day for anyone
+ * east or west of the client.
+ *
+ * The reason is narrower than "the server got it right", and the distinction
+ * matters: **this component has no zone information at all**, so the server is
+ * the only place the decision can be made. What the server currently uses is
+ * `DEFAULT_TIME_ZONE` from `lib/time/zone.ts`, one constant, `America/Chicago`,
+ * for everyone — not the tenant's zone and not the location's, because
+ * `zone.ts` records that no such field exists in the system yet. Correct while
+ * every location is Central; not correct per sublocation.
+ *
+ * So the string on screen may become the wrong time later, and it will not
+ * become wrong *here*. Rendering the server's string rather than computing one
+ * is what keeps that a server-side fix.
  *
  * ## Empty and unreachable are different states, and the route says so
  *

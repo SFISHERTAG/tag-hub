@@ -32,9 +32,17 @@ const VISIBLE_UPCOMING = 5;
  * viewer's zone, which is the exact defect `DayViewWidget` guards against, and
  * this endpoint offers no server-side alternative to fall back on.
  *
- * So this shows no times. Day-level information is safe and is used freely,
- * because every field on `CalendarDay` — `date`, `dayOfMonth`, `isToday`,
- * `isCurrentMonth` — is computed server-side in the tenant's zone.
+ * So this shows no times. Day-level information is used freely, because every
+ * field on `CalendarDay` — `date`, `dayOfMonth`, `isToday`, `isCurrentMonth` —
+ * is computed **server-side** (`lib/dashboard/owner-calendar.ts` buckets with
+ * `timeZone: DEFAULT_TIME_ZONE`) rather than from the instant in the browser.
+ *
+ * "Server-side" is the claim, and **not** "in the tenant's zone": that constant
+ * is `America/Chicago` for everyone, and `lib/time/zone.ts` records that no
+ * per-tenant or per-location zone exists yet. Day bucketing against one zone is
+ * right while every location is Central and wrong for a sublocation elsewhere,
+ * where a late-evening appointment falls on the next calendar day. That is a
+ * server-side correctness question, not one this component can see or fix.
  *
  * The fix is on the server (add a formatted string the way `CallForDisplay`
  * has one), not here. Rendering a wrong time would be worse than rendering

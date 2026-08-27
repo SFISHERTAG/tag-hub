@@ -93,13 +93,27 @@ export type LeadsFunnelResponse =
  * One appointment, mirrored from `CallForDisplay` in
  * `lib/dashboard/data-fetchers.ts`.
  *
- * `startTimeFormatted` / `endTimeFormatted` are formatted **server-side, in the
- * tenant's zone**, and they are the only times that may be rendered. The raw
- * `startTime` / `endTime` ISO strings are carried for ordering and keys, never
- * for display: formatting them in the browser produces the viewer's midnight
- * rather than the client's, so an evening appointment lands on the wrong day
- * for anyone east or west of the tenant. `TodayService` documents the same
- * constraint for the same reason on the full-page view.
+ * `startTimeFormatted` / `endTimeFormatted` are formatted **server-side**, and
+ * they are the only times that may be rendered. The raw `startTime` /
+ * `endTime` ISO strings are carried for ordering and keys, never for display:
+ * formatting them in the browser produces the viewer's midnight rather than the
+ * client's. `TodayService` documents the same constraint on the full-page view.
+ *
+ * **Be precise about which zone the server used, because it is not the
+ * tenant's.** `lib/time/zone.ts` exports a single constant,
+ * `DEFAULT_TIME_ZONE = "America/Chicago"`, and its header states that no
+ * timezone exists anywhere in the system today: not on `Tenant`, not on
+ * `LocationConfig`, not in the live `clients` documents. Every formatter takes
+ * a zone parameter that defaults to that constant, and no call site passes one,
+ * because there is no per-location value to pass. `data-fetchers.ts` calls
+ * `formatTime(apt.startTime)` with no zone.
+ *
+ * That is deliberate and documented, not an oversight, and it is correct while
+ * every location is Central. It stops being correct per sublocation, which is
+ * the direction this is going. **The contract this type encodes survives that
+ * change either way:** the client renders the server's string and never
+ * computes one, so giving locations their own zone is a server change and
+ * touches no component.
  */
 export interface CallForDisplay {
   readonly id: string;
