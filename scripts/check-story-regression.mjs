@@ -57,13 +57,47 @@ function versionAt(ref, path) {
   }
 }
 
-/** The commit being merged in, or null when this is an ordinary commit. */
+/**
+ * The commit being merged in, or null when this is not a merge.
+ *
+ * Two hooks reach this file and they see different things, which the first
+ * version of this fix got wrong.
+ *
+ * `pre-commit` runs when a merge has STOPPED, on a conflict or because another
+ * hook refused, and is then concluded with `git commit`. MERGE_HEAD exists by
+ * then, so the first probe answers.
+ *
+ * `pre-merge-commit` runs on a CLEAN merge, and git writes MERGE_HEAD only when
+ * a merge stops. So the first probe returns null exactly where this check runs
+ * first, and the original fix was inert there: a clean catch-up was refused,
+ * the refusal itself left MERGE_HEAD behind, and the retry through `git commit`
+ * then passed. Two commands and a false refusal for what should be one command.
+ * Confirmed on git 2.50.1 with a hook that reports only whether MERGE_HEAD
+ * exists.
+ *
+ * What git does export there is `GITHEAD_<sha>=<ref>`, one per commit being
+ * merged, with the sha in the variable NAME rather than its value.
+ *
+ * More than one means an octopus merge. Taking an arbitrary parent from that
+ * set would be worse than not answering, so this returns null and an octopus
+ * falls back to the single-parent comparison. That is the strict direction: it
+ * can refuse a merge it should allow, never the reverse.
+ */
 function mergeHead() {
   try {
-    return git(["rev-parse", "--verify", "--quiet", "MERGE_HEAD"], { quiet: true }).trim() || null;
+    const fromRef = git(["rev-parse", "--verify", "--quiet", "MERGE_HEAD"], { quiet: true }).trim();
+    if (fromRef) return fromRef;
   } catch {
-    return null;
+    // Not a stopped merge. Fall through to the pre-merge-commit signal.
   }
+
+  // {40,64} rather than {40}: this repo is sha1 today (`git rev-parse
+  // --show-object-format`), but on a sha256 repo a {40} pattern matches nothing,
+  // `heads` comes back empty, and the guard silently reverts to single-parent.
+  // That fails strict rather than lenient, so nothing is wrongly permitted, but
+  // it fails SILENTLY, which is the property that has cost this repo the most.
+  const heads = Object.keys(process.env).filter((k) => /^GITHEAD_[0-9a-f]{40,64}$/.test(k));
+  return heads.length === 1 ? heads[0].slice("GITHEAD_".length) : null;
 }
 
 if (process.env.TAG_STORY_REOPEN_OK === "1") {
