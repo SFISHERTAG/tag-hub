@@ -94,6 +94,18 @@ jobs:
       # in now: 0 errors, 64 warnings. Warnings do not fail the run.
       - name: Lint
         run: npm run lint
+      # The root `build` script is NOT `next build`, whatever CLAUDE.md's
+      # "Build + test as the gate" section says. It is
+      # `npm run web:build && stage-angular-bundle && next build`, so it shells
+      # into the web workspace FIRST and dies with `ng: not found` unless that
+      # workspace's dependencies exist. `npm ci` at the root does not install
+      # them; only the angular job below does, in its own checkout.
+      #
+      # The Build step was added in f22bf90 without checking that, and turned
+      # main red from that commit onward. Worth leaving the note: it landed in
+      # the same commit that fixed two CI checks which passed without reading
+      # anything, and it was a third check that could not run at all.
+      - run: npm ci --prefix web
       - name: Build
         # lib/config.ts validates required keys at import, by design, so the
         # build cannot run without one. This value is a syntactic placeholder;
