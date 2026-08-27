@@ -163,3 +163,87 @@ describe("check-story-regression, merge in progress", () => {
     git(repo, ["merge", "--abort"]);
   });
 });
+
+/**
+ * The invocation path, added 2026-08-27 after the first fix shipped inert.
+ *
+ * The suite above validated the guard by CALLING it. That is the code path, and
+ * it is not where the guard runs first. `pre-merge-commit` fires on a clean
+ * merge, before git writes MERGE_HEAD, so the merge-aware branch returned null
+ * exactly there and the pre-fix single-parent behaviour ran. The clean catch-up
+ * was refused, the refusal left MERGE_HEAD behind, and the retry through
+ * `git commit` then passed. Two commands, one false refusal, and seven green
+ * tests that never noticed, because every one of them concluded its merge with
+ * `git commit`.
+ *
+ * So this block installs the hook and asserts on `git merge`'s own exit code.
+ * A test that exercises the code path and not the invocation path is the
+ * discriminating-nothing failure one level up.
+ */
+describe("check-story-regression, invoked from pre-merge-commit", () => {
+  let hookRepo: string;
+  let hookRoot: string;
+
+  const DOC2 = "docs/stories/4.4-roas-joined-on-utmadid.md";
+
+  beforeAll(() => {
+    hookRoot = mkdtempSync(path.join(tmpdir(), "tag-premerge-"));
+    hookRepo = path.join(hookRoot, "repo");
+    git(hookRoot, ["init", "-q", "-b", "main", hookRepo]);
+    git(hookRepo, ["config", "user.email", "guard-test@example.invalid"]);
+    git(hookRepo, ["config", "user.name", "guard test"]);
+    git(hookRepo, ["config", "commit.gpgsign", "false"]);
+    execFileSync("mkdir", ["-p", path.join(hookRepo, "docs/stories")]);
+
+    const doc = (status: string) =>
+      `# Story 4.4\n**Status:** ${status}\n\n## Tasks\n- [x] first\n\n## Dev Agent Record\nBuilt it.\n`;
+
+    writeFileSync(path.join(hookRepo, DOC2), doc("done"));
+    writeFileSync(path.join(hookRepo, "other.txt"), "base\n");
+    git(hookRepo, ["add", "-A"]);
+    git(hookRepo, ["commit", "-q", "--no-verify", "-m", "base, 4.4 done"]);
+    git(hookRepo, ["branch", "stale"]);
+
+    // main corrects the story downwards. The branch never touches this file,
+    // which is what makes the catch-up merge clean.
+    writeFileSync(path.join(hookRepo, DOC2), doc("ready"));
+    git(hookRepo, ["add", "-A"]);
+    git(hookRepo, ["commit", "-q", "--no-verify", "-m", "main: 4.4 was never done"]);
+
+    git(hookRepo, ["switch", "-q", "stale"]);
+    writeFileSync(path.join(hookRepo, "other.txt"), "branch work\n");
+    git(hookRepo, ["add", "-A"]);
+    git(hookRepo, ["commit", "-q", "--no-verify", "-m", "stale: unrelated work"]);
+
+    // The real invocation: git runs this with cwd at the worktree root.
+    const hook = path.join(hookRepo, ".git", "hooks", "pre-merge-commit");
+    writeFileSync(hook, `#!/bin/sh\nexec "${process.execPath}" "${GUARD}"\n`, { mode: 0o755 });
+  });
+
+  afterAll(() => {
+    if (hookRoot) rmSync(hookRoot, { recursive: true, force: true });
+  });
+
+  it("lets a clean catch-up merge through the hook in one command", () => {
+    let code = 0;
+    let output = "";
+    try {
+      output = execFileSync("git", ["merge", "--no-edit", "main"], {
+        cwd: hookRepo,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+    } catch (err) {
+      const e = err as { status?: number; stdout?: string; stderr?: string };
+      code = e.status ?? 1;
+      output = `${e.stdout ?? ""}${e.stderr ?? ""}`;
+    }
+
+    expect(output).not.toContain("going backwards");
+    expect(code).toBe(0);
+
+    // And it really merged, rather than stopping somewhere quiet.
+    expect(git(hookRepo, ["rev-list", "--count", "HEAD..main"])).toBe("0");
+    expect(git(hookRepo, ["rev-list", "--count", "--merges", "HEAD~1..HEAD"])).toBe("1");
+  });
+});
