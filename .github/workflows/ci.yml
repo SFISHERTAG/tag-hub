@@ -68,9 +68,22 @@ jobs:
       # step above exists to fix.
       #
       # continue-on-error is TEMPORARY and has a defined removal condition.
-      # REMOVE THIS LINE once `npm run check:loops` exits 0. Origin carried 14
-      # stale branches on 2026-08-25 and 2 by the end of that day, so this is
-      # close. A check that is red on day one is one people learn to delete.
+      # REMOVE THIS LINE once `npm run check:loops` exits 0.
+      #
+      # That condition was previously UNREACHABLE, which is worth recording. On
+      # a pull_request event the runner checks out refs/pull/N/merge, a commit
+      # on no branch, and check-loop-closure counted the runner's own checkout
+      # as a detached worktree with nothing containing it — the exact condition
+      # --strict exits 1 on. So this step failed every run for a reason that had
+      # nothing to do with the repository, and the gate it was meant to be has
+      # never once fired. Fixed by skipping GITHUB_WORKSPACE; see CI_WORKSPACE
+      # in scripts/check-loop-closure.mjs.
+      #
+      # What remains is real: origin still carries stale branches. Run
+      # `npm run loops -- --remote` for the current list rather than trusting a
+      # count written here. Close those and this line comes off.
+      #
+      # A check that is red on day one is one people learn to delete.
       - name: Open loops
         continue-on-error: true
         run: npm run check:loops

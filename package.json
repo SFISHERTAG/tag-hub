@@ -16,6 +16,7 @@
     "check:agent-isolation": "node scripts/check-agent-isolation.mjs",
     "check:main-ownership": "node scripts/check-main-ownership.mjs",
     "check:branch-freshness": "node scripts/check-branch-freshness.mjs",
+    "check:reachability": "node scripts/check-commit-reachability.mjs",
     "loops": "node scripts/check-loop-closure.mjs",
     "check:loops": "node scripts/check-loop-closure.mjs --strict --remote",
     "check:secret-scan": "node scripts/check-secret-scan.mjs",
