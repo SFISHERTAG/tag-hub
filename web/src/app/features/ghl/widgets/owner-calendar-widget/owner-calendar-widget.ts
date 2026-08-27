@@ -46,9 +46,25 @@ const VISIBLE_UPCOMING = 5;
  *
  * `lib/time/zone.ts:5-9` is the authority on what the process zone is: nothing
  * sets `TZ` in Cloud Run, so Node defaults to **UTC**. So the buckets are UTC
- * while the label is Central. A 7:00 PM Central appointment is 01:00 UTC the
- * next day and lands on tomorrow's cell, and at a month boundary the label and
- * the grid disagree outright.
+ * while the label is Central, and the two disagree in two separate ways.
+ *
+ * A 7:00 PM Central appointment is 01:00 UTC the next day and lands on
+ * tomorrow's cell. That one is invisible.
+ *
+ * **The month header is wrong every single month, not occasionally.** `:62`
+ * builds the 1st in the process zone and `:75-79` renders that instant in
+ * Central, and midnight UTC is always the previous evening anywhere west of it.
+ * Reproduced across a full year rather than reasoned about:
+ *
+ *     TZ=UTC              -> 12/12 months mismatch
+ *     TZ=America/Chicago  ->  0/12 months mismatch
+ *
+ *     grid=January 2026    label=December 2025   <- wrong month AND wrong year
+ *     grid=September 2026  label=August 2026
+ *
+ * Right on a developer's machine, wrong in Cloud Run, in the largest type on
+ * the tile. That is the same shape `zone.ts` documents in its own header as the
+ * reason that file exists.
  *
  * **This is wrong today, for Central, not merely wrong for a future
  * sublocation** — which is the opposite of the situation for
