@@ -66,8 +66,16 @@ concluding.
 
 ## 4b. A session is named for where it sits
 
-**The title of a chat is the basename of its worktree directory.** Two exceptions, and
-only two: the lead is `Maestro`, and the session Maestro spawns is `Apprentice`.
+**The title of a chat is the basename of its worktree directory.** That is the rule,
+and it applies to every session without exception today.
+
+**Two roles are expected to be named rather than located — the lead, and the session
+it pairs with — and what those two are called is deliberately not settled here.** Two
+vocabularies were in use on 2026-08-27 and the accounts of which was current
+conflicted. Sam's ruling was to land the location rule now and defer the names, on the
+reasoning that the two are independent: the location rule survives any vocabulary, and
+only this clause moves. When the names are settled, they replace this paragraph and
+nothing else in §4b changes.
 
 On 2026-08-27, forty-two commits of video-editing work under `tools/rough-cut` took
 an unrelated audit to find. The session doing it was titled for one thing, sat in a
