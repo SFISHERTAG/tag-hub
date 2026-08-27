@@ -305,6 +305,12 @@ describe("availableFor offers metrics only to roles the adapter can serve", () =
       currentRole: role,
       availableRoles: [role],
       locations: [...LOCATIONS],
+      // `grants` arrived on Session with story 15.A, after these review-stream
+      // commits were written. Mirrors the fixture in test/scope-resolver.test.ts:
+      // one grant for the role under test, scoped to the same locations the
+      // session carries, so the adapter sees a consistent session rather than
+      // one whose claim and resolved locations disagree.
+      grants: [{ role, locations: [...LOCATIONS] }],
     };
   }
 
