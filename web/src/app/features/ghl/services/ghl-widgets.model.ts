@@ -16,7 +16,7 @@
  * :locationId/**` endpoints in `ghl.model.ts`.
  */
 
-import type { SampleDataDisclosure } from '../../clients/services/client.model';
+import type { SampleDataDisclosure } from '../../../shared/ui';
 
 export type { SampleDataDisclosure };
 

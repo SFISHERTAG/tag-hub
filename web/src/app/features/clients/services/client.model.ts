@@ -9,31 +9,15 @@
  * no id here a caller could substitute to widen what they see. The one
  * caller-supplied identifier that exists — `csmEmail` — only selects *whose*
  * book, and only for staff roles the API has already admitted.
+ *
+ * `SampleDataDisclosure` is re-exported rather than declared: it moved to
+ * `shared/ui` when a second feature needed it, and it is genuinely part of
+ * these payloads, so the shapes below stay readable in one place.
  */
 
-/**
- * The disclosure that travels with every payload built on fabricated numbers.
- *
- * Health scores, statuses and escalation buckets all derive from
- * `lib/dashboard/mock-metrics.ts#getMockMetrics`, which returns the same fixed
- * `{ roas: 95, spend: 102, leads: 88, sla: 97 }` for every client id. The
- * reference implementation guarded that with a banner component; a banner
- * cannot cross an HTTP boundary, so the server sends the disclosure and this
- * layer renders it.
- *
- * `isSample` is read, never assumed. When the Meta integration lands and the
- * server flips its two constants, every notice in this feature disappears on
- * its own — there is no second copy of the truth here to forget to update.
- */
-export interface SampleDataDisclosure {
-  readonly isSample: boolean;
-  /** Payload-rooted dotted paths the notice applies to. */
-  readonly fields: readonly string[];
-  /** Where the fabrication comes from, so a notice can name it. */
-  readonly source: string;
-  /** Human-readable, safe to render verbatim. */
-  readonly notice: string;
-}
+import type { SampleDataDisclosure } from '../../../shared/ui';
+
+export type { SampleDataDisclosure };
 
 export type ClientStatus = 'excellent' | 'healthy' | 'at-risk' | 'critical' | 'alert';
 

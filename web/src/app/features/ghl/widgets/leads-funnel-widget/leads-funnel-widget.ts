@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { ErrorState, LoadingState } from '../../../../shared/ui';
-import { SampleDataNotice } from '../../../clients/shared/sample-data-notice/sample-data-notice';
+import { ErrorState, LoadingState, SampleDataNotice } from '../../../../shared/ui';
 import { GhlWidgetsService } from '../../services/ghl-widgets.service';
 import type {
   FunnelStage,

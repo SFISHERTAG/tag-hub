@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import type { SampleDataDisclosure } from '../../services/client.model';
+import type { SampleDataDisclosure } from './sample-data-notice.model';
 
 /**
  * The visible half of the sample-data contract, and a carried-forward defect

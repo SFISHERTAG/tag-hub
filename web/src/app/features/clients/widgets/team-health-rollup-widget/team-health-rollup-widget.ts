@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { EmptyState, ErrorState, LoadingState } from '../../../../shared/ui';
+import { EmptyState, ErrorState, LoadingState, SampleDataNotice } from '../../../../shared/ui';
 import { ClientWidgetsService } from '../../services/client-widgets.service';
 import { scoreTone } from '../../services/client-status';
-import { SampleDataNotice } from '../../shared/sample-data-notice/sample-data-notice';
 import type { CsmBookSummary, SampleDataDisclosure } from '../../services/client.model';
 
 /**

@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ErrorState, HudGauge, LoadingState } from '../../../../shared/ui';
+import { ErrorState, HudGauge, LoadingState, SampleDataNotice } from '../../../../shared/ui';
 import { ClientWidgetsService } from '../../services/client-widgets.service';
 import { scoreTone } from '../../services/client-status';
-import { SampleDataNotice } from '../../shared/sample-data-notice/sample-data-notice';
 import type { DepartmentSummary, SampleDataDisclosure } from '../../services/client.model';
 
 interface Tile {
