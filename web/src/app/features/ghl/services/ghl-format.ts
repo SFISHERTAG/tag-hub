@@ -61,13 +61,69 @@ export function formatTime(iso: string | null | undefined): string {
       });
 }
 
-/** "Today", "1 day ago", "12 days ago" — for a Firestore epoch-ms timestamp. */
+/**
+ * "Today", "1 day ago", "12 days ago" — for a Firestore epoch-ms timestamp.
+ *
+ * **This is a calendar-day question, not an elapsed-duration one**, and the two
+ * are not the same measurement. "Today" means *the same date in the tenant's
+ * zone*, so the only way to answer it is to ask a named zone which date each
+ * instant falls on. The previous implementation divided elapsed milliseconds by
+ * 86,400,000, which answers "how many 24-hour blocks fit in the gap" — a
+ * different question that agrees with this one only by coincidence.
+ *
+ * Two ways that coincidence breaks, both verified against the old code:
+ *
+ * - **Either side of midnight.** 11:30 PM to 12:30 AM is one hour and two
+ *   calendar days. The old code returned "Today" for something that happened
+ *   yesterday.
+ * - **DST, twice a year.** 8 March 2026 is 23 hours long in `GHL_TIME_ZONE`, so
+ *   noon-to-noon across it returned "Today" instead of "1 day ago". 1 November
+ *   is 25 hours long, so 12:30 AM to 11:30 PM *on that one date* returned
+ *   "1 day ago" for two instants on the same day.
+ *
+ * Contrast `lib/format/time-ago.ts#formatTimeAgo`, which looks like this
+ * function and is **correct as written**: it reports elapsed duration ("3 hours
+ * ago"), and no timezone can change how long ago something was. Anyone sweeping
+ * for relative-time helpers finds both; only this one is a date computation.
+ *
+ * The zone is `GHL_TIME_ZONE`, the constant this file already applies in
+ * `formatDate` and `formatTime`. It was declared eighteen lines above this
+ * function and this function did not use it.
+ */
 export function relativeDays(markedAt: number, now: number = Date.now()): string {
-  if (!Number.isFinite(markedAt)) return MISSING;
-  const days = Math.floor((now - markedAt) / MS_PER_DAY);
+  if (!Number.isFinite(markedAt) || !Number.isFinite(now)) return MISSING;
+  const days = civilDayIndex(now) - civilDayIndex(markedAt);
   if (days <= 0) return 'Today';
   if (days === 1) return '1 day ago';
   return `${days} days ago`;
+}
+
+/** Constructed once: `Intl.DateTimeFormat` is expensive and this runs per row. */
+const CIVIL_DAY_FORMAT = new Intl.DateTimeFormat('en-US', {
+  timeZone: GHL_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/**
+ * The calendar date an instant falls on in `GHL_TIME_ZONE`, as a day number
+ * that can be subtracted.
+ *
+ * The parts are re-anchored through `Date.UTC` on purpose: UTC has no DST, so
+ * dividing by `MS_PER_DAY` there is exact. Doing the same arithmetic in a zone
+ * that observes DST is what this function exists to avoid.
+ */
+function civilDayIndex(ms: number): number {
+  let year = 0;
+  let month = 0;
+  let day = 0;
+  for (const part of CIVIL_DAY_FORMAT.formatToParts(new Date(ms))) {
+    if (part.type === 'year') year = Number(part.value);
+    else if (part.type === 'month') month = Number(part.value);
+    else if (part.type === 'day') day = Number(part.value);
+  }
+  return Date.UTC(year, month - 1, day) / MS_PER_DAY;
 }
 
 export function plural(count: number, noun: string): string {

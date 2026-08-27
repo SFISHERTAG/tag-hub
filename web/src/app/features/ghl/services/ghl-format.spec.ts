@@ -74,6 +74,49 @@ describe('ghl-format', () => {
     it('never reports a future timestamp as negative days', () => {
       expect(relativeDays(now + 86_400_000, now)).toBe('Today');
     });
+
+    /**
+     * The four cases above cannot fail for the defect these three cover.
+     * Every one of them sits on an exact multiple of 86,400,000, where
+     * "elapsed / 24h" and "difference between calendar dates" agree by
+     * coincidence, so all four pass against the broken implementation too.
+     * That is worth stating rather than leaving for the next reader to
+     * discover: a test that cannot fail is not coverage.
+     *
+     * These three are written as absolute UTC instants and assert against
+     * GHL_TIME_ZONE calendar days, so they do not depend on the runner's own
+     * zone — which is unpinned, and would otherwise decide the result. Each
+     * one was confirmed to FAIL against the previous implementation before
+     * being committed; the expected value is the corrected answer, not a
+     * transcript of what the code currently returns.
+     */
+    it('counts the calendar day, not 24-hour blocks, across midnight', () => {
+      // 11:30 PM -> 12:30 AM in America/Chicago. One hour, two dates.
+      const marked = Date.parse('2026-03-10T04:30:00.000Z');
+      const at = Date.parse('2026-03-10T05:30:00.000Z');
+      expect(relativeDays(marked, at)).toBe('1 day ago');
+    });
+
+    it('handles the spring-forward date being 23 hours long', () => {
+      // Noon to noon across 8 March 2026, when DST starts. 23 hours elapsed,
+      // one calendar day apart. "elapsed / 24h" floors this to 0.
+      const marked = Date.parse('2026-03-07T18:00:00.000Z');
+      const at = Date.parse('2026-03-08T17:00:00.000Z');
+      expect(relativeDays(marked, at)).toBe('1 day ago');
+    });
+
+    it('handles the fall-back date being 25 hours long', () => {
+      // 12:30 AM to 11:30 PM on 1 November 2026, when DST ends. Both instants
+      // are the same date, but 24 hours apart, so "elapsed / 24h" reports a
+      // day that did not pass.
+      const marked = Date.parse('2026-11-01T05:30:00.000Z');
+      const at = Date.parse('2026-11-02T05:30:00.000Z');
+      expect(relativeDays(marked, at)).toBe('Today');
+    });
+
+    it('returns the em-dash for a non-finite timestamp', () => {
+      expect(relativeDays(Number.NaN, now)).toBe('—');
+    });
   });
 
   describe('stageAgeLabel', () => {
