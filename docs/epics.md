@@ -320,7 +320,7 @@ Angular, so a screen exists in exactly one place and no defect gets fixed twice.
 | 10.2 | Real session wiring and the auth surface | In Progress | `10.2-real-session-wiring-and-the-auth-surface.md` |
 | 10.3 | Responsive shell and navigation | Review — theme toggle rejected, see story | `10.3-responsive-shell-and-navigation.md` |
 | 10.4 | Shared M3 primitives, portfolio and bug reports | Draft | `10.4-shared-m3-primitives-portfolio-and-bug-reports.md` |
-| 10.5 | GHL integration module | Draft | `10.5-ghl-integration-module.md` |
+| 10.5 | GHL integration module | In Progress | `10.5-ghl-integration-module.md` |
 | 10.6 | Widget dashboard and the clients book | Draft | `10.6-widget-dashboard-and-clients-book.md` |
 | 10.7 | Remaining feature modules | Draft | `10.7-remaining-feature-modules.md` |
 | 10.8 | Legacy removal | Draft | `10.8-legacy-removal.md` |
