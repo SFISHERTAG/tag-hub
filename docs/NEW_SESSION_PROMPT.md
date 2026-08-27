@@ -212,9 +212,8 @@ what that row can be, and it closes both directions: `ListAgents` has no role
 column, a row's name is an address and nothing more, and one address has been the
 literal word `LEAD` (§4b:83, :98), which made the seat **harder** to identify
 rather than easier (§4b:127-128). §4b's callsign rule 5 (§4b:164) now bans
-role-shaped callsigns, so
-neither the absence nor the presence of a role-looking row tells a Reviewer who
-you are. **Every Reviewer spawned on 2026-08-27 had to infer the Lead from session
+role-shaped callsigns, so neither the absence nor the presence of a role-looking
+row tells a Reviewer who you are. **Every Reviewer spawned on 2026-08-27 had to infer the Lead from session
 age and branch ownership, and each said plainly that it was inference.** Under the
 model in this section the task exists in exactly one place, your reply, so a
 Reviewer who infers wrong has no task, no fallback and no way to know. And §4b
