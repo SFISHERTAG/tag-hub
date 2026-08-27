@@ -235,6 +235,14 @@ The four defects it caught are in
 exchanges, four of them spent establishing which session could see what.
 
 ## Output discipline
+- **No preamble. Act, then report.** Never announce an action you are about to take:
+  "I'll read that file", "Let me check X", "Now I'll run the build". The user handed you
+  the task and already knows a tool call follows it, so the announcement buys nothing the
+  result will not say better, and it costs a round trip to say it. The first thing in a
+  response is a tool call or an outcome, never a statement of intent. This covers every
+  action, not just reads: no "I'll verify", no "let me look into that", no restating the
+  request back before doing it. Narrating a plan is only warranted when the user asked
+  for the plan instead of the work, or when the action needs permission first.
 - Keep responses terse: state what changed and what's next, don't restate file contents,
   don't narrate implementation step by step. The diff is the report.
 - Prefer `ng generate` over hand-writing boilerplate.
