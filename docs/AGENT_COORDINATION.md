@@ -64,6 +64,58 @@ git log --all -- "**/check-branch-freshness.mjs"   # returns nothing — never c
 Stylistic inference is not evidence. Ask, and say plainly that you are asking rather than
 concluding.
 
+## 4b. A session is named for where it sits
+
+**The title of a chat is the basename of its worktree directory.** That is the rule,
+and it applies to every session without exception today.
+
+**Two roles are expected to be named rather than located — the lead, and the session
+it pairs with — and what those two are called is deliberately not settled here.** Two
+vocabularies were in use on 2026-08-27 and the accounts of which was current
+conflicted. Sam's ruling was to land the location rule now and defer the names, on the
+reasoning that the two are independent: the location rule survives any vocabulary, and
+only this clause moves. When the names are settled, they replace this paragraph and
+nothing else in §4b changes.
+
+On 2026-08-27, forty-two commits of video-editing work under `tools/rough-cut` took
+an unrelated audit to find. The session doing it was titled for one thing, sat in a
+worktree named for a second, and committed to a branch named for a third. No
+individual name was wrong; answering *who is in there and what are they touching*
+required already knowing all three.
+
+**This rule is about discoverability, not loss.** The loss half is mechanised as of
+`54d08ea`: `check-commit-reachability` refuses a commit on a detached HEAD and warns
+with the exact push command on a branch with no upstream. Naming by location answers a
+different question — *which of a hundred sessions was that* — and no guard can answer
+it, because a chat title is not in the repository. Per standing order 8, the part of a
+norm that duplicates a mechanism is the part that decays, so this rule deliberately
+claims only what no mechanism covers.
+
+- Use the directory name **verbatim, hash suffix included**:
+  `functions-typescript-build-8fa5d4`, not "Functions build". The suffix is what makes
+  it match `git worktree list`, and a tidied name defeats the whole point.
+- A session in the shared checkout at the repo root is `TAG`. There should rarely be
+  one; that checkout is usually parked.
+- **Rename at the start of a session, not at the end.** A title that becomes correct
+  after the work is over solves nothing.
+
+**A second hole, larger than the first.** A plain terminal `claude` session in a
+worktree has no title to set. It does not appear in the session list, its transcript is
+not searchable, and there is nothing to archive or restore — the video-editing session
+above was exactly this, which is why searching the session list for it returned nothing.
+The rule cannot reach those sessions at all. Where work matters, the branch is the
+record that survives, not the chat.
+
+**The known hole, stated rather than hidden.** Worktrees outlive sessions and get
+reused — `functions-typescript-build-8fa5d4` has hosted at least five — so a location
+name is not unique over time. Address the live one by name; if two are live in the
+same directory, disambiguate with the session id, never with an invented nickname.
+Inventing one puts you straight back in the situation this rule exists to prevent.
+
+This is **not mechanised**, and cannot be: no git hook can read a chat title. It is
+therefore a check-in item. When two sessions first make contact, the first thing each
+confirms is that it is named for where it sits.
+
 ## 5. Another session's work is not yours to move
 
 This covers uncommitted files, untracked files, and commits.
@@ -149,6 +201,35 @@ visible checkout. Park with `git switch -c hold/main-parked` from the same commi
 no file, preserves untracked files, and leaves stashes alone. Never park with
 `git checkout --detach`, which is what deleted a tracked file from another session's tree on
 2026-08-20 (§1).
+
+## 9b. Say whether it is safe. Then ask.
+
+Added 2026-08-26, after a session merged a PR on the words "so can you merge
+pr7". That was a question about safety, not an instruction, and it was read as
+one because it was the first thing in three days that sounded like a yes.
+
+**The rule.** For any action on a shared ref -- a merge, a push to `main`, a
+deploy, a branch deletion -- report whether it is safe and then ASK whether to
+proceed. Two separate messages, or one message ending in a question. Never infer
+the instruction from the question.
+
+**Why the phrasing is the trap.** "Can you X" is ambiguous between *are you able*
+and *please do*. So is "should we X", "ready to X", and "is X good to go". Every
+one of them reads as authorisation to a session that has been waiting for
+authorisation, which is exactly when it is least able to tell the difference. The
+longer a session has been correctly declining to act, the more likely it is to
+over-read the first permissive-sounding sentence.
+
+**What safe means here, and it is not a feeling.** Name the checks that ran, the
+commit they ran against, and what is still unverified. "It is safe" without those
+is the same claim as "this should work", which §10 already refuses.
+
+**This is not the ownership rule again.** §9 says who may move `main`. This says
+that even the owner's apparent go-ahead is confirmed before it is acted on,
+because the cost of asking is one line and the cost of a wrong read is a shared
+ref moved without intent.
+
+---
 
 ## 10. Standing orders
 

@@ -59,11 +59,36 @@ function main() {
     return;
   }
 
-  const behind = Number(tryGit(`rev-list --count HEAD..${BASE}`) ?? 0);
+  // Mid-merge, HEAD is still the pre-merge commit, so counting from it measures
+  // the drift this very commit is erasing. Measure what the merge actually
+  // leaves instead: commits in BASE that the merge result would still not
+  // reach. Zero means this commit IS the catch-up printed at the bottom of this
+  // file as the remedy.
+  //
+  // How a catch-up reaches a pre-commit hook at all: git runs pre-merge-commit
+  // for a merge, and that hook does not call this check. But it calls others,
+  // and any one of them refusing leaves the merge in progress with MERGE_HEAD
+  // set, so the only way to conclude it is `git commit`, which runs pre-commit,
+  // which runs this. Conflicts do the same thing by a different road. Neither is
+  // the trigger; MERGE_HEAD is. An earlier draft of this comment said a clean
+  // merge never arrives here, and the Reviewer reproduced a clean one that did.
+  // On 2026-08-27 the pair of them deadlocked fix/alert-on-config-fault, 25
+  // behind, unable to run the merge both guards printed as the remedy.
+  //
+  // Existence of MERGE_HEAD alone is not the test. Returning on that would wave
+  // through a merge of any unrelated branch while the drift stands untouched.
+  const mergeHead = tryGit("rev-parse --verify --quiet MERGE_HEAD");
+  const behind = mergeHead
+    ? Number(tryGit(`rev-list --count ${BASE} --not HEAD MERGE_HEAD`) ?? 0)
+    : Number(tryGit(`rev-list --count HEAD..${BASE}`) ?? 0);
   if (behind === 0) return;
 
   // Merge commits are excluded: merging main in does not make a branch your
   // own work, and counting them would let a stale snapshot look productive.
+  //
+  // This one is deliberately NOT adjusted for a merge in progress. A branch with
+  // no work of its own that is mid-merge of something other than BASE is still
+  // stranded, and should still be refused.
   const unique = Number(tryGit(`rev-list --count --no-merges ${BASE}..HEAD`) ?? 0);
 
   const stranded = unique === 0;
