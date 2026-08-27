@@ -142,7 +142,7 @@ Your plan must name, explicitly:
 ## §3. Spawn the assistant — one line, then a message
 
 **Read this paragraph first. It is the part that has already been got wrong,
-twice, in opposite directions.**
+twice, in different ways.**
 
 **You do not spawn the pair yourself.** Sam pastes one line into a fresh session
 and that session reports in to you. A subagent is not a pair: it cannot commit,
@@ -152,11 +152,8 @@ Sam. On 2026-08-26 a lead session read this section, understood it correctly, an
 spawned two subagents anyway. Sam had to correct it. The work was not wasted, but
 it was not a pair either.
 
-**And this paragraph used to say "draft a prompt means you write a document".**
-It does not any more, for the reason the rest of this section gives, and the
-sentence is removed rather than left standing: an instruction repealed twenty
-lines below its own definition is worse than one never written, because a reader
-told to read the definition *first* learns the repealed model as the correct one.
+This paragraph used to define "draft a prompt" as writing a document. That
+sentence is removed, not lost.
 
 Subagents are still useful, as **Specialists**: bounded, disposable
 investigators you send at one question and dissolve. Use them freely. Just do
@@ -194,14 +191,7 @@ is to run `ListAgents`, message the Lead, and wait. Your reply is the only place
 its task exists, and that is the right place: you can see who is already inside
 what, and a document cannot. Send it, at minimum:
 
-1. **Your own address, verbatim from `ListAgents` line 1.** First, and before the
-   task. Step 0 tells the Reviewer to read the Lead's row, and **`ListAgents`
-   prints addresses, never roles, so there is no Lead row to read.** On 2026-08-27
-   four Reviewers each had to infer the Lead from session age and PR ownership,
-   said so plainly, and happened to be right. Under the model in this section the
-   task exists in exactly one place, your reply, so a Reviewer who infers wrong
-   has no task, no fallback and no way to know. Stating your address costs one
-   line and is the only thing standing between Step 0 and a silent dead end.
+1. **Your own address, verbatim from `ListAgents` line 1.** First, before the task.
 2. **The task, and the definition of done for it** — including which gate must be
    green and what "green" means for that gate specifically.
 3. **A named first check-in point** — a specific artefact or moment, not "when
@@ -215,6 +205,20 @@ protocol, the §4b protocols, **and the instruction to attack the Lead, which is
 entire titled step of that document and says it harder than a message line will.**
 Copying any of it into a message is how one rule comes to exist in two places and
 goes stale in one of them.
+
+**Why your address comes first, and why it is not optional.** Step 0 tells the
+Reviewer to read the Lead's row. `AGENT_COORDINATION.md` §4b is the authority on
+what that row can be, and it closes both directions: `ListAgents` has no role
+column, a row's name is an address and nothing more, and one address has been the
+literal word `LEAD` (§4b:83, :98), which made the seat **harder** to identify
+rather than easier (§4b:127-128). Rule 5 now bans role-shaped callsigns, so
+neither the absence nor the presence of a role-looking row tells a Reviewer who
+you are. **Every Reviewer spawned on 2026-08-27 had to infer the Lead from session
+age and branch ownership, and each said plainly that it was inference.** Under the
+model in this section the task exists in exactly one place, your reply, so a
+Reviewer who infers wrong has no task, no fallback and no way to know. And §4b
+records an address changing mid-session with no action by that session, so if a
+send fails, re-derive from `ListAgents` rather than reusing what you were told.
 
 **The old list had seven items and this one has four, which does not subtract.**
 One old item carried a durable half and a per-task half and was split, so the
