@@ -308,8 +308,12 @@ describe("the invariant the design rests on", () => {
       });
 
       // Unique ids, per the precondition above.
+      // Bound computed ONCE. Recomputing it in the condition moved the target
+      // size between passes — harmless here because it terminates and the run is
+      // seeded, but it did not do what it read as.
+      const idCount = 1 + Math.floor(rnd() * 3);
       const ids = new Set<string>();
-      while (ids.size < 1 + Math.floor(rnd() * 3)) {
+      while (ids.size < idCount) {
         ids.add(
           pick([
             `phase1:${pick(OPPS)}`,
@@ -334,12 +338,33 @@ describe("the invariant the design rests on", () => {
       expect(claims.stranded.length + r.orphansOnly.length).toBe(orphans.length);
       expect(r.startedNeverFinished).toBe(orphans.length);
 
-      // Fail-closed: nothing undecidable may reach `complete`.
+      // Fail-closed, stated as "a completion was ESTABLISHED" rather than "the
+      // start had a timestamp".
+      //
+      // The original defect had TWO independent fail-open clauses — a null start
+      // ts and a null completion ts — and the first version of this assertion
+      // checked only the start's. A mutant that corrupts the decision through the
+      // COMPLETION's timestamp left the start non-null and passed this test
+      // clean. The invariant assertions above cannot backstop it either: moving a
+      // claim from `stranded` to `complete` shrinks one side and grows the other,
+      // so the sum is unchanged. They verify the pairing arithmetic, not the
+      // classification.
       for (const done of claims.complete) {
         const start = events.find(
           (e) => e.type === "phase1_started" && e.opportunityId === done.eventId,
         );
-        expect(start?.ts).not.toBeNull();
+        expect(start).toBeDefined();
+        expect(start!.ts).not.toBeNull();
+
+        const establishing = events.filter(
+          (e) =>
+            e.locationId === done.locationId &&
+            e.type === "phase1_complete" &&
+            e.ts !== null &&
+            start!.ts !== null &&
+            e.ts >= start!.ts,
+        );
+        expect(establishing.length).toBeGreaterThan(0);
       }
     }
   });
