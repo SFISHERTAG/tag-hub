@@ -98,7 +98,7 @@ branch away. A rule that is not on `main` does not exist, and neither does a sto
 | Land `docs/land-tonights-decisions` so its structure is readable to other sessions | peer session | open |
 | Read the GHL v2 API before 18.5-18.8 are sized; every verb assumes one call | next session | open |
 | `npm run check:functions` runs no tests; add `functions` `test` to it or to the DoD | next session | open |
-| Decide what happens to `/private/tmp/tag-deploy-doc`, which is not a worktree and not tracked | Sam | open |
+| Decide what happens to `/private/tmp/tag-deploy-doc`, which is not a worktree and not tracked | Sam | open — credential exposure closed 2026-08-26, 90MB of untracked files remain |
 
 ### The two carried over from the 25-26 Aug sessions, verified 2026-08-26
 
@@ -125,9 +125,14 @@ Two consequences, and the second is the one that matters:
 1. Nothing there is recoverable through git. There are no unpushed commits to
    rescue because there is no repository, but any edit made in it exists in that
    directory and nowhere else, with no history.
-2. **It contains `.env.local` as a symlink to `/Users/home/projects/TAG/.env.local`.**
-   Real credentials are reachable through a path under `/private/tmp`, which is
-   world-writable with the sticky bit and is periodically purged by the OS.
+2. **It contained `.env.local` as a symlink to `/Users/home/projects/TAG/.env.local`.**
+   Live credentials, 26 keys, reachable and readable through a path under
+   `/private/tmp`. **Closed 2026-08-26:** the symlink was removed, and the target
+   in the main checkout was `0644` (world-readable) and is now `0600`. The
+   symlink was the path that made it findable; the mode was the reason it would
+   have been readable once found. Nothing else under `/private/tmp` or `/tmp`
+   points into the repo. No key was read, printed, or moved; only the count of
+   key names was taken.
 
 Not touched, and deliberately: deleting 90MB of someone else's working directory
 is not a call this session gets to make, and per `docs/AGENT_COORDINATION.md` a
