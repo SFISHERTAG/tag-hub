@@ -274,3 +274,73 @@ describe("reconcileSides pairs incidents instead of summing rows", () => {
     expect(r).not.toHaveProperty("count");
   });
 });
+
+describe("the invariant the design rests on", () => {
+  /**
+   * `startedNeverFinished` is `orphans.length` with no sum, which is only correct
+   * if EVERY stranded claim is also one of the orphan starts. If that is ever
+   * false the run count undercounts silently, and nothing else would catch it.
+   *
+   * A reviewer established this by fuzzing 50,000 randomised cases in a session
+   * that no longer exists. Standing order 8: prefer a mechanism to a norm. This
+   * is a smaller, seeded, deterministic version that runs in the suite forever.
+   *
+   * PRECONDITION, and it is the reviewer's own scar: claim ids must be UNIQUE.
+   * Their first generator emitted duplicates and reported 903 false violations.
+   * Firestore document ids are unique within a collection, so
+   * `webhookEventsProcessed/{source}:{eventId}` cannot produce that input — the
+   * counterexample was unreachable and the generator was the bug.
+   */
+  const LOCATIONS = ["loc-1", "loc-2", "loc-3"];
+  const OPPS = ["opp-1", "opp-2", "opp-3"];
+
+  // Seeded so a failure is reproducible rather than a story about last Tuesday.
+  let seed = 20260827;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  const pick = <T,>(xs: readonly T[]) => xs[Math.floor(rnd() * xs.length)];
+
+  it("every stranded claim is also an orphan start, over 2000 randomised cases", () => {
+    for (let c = 0; c < 2000; c++) {
+      const events = Array.from({ length: 1 + Math.floor(rnd() * 5) }, () => {
+        const type = pick(["phase1_started", "phase1_complete", "phase3_started", "phase3_setup_guide_sent"]);
+        const hours = rnd() < 0.25 ? null : Math.floor(rnd() * 12);
+        return ev(pick(LOCATIONS), type, hours, type === "phase1_started" ? pick(OPPS) : undefined);
+      });
+
+      // Unique ids, per the precondition above.
+      const ids = new Set<string>();
+      while (ids.size < 1 + Math.floor(rnd() * 3)) {
+        ids.add(
+          pick([
+            `phase1:${pick(OPPS)}`,
+            `phase1:${SHA}`,
+            `phase1:caller-key-${Math.floor(rnd() * 100)}`,
+            `phase2:${SHA}`,
+            `phase3:${SHA}`,
+          ]),
+        );
+      }
+
+      const claims = classifyClaims([...ids].map((id) => claim(id)), events, NOW);
+      const { orphans } = findOrphanStarts(events);
+      const r = reconcileSides(claims, orphans);
+
+      const orphanKeys = orphans.map((o: { source: string; locationId: string }) => `${o.source}:${o.locationId}`);
+      for (const s of claims.stranded) {
+        expect(orphanKeys).toContain(`${s.source}:${s.locationId}`);
+      }
+
+      // The pool must absorb exactly, in both directions.
+      expect(claims.stranded.length + r.orphansOnly.length).toBe(orphans.length);
+      expect(r.startedNeverFinished).toBe(orphans.length);
+
+      // Fail-closed: nothing undecidable may reach `complete`.
+      for (const done of claims.complete) {
+        const start = events.find(
+          (e) => e.type === "phase1_started" && e.opportunityId === done.eventId,
+        );
+        expect(start?.ts).not.toBeNull();
+      }
+    }
+  });
+});
