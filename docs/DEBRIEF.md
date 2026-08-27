@@ -11,6 +11,16 @@ documents, four of them dated in the filename:
     LETTER_TO_THE_NEXT_LEAD.md              LETTER_TO_THE_NEXT_SESSION.md
     MERGE_CONFLICTS_IDENTIFIED.md           MERGE_READY_FOR_SAM.md
 
+**Two corrections to that block, 2026-08-27, from a blind review.** The baseline
+convention in trap 11 resolves a *count* at its baseline, and this is not only a
+count: it is a block of paths a reader follows, doing live argumentative work in
+the sentence below it. `LETTER_TO_THE_NEXT_SESSION.md` is no longer among them; it
+is now `_archive/session-letters/LETTER_TO_THE_NEXT_SESSION-2026-08-23.md`, and a
+reader on `main` following the old path finds nothing. Separately, **eight is an
+undercount** of the class on `main`, which also holds `MERGE_DECISIONS_2026-08-23.md`
+and `handoff-angular-migration.md`. The argument below is stronger than the number
+it rests on, not weaker.
+
 A ninth was about to be written, which is what prompted this file. `CLAUDE.md`
 bans exactly this accumulation for status docs and names `MERGE_STATUS_<date>.md`
 as the shape; the last two above are that shape with the date left off. A reader
@@ -18,8 +28,15 @@ facing eight does not know which is current, so they read none, and every lesson
 paid for in them is lost.
 
 It also exists because a debrief nobody reads is not a loop. `PEER_SESSION_PROMPT.md`
-Step 1 points a new Reviewer here and Step 5 sends them back to append. Read at
-the start, written at the end, same file. That is the whole mechanism.
+Step 1 points a new Reviewer here and **Moment 5** sends them back to append. Read
+at the start, written at the end, same file. That is the whole mechanism.
+
+**Corrected 2026-08-27: this sentence said "Step 5".** That document runs two
+numbering schemes, Moments 1 to 5 and Steps 0 to 7, which is trap 14 below, and
+this sentence committed trap 14 while describing its own mechanism. Step 5 is the
+permission boundary, marked "Verbatim. This does not move", so a session sent
+there either concludes the append was never shipped or starts editing beside the
+one section that must not move. "Read at Step 1" was correct and stays.
 
 **Why it earns a place in a list that says "and only these".** The other four
 items in Step 1 say what is *true*: the constraints, the method, the standing
@@ -156,8 +173,14 @@ paragraphs that corrected an earlier false claim. *Check:* `git diff main...bran
 did since.
 
 **13. A warning precise enough to be trusted and narrow enough to mislead.**
-`NEW_SESSION_PROMPT.md:14` names `LETTER_TO_THE_NEXT_LEAD.md` by path as proven
-stale the same day it was written. `LETTER_TO_THE_NEXT_SESSION.md` sits beside it
+`NEW_SESSION_PROMPT.md:14` names `LETTER_TO_THE_NEXT_LEAD.md` as proven stale the
+same day it was written, and it names it by **bare filename, never by path**.
+Corrected 2026-08-27: this trap said "by path", so a session applying the trap's
+own instruction greps `docs/LETTER_TO_THE_NEXT_LEAD.md`, gets zero hits, and
+concludes there is no warning at all. The trap defeated itself on its own check.
+Two sessions produced that same "by path" wording independently, from the same
+sentence, with no transmission between them, so treat the miscitation as
+reproducible rather than as one person's slip. `LETTER_TO_THE_NEXT_SESSION.md` sits beside it
 and is referenced by **nothing** on `main`. A session that reads §0 carefully
 learns to distrust exactly one of two identically shaped documents, and trusts the
 other *because* the warning was specific. That is worse than no warning. *Check:*
@@ -269,7 +292,7 @@ same primary source catches that, which is the case for the seat.
   why that mattered, then did not run the same command against the adjacent PR.
   It had merged seconds earlier. One of four questions I put to Sam described a PR
   that no longer existed. **Applying a lesson to one item and not its neighbour is
-  Promoted as traps 2 and 8.
+  the failure, not the missing command.** Promoted as traps 2 and 8.
 - I inferred a wrong count came from the test suite's case count. It came from a
   grep sweeping the type declaration. My theory explained one number and orphaned
   two; the better one explained all three. Flagging it as inference was the only
