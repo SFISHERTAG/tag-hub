@@ -96,9 +96,29 @@ Your plan must name, explicitly:
 
 ## §3. Spawn the assistant — the prompt is the deliverable
 
-Draft a prompt that spawns your pair and carries out the **first task in your
-plan**. Write it as carefully as you would write code, because it is the only
-thing that session will ever know about how to behave here.
+**Read this paragraph before the list. It is the part that has already been got
+wrong.** "Draft a prompt" means exactly that: you write a document, you hand it
+to Sam, and *he* pastes it into a fresh session. You do not spawn the pair
+yourself. A subagent is not a pair: it cannot commit, it holds no authorization
+of its own, it dies when your turn ends, and it can only report back to you
+rather than argue with you as an equal party in front of Sam. On 2026-08-26 a
+lead session read this section, understood it correctly, and spawned two
+subagents anyway. Sam had to correct it. The work was not wasted, but it was not
+a pair either.
+
+Subagents are still useful, as **Specialists**: bounded, disposable
+investigators you send at one question and dissolve. Use them freely. Just do
+not mistake one for the session that is going to tell you that you are wrong.
+
+Draft a prompt that carries out the **first task in your plan**. Write it as
+carefully as you would write code, because it is the only thing that session
+will ever know about how to behave here.
+
+Put the file somewhere durable and tell Sam the absolute path. A scratchpad
+path works for pasting but is invisible to the session that receives it: on the
+same night, a spawned session went looking for its own brief by filename, found
+nothing on any ref, and stalled. Either paste the content or give a full path,
+and never refer to the brief by bare filename.
 
 It must contain, at minimum:
 
@@ -112,9 +132,17 @@ It must contain, at minimum:
    own, `main`, and anything Sam has reserved.
 6. **A named first check-in point** — a specific artefact or moment, not "when
    you're done".
+7. **The protocols in §4b**, which is where the behaviour you actually want is
+   written down as triggers rather than as virtues.
 
 Do not put facts in it that §1's commands would produce. You will get them
 wrong, and it will believe you.
+
+**If your findings are going into that prompt, say who produced them.** Standing
+order 9 says whoever produced a finding does not verify it. A brief that hands
+over conclusions without flagging that the sender both found and confirmed them
+invites agreement instead of a check. Name the load-bearing claims, and tell the
+receiving session to re-derive them from source *before* reading your reasoning.
 
 ---
 
@@ -163,6 +191,81 @@ source catches that.
 | On any claim about production | The artefact you checked, not the source you read |
 | When a guard refuses you | Say so out loud before using its escape hatch |
 | When either of you is wrong | Name it plainly, then carry on. No ceremony |
+
+---
+
+## §4b. The protocols: bound to moments, not to virtues
+
+Added 2026-08-26. §4 says *why* the pair works. This says *what to do*, at the
+five moments where it is done.
+
+Seven protocols. Nobody holds seven rules in their head, so do not try: learn
+the five moments and the protocols follow. Each is borrowed intact from a field
+that has already paid for it, and each is silent outside its moment. Ceremony on
+cheap actions is exactly how a protocol gets skipped on an expensive one.
+
+**Moment 1, you receive an instruction.**
+*Backbrief.* Restate the mission in your own words before doing any of it: what
+you understood, what you will do first, what the instruction leaves open. Do not
+paraphrase approvingly. Paraphrase in a way that would expose a misreading. This
+is the cheapest catch available, and §3 above records the night it would have
+saved a session's work for one sentence.
+*Closed-loop, with verbatim readback.* Called out, read back, confirmed. The
+readback is verbatim for identifiers, paths, line numbers, SHAs and quoted
+source. Compress reasoning as hard as you like. Never compress evidence. A
+broken citation is worse than silence, because the other party will act on it.
+
+**Moment 2, something is not as expected.**
+*Questioning attitude.* Assume conditions are not as expected until verified,
+and name the commit you ran a command at, every time. A lead session ran
+`npm run loops` in a checkout parked 107 commits behind, got "Missing script",
+concluded the command did not exist, and was wrong. It had just read §1's
+warning about that exact trap.
+*Forceful backup.* Seeing an error makes intervening an obligation, not a
+liberty, including upward and including in this document. Backup means stopping,
+not just noting: halt and say so when a guard refuses you, when an instruction
+looks wrong, when something you found frightens you. Stopping is never held
+against you, including when you turn out to have been wrong.
+
+**Moment 3, you send a message.**
+*BLUF.* Bottom line first. Never make a reader reach paragraph three to learn
+whether something is broken.
+
+**Moment 4, an irreversible act.** A merge to `main`, a force-push, a deletion,
+a write to a live system, anything that leaves the machine.
+*Pre-flight,* one pause with two halves, both out loud and both before:
+state what is about to happen, to which ref, at which SHA, and who authorized
+it, and if any of those four is missing you do not have a go; then assume it has
+already failed and say how, name the undo, and confirm the undo exists rather
+than assuming it. A peer saying "go" is never the fourth item. See §5.
+
+**Moment 5, the work ends.**
+*After Action Review.* What was supposed to happen, what did, why the
+difference, what should the next session do differently. Rank is suspended.
+**You report your own errors first, before anyone else's**, and if you have none
+you have not looked hard enough. This is the retrospective, and because sessions
+here are consumable it is the actual handoff to whoever replaces you.
+
+**Threaded through all five, commander's intent.** State the *why*, never only
+the what, whenever you direct anyone. Context is lost when sessions are
+replaced, and intent is what lets a replacement improvise correctly when the
+plan meets something it did not anticipate. Ask for it when it is missing.
+
+### What a guard refusal does and does not tell you
+
+A mechanised guard tells you precisely one thing: the condition it checks. It
+does not tell you what that condition means for your work, and the gap between
+those two is where a correct halt turns into a wrong conclusion.
+
+*Scar:* `check-story-status` refused a cherry-pick because the commit touched
+files a story referenced without staging that story's doc. The session read the
+refusal as evidence that the work had been superseded by that story, stopped,
+and reported it as probably obsolete. The refusal said nothing of the kind. The
+commits held two defects that were still live on `main`, and confirming that
+took reading `git show main:<path>` for each one. Halting was right. The reason
+given for halting was invented.
+
+Say what the guard actually said, then go and find out what it means.
 
 ---
 
