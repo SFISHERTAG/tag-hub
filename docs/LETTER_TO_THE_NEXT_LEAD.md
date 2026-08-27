@@ -12,10 +12,11 @@
 >
 > - The pointer near the top, "`docs/SESSION_HANDOFF_2026-08-23.md` has the facts:
 >   what landed, what is open, who owns what", sends you to a document whose own
->   first fact is "`main` is at `63362a8`". That is 151 commits behind `main` at
->   `4ad17c5`. Derive open work and ownership from `npm run loops -- --remote`,
->   `gh pr list` and `git worktree list` instead. Precisely, because the target is
->   not uniformly stale: stories 14.1 and 14.2 are still Status Review, as it says.
+>   first fact is "`main` is at `63362a8`", which `main` left behind more than a
+>   hundred commits ago. Derive open work and ownership from
+>   `npm run loops -- --remote`, `gh pr list` and `git worktree list` instead.
+>   Precisely, because the target is not uniformly stale: stories 14.1 and 14.2
+>   are still Status Review, as it says.
 > - Section 12's "**Phases 2 and 3 are not deployed at all**" is a production claim
 >   from 2026-08-23 and this repository cannot settle it in either direction.
 >   Section 12 is itself the rule that says so. The artefact that settles it is the
