@@ -322,7 +322,7 @@ Angular, so a screen exists in exactly one place and no defect gets fixed twice.
 | 10.4 | Shared M3 primitives, portfolio and bug reports | In Progress | `10.4-shared-m3-primitives-portfolio-and-bug-reports.md` |
 | 10.5 | GHL integration module | In Progress | `10.5-ghl-integration-module.md` |
 | 10.6 | Widget dashboard and the clients book | In Progress | `10.6-widget-dashboard-and-clients-book.md` |
-| 10.7 | Remaining feature modules | Draft | `10.7-remaining-feature-modules.md` |
+| 10.7 | Remaining feature modules | In Progress | `10.7-remaining-feature-modules.md` |
 | 10.8 | Legacy removal | Draft | `10.8-legacy-removal.md` |
 | 10.9 | User menu and sign-out | Review — implemented 2026-08-23 | `10.9-user-menu-and-sign-out.md` |
 | 10.13 | Production hardening and release | Draft | `10.13-production-hardening-and-release.md` |
