@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 // @ts-expect-error - plain .mjs script, no type declarations
 import {
   classifyClaims,
-  distinctIncidents,
+  reconcileSides,
   findOrphanStarts,
 } from "@/scripts/find-stranded-claims.mjs";
 
@@ -211,11 +211,10 @@ describe("the ordering guard fails closed", () => {
   });
 });
 
-describe("distinctIncidents counts incidents, not rows", () => {
+describe("reconcileSides pairs incidents instead of summing rows", () => {
   it("does not count one phase1 stranding twice", () => {
-    // phase1 is detected on BOTH sides, so summing the two lists double-counted
-    // every phase1 stranding and printed it in both. Claim rows and start rows
-    // are different units. AGENT_COORDINATION.md standing order 6.
+    // phase1 is detected on BOTH sides. Claim rows and start rows are different
+    // units. AGENT_COORDINATION.md standing order 6.
     const events = [ev("loc-1", "phase1_started", 3, "opp-1")];
     const claims = classifyClaims([claim("phase1:opp-1")], events, NOW);
     const { orphans } = findOrphanStarts(events);
@@ -223,29 +222,55 @@ describe("distinctIncidents counts incidents, not rows", () => {
     expect(claims.stranded).toHaveLength(1);
     expect(orphans).toHaveLength(1); // same incident, other side
 
-    const { count, orphansOnly } = distinctIncidents(claims, orphans);
-    expect(count).toBe(1);
-    expect(orphansOnly).toEqual([]);
+    const r = reconcileSides(claims, orphans);
+    expect(r.startedNeverFinished).toBe(1);
+    expect(r.orphansOnly).toEqual([]);
   });
 
-  it("still counts a log-side incident the claim side never saw", () => {
-    // A phase3 start with no completion has no joinable claim, so the claim
-    // side cannot see it. It must survive the dedupe.
+  it("still reports a log-side incident the claim side never saw", () => {
     const events = [ev("loc-2", "phase3_started", 3)];
     const claims = classifyClaims([], events, NOW);
     const { orphans } = findOrphanStarts(events);
 
-    expect(distinctIncidents(claims, orphans).count).toBe(1);
+    const r = reconcileSides(claims, orphans);
+    expect(r.startedNeverFinished).toBe(1);
+    expect(r.orphansOnly).toHaveLength(1);
   });
 
-  it("adds a claim-side and a log-side incident at different locations", () => {
+  it("pairs one-to-one, so one claim row cannot suppress two starts", () => {
+    // The dedup was a set FILTER: any orphan whose key was present got removed,
+    // so two failed runs at one location plus one claim-side row reported one
+    // incident instead of two. An undercount, and the mirror of the overcount.
     const events = [
-      ev("loc-a", "phase1_started", 3, "opp-a"),
-      ev("loc-b", "phase3_started", 3),
+      ev("loc-3", "phase1_started", 5, "opp-a"),
+      ev("loc-3", "phase1_started", 3, "opp-b"),
     ];
     const claims = classifyClaims([claim("phase1:opp-a")], events, NOW);
     const { orphans } = findOrphanStarts(events);
 
-    expect(distinctIncidents(claims, orphans).count).toBe(2);
+    expect(orphans).toHaveLength(2);
+
+    const r = reconcileSides(claims, orphans);
+    expect(r.startedNeverFinished).toBe(2);
+    expect(r.orphansOnly).toHaveLength(1); // the run with no claim-side row
+  });
+
+  it("never folds a no-start claim into the run count", () => {
+    // A caller-supplied x-idempotency-key means the claim cannot match its own
+    // start, so the SAME incident appears as a noStart row and as an orphan
+    // start. Summing them reported two incidents for one delivery. The two
+    // figures are reported separately and the overlap is stated, because
+    // nothing here can tell the two cases apart.
+    const events = [ev("loc-4", "phase1_started", 3, "opp-1")];
+    const claims = classifyClaims([claim("phase1:gh-redelivery-4412")], events, NOW);
+    const { orphans } = findOrphanStarts(events);
+
+    expect(claims.noStart).toHaveLength(1);
+
+    const r = reconcileSides(claims, orphans);
+    expect(r.startedNeverFinished).toBe(1);
+    expect(r.claimsWithNoStart).toBe(1);
+    // The thing that must never come back: a single total of 2.
+    expect(r).not.toHaveProperty("count");
   });
 });

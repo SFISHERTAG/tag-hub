@@ -145,19 +145,48 @@ export function findOrphanStarts(events) {
 }
 
 /**
- * Distinct INCIDENTS across the two sides.
+ * Reconcile the two sides. Returns figures, never one total.
  *
- * phase1 is detected on both sides, so the same incident appears twice. Claim
- * rows and start rows are different units and summing them double-counted every
- * phase1 stranding — the failure standing order 6 exists for. The log side
- * contributes only what the claim side did not already list.
+ * There is no shared key that reconciles these lists into a single number, and
+ * two defects came from pretending otherwise:
+ *
+ *   - `noStart` rows were summed into a total but carry no `locationId` — they
+ *     are pushed before a start resolves — so they contributed nothing to the
+ *     dedup key and double-counted against an orphan start whenever a caller
+ *     supplied `x-idempotency-key`.
+ *   - The dedup was a set filter, so a single claim row suppressed EVERY orphan
+ *     at that location. Two failed runs at one location plus one claim row
+ *     reported one incident instead of two.
+ *
+ * So: every `stranded` claim matched a start that has no completion, which means
+ * it IS one of `orphans` — pair them one-to-one and `orphans.length` is already
+ * the number of runs that began and did not finish. `noStart` is reported
+ * separately and never added, because a claim with no matching start is either a
+ * delivery that died before logging OR one of those same runs seen through a
+ * caller-supplied key, and nothing here can tell which.
+ *
+ * If GHL never sends that header the two sets cannot overlap in practice — but
+ * that is a property of the sender, not of this code, and it is unestablished.
  */
-export function distinctIncidents(claims, orphans) {
-  const claimSideKeys = new Set(claims.stranded.map((r) => `${r.source}:${r.locationId}`));
-  const orphansOnly = orphans.filter((o) => !claimSideKeys.has(`${o.source}:${o.locationId}`));
+export function reconcileSides(claims, orphans) {
+  const pool = new Map();
+  for (const r of claims.stranded) {
+    const k = `${r.source}:${r.locationId}`;
+    pool.set(k, (pool.get(k) ?? 0) + 1);
+  }
+
+  const orphansOnly = [];
+  for (const o of orphans) {
+    const k = `${o.source}:${o.locationId}`;
+    const n = pool.get(k) ?? 0;
+    if (n > 0) pool.set(k, n - 1);
+    else orphansOnly.push(o);
+  }
+
   return {
     orphansOnly,
-    count: claims.stranded.length + claims.noStart.length + orphansOnly.length,
+    startedNeverFinished: orphans.length,
+    claimsWithNoStart: claims.noStart.length,
   };
 }
 
@@ -221,7 +250,7 @@ async function main() {
   // double-counted every phase1 stranding and printed it in both lists.
   // AGENT_COORDINATION.md standing order 6: never add across units or scopes.
   const { orphans, indeterminate: orphanIndeterminate } = findOrphanStarts(events);
-  const { orphansOnly, count: found } = distinctIncidents(claims, orphans);
+  const { orphansOnly, startedNeverFinished, claimsWithNoStart } = reconcileSides(claims, orphans);
 
   console.log("LOG SIDE (started, never finished — independent of the claim id)");
   console.log(`  phase1: ${orphans.filter((o) => o.source === "phase1").length} start(s), of which ${orphansOnly.filter((o) => o.source === "phase1").length} not already listed claim-side`);
@@ -259,9 +288,13 @@ async function main() {
     return;
   }
 
-  if (found) {
-    console.log(`${found} distinct incident(s) above: ${claims.stranded.length} stranded claim(s), ${claims.noStart.length} claim(s) with no start, ${orphansOnly.length} start(s) with no finish and no claim-side row.`);
-    console.log("Counts carry their units and are not summed across them.");
+  if (startedNeverFinished || claimsWithNoStart) {
+    console.log(`${startedNeverFinished} run(s) began and did not finish.`);
+    console.log(`  seen claim-side: ${claims.stranded.length}   log-side only: ${orphansOnly.length}`);
+    console.log(`${claimsWithNoStart} claim(s) have no matching start.`);
+    console.log("These two figures are NOT added. A claim with no start is either a");
+    console.log("delivery that died before logging, or one of the runs above seen");
+    console.log("through a caller-supplied x-idempotency-key. Nothing here can tell.");
   } else if (hidden) {
     console.log(`No stranded claims FOUND, and ${hidden} claim(s) could not be examined.`);
     console.log("That is not a clean result. Do not report it as one.");
