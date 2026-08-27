@@ -371,6 +371,25 @@ and migrating it faithfully would have let a race loser create a duplicate paid
 Meta campaign with no error anywhere. Reading the original first produces
 agreement, not verification.
 
+**10. `mergedBy` is a credential field, not an actor field.** The repository
+records *that* a shared ref moved and *by whose token*. It records nothing about
+which session did it.
+*Scar:* on 2026-08-27 a session audited who had merged four PRs, ran
+`gh pr view N --json mergedBy`, got `SFISHERTAG` on all four, and reported "no
+session merged anything, boundary intact". Another session had merged all four,
+with Sam's authorisation given in chat. `gh api /user` returns `SFISHERTAG` too:
+every session on this machine holds the same credential, so a merge performed by
+a session is indistinguishable from one performed by Sam in every GitHub field
+there is. The conclusion happened to be right and the evidence could not have
+established it, which is standing order 2 arriving through a field nobody
+suspected.
+The gap is worth naming as a gap: **the only record of which session moved a
+shared ref is the transcript where the authorisation was given, and no such
+record exists in the repository.** Do not fix this by inferring an actor from a
+commit trailer either; `Agent-Worktree:` is stamped by the committing session
+about itself, which answers a different question and is trivially absent on a
+merge made through the GitHub UI or API.
+
 ---
 
 **Overrides are recorded, not prevented.** Each standing order above that is
