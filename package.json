@@ -32,7 +32,8 @@
     "check:migrations": "tsx scripts/check-migrations.mjs",
     "migrate:local": "node scripts/migrate.mjs",
     "prepare": "node scripts/install-hooks.mjs || true",
-    "build:next-only": "next build"
+    "build:next-only": "next build",
+    "awaiting": "node scripts/check-awaiting-human.mjs"
   },
   "dependencies": {
     "@google-cloud/firestore": "^8.7.1",
