@@ -9,10 +9,12 @@ reason.**
 
 - **Durable**: everything from "The protocols" down to Step 6, plus Step 7's
   shape. Argue with it, do not silently drop it. It was paid for in incidents.
-- **Perishable**: Step 2's assignment. PR numbers, which branches are stale, who
-  holds what. Every one of those was true when written and will be false soon.
-  **Rewrite Step 2 for the task at hand before you hand this over**, and derive
-  its facts with Step 1's commands rather than copying the ones below.
+- **Perishable**: nothing, now. Step 2 used to carry the assignment and it is the
+  reason this split exists. As of 2026-08-27 it carries no PR number, branch, SHA
+  or line number at all, because "rewrite it before you hand it over" was the
+  instruction and it was not followed, twice. **The assignment travels in a
+  message from the Lead, never in this file.** If you are about to paste a fact
+  in here, that is the bug.
 
 Role names are provisional. Sam deferred the naming question on 2026-08-26, so
 "Lead" and "Reviewer" here describe seats, not a ruling.
@@ -241,49 +243,61 @@ Then read, in this order, and only these:
 
 ## Step 2: your task
 
+**This document does not assign you work. Your task arrives from the Lead, in a
+message. Nothing in this section is a task.**
+
+Added 2026-08-27, after this section hardcoded a specific PR as "first" and three
+sessions were spawned from it inside ten minutes. All three read the same
+sentence and all three started on the same pull request, while the session
+already an hour into it went unmentioned, because a document cannot know who is
+working. Two of the three caught it from `gh pr list` and asked before spending
+anything, which is the behaviour to copy. The collision was the document's, not
+theirs.
+
+A brief that names a PR number assigns that PR to every session that will ever
+read it, including the ones nobody has thought of yet. That is not staleness
+that can be fixed by rewriting it more carefully next time. It is a document
+doing a job only a live sender can do.
+
+The same paragraph also cited `lib/auth/admin.ts:157-160` for a defect that is at
+`:161-163`. The cited range ended one line before the bare `catch` it was
+describing, so a Reviewer following the citation would have read the happy path
+and found nothing. It was caught only because that Reviewer read the source
+instead of the citation. That is the one-line-off failure this whole method
+exists to catch, sitting inside the document that teaches it.
+
+Both failures have one cause: perishable facts written into a durable document.
+
+**So Step 2 carries no PR number, no branch name, no SHA and no line number.
+Ever.** If you are reading one here, this document has regressed and saying so is
+more useful than acting on it.
+
+### What is durable, and stays
+
 Sam reserves the merge decision on every open PR. **Nothing merges without an
 explicit yes from Sam.** Get the list from `gh pr list`, never from a count
-written in a document; the first version of this line said "four" and there were
-seven by the time anyone read it. Your job is review that tries to break
-things.
+written in a document; an earlier version of this line said "four" and there were
+seven by the time anyone read it.
 
-The Lead holds **PR #9** and the question of whether CI's gates measure
-anything. Stay off both. The loop cannot catch agreement; two sessions checking
-one thing is the arrangement guaranteed to find nothing.
+**Ask the Lead what it holds, and what every other live session holds, before you
+open anything.** `ListAgents` tells you who exists; only the Lead knows who is
+inside what. The loop cannot catch agreement, and two sessions checking one thing
+is the arrangement guaranteed to find nothing.
 
-**You take PR #17 first, then #16, then #10 and #12.** Ignore #11: it is
-superseded by #16, and the Lead opened #16 to replace it.
+When the Lead hands you a claim to check, **re-derive it from `git show
+main:<path>` BEFORE reading the PR body or the Lead's reasoning.** Reading the
+original first produces agreement, not verification.
 
-**#17 is first because its findings are unsafe.** The same session that proposed
-landing those four commits then verified they were still needed, which standing
-order 9 says does not count as verification. Two claims in that PR body are
-load-bearing and were produced and checked by one party:
+**Treat any line number you are given as a hint about which file to open, not as
+the location.** Read around it and report the range you actually found. Every
+miss this method has caught was a verification pointed one line, one column or
+one grep off the thing that mattered, and the citation above is an example of a
+correct-looking range that excluded its own subject.
 
-- that `lib/auth/admin.ts:157-160` on main still wraps a user lookup in a bare
-  `try/catch` returning `false`, so an Auth outage reads as "this user does not
-  exist" and rejects a whole grant write while naming real people;
-- that `lib/dashboard/metrics.ts:180,192,203` on main still offer three metrics
-  to two client roles whose scopes the adapter refuses, making them permanent
-  error widgets.
-
-**Re-derive both from `git show main:<path>` BEFORE reading the PR body.**
-Reading the original first produces agreement, not verification. Then attack the
-three judgement calls the PR names: two files where main's version was kept and
-Stream 3's discarded, two story docs resolved by keeping both sides, and a
-`Touched by` note added to 15.A. The first of those three is the dangerous one:
-if keeping main's version was wrong, a fix silently vanished; if discarding
-Stream 3's was wrong, story 14.1's migration silently reverted.
-
-**#16 second, and the Lead wrote it, so it gets the same treatment.** It claims
-that PR #11 carries Story 12.5's code with the story doc left out, and that a
-conflict in `12.5-csm-course-authored-lessons.md` was resolved by keeping both
-sides with nothing dropped. Check the second claim against
-`git show 0bf8187 -- docs/stories/12.5-*` and `git show main:docs/stories/12.5-*`.
-
-Read the diff and the files at the commit (`gh pr diff N`,
-`gh pr view N --json files,body`). Primary sources only. Never review from a PR
-body's account of itself, that body is the author's summary, and the summary is
-what you are checking, not what you are checking against.
+Read the diff and the files at the commit (`gh pr diff N`, `gh pr view N --json
+files,body`). Primary sources only. Never review from a PR body's account of
+itself: that body is the author's summary, and the summary is what you are
+checking, not what you are checking against.
 
 Attack at least:
 
