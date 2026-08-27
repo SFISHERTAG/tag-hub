@@ -89,7 +89,7 @@ GoHighLevel.
 | 4.5 | "As of" freshness indicator | Done |
 | 4.6 | Owner's own calendar view | Done |
 | 4.7 | Creatives to campaigns linking | **Backlog — shipped without a story** |
-| 4.8 | The client owner dashboard renders nothing it promises | Draft — not started 2026-08-26 |
+| 4.8 | What each client role is offered, and whether any of it renders | Draft — not started 2026-08-26 |
 
 **Blocker moved.** 4.1 is no longer the gate: the System User and token are live
 and client ad accounts are assigned. What remains is that this environment has no
