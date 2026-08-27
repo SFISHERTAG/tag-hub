@@ -15,11 +15,25 @@ believed because it was tidy. That is the failure this version is built around.
 
 `LETTER_TO_THE_NEXT_LEAD.md` was named here as the same case, and **that was too
 broad. Corrected 2026-08-27, after a Reviewer measured it instead of repeating
-it.** Its rules held: four of four claims checked against the tree were correct,
-and twelve of its fourteen sections are the origin evidence for standing orders
-that are still in force. What had rotted was one pointer, at line 6, to a handoff
-whose own first fact is 151 commits behind, and one production claim this
-repository cannot settle in either direction.
+it.**
+
+**Its rules held**, and the four claims that were checked are named so the next
+reader can re-check them rather than take a score: that standing order 8 is the
+one that outranks the others, that `AGENT_COORDINATION` §11 came out of it, that
+the standing orders live in §10, and that overrides now stamp a `Guard-Override:`
+trailer. The last is in fact stronger than the letter claims. Several of its
+numbered sections are visibly the origin of orders still in force — its §1 and
+standing order 4 carry the same sentence, as do its §5 and standing order 8.
+**No artefact records that lineage**, so treat the relationship as legible and the
+proportion as unmeasured; a provenance note on each standing order would settle
+it and none exists.
+
+**What had rotted was two things.** One pointer, at line 6, to a handoff whose own
+first stated fact is a `main` SHA from 2026-08-23. **Do not look for a number
+here: run `git rev-list --count 63362a8..origin/main` and get the current one.**
+An earlier draft of this paragraph wrote that count down and it was wrong within
+the hour, in the section whose whole subject is facts that do not keep. And one
+production claim this repository cannot settle in either direction.
 
 So it is not an example of a document that went wrong within hours. It is the
 more common and more dangerous case: **a document that is mostly right, with a
