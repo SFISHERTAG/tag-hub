@@ -17,24 +17,39 @@ sound; the state was stale.
 
 Re-run the check in the same command as the action, or accept that you are acting blind.
 
-**And the half that care cannot fix: your report goes stale under its reader.** Added
-2026-08-27. A session reported its branch "0 behind `main`" three times in one evening. Each
-was true when it was sent. By the time anyone reused the number it was 7 behind, because
-`main` had moved. Separately, a Reviewer auditing a pull request verified every claim from
-source, named the SHA it read them at, and said so — and the branch moved under it mid-audit,
-so one of its findings was already fixed by the time the message arrived.
+**And the half that care cannot fix: your report goes stale under its reader.**
+Added 2026-08-27.
 
-**Neither session was careless and neither could have prevented it.** Every other stale-state
-failure in this document was preventable by checking one more thing before acting. This one is
-not: there is no amount of care at the moment of reading that stops a ref moving afterwards.
-That makes it a different failure with a different remedy, and "re-read before you act" does
-not cover it, because the person who has to re-read is the recipient.
+**The near-miss first, because it is sharper than a bare number.** A session
+reported its branch "0 ahead, 0 behind **at spawn**". It was trying to qualify the
+claim and it had the SHA in hand. But "at spawn" is *provenance*, and a reader
+cannot resolve it to anything runnable: there is no command that turns "spawn"
+into a commit. "0 behind at `8787c50`" is checkable in one command and reads
+identically. **That is the whole distinction — a ref is an expiry date, a
+time-marker only looks like one.** This half was preventable, and the session that
+did it says so.
 
-**So: name the ref, every time, in anything you send.** Not as provenance, as an expiry date.
-A reader who knows you read it at `8787c50` can tell in one command whether you are current; a
-reader given a bare "0 behind" or "two open PRs" cannot, and will reuse it. **A count of what
-is behind, open, dirty or merged is board state, and board state does not survive in prose.**
-The number is generated; the sentence around it is not.
+**The half that was not preventable.** A Reviewer auditing a pull request verified
+every claim from source, named the SHA it read them at, and said so. The branch
+moved under it mid-audit, and by the time its message arrived the misleading
+comment it had found was already corrected. Nothing it did was wrong, and the ref
+it named is the only reason anyone could tell. **Note what had and had not
+changed: the comment was fixed, the defect the comment described was not.** That
+distinction is exactly the kind a stale reading destroys.
+
+**So: name the ref, in anything you send.** Whether a number was still true at the
+instant it left is usually unestablishable afterwards — no timestamped record ties
+a message to a ref — which is the point. **A reader who can re-run it does not
+need to know.**
+
+**Two decay directions, and they need different remedies.** A stale "0 behind" or
+"clean tree" is simply *false*, because those states reverse. A stale count of
+merged work is an *undercount*, because merging is monotonic and that number only
+rises. Treating them as one job teaches a reader to check them the same way.
+
+**The generated categories are the ones to distrust in prose:** unmerged work,
+stale branches, local-only branches, detached worktrees, dirty worktrees. `npm run
+loops` prints all five. **The number is generated; the sentence around it is not.**
 
 ## 2. Verify against a commit, never against a directory
 
