@@ -11,9 +11,11 @@ also says the title conforms to the address and never the reverse. The callsign
 rule in §4b binds a moment no step of this document performs, and **§4b is the
 authority on which moment, not this section.** It records that an address is
 derived from the worktree name at spawn, that addresses cannot be changed from
-inside, and that **it does not say who does the naming.**
-**So do not assume you chose yours, and do not assume you can change it.** Sam
-names the seat; §4b decides how you are reached.
+inside, and that a session picks its own callsign at `EnterWorktree` from the
+first one not already visible in `ListAgents`.
+**But it also records an address rewritten after spawn with no action by the
+session it belonged to**, so do not assume the address you were given is the one
+you still have. Sam names the seat; §4b decides how you are reached.
 
 Budget fifteen minutes on this page. Do not skim §0.
 
