@@ -215,8 +215,38 @@ and the Lead assigns it when you report in.
 a callsign is a title, so no callsign has ever appeared there. A Lead deriving
 from it sees none spent and assigns the first one every time, forever. **Derive
 from the session list that shows titles**, the same listing used to archive
-or rename a session, **asked for archived sessions too**, and take the first
-NATO name **no session has ever been titled with, archived or not**.
+or rename a session, **asked for archived sessions too and for enough of them
+that the listing reaches past the oldest session you care about**, and take the
+first NATO name **no session has ever been titled with, archived or not**.
+
+**Three things that listing will not hand you unless you ask, each of which
+silently produces a collision.**
+
+- **It truncates, and the limit is a parameter.** Asking for archived sessions
+  is not the same as asking for all of them: a default page has come back at
+  forty rows while the full history reached back months. **A spent callsign that
+  falls off the end reads as free.** Ask for a few hundred, and check that the
+  oldest row you get back predates the fleet you are naming into.
+- **The far-end names fall off first**, which is precisely the hazard the
+  paragraph below warns about. A callsign assigned from the end of the alphabet
+  is old by definition, so it sinks in a listing ordered by activity. **The
+  warning and the mechanism that defeats it are twelve lines apart, so treat
+  them as one instruction.**
+- **It is scoped to this machine, not to this repository.** Sessions from
+  unrelated projects appear in the same output. **Treat the whole machine as the
+  population and do not filter by directory:** two sessions answering to one
+  name is the failure the callsign layer exists to prevent, and it does not stop
+  being a failure because the other one is in a different repo. The cost is that
+  a name spent elsewhere is spent here, which is twenty-six names against a
+  handful of concurrent sessions and is the cheap side of the trade.
+
+**And the listing excludes you.** The tool does not return the calling session's
+own row, so a Lead cannot see its own title in it. Harmless while the Lead is
+titled something that is not a callsign; **not harmless the first time a
+reinforcement is promoted to Lead**, which is the ordinary way this seat is
+filled. A Lead titled `FOXTROT` derives from a listing that cannot show
+`FOXTROT` and assigns `FOXTROT` again. **Add your own title to the spent set
+before you derive.**
 
 **"Ever", not "live", and the difference is the whole rule.** An earlier draft
 said the first name no *live* session carries. Every callsign spent so far
