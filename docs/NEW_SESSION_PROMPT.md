@@ -95,6 +95,14 @@ Then read, in this order, and only these:
 2. `docs/AGENT_COORDINATION.md` §10 (standing orders) and §11 (the story rule).
    Each order carries the incident that produced it.
 3. `docs/data-model.md` — the single source of truth for every store.
+4. `docs/DEBRIEF.md`, **the standing traps section only**. Added 2026-08-28.
+   The Reviewer's brief has sent a Reviewer here since the file landed; this
+   list did not, so a Lead orienting exactly as instructed never read it.
+   **Most of the recent traps are a Lead's own errors**, and the instruction
+   to extend the reading list when a trap is added is addressed to whoever
+   adds one, which was the seat not told to read them. Each trap presents as
+   something a careful reader already believes, so this is not optional
+   diligence. The entries below that section are archive, not required.
 
 Everything else is reference: open it when a question makes you need it, not
 before. `docs/postgres-stack.md` in particular is a **backlog, not a plan** — no
