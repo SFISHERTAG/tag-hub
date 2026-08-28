@@ -10,9 +10,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import type { Sort } from '@angular/material/sort';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { EmptyState, ErrorState, LoadingState, PageShell } from '../../../shared/ui';
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageShell,
+  SampleDataNotice,
+} from '../../../shared/ui';
 import { ClientsService } from '../services/clients.service';
-import { SampleDataNotice } from '../shared/sample-data-notice/sample-data-notice';
 import { ClientGrid } from './views/client-grid/client-grid';
 import { ClientList } from './views/client-list/client-list';
 import { ClientKanban } from './views/client-kanban/client-kanban';

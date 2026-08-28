@@ -1,0 +1,53 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="4" label="Loading your calendar" />
+} @else {
+  @for (warning of warnings(); track warning.code) {
+    <p class="calendar__warning" role="note">{{ warning.message }}</p>
+  }
+
+  @if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else if (days(); as days) {
+    @if (!scoped()) {
+      <p class="calendar__scope" role="note">
+        Showing the whole location's calendar, not just yours. No owner is configured for this
+        account.
+      </p>
+    }
+
+    @if (monthLabel(); as label) {
+      <p class="calendar__month">{{ label }}</p>
+    }
+
+    <ol class="calendar__grid">
+      @for (cell of cells(); track cell.date) {
+        <li
+          class="calendar__day"
+          [class.calendar__day--today]="cell.isToday"
+          [class.calendar__day--outside]="!cell.isCurrentMonth"
+        >
+          <span class="calendar__date">{{ cell.dayOfMonth }}</span>
+          @if (cell.count > 0) {
+            <span class="calendar__count">{{ cell.count }}</span>
+          }
+        </li>
+      }
+    </ol>
+
+    <h3 class="calendar__heading">Upcoming</h3>
+    @if (visibleUpcoming().length === 0) {
+      <app-empty-state icon="event_available" message="Nothing scheduled" />
+    } @else {
+      <ul class="calendar__upcoming">
+        @for (appointment of visibleUpcoming(); track appointment.id) {
+          <li class="calendar__appointment">
+            <span class="calendar__title">{{ appointment.title }}</span>
+            <span class="calendar__status" [class]="'calendar__status--' + appointment.status">
+              {{ appointment.status }}
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  }
+}
