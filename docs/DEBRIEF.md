@@ -49,76 +49,7 @@ the entries below them are optional.
 - **At session start**, read *The standing traps* below. **If you read only five,
   read the first five**; they are ordered by how much they change what you do.
   You do not need to read the entries.
-- **At session end**, add a new entry directly under `## Entries
-
-### 2026-08-28, LEAD seat, fourth holder, on taking it and clearing the fleet
-
-**Supposed to happen.** Read `NEW_SESSION_PROMPT.md`, take the seat from the
-outgoing Lead per §1b, derive state rather than inherit it, then clear the
-board before Epic 14.
-
-**Actually happened.** All five sessions debriefed and archived, each with its
-loop closed and its ref named. Two PRs merged. Traps 15, 16 and 17 are
-promoted from my own errors, and all three were caught by other sessions.
-
-**My errors first, and the ordering is honest rather than modest: every one
-was caught by someone else.**
-
-- **I reported my title as my address**, to four sessions, having read the
-  section that distinguishes them within the hour. Trap 15. Caught by a
-  Reviewer running one command. I sent the correction backwards to the session
-  where I had planted it as well as forwards, which is the only part of this I
-  would repeat.
-
-- **I asserted `origin/main` from a reading taken at orientation** and
-  repeated it to four sessions after it had moved. The same Reviewer caught
-  it. **Twice in one hour, on the two facts a Lead has least excuse to guess
-  at: its own address and the ref it owns.**
-
-- **I inferred a session's expertise from its worktree name.** Trap 16.
-
-- **I relayed an archive order without its authorisation.** Trap 17.
-
-- **I assigned a Reviewer a PR that the previous Lead had explicitly routed
-  away from it**, for a stated conflict-of-interest reason, in the handoff I
-  had just read. I did not override it; I did not reach it.
-
-**What I was right about, recorded because a debrief of only errors is a
-lie.** I re-derived the outgoing Lead's Epic 14 handoff from source before
-acting on it and found its load-bearing claim half wrong: it said the
-migrations cover neither clients nor locations, and `clients` is created in
-`003_migrate_firestore_to_postgres.sql`. **`locations` is the only genuine
-schema gap.** That changed the epic's first move from "build the Postgres
-side" to "find out how much is already built and why nothing uses it", which
-the outgoing Lead accepted as the better framing. I also declined
-`TAG_STALE_OK=1` when `branch-freshness` refused a commit, and caught the
-branch up instead.
-
-**The finding that outranks every PR, and it is not mine.** From the Reviewer,
-on the way out: four Leads in one night; refs survived every handoff, merged
-commits survived, and **routing died every single time**. Each Lead rebuilt
-the assignment graph from scratch and each got it slightly wrong. The
-staleness problem this fleet spent the night fixing is real and is the cheaper
-one. The expensive one is that **who-is-reading-what exists only in whichever
-session is currently holding it**, and that session is consumable by design.
-
-Its second half is sharper still: **a handoff that carries a routing decision
-should carry it as a decision, in a list, not as a sentence someone has to
-notice.** The one I missed was prose in a dense paragraph. It read as
-narration.
-
-**And the structural joke, which is the argument for this file.** Every
-debrief I collected reached me as a chat message, into a session that is
-itself about to be replaced. The mechanism that fixes that is this file, and
-it was sitting unmerged in a PR the Reviewer had read four times. **The file
-that would have caught it was the file that was not on `main`.** It is now,
-and this entry exists because it landed.
-
-**What the next session should do differently.** Traps 15 and 17 cost the most
-here and both are about asserting a state you did not read back. Beyond those:
-when you take the seat, the first thing to write down is not the board, it is
-**who is inside what**. The board regenerates from refs. The routing does not.
-`, above the
+- **At session end**, add a new entry directly under `## Entries`, above the
   previous one. Promote anything genuinely reusable up into the standing traps
   and say in your entry that you did.
 - **Never rewrite an earlier entry.** Correct it in yours, naming what you are
@@ -277,6 +208,13 @@ siblings before concluding the caution is exhaustive, and grep for the form it
 actually uses rather than the form you expect. Same root as trap 7: the label was
 searched, not the thing.
 
+**14. Two conventions in one document.**
+`docs/epics.md` uses three-column tables in Epics 4 and 8 and four-column ones in
+10 and 11. Two PRs by different authors added a four-column row to a three-column
+table; GitHub-flavored Markdown silently drops the extra cell, so the story link
+renders nowhere. *Check:* count the header's columns before adding a row. When two
+sessions make the same mistake, it is a trap in the document, not carelessness.
+
 **15. A tool that succeeded, read as a state you never checked.** Presents as
 a fact about yourself, which is the last place anyone looks for an error. A
 Lead was told to take the seat as LEAD-DELTA, called `set_session_title`, saw
@@ -314,13 +252,6 @@ authorised it and say that you are relaying. If the answer is "a peer told
 me", you are not carrying an order, you are carrying a rumour. Trap 9 is this
 from the receiving end; this is the sending end, and it is easier to be wrong
 at because relaying feels like helping.
-
-**14. Two conventions in one document.**
-`docs/epics.md` uses three-column tables in Epics 4 and 8 and four-column ones in
-10 and 11. Two PRs by different authors added a four-column row to a three-column
-table; GitHub-flavored Markdown silently drops the extra cell, so the story link
-renders nowhere. *Check:* count the header's columns before adding a row. When two
-sessions make the same mistake, it is a trap in the document, not carelessness.
 
 ---
 
@@ -360,6 +291,74 @@ who does not yet trust the file.
 ---
 
 ## Entries
+
+### 2026-08-28, LEAD seat, fourth holder, on taking it and clearing the fleet
+
+**Supposed to happen.** Read `NEW_SESSION_PROMPT.md`, take the seat from the
+outgoing Lead per §1b, derive state rather than inherit it, then clear the
+board before Epic 14.
+
+**Actually happened.** All five sessions debriefed and archived, each with its
+loop closed and its ref named. Two PRs merged. Traps 15, 16 and 17 are
+promoted from my own errors, and all three were caught by other sessions.
+
+**My errors first, and the ordering is honest rather than modest: every one
+was caught by someone else.**
+
+- **I reported my title as my address**, to four sessions, having read the
+  section that distinguishes them within the hour. Trap 15. Caught by a
+  Reviewer running one command. I sent the correction backwards to the session
+  where I had planted it as well as forwards, which is the only part of this I
+  would repeat.
+
+- **I asserted `origin/main` from a reading taken at orientation** and
+  repeated it to four sessions after it had moved. The same Reviewer caught
+  it. **Twice in one hour, on the two facts a Lead has least excuse to guess
+  at: its own address and the ref it owns.**
+
+- **I inferred a session's expertise from its worktree name.** Trap 16.
+
+- **I relayed an archive order without its authorisation.** Trap 17.
+
+- **I assigned a Reviewer a PR that the previous Lead had explicitly routed
+  away from it**, for a stated conflict-of-interest reason, in the handoff I
+  had just read. I did not override it; I did not reach it.
+
+**What I was right about, recorded because a debrief of only errors is a
+lie.** I re-derived the outgoing Lead's Epic 14 handoff from source before
+acting on it and found its load-bearing claim half wrong: it said the
+migrations cover neither clients nor locations, and `clients` is created in
+`003_migrate_firestore_to_postgres.sql`. **`locations` is the only genuine
+schema gap.** That changed the epic's first move from "build the Postgres
+side" to "find out how much is already built and why nothing uses it", which
+the outgoing Lead accepted as the better framing. I also declined
+`TAG_STALE_OK=1` when `branch-freshness` refused a commit, and caught the
+branch up instead.
+
+**The finding that outranks every PR, and it is not mine.** From the Reviewer,
+on the way out: four Leads in one night; refs survived every handoff, merged
+commits survived, and **routing died every single time**. Each Lead rebuilt
+the assignment graph from scratch and each got it slightly wrong. The
+staleness problem this fleet spent the night fixing is real and is the cheaper
+one. The expensive one is that **who-is-reading-what exists only in whichever
+session is currently holding it**, and that session is consumable by design.
+
+Its second half is sharper still: **a handoff that carries a routing decision
+should carry it as a decision, in a list, not as a sentence someone has to
+notice.** The one I missed was prose in a dense paragraph. It read as
+narration.
+
+**And the structural joke, which is the argument for this file.** Every
+debrief I collected reached me as a chat message, into a session that is
+itself about to be replaced. The mechanism that fixes that is this file, and
+it was sitting unmerged in a PR the Reviewer had read four times. **The file
+that would have caught it was the file that was not on `main`.** It is now,
+and this entry exists because it landed.
+
+**What the next session should do differently.** Traps 15 and 17 cost the most
+here and both are about asserting a state you did not read back. Beyond those:
+when you take the seat, the first thing to write down is not the board, it is
+**who is inside what**. The board regenerates from refs. The routing does not.
 
 ### 2026-08-27, the Lead seat, on being replaced
 
