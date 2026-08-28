@@ -1,5 +1,5 @@
 import "server-only";
-import { DEFAULT_TIME_ZONE } from "../time/zone";
+import { DEFAULT_TIME_ZONE, endOfDayInZone, startOfDayInZone, zonedDateParts } from "../time/zone";
 import { ghl } from "./client";
 
 /** GHL's calendar endpoints are pinned to an older API version than the rest. */
@@ -133,39 +133,16 @@ export function dayRange(
   timeZone: string = DEFAULT_TIME_ZONE,
 ): { startMs: number; endMs: number } {
   const now = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000);
+  const { year, month, day } = zonedDateParts(now, timeZone);
 
-  // The Y/M/D that `now` falls on, as seen in timeZone.
-  const [{ value: month }, , { value: day }, , { value: year }] =
-    new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(now);
-
-  // Midnight that calendar day, in timeZone, expressed as an instant. Guessed
-  // as UTC first, then corrected by the zone's offset at that moment.
-  const guess = Date.parse(`${year}-${month}-${day}T00:00:00Z`);
-  const offsetMs = guess - Date.parse(zonedIsoString(new Date(guess), timeZone));
-  const startMs = guess + offsetMs;
-
-  return { startMs, endMs: startMs + 24 * 60 * 60 * 1000 - 1 };
-}
-
-/** The wall-clock time in `timeZone`, formatted so Date.parse reads it as UTC. */
-function zonedIsoString(instant: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(instant);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
-  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}Z`;
+  // Both ends go through the zone. Deriving the end as start + 24h assumed
+  // every day is 24 hours, which is the assumption this function exists to
+  // remove: it closed the 25-hour day an hour early and ran the 23-hour day
+  // into the next morning.
+  return {
+    startMs: startOfDayInZone(year, month, day, timeZone),
+    endMs: endOfDayInZone(year, month, day, timeZone),
+  };
 }
 
 export { formatTime } from "./format";
