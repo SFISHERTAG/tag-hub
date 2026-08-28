@@ -79,12 +79,15 @@ describe("dayRange", () => {
     expect(new Date(endMs).toISOString()).toBe("2026-08-21T04:59:59.999Z");
   });
 
-  it("spans exactly one day", () => {
+  it("spans exactly one day, whatever that day is worth", () => {
     asContainer();
 
     const { startMs, endMs } = dayRange();
 
-    expect(endMs - startMs).toBe(24 * 60 * 60 * 1000 - 1);
+    // Not `24h - 1`. That was the old assertion and it encoded the bug: a
+    // Central day is 23 or 25 hours twice a year, so the invariant is that the
+    // window ends one millisecond before the next one starts.
+    expect(endMs + 1).toBe(dayRange(1).startMs);
   });
 
   it("offsets by whole days", () => {

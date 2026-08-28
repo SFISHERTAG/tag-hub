@@ -1,0 +1,46 @@
+// M3 tokens only. No raw hex, no !important, no deep selectors.
+:host {
+  display: block;
+}
+
+// In the flow, not a tooltip: a warning qualifies numbers that otherwise read
+// as a confident total, so it sits above them and is styled to be noticed.
+.funnel__warning {
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-label-small);
+}
+
+.funnel__stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.funnel__stage {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-low);
+
+  dt {
+    font: var(--mat-sys-label-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  dd {
+    margin: 0.125rem 0 0;
+    font: var(--mat-sys-headline-small);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.funnel__window {
+  margin: 0.5rem 0 0;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}

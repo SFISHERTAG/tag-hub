@@ -1,0 +1,31 @@
+@if (loading()) {
+  <app-loading-state variant="skeleton" [rows]="3" label="Loading today's schedule" />
+} @else {
+  @for (warning of warnings(); track warning.code) {
+    <p class="day__warning" role="note">{{ warning.message }}</p>
+  }
+
+  @if (error(); as message) {
+    <app-error-state [message]="message" (retry)="load()" />
+  } @else if (calls(); as calls) {
+    @if (calls.length === 0) {
+      <app-empty-state icon="event_available" message="Nothing booked today" />
+    } @else {
+      <ul class="day__calls">
+        @for (call of visible(); track call.id) {
+          <li class="day__call">
+            <span class="day__time">{{ call.startTimeFormatted }}</span>
+            <span class="day__who">{{ call.attendee || call.topic || 'Untitled' }}</span>
+            <span class="day__status" [class]="'day__status--' + call.status">
+              {{ call.status }}
+            </span>
+          </li>
+        }
+      </ul>
+
+      @if (overflow(); as more) {
+        <p class="day__more">and {{ more }} more today</p>
+      }
+    }
+  }
+}

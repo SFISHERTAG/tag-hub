@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { EmptyState, ErrorState, LoadingState } from '../../../../shared/ui';
+import { EmptyState, ErrorState, LoadingState, SampleDataNotice } from '../../../../shared/ui';
 import { ClientWidgetsService } from '../../services/client-widgets.service';
 import { HealthBadge } from '../../shared/health-badge/health-badge';
-import { SampleDataNotice } from '../../shared/sample-data-notice/sample-data-notice';
 import type { ClientData, SampleDataDisclosure } from '../../services/client.model';
 
 const VISIBLE = 8;

@@ -1,0 +1,121 @@
+// M3 tokens only. No raw hex, no !important, no deep selectors.
+:host {
+  display: block;
+}
+
+.calendar__warning {
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-label-small);
+}
+
+// Not an error: the data is correct, it is the tile's title that is narrower
+// than what is being shown. Secondary container rather than error container.
+.calendar__scope {
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-small);
+}
+
+.calendar__month {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.25rem 0.125rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.calendar__day--today {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.calendar__day--outside {
+  color: var(--mat-sys-outline);
+}
+
+.calendar__date {
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar__count {
+  padding: 0 0.25rem;
+  border-radius: var(--mat-sys-corner-full);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar__heading {
+  margin: 0.75rem 0 0.375rem;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.calendar__upcoming {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar__appointment {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  font: var(--mat-sys-body-small);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.calendar__title {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.calendar__status {
+  font: var(--mat-sys-label-small);
+  text-transform: capitalize;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.calendar__status--showed {
+  color: var(--mat-sys-primary);
+}
+
+.calendar__status--noshow,
+.calendar__status--cancelled {
+  color: var(--mat-sys-error);
+}

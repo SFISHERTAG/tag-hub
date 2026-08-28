@@ -1,3 +1,40 @@
+> **SUPERSEDED IN PART, 2026-08-27. Two claims below are stale. The rest stands.**
+>
+> This is not an archive notice and this letter is not retired. Sections of it
+> read as the origin of standing orders now in force: `AGENT_COORDINATION.md`
+> §10 orders 1, 2, 8 and 9, and §11. Four of its
+> claims were re-derived from source on 2026-08-27 at `4ad17c5` and held, including
+> its report that overrides now stamp `Guard-Override:`, which is stronger than the
+> letter claims: `scripts/stamp-agent-trailer.mjs` stamps on both the merge path
+> and the commit path, closing the merge/non-merge split that section 4 warns about.
+>
+> **What in it is now false or unverifiable, so a reader does not have to find out:**
+>
+> - The pointer near the top, "`docs/SESSION_HANDOFF_2026-08-23.md` has the facts:
+>   what landed, what is open, who owns what", sends you to a document whose own
+>   first fact is "`main` is at `63362a8`", which `main` left behind more than a
+>   hundred commits ago. Derive open work and ownership from
+>   `npm run loops -- --remote`, `gh pr list` and `git worktree list` instead.
+>   Precisely, because the target is not uniformly stale: stories 14.1 and 14.2
+>   are still Status Review, as it says.
+> - Section 12's "**Phases 2 and 3 are not deployed at all**" is a production claim
+>   from 2026-08-23 and this repository cannot settle it in either direction.
+>   Section 12 is itself the rule that says so. The artefact that settles it is the
+>   deployed revision and IAM policy from `gcloud`, not this file and not the source.
+>
+> **No line numbers appear above, deliberately.** Two previous attempts here to
+> record a defect by coordinate went stale into looking simply wrong, and a stale
+> citation is indistinguishable from a false one to everyone downstream. The claims
+> are quoted instead, so a reader finds them by searching the text. Adding this
+> header shifted every line number in the file, which is that same failure arriving
+> once more.
+>
+> **Why this was not archived like its sibling.**
+> `_archive/session-letters/LETTER_TO_THE_NEXT_SESSION-2026-08-23.md` was moved and
+> given a blanket "do not act on this document", and that was right: its central
+> claims are false. This letter's are not. Applying the same disposition to both
+> would have been the mistake rather than the fix.
+
 # Letter to whoever leads this next
 
 Written 2026-08-23, at the end of a day that shipped four stories, deployed two

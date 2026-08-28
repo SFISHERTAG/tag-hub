@@ -1,5 +1,6 @@
 import type { WidgetRegistryService } from './shared/widgets/widget-registry.service';
 import { registerClientWidgets } from './features/clients/widgets/client-widget-loaders';
+import { registerGhlWidgets } from './features/ghl/widgets/ghl-widget-loaders';
 
 /**
  * The dashboard's composition root, and the one file allowed to import a
@@ -30,4 +31,5 @@ import { registerClientWidgets } from './features/clients/widgets/client-widget-
  */
 export function registerWidgetLoaders(registry: WidgetRegistryService): void {
   registerClientWidgets(registry);
+  registerGhlWidgets(registry);
 }
