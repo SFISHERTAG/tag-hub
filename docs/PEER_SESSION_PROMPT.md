@@ -215,10 +215,22 @@ and the Lead assigns it when you report in.
 a callsign is a title, so no callsign has ever appeared there. A Lead deriving
 from it sees none spent and assigns the first one every time, forever. **Derive
 from the session list that shows titles**, the same listing used to archive
-or rename a session, and take the first NATO name no live session is titled
-with.
-Derived, not remembered, and no number is written here on purpose: any list of
-spent callsigns is stale the moment the next session spawns.
+or rename a session, **asked for archived sessions too**, and take the first
+NATO name **no session has ever been titled with, archived or not**.
+
+**"Ever", not "live", and the difference is the whole rule.** An earlier draft
+said the first name no *live* session carries. Every callsign spent so far
+belongs to an archived, stopped session, so that draft returned the first name
+in the alphabet and handed the fifth reinforcement the first callsign. It was
+also the exact inverse of §4b rule 4, which this section claims to preserve: a
+callsign stays dead once its session is gone, and archived is when it is most
+dead. **Recycle-on-archive is the failure, and it is silent.**
+
+Derived, not remembered, and no list of spent callsigns is written here on
+purpose: any such list is stale the moment the next session spawns, and the
+listing is the only record that does not go stale. Do not assume the spent ones
+are a prefix of the alphabet. **At least one callsign was assigned from the far
+end**, so counting forward from the last one you recognise will collide.
 
 **Your callsign is your title. It is not your address, and it will not route.**
 `set_session_title` writes the title and nothing else; the address stays the
@@ -228,8 +240,10 @@ first hour, and `DEBRIEF.md` trap 15 exists because of it. **Sam or the Lead may
 call you by a callsign; you still report your address verbatim off `ListAgents`
 line 1, and peers still reach you at that.**
 
-**Where this departs from §4b, and it is three places, not one.** Naming one
-departure warrants the rest as agreeing, which is `DEBRIEF.md` trap 13.
+**Where this departs from §4b, and it is four places, not one.** Naming one
+departure warrants the rest as agreeing, which is `DEBRIEF.md` trap 13. An
+earlier draft of this block named three and missed the fourth, which is the one
+the section is named for.
 
 1. **The conform rule.** §4b says the title conforms to the address and never
    the reverse. Under this ruling it does not: the title is the callsign, the
@@ -246,6 +260,17 @@ departure warrants the rest as agreeing, which is `DEBRIEF.md` trap 13.
    appearing in `ListAgents`" — has no trigger at all once a callsign has no
    address, so retire-never-recycle must be evaluated against the title listing
    or not at all.
+
+4. **What a title is for.** §4b is headed "a session is named for where it
+   sits" and requires the title to be the worktree directory verbatim, hash
+   suffix included, so it matches `git worktree list`. A callsign matches
+   nothing: under this ruling a session is named for arrival order instead.
+   That bullet claims only what no mechanism covers — answering *which of a
+   hundred sessions was that* — and it was written after forty-two commits of
+   work were found only by an unrelated audit. **This ruling trades that
+   discoverability for a name that is short enough to say out loud, and the
+   trade is Sam's to make, but it is a trade and not a clarification.** Expect
+   both conventions in the session list at once while older sessions live.
 
 **One consequence for §4b that a follow-up owes:** §4b retires the
 no-role-names rule on the strength of the conform rule, reasoning that
