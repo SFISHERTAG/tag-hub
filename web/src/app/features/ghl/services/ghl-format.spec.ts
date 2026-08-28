@@ -117,6 +117,23 @@ describe('ghl-format', () => {
     it('returns the em-dash for a non-finite timestamp', () => {
       expect(relativeDays(Number.NaN, now)).toBe('—');
     });
+
+    /**
+     * The NaN case above tests the guard that already worked. This one tests
+     * the hole: ECMA-262 caps a Date at +/-8.64e15 ms, so 1e16 is finite,
+     * passes `Number.isFinite`, and made `Intl.DateTimeFormat` throw
+     * `RangeError` rather than return a string. Confirmed to throw against the
+     * `Number.isFinite` guard before this was committed.
+     */
+    it('returns the em-dash for a timestamp past the Date range', () => {
+      expect(relativeDays(1e16, now)).toBe('—');
+      expect(relativeDays(-1e16, now)).toBe('—');
+    });
+
+    /** The boundary itself is a real Date, so the guard must not reject it. */
+    it('still handles the largest representable timestamp', () => {
+      expect(relativeDays(8_640_000_000_000_000, now)).toBe('Today');
+    });
   });
 
   describe('stageAgeLabel', () => {

@@ -91,7 +91,7 @@ export function formatTime(iso: string | null | undefined): string {
  * function and this function did not use it.
  */
 export function relativeDays(markedAt: number, now: number = Date.now()): string {
-  if (!Number.isFinite(markedAt) || !Number.isFinite(now)) return MISSING;
+  if (!isDateable(markedAt) || !isDateable(now)) return MISSING;
   const days = civilDayIndex(now) - civilDayIndex(markedAt);
   if (days <= 0) return 'Today';
   if (days === 1) return '1 day ago';
@@ -114,6 +114,28 @@ const CIVIL_DAY_FORMAT = new Intl.DateTimeFormat('en-US', {
  * dividing by `MS_PER_DAY` there is exact. Doing the same arithmetic in a zone
  * that observes DST is what this function exists to avoid.
  */
+/**
+ * Whether an epoch-ms value can become a `Date` at all.
+ *
+ * **`Number.isFinite` is not enough, and this guard replaced it.** ECMA-262 caps
+ * a Date at +/-8,640,000,000,000,000 ms. `1e16` is finite, passes
+ * `Number.isFinite`, and makes `Intl.DateTimeFormat.formatToParts` throw
+ * `RangeError: Invalid time value`.
+ *
+ * That was a regression I introduced, not a pre-existing hole. The previous
+ * implementation divided elapsed milliseconds and returned a number, so no
+ * input could make it throw. This one formats, so out-of-range input can — and
+ * `relativeDays` is called per row from a template
+ * (`follow-up/follow-up-panel.ts:151`), where a throw during change detection
+ * takes out the whole widget rather than one cell.
+ *
+ * One predicate covers every bad case: `new Date(x).getTime()` is `NaN` for
+ * `NaN`, for `Infinity`, and for anything past the range cap.
+ */
+function isDateable(ms: number): boolean {
+  return !Number.isNaN(new Date(ms).getTime());
+}
+
 function civilDayIndex(ms: number): number {
   let year = 0;
   let month = 0;
