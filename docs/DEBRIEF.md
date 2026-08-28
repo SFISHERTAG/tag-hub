@@ -324,16 +324,32 @@ was caught by someone else.**
   away from it**, for a stated conflict-of-interest reason, in the handoff I
   had just read. I did not override it; I did not reach it.
 
-**What I was right about, recorded because a debrief of only errors is a
-lie.** I re-derived the outgoing Lead's Epic 14 handoff from source before
-acting on it and found its load-bearing claim half wrong: it said the
-migrations cover neither clients nor locations, and `clients` is created in
-`003_migrate_firestore_to_postgres.sql`. **`locations` is the only genuine
-schema gap.** That changed the epic's first move from "build the Postgres
-side" to "find out how much is already built and why nothing uses it", which
-the outgoing Lead accepted as the better framing. I also declined
-`TAG_STALE_OK=1` when `branch-freshness` refused a commit, and caught the
-branch up instead.
+**And the error I was proudest of, which is the one worth reading.** I
+re-derived my predecessor's Epic 14 handoff before acting on it. It claimed the
+migrations cover neither clients nor locations. I searched for `clients`, found
+it, and reported the claim half wrong. Then I searched for `locations`, did not
+find it, and reported that half correct: the only genuine schema gap. **A blind
+reviewer found the table nine lines from the top of the file I had already
+opened.** `003_migrate_firestore_to_postgres.sql` says in its own header that
+`locations/{locationId}` migrated to `tenants`, keyed on `location_id`, and that
+a second `locations` concept migrated to `ghl_location_tokens`. There is no
+gap. **Trap 7, applied correctly to the first half of a sentence and missed in
+the second, on a trap promoted from my own predecessor.**
+
+**Which is the whole lesson: catching someone else's error is not evidence that
+you checked your own half.** The half I corrected felt like the work. The half I
+confirmed felt like agreeing with a check already done, and nothing about it
+felt different at the time.
+
+The framing that came out of it survives and is now better founded. "Find out
+how much is already built and why nothing uses it" was right, and the answer to
+*how much* includes the thing I had just named as missing. What does not survive
+is any version of this filed under work I got right. **A session acting on the
+sentence I wrote would have created a `locations` table duplicating `tenants`,
+which is the split-brain the data-model hook exists to block.**
+
+What I will still claim: I declined `TAG_STALE_OK=1` when `branch-freshness`
+refused a commit, and caught the branch up instead.
 
 **The finding that outranks every PR, and it is not mine.** From the Reviewer,
 on the way out: four Leads in one night; refs survived every handoff, merged
