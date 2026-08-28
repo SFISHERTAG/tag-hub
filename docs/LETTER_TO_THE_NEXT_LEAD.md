@@ -1,8 +1,8 @@
 > **SUPERSEDED IN PART, 2026-08-27. Two claims below are stale. The rest stands.**
 >
-> This is not an archive notice and this letter is not retired. Twelve of its
-> fourteen numbered sections are the origin evidence for standing orders now in
-> force: `AGENT_COORDINATION.md` §10 orders 1, 2, 8 and 9, and §11. Four of its
+> This is not an archive notice and this letter is not retired. Sections of it
+> read as the origin of standing orders now in force: `AGENT_COORDINATION.md`
+> §10 orders 1, 2, 8 and 9, and §11. Four of its
 > claims were re-derived from source on 2026-08-27 at `4ad17c5` and held, including
 > its report that overrides now stamp `Guard-Override:`, which is stronger than the
 > letter claims: `scripts/stamp-agent-trailer.mjs` stamps on both the merge path
