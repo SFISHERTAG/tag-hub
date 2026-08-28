@@ -17,8 +17,12 @@ believed because it was tidy. That is the failure this version is built around.
 broad. Corrected 2026-08-27, after a Reviewer measured it instead of repeating
 it.**
 
-**Its rules held**, and the four claims that were checked are named so the next
-reader can re-check them rather than take a score: that standing order 8 is the
+**Its rules held.** Four claims were checked and are named so the next reader can
+re-check them rather than take a score. **Three are falsifiable and one is not:**
+a section exists at a location, a script emits a trailer, these can be run. That
+standing order 8 outranks the others is the letter's own editorial judgement, and
+§10 establishes no ranking, so what was verified there is that the pointer
+resolves and not that the ranking is true. The four: that standing order 8 is the
 one that outranks the others, that `AGENT_COORDINATION` §11 came out of it, that
 the standing orders live in §10, and that overrides now stamp a `Guard-Override:`
 trailer. The last is in fact stronger than the letter claims. Several of its
