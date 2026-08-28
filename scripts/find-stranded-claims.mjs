@@ -53,6 +53,22 @@ try {
 const STARTED = { phase1: "phase1_started", phase3: "phase3_started" };
 const DONE = { phase1: "phase1_complete", phase3: "phase3_setup_guide_sent" };
 
+/**
+ * Shapes, declared rather than inferred.
+ *
+ * `tsconfig.json` sets `allowJs` with `strict`, so the root typecheck reads this
+ * file and infers from it. An empty array literal infers as `never[]` and pushes
+ * do not widen it, so every consumer saw `never` and could not read a field off
+ * a row. The Next app job caught that; `npm test` and `npm run lint` do not
+ * typecheck and never would have.
+ *
+ * @typedef {{ locationId: string, type: string, opportunityId: string|null, ts: number|null }} LogEvent
+ * @typedef {{ id: string, processedAt?: number|null }} ClaimDoc
+ * @typedef {{ source: string, eventId: string, ageH: string, claimedAt: number|null, locationId?: string }} ClaimRow
+ * @typedef {{ source: string, locationId: string, ts: number|null }} StartRow
+ * @typedef {{ stranded: ClaimRow[], complete: ClaimRow[], noStart: ClaimRow[], unjoinable: ClaimRow[], indeterminate: ClaimRow[] }} Classified
+ */
+
 const isContentHash = (s) => /^[0-9a-f]{64}$/.test(s);
 const ms = (v) => (v instanceof Date ? v.getTime() : typeof v === "number" ? v : null);
 
@@ -121,9 +137,14 @@ export function classifyClaims(claimDocs, events, nowMs) {
  * Same fail-closed rule as `classifyClaims`: a start whose ordering against its
  * candidate completions cannot be established is reported as indeterminate
  * rather than quietly treated as finished.
+ *
+ * @param {LogEvent[]} events
+ * @returns {{ orphans: StartRow[], indeterminate: StartRow[] }}
  */
 export function findOrphanStarts(events) {
+  /** @type {StartRow[]} */
   const orphans = [];
+  /** @type {StartRow[]} */
   const indeterminate = [];
 
   for (const source of ["phase1", "phase3"]) {
@@ -167,14 +188,20 @@ export function findOrphanStarts(events) {
  *
  * If GHL never sends that header the two sets cannot overlap in practice — but
  * that is a property of the sender, not of this code, and it is unestablished.
+ *
+ * @param {Classified} claims
+ * @param {StartRow[]} orphans
+ * @returns {{ orphansOnly: StartRow[], startedNeverFinished: number, claimsWithNoStart: number }}
  */
 export function reconcileSides(claims, orphans) {
+  /** @type {Map<string, number>} */
   const pool = new Map();
   for (const r of claims.stranded) {
     const k = `${r.source}:${r.locationId}`;
     pool.set(k, (pool.get(k) ?? 0) + 1);
   }
 
+  /** @type {StartRow[]} */
   const orphansOnly = [];
   for (const o of orphans) {
     const k = `${o.source}:${o.locationId}`;

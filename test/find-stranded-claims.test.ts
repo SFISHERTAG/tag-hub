@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-// @ts-expect-error - plain .mjs script, no type declarations
 import {
   classifyClaims,
   reconcileSides,
@@ -46,7 +45,7 @@ describe("classifyClaims — phase1, the only joinable source", () => {
       NOW,
     );
 
-    expect(r.complete.map((c: { eventId: string }) => c.eventId)).toEqual(["opp-1"]);
+    expect(r.complete.map((c) => c.eventId)).toEqual(["opp-1"]);
     expect(r.stranded).toEqual([]);
   });
 
@@ -81,7 +80,7 @@ describe("classifyClaims — phase1, the only joinable source", () => {
   it("reports a claim with no matching start under NO START", () => {
     const r = classifyClaims([claim("phase1:opp-missing")], [], NOW);
 
-    expect(r.noStart.map((c: { eventId: string }) => c.eventId)).toEqual(["opp-missing"]);
+    expect(r.noStart.map((c) => c.eventId)).toEqual(["opp-missing"]);
   });
 
   it("puts a caller-supplied idempotency key in NO START, not in a finding bucket", () => {
@@ -329,7 +328,7 @@ describe("the invariant the design rests on", () => {
       const { orphans } = findOrphanStarts(events);
       const r = reconcileSides(claims, orphans);
 
-      const orphanKeys = orphans.map((o: { source: string; locationId: string }) => `${o.source}:${o.locationId}`);
+      const orphanKeys = orphans.map((o) => `${o.source}:${o.locationId}`);
       for (const s of claims.stranded) {
         expect(orphanKeys).toContain(`${s.source}:${s.locationId}`);
       }
