@@ -63,10 +63,16 @@ export type TodayResponse = {
 /**
  * GET /api/ghl/locations/[locationId]/today?day=today
  *
- * The closer's day. `dayRange` resolves the window in the tenant's named time
- * zone rather than the process one — in Cloud Run the process zone is UTC, so
- * a naive "today" started at 7pm the previous evening Central and hid that
- * evening's remaining calls.
+ * The closer's day. `dayRange` resolves the window in a named time zone rather
+ * than the process one — in Cloud Run the process zone is UTC, so a naive
+ * "today" started at 7pm the previous evening Central and hid that evening's
+ * remaining calls.
+ *
+ * Not "the tenant's" zone: there is no timezone on `Tenant`, on
+ * `LocationConfig`, or in the live `clients` documents. It is the one constant
+ * in `lib/time/zone.ts`, passed as an argument so per-tenant later is a
+ * call-site change. See that file for why inventing the field early would be
+ * worse than the honest constant.
  *
  * The follow-up queue is deliberately NOT bundled in here. It has its own
  * endpoint (`/follow-up`) so the today screen and the dedicated follow-up
