@@ -50,8 +50,10 @@ the entries below them are optional.
   this said to read the first five, on the grounds that the traps are ordered by
   how much they change what you do. They are not, and have not been since at
   least trap 14: new traps are appended chronologically.** Only the first block
-  was ever ranked. So read the first five and the last five, and treat the
-  numbering as arrival order rather than priority. Left as a correction rather
+  was ever ranked. So read the first five and the last five, plus
+  **traps 7 and 9, which three of the last five define themselves against and
+  are unreadable without.** Treat the numbering as arrival order rather than
+  priority. Left as a correction rather
   than a rewrite because an author who ranks their own new trap highly and files
   it last has no way to say so under the old rule, which is how this was found.
   You do not need to read the entries.
@@ -283,8 +285,11 @@ where attention goes inside a single act of verification.
 Presents as a thorough handover. Across four Lead handovers in one night, refs
 survived every time and merged commits survived every time; **the assignment
 graph died at every one.** Each Lead rebuilt who-reads-what from scratch and
-each got it slightly wrong. One handover carried "do not send this PR to that
-Reviewer, it produced the evidence" as a sentence inside a dense paragraph; the
+each got it slightly wrong. One handover carried a decision to the effect of
+*do not send this PR to that Reviewer, it produced the evidence* as a sentence
+inside a dense paragraph. **Reconstructed, not quoted: the handover was a chat
+message and no artefact preserves its wording**, which is the trap demonstrating
+itself. The
 incoming Lead read the paragraph and assigned exactly that pairing within the
 hour. It did not override the decision. It did not reach it. *Check:* **a
 handover carries routing as a decision in a list, never as a sentence someone
@@ -338,9 +343,11 @@ outgoing Lead per §1b, derive state rather than inherit it, then clear the
 board before Epic 14.
 
 **Actually happened.** All five sessions debriefed and archived, each with its
-loop closed and its ref named. Two PRs merged. Traps 15 to 19 are promoted from
-my own errors, and every one of the five was caught by another session rather
-than by me.
+loop closed and its ref named. Two PRs merged. Traps 15 to 18 are promoted
+from my own errors, every one caught by another session rather than by me.
+**Trap 19 is not mine**: it is the outgoing Reviewer's finding, promoted here
+because it outranks anything I found, and my own error in that range is the one
+at the bottom of the list below.
 
 **The register of this entry, because the file's own argument is that a document
 is not evidence, including itself.** Most of what follows is my account and no
