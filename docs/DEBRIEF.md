@@ -38,9 +38,21 @@ permission boundary, marked "Verbatim. This does not move", so a session sent
 there either concludes the append was never shipped or starts editing beside the
 one section that must not move. "Read at Step 1" was correct and stays.
 
-**Why it earns a place in a list that says "and only these".** The other three
-items in Step 1 say what is *true*: the constraints, the method, the standing
-orders. This is the only one that says what went *wrong*.
+**Why it earns a place in a list that says "and only these".** The list meant is
+`PEER_SESSION_PROMPT.md` Step 1, and naming it matters: **there are two such
+lists and this file is only on one of them.** The other three items there say
+what is *true*: the constraints, the method, the standing orders. This is the
+only one that says what went *wrong*.
+
+**And the other list is the Lead's, and does not carry this file at all.**
+`NEW_SESSION_PROMPT.md` §1 sends a Lead to `CLAUDE.md`, the standing orders and
+`docs/data-model.md`, and stops. **So a Reviewer is told to read the traps and a
+Lead is not** — including the Lead whose own errors most of the recent ones
+are,
+and who is the audience for "when you add a trap, extend this list". Recorded
+here rather than left in a message, per trap 19, because a routing decision
+about a document dies the same way one about a session does. Fixing it is a
+one-line edit to a different file and lands on its own.
 
 **Corrected 2026-08-28, twice in one line.** It said "the other four items" and
 there are three. And it said this is the only item that does not get longer to
