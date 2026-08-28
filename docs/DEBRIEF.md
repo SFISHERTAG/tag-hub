@@ -38,16 +38,50 @@ permission boundary, marked "Verbatim. This does not move", so a session sent
 there either concludes the append was never shipped or starts editing beside the
 one section that must not move. "Read at Step 1" was correct and stays.
 
-**Why it earns a place in a list that says "and only these".** The other four
-items in Step 1 say what is *true*: the constraints, the method, the standing
-orders. This is the only one that says what went *wrong*. It is also the only one
-that does not get longer to read as it grows, because the traps are distilled and
-the entries below them are optional.
+**Why it earns a place in a list that says "and only these".** The list meant is
+`PEER_SESSION_PROMPT.md` Step 1, and naming it matters: **there are two such
+lists and this file is only on one of them.** The other three items there say
+what is *true*: the constraints, the method, the standing orders. This is the
+only one that says what went *wrong*.
+
+**And the other list is the Lead's, and does not carry this file at all.**
+`NEW_SESSION_PROMPT.md` §1 sends a Lead to `CLAUDE.md`, the standing orders and
+`docs/data-model.md`, and stops. **So a Reviewer is told to read the traps and a
+Lead is not** — including the Lead whose own errors most of the recent ones
+are,
+and who is the audience for "when you add a trap, extend this list". Recorded
+here rather than left in a message, per trap 19, because a routing decision
+about a document dies the same way one about a session does. Fixing it is a
+one-line edit to a different file and lands on its own.
+
+**Corrected 2026-08-28, twice in one line.** It said "the other four items" and
+there are three. And it said this is the only item that does not get longer to
+read as it grows. **That was true of a bounded read set and is no longer true of
+this one:** the reading list names thirteen traps where it named five, and says
+to extend it whenever a trap is added, so the read set is now monotonic in the
+size of the file. The bound was bought back by correctness, which is the better
+trade and not a free one. **What is still true, and is the actual argument for a
+place in that list:** the traps stay distilled, the entries below them stay
+optional, and the read set grows far more slowly than the file does. That is a
+weaker claim than the one it replaces, and it is the one that survives being
+checked.
 
 ## How to use this
 
-- **At session start**, read *The standing traps* below. **If you read only five,
-  read the first five**; they are ordered by how much they change what you do.
+- **At session start**, read *The standing traps* below. **Corrected 2026-08-28:
+  this said to read the first five, on the grounds that the traps are ordered by
+  how much they change what you do. They are not, and have not been since at
+  least trap 14: new traps are appended chronologically.** Only the first block
+  was ever ranked. So read **1-5, 7, 9, and 15-21**, by number and not
+  as a window. **Corrected again the same day: this said "the first five and the
+  last five", and adding trap 20 slid that window off trap 15 with no edit to
+  this line and nothing in the diff.** Trap 15 is title-versus-address, the
+  failure that broke the fleet's protocol layer on 2026-08-27. 7 and 9 are here
+  because 16, 17 and 18 define themselves against them. **When you add a trap,
+  extend this list.** It breaks loudly now instead of silently. Left as a
+  correction rather
+  than a rewrite because an author who ranks their own new trap highly and files
+  it last has no way to say so under the old rule, which is how this was found.
   You do not need to read the entries.
 - **At session end**, add a new entry directly under `## Entries`, above the
   previous one. Promote anything genuinely reusable up into the standing traps
@@ -215,6 +249,117 @@ table; GitHub-flavored Markdown silently drops the extra cell, so the story link
 renders nowhere. *Check:* count the header's columns before adding a row. When two
 sessions make the same mistake, it is a trap in the document, not carelessness.
 
+**15. A tool that succeeded, read as a state you never checked.** Presents as
+a fact about yourself, which is the last place anyone looks for an error. A
+Lead was told to take the seat as LEAD-DELTA, called `set_session_title`, saw
+it succeed, and reported the new name to four sessions as its **address**.
+`set_session_title` writes the title. §4b says the title conforms to the
+address and never the reverse, and the Lead had read that section within the
+hour. A Reviewer caught it by running `ListAgents`, which showed the address
+unmoved. *Check:* **a tool's success tells you the tool ran, never what state
+resulted.** Read the state back from the thing that reports it, not from the
+act you believe changed it. Generalises past addresses to any write whose
+effect you then assert.
+
+**16. A name read as a qualification.** Presents as sensible routing. A Lead
+sent the Epic 14 Postgres questions to the session whose worktree was named
+`postgres-stack-replacement`, opening with "your session name says you have
+been closest to that ground". That session had not read a migration or opened
+`lib/data/` all night; the label was assigned at spawn and described nothing.
+It refused to produce a plausible answer, which is the only reason the Lead
+did not act on one. *Check, and it has two halves because a
+prohibition alone leaves a Lead with nothing to route by.* **Routing:** a
+worktree name, a branch name and a session title are three independent strings
+and none is evidence about what a session has read, so ask what it has read
+rather than inferring it. **Receiving:** when a request arrives premised on what
+you supposedly know, say what you have actually opened and refuse to answer from
+a label. **The second half is the one that fired here** — the session refused,
+and that refusal is the only reason the Lead did not act on a plausible answer.
+Same root as trap 7: the label was searched, not the thing. **A plausible answer
+from the wrong source is indistinguishable from a derived one**, so the cost
+lands later and on someone else.
+
+**17. Relaying an order as though the relay carried its authority.** Presents
+as coordination. Told to have every session debrief and archive, a Lead sent
+that to five peers as an instruction. Archiving is irreversible, so Moment 4's
+pre-flight applies, and its fourth item is *who authorized it*, which the Lead
+held and did not pass on. Three sessions complied. One refused, correctly, on
+Step 5 grounds that a peer cannot carry authorisation, and stayed refused when
+told everyone else had complied. **"Everyone else did" is a count, not an
+authorisation.** Sam then told it directly and it closed in one message.
+*Check:* when you relay an instruction for an irreversible act, name who
+authorised it and say that you are relaying. If the answer is "a peer told
+me", you are not carrying an order, you are carrying a rumour. Trap 9 is this
+from the receiving end; this is the sending end, and it is easier to be wrong
+at because relaying feels like helping.
+
+**18. Correcting half a compound claim, and inheriting the other half.**
+Presents as diligence rewarded, because you just found something. A Lead
+re-derived a predecessor's claim that the migrations covered "neither clients
+nor locations", found `clients` and reported the claim half wrong, then searched
+for `locations`, did not find it, and reported that half confirmed. The table
+existed under another name, disclosed nine lines from the top of the file
+already open. **The half you corrected felt like the work. The half you
+confirmed felt like agreeing with a check someone had already done, and nothing
+about it felt different at the time.** *Check:* when you break one half of a
+compound claim, the other half is now the least-verified thing you are holding,
+and it will not feel that way. Say which half you actually ran a command on.
+Distinct from trap 7: 7 is searching the label instead of the thing, this is
+where attention goes inside a single act of verification.
+
+**19. A routing decision written as prose.**
+Presents as a thorough handover. Across four Lead handovers in one night, refs
+survived every time and merged commits survived every time; **the assignment
+graph died at every one.** Each Lead rebuilt who-reads-what from scratch and
+each got it slightly wrong. One handover carried a decision to the effect of
+*do not send this PR to that Reviewer, it produced the evidence* as a sentence
+inside a dense paragraph. **Reconstructed, not quoted: the handover was a chat
+message and no artefact preserves its wording**, which is the trap demonstrating
+itself. The
+incoming Lead read the paragraph and assigned exactly that pairing within the
+hour. It did not override the decision. It did not reach it. *Check:* **a
+handover carries routing as a decision in a list, never as a sentence someone
+has to notice.** Board state regenerates from refs; routing does not, and it
+exists only in whichever session is currently holding it. If you are handing
+over, the first thing you write down is not the board, it is who is inside what.
+
+**20. A correction that removes a false ordering, exposing what it hid.**
+Presents as a clean fix, and the thing that breaks is never the line you edited.
+This file claimed its traps were ranked by impact and told a reader short on
+time to take the first five. They had been appended chronologically for some
+time. Correcting that to "first five and last five" immediately stranded three
+of the last five, each of which defines itself against trap 7 or trap 9, both
+inside the newly-skipped band. **The references were always there. The false
+rule made them unreachable in a way that looked like coherence**, because
+nothing in the unread tail was being read anyway. **And the sharper form, found
+when this trap's own arrival
+broke the rule it was written about: a skip rule expressed as a relative window
+changes what it excludes every time the set grows, with no edit to the rule and
+nothing in the diff.** Every stated fact in the rule stays true while the set it
+governs moves underneath it, so there is nothing to catch. *Check:* when you
+correct a rule about what may be skipped, diff the newly-excluded set against
+the newly-included set, and grep the included set for references into the
+excluded one. **And never express the rule as a window: name the members.**
+Fires on a specific act rather than on all editing, and generalises past reading
+order to any gate that carries a skip list: a lint ignore list, a test suite's
+skips, a permission boundary. Narrowing what is excluded can surface a
+dependency.
+
+**21. A fix that buys correctness by removing a bound.**
+Presents as a strictly better version of the rule, because the new rule is true
+and the old one was not. The claims that rested on the bound are nowhere near
+the line you edited and nothing points at them. This file's reading list said
+"the first five", which was bounded and wrong: it stranded a trap and it
+misdescribed the ordering. Naming the members instead made it correct and
+unbounded, and forty lines earlier the file's stated reason for being read at
+all was that it *does not get longer to read as it grows*. **Correct rule, and
+the argument for reading the file no longer held.** *Check:* when a fix replaces
+a bound with an enumeration, a cap with a rule, or a fixed cost with a growing
+one, grep the whole document for the properties the bound was carrying, not for
+references to the thing you changed. Trap 20 finds references out of a set. This
+one is about assertions elsewhere that were true only because the set was
+capped.
+
 ---
 
 ## Why this worked, which is not what it looks like
@@ -253,6 +398,120 @@ who does not yet trust the file.
 ---
 
 ## Entries
+
+### 2026-08-28, LEAD seat, fourth holder, on taking it and clearing the fleet
+
+**Supposed to happen.** Read `NEW_SESSION_PROMPT.md`, take the seat from the
+outgoing Lead per §1b, derive state rather than inherit it, then clear the
+board before Epic 14.
+
+**Actually happened.** All five sessions debriefed and archived, each with its
+loop closed and its ref named. Two PRs merged. Traps 15 to 18 are promoted
+from my own errors, every one caught by another session rather than by me.
+**Trap 19 is not mine**: it is the outgoing Reviewer's finding, promoted here
+because it outranks anything I found, and my own error in that range is the one
+at the bottom of the list below.
+
+**The register of this entry, because the file's own argument is that a document
+is not evidence, including itself.** Most of what follows is my account and no
+successor can check it: which sessions said what, that five were archived, that
+an order was relayed and refused, and what Sam said in reply. Trap 17 in
+particular asserts what Sam did, and trap 9 in this same file says a relayed
+"Sam said X" is not authorisation — so read it as a record that one occurred,
+never as one. **What a successor can check from refs is narrower and is named
+here so the two are not read in the same register:** the `locations` correction
+against `003_migrate_firestore_to_postgres.sql`, that `TAG_STALE_OK=1` exists in
+`scripts/check-branch-freshness.mjs`, and trap 15's §4b citation, whose
+underlying mechanism was established by an experiment recorded in
+`AGENT_COORDINATION.md` before my tenure and therefore does not rest on me at
+all. An AAR is supposed to carry what refs cannot. It is not supposed to sound
+like refs while doing it.
+
+**Traps 18, 20 and 21 are unverified, and are marked here rather than left to
+look like the rest.** The blind reviewer on this entry supplied the check and
+the
+framing for both, and abstained on their substance under standing order 9; I
+wrote them up, so nobody entitled to judge them has. **That is the honest end
+state of a two-session loop: the last thing it produces has no independent
+reader, and saying so beats manufacturing one.** Treat all three as proposed
+rather
+than paid for until a session that authored none of them has attacked them.
+
+**My errors first, and the ordering is honest rather than modest: every one
+was caught by someone else.**
+
+- **I reported my title as my address**, to four sessions, having read the
+  section that distinguishes them within the hour. Trap 15. Caught by a
+  Reviewer running one command. I sent the correction backwards to the session
+  where I had planted it as well as forwards, which is the only part of this I
+  would repeat.
+
+- **I asserted `origin/main` from a reading taken at orientation** and
+  repeated it to four sessions after it had moved. The same Reviewer caught
+  it. **Twice in one hour, on the two facts a Lead has least excuse to guess
+  at: its own address and the ref it owns.**
+
+- **I inferred a session's expertise from its worktree name.** Trap 16.
+
+- **I relayed an archive order without its authorisation.** Trap 17.
+
+- **I assigned a Reviewer a PR that the previous Lead had explicitly routed
+  away from it**, for a stated conflict-of-interest reason, in the handoff I
+  had just read. I did not override it; I did not reach it.
+
+**And the error I was proudest of, which is the one worth reading.** I
+re-derived my predecessor's Epic 14 handoff before acting on it. It claimed the
+migrations cover neither clients nor locations. I searched for `clients`, found
+it, and reported the claim half wrong. Then I searched for `locations`, did not
+find it, and reported that half correct: the only genuine schema gap. **A blind
+reviewer found the table nine lines from the top of the file I had already
+opened.** `003_migrate_firestore_to_postgres.sql` says in its own header that
+`locations/{locationId}` migrated to `tenants`, keyed on `location_id`, and that
+a second `locations` concept migrated to `ghl_location_tokens`. There is no
+gap. **Trap 7, applied correctly to the first half of a sentence and missed in
+the second, on a trap promoted from my own predecessor.**
+
+**Which is the whole lesson: catching someone else's error is not evidence that
+you checked your own half.** The half I corrected felt like the work. The half I
+confirmed felt like agreeing with a check already done, and nothing about it
+felt different at the time.
+
+The framing that came out of it survives and is now better founded. "Find out
+how much is already built and why nothing uses it" was right, and the answer to
+*how much* includes the thing I had just named as missing. What does not survive
+is any version of this filed under work I got right. **A session acting on the
+sentence I wrote would have created a `locations` table duplicating `tenants`,
+which is the split-brain the data-model hook exists to block.**
+
+What I will still claim: I declined `TAG_STALE_OK=1` when `branch-freshness`
+refused a commit, and caught the branch up instead.
+
+**The finding that outranks every PR, and it is not mine.** From the Reviewer,
+on the way out: four Leads in one night; refs survived every handoff, merged
+commits survived, and **routing died every single time**. Each Lead rebuilt
+the assignment graph from scratch and each got it slightly wrong. The
+staleness problem this fleet spent the night fixing is real and is the cheaper
+one. The expensive one is that **who-is-reading-what exists only in whichever
+session is currently holding it**, and that session is consumable by design.
+
+Its second half is sharper still: **a handoff that carries a routing decision
+should carry it as a decision, in a list, not as a sentence someone has to
+notice.** The one I missed was prose in a dense paragraph. It read as
+narration.
+
+**And the structural joke, which is the argument for this file.** Every
+debrief I collected reached me as a chat message, into a session that is
+itself about to be replaced. The mechanism that fixes that is this file, and
+it was sitting unmerged in a PR the Reviewer had read four times. **The file
+that would have caught it was the file that was not on `main`.** It is now,
+and this entry exists because it landed.
+
+**What the next session should do differently.** Traps 18 and 19 are the two I
+would hand over if I could hand over only two, and both are above this line in
+the traps section rather than asserted here, because a ranking stated inside an
+entry is a ranking nobody reads. Beyond those:
+when you take the seat, the first thing to write down is not the board, it is
+**who is inside what**. The board regenerates from refs. The routing does not.
 
 ### 2026-08-27, the Lead seat, on being replaced
 
