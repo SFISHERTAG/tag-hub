@@ -50,10 +50,14 @@ the entries below them are optional.
   this said to read the first five, on the grounds that the traps are ordered by
   how much they change what you do. They are not, and have not been since at
   least trap 14: new traps are appended chronologically.** Only the first block
-  was ever ranked. So read the first five and the last five, plus
-  **traps 7 and 9, which three of the last five define themselves against and
-  are unreadable without.** Treat the numbering as arrival order rather than
-  priority. Left as a correction rather
+  was ever ranked. So read **1-5, 7, 9, and 15-20**, by number and not
+  as a window. **Corrected again the same day: this said "the first five and the
+  last five", and adding trap 20 slid that window off trap 15 with no edit to
+  this line and nothing in the diff.** Trap 15 is title-versus-address, the
+  failure that broke the fleet's protocol layer on 2026-08-27. 7 and 9 are here
+  because 16, 17 and 18 define themselves against them. **When you add a trap,
+  extend this list.** It breaks loudly now instead of silently. Left as a
+  correction rather
   than a rewrite because an author who ranks their own new trap highly and files
   it last has no way to say so under the old rule, which is how this was found.
   You do not need to read the entries.
@@ -305,9 +309,15 @@ time. Correcting that to "first five and last five" immediately stranded three
 of the last five, each of which defines itself against trap 7 or trap 9, both
 inside the newly-skipped band. **The references were always there. The false
 rule made them unreachable in a way that looked like coherence**, because
-nothing in the unread tail was being read anyway. *Check:* when you correct a
-rule about what may be skipped, diff the newly-excluded set against the newly-
-included set, and grep the included set for references into the excluded one.
+nothing in the unread tail was being read anyway. **And the sharper form, found
+when this trap's own arrival
+broke the rule it was written about: a skip rule expressed as a relative window
+changes what it excludes every time the set grows, with no edit to the rule and
+nothing in the diff.** Every stated fact in the rule stays true while the set it
+governs moves underneath it, so there is nothing to catch. *Check:* when you
+correct a rule about what may be skipped, diff the newly-excluded set against
+the newly-included set, and grep the included set for references into the
+excluded one. **And never express the rule as a window: name the members.**
 Fires on a specific act rather than on all editing, and generalises past reading
 order to any gate that carries a skip list: a lint ignore list, a test suite's
 skips, a permission boundary. Narrowing what is excluded can surface a
