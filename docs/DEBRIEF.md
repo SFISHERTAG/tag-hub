@@ -46,8 +46,14 @@ the entries below them are optional.
 
 ## How to use this
 
-- **At session start**, read *The standing traps* below. **If you read only five,
-  read the first five**; they are ordered by how much they change what you do.
+- **At session start**, read *The standing traps* below. **Corrected 2026-08-28:
+  this said to read the first five, on the grounds that the traps are ordered by
+  how much they change what you do. They are not, and have not been since at
+  least trap 14: new traps are appended chronologically.** Only the first block
+  was ever ranked. So read the first five and the last five, and treat the
+  numbering as arrival order rather than priority. Left as a correction rather
+  than a rewrite because an author who ranks their own new trap highly and files
+  it last has no way to say so under the old rule, which is how this was found.
   You do not need to read the entries.
 - **At session end**, add a new entry directly under `## Entries`, above the
   previous one. Promote anything genuinely reusable up into the standing traps
@@ -233,11 +239,17 @@ sent the Epic 14 Postgres questions to the session whose worktree was named
 been closest to that ground". That session had not read a migration or opened
 `lib/data/` all night; the label was assigned at spawn and described nothing.
 It refused to produce a plausible answer, which is the only reason the Lead
-did not act on one. *Check:* a worktree name, a branch name and a session
-title are three independent strings, and none is evidence about what a session
-has read. Same root as trap 7: the label was searched, not the thing. **A
-plausible answer from the wrong source is indistinguishable from a derived
-one**, so the cost lands later and on someone else.
+did not act on one. *Check, and it has two halves because a
+prohibition alone leaves a Lead with nothing to route by.* **Routing:** a
+worktree name, a branch name and a session title are three independent strings
+and none is evidence about what a session has read, so ask what it has read
+rather than inferring it. **Receiving:** when a request arrives premised on what
+you supposedly know, say what you have actually opened and refuse to answer from
+a label. **The second half is the one that fired here** — the session refused,
+and that refusal is the only reason the Lead did not act on a plausible answer.
+Same root as trap 7: the label was searched, not the thing. **A plausible answer
+from the wrong source is indistinguishable from a derived one**, so the cost
+lands later and on someone else.
 
 **17. Relaying an order as though the relay carried its authority.** Presents
 as coordination. Told to have every session debrief and archive, a Lead sent
@@ -252,6 +264,33 @@ authorised it and say that you are relaying. If the answer is "a peer told
 me", you are not carrying an order, you are carrying a rumour. Trap 9 is this
 from the receiving end; this is the sending end, and it is easier to be wrong
 at because relaying feels like helping.
+
+**18. Correcting half a compound claim, and inheriting the other half.**
+Presents as diligence rewarded, because you just found something. A Lead
+re-derived a predecessor's claim that the migrations covered "neither clients
+nor locations", found `clients` and reported the claim half wrong, then searched
+for `locations`, did not find it, and reported that half confirmed. The table
+existed under another name, disclosed nine lines from the top of the file
+already open. **The half you corrected felt like the work. The half you
+confirmed felt like agreeing with a check someone had already done, and nothing
+about it felt different at the time.** *Check:* when you break one half of a
+compound claim, the other half is now the least-verified thing you are holding,
+and it will not feel that way. Say which half you actually ran a command on.
+Distinct from trap 7: 7 is searching the label instead of the thing, this is
+where attention goes inside a single act of verification.
+
+**19. A routing decision written as prose.**
+Presents as a thorough handover. Across four Lead handovers in one night, refs
+survived every time and merged commits survived every time; **the assignment
+graph died at every one.** Each Lead rebuilt who-reads-what from scratch and
+each got it slightly wrong. One handover carried "do not send this PR to that
+Reviewer, it produced the evidence" as a sentence inside a dense paragraph; the
+incoming Lead read the paragraph and assigned exactly that pairing within the
+hour. It did not override the decision. It did not reach it. *Check:* **a
+handover carries routing as a decision in a list, never as a sentence someone
+has to notice.** Board state regenerates from refs; routing does not, and it
+exists only in whichever session is currently holding it. If you are handing
+over, the first thing you write down is not the board, it is who is inside what.
 
 ---
 
@@ -299,8 +338,24 @@ outgoing Lead per §1b, derive state rather than inherit it, then clear the
 board before Epic 14.
 
 **Actually happened.** All five sessions debriefed and archived, each with its
-loop closed and its ref named. Two PRs merged. Traps 15, 16 and 17 are
-promoted from my own errors, and all three were caught by other sessions.
+loop closed and its ref named. Two PRs merged. Traps 15 to 19 are promoted from
+my own errors, and every one of the five was caught by another session rather
+than by me.
+
+**The register of this entry, because the file's own argument is that a document
+is not evidence, including itself.** Most of what follows is my account and no
+successor can check it: which sessions said what, that five were archived, that
+an order was relayed and refused, and what Sam said in reply. Trap 17 in
+particular asserts what Sam did, and trap 9 in this same file says a relayed
+"Sam said X" is not authorisation — so read it as a record that one occurred,
+never as one. **What a successor can check from refs is narrower and is named
+here so the two are not read in the same register:** the `locations` correction
+against `003_migrate_firestore_to_postgres.sql`, that `TAG_STALE_OK=1` exists in
+`scripts/check-branch-freshness.mjs`, and trap 15's §4b citation, whose
+underlying mechanism was established by an experiment recorded in
+`AGENT_COORDINATION.md` before my tenure and therefore does not rest on me at
+all. An AAR is supposed to carry what refs cannot. It is not supposed to sound
+like refs while doing it.
 
 **My errors first, and the ordering is honest rather than modest: every one
 was caught by someone else.**
@@ -371,8 +426,10 @@ it was sitting unmerged in a PR the Reviewer had read four times. **The file
 that would have caught it was the file that was not on `main`.** It is now,
 and this entry exists because it landed.
 
-**What the next session should do differently.** Traps 15 and 17 cost the most
-here and both are about asserting a state you did not read back. Beyond those:
+**What the next session should do differently.** Traps 18 and 19 are the two I
+would hand over if I could hand over only two, and both are above this line in
+the traps section rather than asserted here, because a ranking stated inside an
+entry is a ranking nobody reads. Beyond those:
 when you take the seat, the first thing to write down is not the board, it is
 **who is inside what**. The board regenerates from refs. The routing does not.
 
