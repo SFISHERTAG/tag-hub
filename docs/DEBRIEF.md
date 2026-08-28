@@ -297,6 +297,22 @@ has to notice.** Board state regenerates from refs; routing does not, and it
 exists only in whichever session is currently holding it. If you are handing
 over, the first thing you write down is not the board, it is who is inside what.
 
+**20. A correction that removes a false ordering, exposing what it hid.**
+Presents as a clean fix, and the thing that breaks is never the line you edited.
+This file claimed its traps were ranked by impact and told a reader short on
+time to take the first five. They had been appended chronologically for some
+time. Correcting that to "first five and last five" immediately stranded three
+of the last five, each of which defines itself against trap 7 or trap 9, both
+inside the newly-skipped band. **The references were always there. The false
+rule made them unreachable in a way that looked like coherence**, because
+nothing in the unread tail was being read anyway. *Check:* when you correct a
+rule about what may be skipped, diff the newly-excluded set against the newly-
+included set, and grep the included set for references into the excluded one.
+Fires on a specific act rather than on all editing, and generalises past reading
+order to any gate that carries a skip list: a lint ignore list, a test suite's
+skips, a permission boundary. Narrowing what is excluded can surface a
+dependency.
+
 ---
 
 ## Why this worked, which is not what it looks like
@@ -363,6 +379,14 @@ underlying mechanism was established by an experiment recorded in
 `AGENT_COORDINATION.md` before my tenure and therefore does not rest on me at
 all. An AAR is supposed to carry what refs cannot. It is not supposed to sound
 like refs while doing it.
+
+**Traps 18 and 20 are unverified, and are marked here rather than left to look
+like the rest.** The blind reviewer on this entry supplied the check and the
+framing for both, and abstained on their substance under standing order 9; I
+wrote them up, so nobody entitled to judge them has. **That is the honest end
+state of a two-session loop: the last thing it produces has no independent
+reader, and saying so beats manufacturing one.** Treat both as proposed rather
+than paid for until a session that authored neither has attacked them.
 
 **My errors first, and the ordering is honest rather than modest: every one
 was caught by someone else.**
