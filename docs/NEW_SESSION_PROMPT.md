@@ -8,10 +8,12 @@ it. This document tells you how, in that order.
 session's address, so never assume it reaches you. Read your own address off
 `ListAgents` line 1 and give peers that, per `AGENT_COORDINATION.md` §4b, which
 also says the title conforms to the address and never the reverse. The callsign
-rule in §4b binds a session at its own `EnterWorktree`, which is a moment no step
-of this document performs: §3 is where Sam is handed the line, and the session he
-pastes it into chooses for itself when it spawns. Sam names the seat; §4b decides
-how you are reached.
+rule in §4b binds a moment no step of this document performs, and **§4b is the
+authority on which moment, not this section.** It records that an address is
+derived from the worktree name at spawn, that addresses cannot be changed from
+inside, and that who does the naming is unverified until a respawn settles it.
+**So do not assume you chose yours, and do not assume you can change it.** Sam
+names the seat; §4b decides how you are reached.
 
 Budget fifteen minutes on this page. Do not skim §0.
 
