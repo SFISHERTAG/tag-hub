@@ -206,6 +206,28 @@ already dead when the first Reviewer tried it: the Lead had been renamed
 mid-flight, and Step 0 obeyed verbatim would have messaged into the void and
 then waited forever for a reply from nobody. Derive the address, every time.
 
+**Ask it for your callsign, and expect one.** Sam's ruling, 2026-08-28: every
+incoming reinforcement is titled with the next unused NATO phonetic callsign,
+and the Lead assigns it when you report in. ALFA, BRAVO, CHARLIE and DELTA were
+spent on the night of 2026-08-27, so the next is ECHO. The Lead derives the next
+unused one from `ListAgents` rather than remembering it, and retires rather than
+recycles, per `AGENT_COORDINATION.md` §4b callsign rules 3 and 4.
+
+**Your callsign is your title. It is not your address, and it will not route.**
+`set_session_title` writes the title and nothing else; the address stays the
+worktree-derived name you were spawned with. This is not a subtlety you can
+skip:
+a Lead reported its own new title to four sessions as its address in its first
+hour, and `DEBRIEF.md` trap 15 exists because of it. **Sam or the Lead may call
+you ECHO; you still report your address verbatim off `ListAgents` line 1, and
+peers still reach you at that.**
+
+**Where this departs from §4b, said plainly rather than left for you to trip
+over.** §4b says the title conforms to the address and never the reverse. Under
+this ruling it does not: the title is the callsign and the address is whatever
+spawn produced. Sam owns that call and it supersedes the conform rule for
+reinforcements. What §4b still governs is everything about the address itself.
+
 Tell it: you are the Reviewer, you are its adversarial subordinate, and you are
 ready for direction. Keep it short. Then wait for its reply before starting.
 that reply is where you get the task's *intent*, and your backbrief goes back on
