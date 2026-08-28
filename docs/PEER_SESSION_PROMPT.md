@@ -125,6 +125,23 @@ successor. Rank is suspended in an AAR. Four questions:
 to report about yourself, you have not looked hard enough. Prefer the
 `bmad-retrospective` skill if it fits the work.
 
+**The AAR goes into `docs/DEBRIEF.md`, as a new entry at the top of `## Entries`,
+and that is what makes it reach anyone.** **The route, named because a session at
+Moment 5 is out of context and is the last person who will invent one:** commit it
+on your own branch, push that branch, open a PR, and tell the Lead. Step 6 forbids
+you touching `main` or any shared ref, and push-then-PR is one of its four
+legitimate closes. The pull request is not one of the four; it is how you hand the
+push over. One rolling file, no date in the name,
+because dated handoff documents already sit in `docs/` and a reader facing several
+does not know which is current. Promote anything reusable up into *The
+standing traps* so the next session reads it in Step 1 without reading your
+entry. Do not rewrite an earlier entry; correct it in yours and say so.
+
+**No board state in it.** No `main is <sha>`, no PR numbers as status, no count
+of anything that moves. Its predecessor recorded which commit `main` was on and
+was wrong within hours. Refs answer state questions; this file carries only what
+stays true.
+
 ### Threaded through all five: commander's intent
 
 Whenever you direct a Specialist, or hand anything to anyone, state the **why**,
@@ -238,6 +255,11 @@ Then read, in this order, and only these:
 2. `docs/NEW_SESSION_PROMPT.md` on `origin/main`, the method.
 3. `docs/AGENT_COORDINATION.md` §10 and §11. Every standing order names the
    incident that produced it, so it is arguable rather than obeyed.
+4. `docs/DEBRIEF.md`, **the standing traps section only**. It is short by design
+   and it is the accumulated method findings of every session that held this
+   seat. Each trap presents as something a careful reader already believes, so
+   reading them is not optional diligence: they are the errors you are otherwise
+   about to repeat. The entries below that section are archive, not required.
 
 ---
 
