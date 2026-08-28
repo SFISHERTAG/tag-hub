@@ -208,25 +208,55 @@ then waited forever for a reply from nobody. Derive the address, every time.
 
 **Ask it for your callsign, and expect one.** Sam's ruling, 2026-08-28: every
 incoming reinforcement is titled with the next unused NATO phonetic callsign,
-and the Lead assigns it when you report in. ALFA, BRAVO, CHARLIE and DELTA were
-spent on the night of 2026-08-27, so the next is ECHO. The Lead derives the next
-unused one from `ListAgents` rather than remembering it, and retires rather than
-recycles, per `AGENT_COORDINATION.md` §4b callsign rules 3 and 4.
+and the Lead assigns it when you report in.
+
+**Where the Lead derives it, and this is the part that is easy to get wrong.**
+**Not from `ListAgents`.** `ListAgents` prints addresses, and under this ruling
+a callsign is a title, so no callsign has ever appeared there. A Lead deriving
+from it sees none spent and assigns the first one every time, forever. **Derive
+from the session list that shows titles**, the same listing used to archive
+or rename a session, and take the first NATO name no live session is titled
+with.
+Derived, not remembered, and no number is written here on purpose: any list of
+spent callsigns is stale the moment the next session spawns.
 
 **Your callsign is your title. It is not your address, and it will not route.**
 `set_session_title` writes the title and nothing else; the address stays the
 worktree-derived name you were spawned with. This is not a subtlety you can
-skip:
-a Lead reported its own new title to four sessions as its address in its first
-hour, and `DEBRIEF.md` trap 15 exists because of it. **Sam or the Lead may call
-you ECHO; you still report your address verbatim off `ListAgents` line 1, and
-peers still reach you at that.**
+skip: a Lead reported its own new title to four sessions as its address in its
+first hour, and `DEBRIEF.md` trap 15 exists because of it. **Sam or the Lead may
+call you by a callsign; you still report your address verbatim off `ListAgents`
+line 1, and peers still reach you at that.**
 
-**Where this departs from §4b, said plainly rather than left for you to trip
-over.** §4b says the title conforms to the address and never the reverse. Under
-this ruling it does not: the title is the callsign and the address is whatever
-spawn produced. Sam owns that call and it supersedes the conform rule for
-reinforcements. What §4b still governs is everything about the address itself.
+**Where this departs from §4b, and it is three places, not one.** Naming one
+departure warrants the rest as agreeing, which is `DEBRIEF.md` trap 13.
+
+1. **The conform rule.** §4b says the title conforms to the address and never
+   the reverse. Under this ruling it does not: the title is the callsign, the
+   address is whatever spawn produced.
+2. **The moment and the actor.** §4b callsign rule 2 has the session choosing
+   at `EnterWorktree({name})` "and nowhere else, because that is the only
+   moment a session can *choose* it". Here the Lead assigns at report-in,
+   after spawn.
+   Rule 2's reason still holds for the *address*; it is the title being assigned
+   now, which is writable at any time.
+3. **Rules 3 and 4 lose their instrument.** Both name `ListAgents` because under
+   the conform rule a callsign *was* an address and *was* visible there. Rule 4
+   in particular — "a callsign stays dead until its address has stopped
+   appearing in `ListAgents`" — has no trigger at all once a callsign has no
+   address, so retire-never-recycle must be evaluated against the title listing
+   or not at all.
+
+**One consequence for §4b that a follow-up owes:** §4b retires the
+no-role-names rule on the strength of the conform rule, reasoning that
+role-name collision is structurally impossible once title equals address.
+**That premise is gone for
+reinforcements**, so the retirement now rests on nothing here. Not fixed in this
+PR, because §4b is a second document and infrastructure lands alone. Recorded
+so the gap is in the file rather than in a chat message, per trap 19.
+
+Sam owns all of this and it supersedes those rules for reinforcements. What §4b
+still governs is everything about the address itself.
 
 Tell it: you are the Reviewer, you are its adversarial subordinate, and you are
 ready for direction. Keep it short. Then wait for its reply before starting.
