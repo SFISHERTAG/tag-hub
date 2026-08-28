@@ -38,11 +38,21 @@ permission boundary, marked "Verbatim. This does not move", so a session sent
 there either concludes the append was never shipped or starts editing beside the
 one section that must not move. "Read at Step 1" was correct and stays.
 
-**Why it earns a place in a list that says "and only these".** The other four
+**Why it earns a place in a list that says "and only these".** The other three
 items in Step 1 say what is *true*: the constraints, the method, the standing
-orders. This is the only one that says what went *wrong*. It is also the only one
-that does not get longer to read as it grows, because the traps are distilled and
-the entries below them are optional.
+orders. This is the only one that says what went *wrong*.
+
+**Corrected 2026-08-28, twice in one line.** It said "the other four items" and
+there are three. And it said this is the only item that does not get longer to
+read as it grows. **That was true of a bounded read set and is no longer true of
+this one:** the reading list names thirteen traps where it named five, and says
+to extend it whenever a trap is added, so the read set is now monotonic in the
+size of the file. The bound was bought back by correctness, which is the better
+trade and not a free one. **What is still true, and is the actual argument for a
+place in that list:** the traps stay distilled, the entries below them stay
+optional, and the read set grows far more slowly than the file does. That is a
+weaker claim than the one it replaces, and it is the one that survives being
+checked.
 
 ## How to use this
 
@@ -50,7 +60,7 @@ the entries below them are optional.
   this said to read the first five, on the grounds that the traps are ordered by
   how much they change what you do. They are not, and have not been since at
   least trap 14: new traps are appended chronologically.** Only the first block
-  was ever ranked. So read **1-5, 7, 9, and 15-20**, by number and not
+  was ever ranked. So read **1-5, 7, 9, and 15-21**, by number and not
   as a window. **Corrected again the same day: this said "the first five and the
   last five", and adding trap 20 slid that window off trap 15 with no edit to
   this line and nothing in the diff.** Trap 15 is title-versus-address, the
@@ -323,6 +333,21 @@ order to any gate that carries a skip list: a lint ignore list, a test suite's
 skips, a permission boundary. Narrowing what is excluded can surface a
 dependency.
 
+**21. A fix that buys correctness by removing a bound.**
+Presents as a strictly better version of the rule, because the new rule is true
+and the old one was not. The claims that rested on the bound are nowhere near
+the line you edited and nothing points at them. This file's reading list said
+"the first five", which was bounded and wrong: it stranded a trap and it
+misdescribed the ordering. Naming the members instead made it correct and
+unbounded, and forty lines earlier the file's stated reason for being read at
+all was that it *does not get longer to read as it grows*. **Correct rule, and
+the argument for reading the file no longer held.** *Check:* when a fix replaces
+a bound with an enumeration, a cap with a rule, or a fixed cost with a growing
+one, grep the whole document for the properties the bound was carrying, not for
+references to the thing you changed. Trap 20 finds references out of a set. This
+one is about assertions elsewhere that were true only because the set was
+capped.
+
 ---
 
 ## Why this worked, which is not what it looks like
@@ -390,13 +415,15 @@ underlying mechanism was established by an experiment recorded in
 all. An AAR is supposed to carry what refs cannot. It is not supposed to sound
 like refs while doing it.
 
-**Traps 18 and 20 are unverified, and are marked here rather than left to look
-like the rest.** The blind reviewer on this entry supplied the check and the
+**Traps 18, 20 and 21 are unverified, and are marked here rather than left to
+look like the rest.** The blind reviewer on this entry supplied the check and
+the
 framing for both, and abstained on their substance under standing order 9; I
 wrote them up, so nobody entitled to judge them has. **That is the honest end
 state of a two-session loop: the last thing it produces has no independent
-reader, and saying so beats manufacturing one.** Treat both as proposed rather
-than paid for until a session that authored neither has attacked them.
+reader, and saying so beats manufacturing one.** Treat all three as proposed
+rather
+than paid for until a session that authored none of them has attacked them.
 
 **My errors first, and the ordering is honest rather than modest: every one
 was caught by someone else.**
