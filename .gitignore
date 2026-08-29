@@ -62,3 +62,8 @@ next-env.d.ts
 /public/media/
 /public/icons/
 /public/3rdpartylicenses.txt
+
+# bmad installer + renderer output (generated, machine- and worktree-specific)
+_bmad/render/
+_bmad-output/
+*.bak
