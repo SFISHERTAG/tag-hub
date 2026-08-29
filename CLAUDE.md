@@ -212,6 +212,28 @@ should gate on.
   update, fix the doc instead. If the hook is flagging a false positive, fix the check,
   don't route around it.
 
+## Adversarial review (strongly suggested, not a rule)
+
+Before an epic, a contract, or any design document lands, hand the draft to
+another session and ask it to break it. Not a gate and not enforced by a hook:
+it worked on 2026-08-26 because both sessions chose to attack, and a rule would
+more likely produce the performance of attacking than the thing itself.
+
+What made it work, and what to copy:
+- **Name your own weakest claims when you hand over.** Flagging a claim for
+  someone else to attack is what makes you look at it properly.
+- **Go to primary sources, never the other session's summary.** Half the
+  findings in that session were errors in what one session told the other, and
+  every one surfaced because the reader checked the code instead.
+- **A doc cite from another session is branch-local until proven otherwise.**
+  Line numbers, story files and table rows all differ across refs. Verify the
+  file exists on a ref you can both see before reasoning from it.
+- **Neither session commits its own draft on its own say-so.**
+
+The four defects it caught are in
+`docs/stories/epics-18-21-scoping-retro-2026-08-26.md`, along with its cost: six
+exchanges, four of them spent establishing which session could see what.
+
 ## Output discipline
 - Keep responses terse: state what changed and what's next, don't restate file contents,
   don't narrate implementation step by step. The diff is the report.
