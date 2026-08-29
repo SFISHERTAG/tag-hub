@@ -15,13 +15,19 @@ been observed changing with no action by the session they belong to. To reach th
 Lead, run `ListAgents` and read line 1. Never copy an address out of this file into
 a `SendMessage`.
 
+**Unfilled. Sam grants the seat and the granting commit adds the first row.**
+
 | Field | Value |
 | --- | --- |
-| Address at grant | `peer-session-prompt-docs-5dd173-66` |
-| Worktree | `.claude/worktrees/peer-session-prompt-docs-5dd173` |
-| Granted at | `origin/main` `760fab3` |
-| Granted on | 2026-08-29 |
-| Predecessor | `session-handoff-review-f16108-a2`, archived after handover |
+| Address at grant | *unfilled* |
+| Worktree | *unfilled* |
+| Granted at | *unfilled* |
+| Granted on | *unfilled* |
+
+This file landed empty deliberately. The session that wrote it held the seat and
+could have written itself in, and a mechanism whose first commit breaks its own rule
+teaches every later reader that the rule bends for whoever holds the pen. An admitted
+gap beats a status invented to fill one.
 
 **Previous holders** are not tracked here. The handover is in the commit history of
 this file, which is the record that survives when a session does not.

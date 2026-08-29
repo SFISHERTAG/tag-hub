@@ -197,9 +197,17 @@ first, conclusion second, and the weak parts flagged.
 
 Your first act. Message the Lead directly:
 
-Run `ListAgents` and read the Lead's row. Send with
-`SendMessage({to: "<name exactly as the row prints it>"})`, appending the
-` [ref]` only if two rows collide.
+**Read `docs/LEAD_OF_RECORD.md` on `main` first: it names who holds the seat,
+and it is the only artefact that does.** `ListAgents` has no role column and a
+sidebar title can be self-asserted by any session, so neither settles it. Every
+Reviewer before this file existed had to infer the Lead from session age and
+branch ownership, and each said in writing that it was inference.
+
+Then run `ListAgents` to get the routable address for the holder that file
+names, and send with `SendMessage({to: "<name exactly as the row prints it>"})`,
+appending the ` [ref]` only if two rows collide. **The file says who. `ListAgents`
+says how to reach them, and only at the moment you send.** If the file is
+unfilled, say so to whoever spawned you rather than guessing.
 
 **Do not take an address from this document.** A session name written here was
 already dead when the first Reviewer tried it: the Lead had been renamed

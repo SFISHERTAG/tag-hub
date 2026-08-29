@@ -136,11 +136,17 @@ the next rewrite onward.
 **The objection this has to answer, because it is a scar and not a hypothetical.**
 An even earlier version derived the title from the worktree basename and produced
 three sessions whose sidebar labels routed to nothing, which was judged worse than
-having no rule. **The defect was never the worktree name. It was that a title was
-expected to route at all.** Under the rule above no title ever routes, including a
-title that happens to look like an address, so there is nothing left to be misled
-by. If you find yourself typing a name you read off a sidebar into a `SendMessage`,
-that is the error, whatever scheme produced the name.
+having no rule. **This convention is closer to that failure than the old one was,
+not further from it:** a worktree half is exactly one suffix away from a real
+address, where "Functions build" was obviously not one.
+
+**What retires the scar is the `ROLE · ` prefix, and it is structural rather than a
+rule about behaviour.** Every address observed here matches `[a-z0-9-]+`; none
+contains a space or a `·`. So `REVIEWER · postgres-stack-replacement-202d6e` cannot
+be mistaken for an address at a glance, and pasting it into `SendMessage` cannot
+work. That is a property of the string. **Do not defend this convention with "no
+title routes" instead** — the scar was three sessions acting on a norm, and nobody
+types a name they believe is wrong, so another norm would not have stopped them.
 
 **The invariant is not self-maintaining, and this is the open hole.** One session's
 address changed from `handoff-review-questions-555acd-3b` to `LEAD` without that
@@ -153,9 +159,11 @@ earlier message, including one in this file.
 
 ### Callsigns: withdrawn 2026-08-28, and kept here as the reason
 
-**Sam withdrew the NATO callsign scheme on 2026-08-28.** The rules it stated are
+**Sam withdrew the NATO callsign scheme on the evening of 2026-08-27 local time**
+(PR `#42` closed `2026-08-28T04:16:20Z`; **every date in this section is local
+time, and the same event has two defensible dates if you mix conventions**). The rules it stated are
 gone from this section rather than amended, because a withdrawn rule left standing
-is worse than no rule: for roughly a day after the withdrawal this section still
+is worse than no rule: for about 36 hours after the withdrawal this section still
 instructed every new session to pick a callsign, and `#45` was opened by a reviewer
 who found it *while verifying that the withdrawal had been executed*, which it had
 not. The amendment had been made in `PEER_SESSION_PROMPT.md` Step 0, correctly and
@@ -186,7 +194,7 @@ tooling, not of any scheme, and it will outlive this paragraph. **Do not write a
 rule whose conformance nobody can check.**
 
 **Addresses are mutable in both halves, and more so than this section used to say.**
-Measured 2026-08-28: two live sessions changed address in the same window, with no
+Measured 2026-08-29: two live sessions changed address in the same window, with no
 action by either, `peer-session-prompt-docs-5dd173-6f [2202da]` to `-66 [103fe9]`
 and `postgres-stack-replacement-202d6e-37 [11ea02]` to `-25 [0e438b]`. **The `[ref]`
 moved too**, so the claim above that `[ref]` is the only disambiguator is true only
@@ -194,7 +202,7 @@ of a single moment. The worktree half of each address was unchanged, which is th
 one stable component. The window coincided with two sessions leaving `ListAgents`;
 that is a correlation and nobody has identified the mechanism.
 
-A separate experiment the same day: `ListAgents`, then `set_session_title`, then
+A separate experiment the same day, 2026-08-29: `ListAgents`, then `set_session_title`, then
 `ListAgents` again returned an identical address and ref. **Renaming is not what
 moves an address.** That corroborates the `LEAD-PROBE-1` result above at a second
 moment with a different title shape.
@@ -253,11 +261,14 @@ it, because a chat title is not in the repository. Per standing order 8, the par
 norm that duplicates a mechanism is the part that decays, so this rule deliberately
 claims only what no mechanism covers.
 
-- Use the directory name **verbatim, hash suffix included**:
-  `functions-typescript-build-8fa5d4`, not "Functions build". The suffix is what makes
-  it match `git worktree list`, and a tidied name defeats the whole point.
-- A session in the shared checkout at the repo root is `TAG`. There should rarely be
-  one; that checkout is usually parked.
+- Use the directory name **verbatim, hash suffix included**, after the role prefix:
+  `LEAD · functions-typescript-build-8fa5d4`, never `LEAD · Functions build`. The
+  suffix is what makes the second half match `git worktree list`, and a tidied name
+  defeats the whole point. **This bullet used to forbid the prefix** by demanding the
+  directory name alone; that was left standing six lines below the rule that
+  introduced the prefix, and a reviewer found it before this branch merged.
+- A session in the shared checkout at the repo root is `ROLE · TAG`. There should
+  rarely be one; that checkout is usually parked.
 - **Rename at the start of a session, not at the end.** A title that becomes correct
   after the work is over solves nothing.
 
