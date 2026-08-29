@@ -212,8 +212,19 @@ addressing rule here is built on that listing, including the one below: an
 instruction to find a row can fail by the row not being shown. Where the listing and
 a human disagree about who is alive, the human is right.
 
-The mechanism that moves an address is still unidentified, and the leaving-sessions
-explanation is now withdrawn rather than merely unproven.
+**A third observation, and it settles the shape if not the cause.** In a later
+window one session's address moved again, `postgres-stack-replacement-202d6e-25
+[0e438b]` to `-f6 [386e50]`, while this session's stayed at
+`peer-session-prompt-docs-5dd173-66 [103fe9]` throughout, and a third row *arrived*
+in the listing. **So the event is per-session, it does not move every address at
+once, and it does not require anyone to leave.**
+
+Across three observations: the worktree half has never changed, both the suffix and
+the `[ref]` have, and in no case did the session it happened to do anything to cause
+it. **No correlate has been established.** That is weaker than a correlation and it
+is the most the evidence supports; an earlier draft of this paragraph claimed one and
+was wrong twice, first by naming departing sessions as the trigger and then by
+implying the changes were simultaneous.
 
 A separate experiment the same day, 2026-08-29: `ListAgents`, then `set_session_title`, then
 `ListAgents` again returned an identical address and ref. **Renaming is not what
