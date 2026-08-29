@@ -55,6 +55,31 @@ jobs:
       - name: Secret scan
         run: npm run check:secret-scan
 
+      # Added 2026-08-29. These three were pre-commit only, which means they were
+      # armed per clone by a manual `npm run hooks:install` and skippable with
+      # --no-verify. CI is the only place a check cannot be forgotten or bypassed,
+      # and a guard that depends on every clone having run an install step is a
+      # guard with an unknown arming state.
+      #
+      # Each was run against main and observed GREEN before being added here. The
+      # job's own note below is right that a check red on day one is one people
+      # learn to delete, so nothing goes in on the assumption it passes.
+      #
+      # NOT added, and why, so the next person does not think they were missed:
+      #   check:migrations   - needs tsx, which is not on PATH outside npm ci, so
+      #                        it could not be observed green locally. Add it once
+      #                        someone has watched it pass under a real install.
+      #   check:story-parity - the script is not on main yet. Add it in the same
+      #                        commit that lands guard/story-status-parity.
+      - name: Story index
+        run: npm run check:story-index
+
+      - name: Inline role strings
+        run: npm run check:role-strings
+
+      - name: Firestore seam
+        run: npm run check:firestore-seam
+
       # Aggregate repo state, not this change's state, which is why it does not
       # use TAG_DIFF_BASE like the two steps above. Deliberately here and not in
       # pre-commit: blocking a commit because some *other* branch is stale trains
