@@ -649,8 +649,8 @@ were unbuildable as written. Evidence, with line numbers, in
 
 | ID | Story | Status |
 | --- | --- | --- |
-| 14.1 | Repository seam over every collection | Draft |
-| 14.2 | Local Postgres and the migration runner | Draft |
+| 14.1 | [Repository seam over every collection](stories/14.1-repository-seam-over-every-collection.md) | Review |
+| 14.2 | [Local Postgres and the migration runner](stories/14.2-local-postgres-and-the-migration-runner.md) | Review |
 | 14.3 | `authCodes`, `authCodeCooldowns` (+ the missing TTL) | Draft |
 | 14.4 | `locations` — the tenant registry, and the `clients` subtree | Draft — was "`orgs`, `locations`, `users`" |
 | 14.5 | `bugReports`, `groups`, `csm` | Draft — was "`bug_reports`, `creatives`" |
@@ -658,7 +658,8 @@ were unbuildable as written. Evidence, with line numbers, in
 | 14.7 | `manual_pages` and `manual_pages/{id}/versions` | Draft |
 | 14.8 | The per-location subtree: outcomes, conversion log, fetch log, checklists, launches, follow-up settings | Draft — replaces "`flow_scripts`: resolve the two-store split" |
 | 14.9 | GHL agency tokens — Postgres or Secret Manager | Draft |
-| 14.A | Fold `functions/` into `app/api` | Draft — new, blocks 14.10 |
+| 14.A | [Fold `functions/` into `app/api`](stories/14.A-fold-functions-into-app-api.md) | Draft — new, blocks 14.10 |
+| 14.B | [Inline role-string audit](stories/14.B-inline-role-string-audit.md) | Review |
 | 14.10 | Delete `lib/firestore.ts` and drop the SDK | Draft |
 
 **What changed and why.**
