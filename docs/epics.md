@@ -102,7 +102,7 @@ account to work in it — auditably.
 | 3.3 | Enter a client tenant | Done |
 | 3.4 | Impersonation banner and read-only default | Done |
 | 3.5 | Audit log of tenant access | Done |
-| 3.6 | Escalation view — ascension and risk | In review — AC3/AC5 gaps pending live GHL data |
+| 3.6 | Escalation view — ascension and risk | Review — AC3/AC5 gaps pending live GHL data |
 
 **No blocker.** 1.4 is Done and 1.6 is in progress; the impersonation half of
 this epic (3.3–3.5) has landed. Remaining work is Phase 2 of 3.1/3.2 and
@@ -145,7 +145,7 @@ one auditable action.
 | 5.3 | Launch preview | Ready |
 | 5.4 | Create paused via Marketing API | Done |
 | 5.5 | Explicit activation, advancing to `AP 2 - Ads Launched` | Done |
-| 5.6 | Budget ceilings and idempotency | In Progress — implemented and unit-tested, held from Done pending live Meta verification |
+| 5.6 | Budget ceilings and idempotency | Review — implemented and unit-tested, held from Done pending live Meta verification |
 | 5.7 | Stage SLA deadlines | Superseded by 13.5 |
 | 5.8 | SLA breach sweep and escalation | Superseded by 13.5/13.6 |
 | 5.9 | Adjustable stage SLA baselines | Superseded by 13.5 |
@@ -214,7 +214,7 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.4 | Client-visibility allowlist at the query layer | In progress — allowlist and catalog landed, fetcher adoption outstanding |
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
 | 7.6 | Data scope at the query layer — whose rows, per hat | In progress — enforcement layer and metric registry landed, route wiring outstanding |
-| 7.7 | Write scope and team to the claim | In Review — all tasks complete; AC9 verified by inspection only, see Completion Notes |
+| 7.7 | Write scope and team to the claim | Review — all tasks complete; AC9 verified by inspection only, see Completion Notes |
 | 7.8 | Map uids to GHL users | Draft |
 | 7.9 | Admin: users, groups and role assignment | **Backlog — shipped without a story** |
 
