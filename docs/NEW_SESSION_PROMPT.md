@@ -17,7 +17,9 @@ the address you were given is the one you still have.
 
 **Who holds the seat is settled by `docs/LEAD_OF_RECORD.md` and by nothing else.**
 Not a sidebar title, which any session can assert; not `ListAgents`, which has no
-role column. Sam grants the seat and the file records it.
+role column. Sam grants the seat and the file records it. **You do not write
+yourself into it** — the outgoing holder does that, at §1b, before you close it. If
+it is already gone, leave the row unfilled and say so.
 
 Budget fifteen minutes on this page. Do not skim §0.
 

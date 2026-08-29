@@ -157,7 +157,7 @@ So some event nobody has identified writes the address. **Re-read `ListAgents` a
 handover, archive or adoption event**, and never carry an address forward from an
 earlier message, including one in this file.
 
-### Callsigns: withdrawn 2026-08-28, and kept here as the reason
+### Callsigns: withdrawn 2026-08-27, and kept here as the reason
 
 **Sam withdrew the NATO callsign scheme on the evening of 2026-08-27 local time**
 (PR `#42` closed `2026-08-28T04:16:20Z`; **every date in this section is local
@@ -231,8 +231,11 @@ there: a blank reads as missing information, two reads as an answer. Only a gran
 settles a grant.
 
 **So the seat lives in `docs/LEAD_OF_RECORD.md`**, one line naming the current
-Lead's address and the SHA at which Sam granted it, updated in the same commit as
-any handover. It is greppable, it is in the repository, it survives every rename and
+Lead's worktree and address and the SHA at which Sam granted it, **written by the
+outgoing holder and never by the session taking the seat**, in the handover commit.
+A handover has two parties; a session recording itself is the self-assertion the
+file exists to exclude. Where no outgoing session survives to write it, the row
+stays unfilled rather than being filled by its subject. It is greppable, it is in the repository, it survives every rename and
 every address rewrite, and two sessions cannot both hold the file. Standing order 8:
 this is the mechanism, and the title is the norm that points at it. **When the
 sidebar and the file disagree, the file is right.**

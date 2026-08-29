@@ -5,15 +5,35 @@ session title is not, because a title is self-asserted and several sessions can
 assert the same one; `ListAgents` is not, because it has no role column. When the
 sidebar and this file disagree, this file is right.
 
-**Granted by Sam only.** No session writes itself into this file, and no relay of
-"Sam said X" is a grant. A session taking the seat updates this file in the same
-commit as the handover, and states the address it read from `ListAgents` line 1 at
-that moment.
+**Granted by Sam only**, and no relay of "Sam said X" is a grant.
 
-**The address here is a record of a moment, not a routing target.** Addresses have
-been observed changing with no action by the session they belong to. To reach the
-Lead, run `ListAgents` and read line 1. Never copy an address out of this file into
-a `SendMessage`.
+**No session writes itself into this file, including the one taking the seat.** The
+outgoing holder records the incoming one, in the handover commit. A handover has two
+parties, so the write is testimony by the party with nothing to gain, and it is
+checkable because the row being replaced is the writer's own. Sam's grant is what
+makes it legitimate; the outgoing Lead is only the hand that records it.
+
+**If the outgoing session is gone, the row stays unfilled.** That is the normal case,
+not the exception: the sessions that strand work are exactly the ones that crashed or
+hit a limit and cannot write anything. An unfilled row is honest, and Step 0 of
+`PEER_SESSION_PROMPT.md` already tells a Reviewer to say so rather than guess. Do not
+fill it on your own authority to spare the next reader an admitted gap.
+
+**An earlier version of this file said both of these things at once**, forbidding
+self-assertion in one sentence and instructing the incoming holder to write its own
+address in the next. Found before it merged.
+
+**Match on the worktree, never on the address.** The address here is a record of a
+moment: both its suffix and its `[ref]` have been observed changing with no action by
+the session they belong to, so the row will disagree with `ListAgents` and that
+disagreement means nothing. **The worktree half is the stable identifier and is the
+key**; `git worktree list` confirms it. A row reading
+`peer-session-prompt-docs-5dd173-66` and a live row reading
+`peer-session-prompt-docs-5dd173-7a` are the same session.
+
+**Then reach them by the live address and never by this file.** Run `ListAgents`,
+read the row whose worktree half matches, and use that name. Never copy an address
+out of this file into a `SendMessage`.
 
 **Unfilled. Sam grants the seat and the granting commit adds the first row.**
 

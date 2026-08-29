@@ -203,8 +203,11 @@ sidebar title can be self-asserted by any session, so neither settles it. Every
 Reviewer before this file existed had to infer the Lead from session age and
 branch ownership, and each said in writing that it was inference.
 
-Then run `ListAgents` to get the routable address for the holder that file
-names, and send with `SendMessage({to: "<name exactly as the row prints it>"})`,
+Then run `ListAgents` and find the row **whose worktree half matches the file's
+`Worktree` field**. Match on that, never on the recorded address: the address's
+suffix and `[ref]` both move on their own, so a row reading `...-5dd173-7a` and a
+file reading `...-5dd173-66` are the same session. Send with
+`SendMessage({to: "<name exactly as the row prints it>"})`,
 appending the ` [ref]` only if two rows collide. **The file says who. `ListAgents`
 says how to reach them, and only at the moment you send.** If the file is
 unfilled, say so to whoever spawned you rather than guessing.
