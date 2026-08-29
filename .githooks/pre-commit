@@ -73,6 +73,7 @@ run_check "check:agent-isolation" scripts/check-agent-isolation.mjs
 run_check "check:branch-freshness"  scripts/check-branch-freshness.mjs
 run_check "check:secret-scan"      scripts/check-secret-scan.mjs
 run_check "check:story-status"    scripts/check-story-status.mjs
+run_check "check:story-index"     scripts/check-story-index.mjs
 # Reads two versions of a story, where check:story-status reads one. A commit
 # that unchecks completed tasks or deletes a Dev Agent Record is perfectly
 # self-consistent, so the single-version check passes it — which is how story
