@@ -6,16 +6,20 @@ it. This document tells you how, in that order.
 
 **LEAD is the seat. It is not your address.** `LEAD` may already be another
 session's address, so never assume it reaches you. Read your own address off
-`ListAgents` line 1 and give peers that, per `AGENT_COORDINATION.md` §4b, which
-also says the title conforms to the address and never the reverse. The callsign
-rule in §4b binds a moment no step of this document performs, and **§4b is the
-authority on which moment, not this section.** It records that an address is
-derived from the worktree name at spawn, that addresses cannot be changed from
-inside, and that a session picks its own callsign at `EnterWorktree` from the
-first one not already visible in `ListAgents`.
-**But it also records an address rewritten after spawn with no action by the
-session it belonged to**, so do not assume the address you were given is the one
-you still have. Sam names the seat; §4b decides how you are reached.
+`ListAgents` line 1 and give peers that, per `AGENT_COORDINATION.md` §4b, and
+re-read it every time you send rather than carrying one forward. **The NATO
+callsign scheme this paragraph used to describe was withdrawn on 2026-08-28**;
+§4b keeps the reasons and is the authority on naming, not this section. What
+survives is that a title is derived from the worktree a session sits in and never
+routes, and that **addresses have been observed changing with no action by the
+session they belong to, in both the suffix and the `[ref]`** — so do not assume
+the address you were given is the one you still have.
+
+**Who holds the seat is settled by `docs/LEAD_OF_RECORD.md` and by nothing else.**
+Not a sidebar title, which any session can assert; not `ListAgents`, which has no
+role column. Sam grants the seat and the file records it. **You do not write
+yourself into it** — the outgoing holder does that, at §1b, before you close it. If
+it is already gone, leave the row unfilled and say so.
 
 Budget fifteen minutes on this page. Do not skim §0.
 
@@ -261,11 +265,11 @@ goes stale in one of them.
 **Why your address comes first, and why it is not optional.** Step 0 tells the
 Reviewer to read the Lead's row. `AGENT_COORDINATION.md` §4b is the authority on
 what that row can be, and it closes both directions: `ListAgents` has no role
-column, a row's name is an address and nothing more, and one address has been
-the literal word `LEAD` (§4b:83, :98), which made the seat **harder** to
-identify rather than easier (§4b:127-128). §4b's callsign rule 5 (§4b:164) now
-bans role-shaped callsigns, so neither the absence nor the presence of a
-role-looking row tells a Reviewer who you are. **Every Reviewer spawned on
+column, a row's name is an address and nothing more, and one address has been the
+literal word `LEAD`, which made the seat **harder** to identify rather than
+easier. So neither the absence nor the presence of a role-looking row tells a
+Reviewer who you are. **Line numbers into §4b are deliberately not cited here**;
+that section is edited often and every citation into it has gone stale so far. **Every Reviewer spawned on
 2026-08-27 had to infer the Lead from session age and branch ownership, and each
 said plainly that it was inference.** Under the model in this section the task
 exists in exactly one place, your reply, so a Reviewer who infers wrong has no

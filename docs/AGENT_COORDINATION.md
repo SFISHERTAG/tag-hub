@@ -118,97 +118,173 @@ ListAgents        -> This session is LEAD [b09feb]
 ```
 
 Distinct title, delayed second read, address unmoved. **Renaming therefore never
-resolves an address collision, and `[ref]` is the only disambiguator.**
+resolves an address collision.** `[ref]` disambiguates at a single moment and no
+longer than that: it has since been observed to move on its own, and the measurement
+is below.
 
-**The title conforms to the address, never the reverse.** The address is the field
-nobody can write, so it is the one everything else follows. Read it from `ListAgents`
-line 1 and set the title to match, verbatim. An earlier version of this rule derived
-the title from the worktree basename instead, and produced three sessions whose
-sidebar labels routed to nothing, which is worse than having no rule.
+**Neither name routes by being written down. Only `ListAgents`, read at the moment
+of sending, routes.** This is the rule the two below hang off, and getting it wrong
+is what every naming incident in this section has in common.
+
+**The title is derived from where the session sits, never from its address.** Set it
+at the start of a session, to `ROLE · <worktree-directory-verbatim>`; the full
+convention and the reason are below. An earlier version of this rule said the title
+must equal the address verbatim, which was right about direction and wrong about
+source: the address is not stable enough to copy, so a conformed title is stale from
+the next rewrite onward.
+
+**The objection this has to answer, because it is a scar and not a hypothetical.**
+An even earlier version derived the title from the worktree basename and produced
+three sessions whose sidebar labels routed to nothing, which was judged worse than
+having no rule. **This convention is closer to that failure than the old one was,
+not further from it:** a worktree half is exactly one suffix away from a real
+address, where "Functions build" was obviously not one.
+
+**What retires the scar is the `ROLE · ` prefix, and it is structural rather than a
+rule about behaviour.** Every address observed here matches `[a-z0-9-]+`; none
+contains a space or a `·`. So `REVIEWER · postgres-stack-replacement-202d6e` cannot
+be mistaken for an address at a glance, and pasting it into `SendMessage` cannot
+work. That is a property of the string. **Do not defend this convention with "no
+title routes" instead** — the scar was three sessions acting on a norm, and nobody
+types a name they believe is wrong, so another norm would not have stopped them.
 
 **The invariant is not self-maintaining, and this is the open hole.** One session's
 address changed from `handoff-review-questions-555acd-3b` to `LEAD` without that
 session doing anything, some time after its predecessor was archived. Its first
 `set_session_title` call reported `(was "LEAD")`, so the field was already written
 before it ever touched it, and the mechanism is not visible from inside a session.
-So some event nobody has identified writes the address. **Re-read `ListAgents` and
-re-conform the title at any handover, archive or adoption event**, not only when
-someone asks for a rename. A stale title is now worse than it used to be: it looks
-routable and is not, where a role word at least read as "look up the address".
+So some event nobody has identified writes the address. **Re-read `ListAgents` at any
+handover, archive or adoption event**, and never carry an address forward from an
+earlier message, including one in this file.
 
-### Callsigns: the name is chosen once, at spawn
+### Callsigns: withdrawn 2026-08-27, and kept here as the reason
 
-Sam's ruling, 2026-08-27, replacing the deferred paragraph this section used to carry.
+**Sam withdrew the NATO callsign scheme on the evening of 2026-08-27 local time**
+(PR `#42` closed `2026-08-28T04:16:20Z`; **every date in this section is local
+time, and the same event has two defensible dates if you mix conventions**). The rules it stated are
+gone from this section rather than amended, because a withdrawn rule left standing
+is worse than no rule: for about 36 hours after the withdrawal this section still
+instructed every new session to pick a callsign, and `#45` was opened by a reviewer
+who found it *while verifying that the withdrawal had been executed*, which it had
+not. The amendment had been made in `PEER_SESSION_PROMPT.md` Step 0, correctly and
+alone; the scheme itself lived here and nobody came back for it.
 
-**This is not a naming preference. It is the addressing layer the protocols in
-`PEER_SESSION_PROMPT.md` already presuppose, and which nobody installed.**
+**Why it failed, which is the part worth keeping.** Two reasons, and the second
+outlives the scheme.
 
-That document runs end to end on aviation and submarine crew resource management,
-and says so: backbrief, closed-loop communication with verbatim readback,
-questioning attitude, forceful backup, BLUF, pre-flight, after-action review.
-Every one is borrowed intact from a field that pays for communication failures in
-lives. **Every one of them also assumes the participants can address each other
-unambiguously.** That is the substrate they run on, and it was the only part of
-the doctrine left out.
+1. **Twenty-six names with retire-never-recycle is a ceiling that fails without
+   warning.** It does not degrade as the fleet grows, it stops.
+2. **No naming scheme here can rest on a session's `title`.** The title is mutable
+   current state with no history, and this section itself mandates renaming at
+   handover, archive and adoption. Anything that needs to know a name was once
+   used needs a record that is not a session title. Standing order 8.
 
-The distinction matters for whether this rule survives. A rule justified as
-"names were confusing" gets relaxed the first time someone finds it inconvenient.
-A rule justified as "the protocols do not function without it" does not.
+Established over four rounds of review on `docs/reinforcement-callsigns`, kept on
+origin as `keep/callsign-scheme-review-record` @ `3315607` so the next person to
+propose spoken callsigns pays the reading cost rather than the discovery cost.
 
-**The cost of the missing layer, all of it on 2026-08-27 and all of it inside one
-hour:** two sessions both answering to `REVIEWER`; a Lead whose address was the
-role word `LEAD`, so no session could tell the seat from the session; three
-sessions renamed to worktree basenames that routed to nothing; the rule inverted
-twice; and one address assigned by an event nobody has been able to identify.
-None of that was carelessness. It is what happens when a protocol set that
-presumes addressing is deployed without it.
+### What a session cannot do, which constrains every scheme that follows
 
-**The test any scheme has to pass, and it is the whole requirement:** *"Tell BRAVO
-to pick up #16."* Unambiguous to say aloud, to type, and to route, with no lookup.
-Twenty-six is more than any concurrent fleet here has needed, and the phonetic
-alphabet is engineered so that no two entries survive garbling as each other.
-Measure any alternative against that sentence.
+**A session cannot read its own title non-destructively.** `list_sessions` excludes
+the caller. `ListAgents` returns the address. The only path is the `(was "...")`
+string that `set_session_title` returns when it overwrites — a destructive read.
+So "is my title correct?" is answerable only by making it correct, and a session
+renamed by someone else cannot detect that it was. This is a property of the
+tooling, not of any scheme, and it will outlive this paragraph. **Do not write a
+rule whose conformance nobody can check.**
 
-The address is derived from the worktree name at spawn. **Every address observed
-at spawn matches `<worktreeName>-<2 hex>`. One has since been rewritten by the
-unidentified event above, which is why rule 4 exists.** Run `ListAgents` and you
-will find that exception rather than a clean five-for-five, and the exception is
-evidence for the rule, not against it.
+**Addresses are mutable in both halves, and more so than this section used to say.**
+Measured 2026-08-29: two live sessions changed address in the same window, with no
+action by either, `peer-session-prompt-docs-5dd173-6f [2202da]` to `-66 [103fe9]`
+and `postgres-stack-replacement-202d6e-37 [11ea02]` to `-25 [0e438b]`. **The `[ref]`
+moved too**, so the claim above that `[ref]` is the only disambiguator is true only
+of a single moment. The worktree half of each address was unchanged, which is the
+one stable component. The window appeared to coincide with two sessions leaving
+`ListAgents`. **That reading was wrong and is corrected here rather than removed.**
+Neither session had ended: Sam, reading from the iOS app, confirmed one of them was
+live at a moment when this session's `ListAgents` did not list it and `SendMessage`
+to its last known address was refused as unreachable.
 
-1. **Source: the NATO phonetic alphabet, official spellings.** ALFA, BRAVO, CHARLIE,
-   DELTA, ECHO, FOXTROT, GOLF, HOTEL, INDIA, JULIETT, KILO, LIMA, MIKE, NOVEMBER,
-   OSCAR, PAPA, QUEBEC, ROMEO, SIERRA, TANGO, UNIFORM, VICTOR, WHISKEY, XRAY, YANKEE,
-   ZULU. **ALFA, JULIETT and XRAY are spelled that way deliberately; do not correct
-   them.** The alphabet exists so that no two entries are confusable when garbled,
-   which is the property an address typed under time pressure needs.
-2. **Chosen at `EnterWorktree({name})` and nowhere else**, because that is the only
-   moment a session can *choose* it. Not the only moment it can be written: the
-   paragraph above records an address rewritten after spawn by something nobody
-   has identified. An earlier draft of this clause said "the only moment the
-   address is writable at all", which contradicted that paragraph nineteen lines
-   above it and was caught by a second reader rather than by either of the two
-   people who wrote it.
-3. **Assign the first callsign not currently visible in `ListAgents`.** Derived, not
-   remembered.
-4. **Retire, never recycle.** A callsign stays dead until its address has stopped
-   appearing in `ListAgents`. Given that an unidentified event can already move an
-   address, recycling is how that curiosity becomes a collision.
-5. **Never a role, never a task.** `LEAD` and `REVIEWER` collided on 2026-08-27
-   because roles are seats and seats get reoccupied; a task name goes stale the moment
-   the session is reassigned. A callsign names *which session*, never *what it does*.
-   The seat belongs in the brief, where it changes without renaming anything.
-6. **Sessions predating this are grandfathered until they respawn**, because their
-   addresses cannot be changed from inside.
+**So `ListAgents` is not a complete roster. It is one client's view of one moment.**
+A session absent from it may be running, reachable by someone else, and committing.
+This is a stronger constraint than anything else in this section, because every
+addressing rule here is built on that listing, including the one below: an
+instruction to find a row can fail by the row not being shown.
 
-**Unverified, and the first respawn settles it: whether the address preserves
-uppercase.** Every address observed so far is lowercase, and `EnterWorktree` refuses
-to create a worktree from inside one, so no current session can test it. The first
-session spawned under this rubric reports its address verbatim before anyone writes
-`ALFA` into a document expecting it back.
+**And no client is the authority either.** An earlier version of this paragraph said
+that where the listing and a human disagree, the human is right. That was wrong
+within the hour: the same session was invisible to this session's `ListAgents` *and*
+to Sam's iPhone, while it was alive, working, and sending messages that arrived.
+Two independent views showed absent and both were wrong.
 
-**This retires the no-role-names rule rather than sitting beside it.** Once the title
-must equal the address, and addresses are unique by construction, role-name collision
-is structurally impossible.
+**The only positive evidence that a session is alive is a message from it.** An
+inbound message carries a `from` that routed, which is proof of both liveness and
+address at the same instant. Everything else — a listing, a sidebar, another
+client — can show absent for a session that is committing right now. **Absence is
+never evidence.** Reply to the `from` you were given; do not reconstruct an address
+from anything else.
+
+**A third observation, and it settles the shape if not the cause.** In a later
+window one session's address moved again, `postgres-stack-replacement-202d6e-25
+[0e438b]` to `-f6 [386e50]`, while this session's stayed at
+`peer-session-prompt-docs-5dd173-66 [103fe9]` throughout, and a third row *arrived*
+in the listing. **So the event is per-session, it does not move every address at
+once, and it does not require anyone to leave.**
+
+Across three observations: the worktree half has never changed, both the suffix and
+the `[ref]` have, and in no case did the session it happened to do anything to cause
+it. **No correlate has been established.** That is weaker than a correlation and it
+is the most the evidence supports; an earlier draft of this paragraph claimed one and
+was wrong twice, first by naming departing sessions as the trigger and then by
+implying the changes were simultaneous.
+
+A separate experiment the same day, 2026-08-29: `ListAgents`, then `set_session_title`, then
+`ListAgents` again returned an identical address and ref. **Renaming is not what
+moves an address.** That corroborates the `LEAD-PROBE-1` result above at a second
+moment with a different title shape.
+
+### Two names, and which one is authority
+
+**The title is for the human. The record is the authority. Do not confuse them.**
+
+**Title = `ROLE · <worktree-directory-verbatim>`**, for example
+`LEAD · peer-session-prompt-docs-5dd173`. It exists because Sam cannot otherwise
+tell from his sidebar which session holds the seat, and a blank field was his actual
+reported problem. The mutable suffix is excluded deliberately: a title carrying
+`-6f` was false at the moment `set_session_title` reported success, which is trap 15
+caught by reading the state back instead of trusting the tool.
+
+**This replaces "the title conforms to the address, verbatim."** That rule was
+written when the address looked stable. It is not, so conforming a title to it
+guarantees a stale title, and the worktree half is the only component that holds
+still. The half of the old rule that survives is its direction: the session does not
+get to invent the name, it derives it from where it sits.
+
+**A title cannot settle who holds a seat, because it is self-asserted.** N sessions
+can each title themselves `LEAD` and the sidebar shows N. That is the two-sessions-
+answering-to-`REVIEWER` failure moved from the address to the title, and it is worse
+there: a blank reads as missing information, two reads as an answer. Only a grant
+settles a grant.
+
+**So the seat lives in `docs/LEAD_OF_RECORD.md`**, one line naming the current
+Lead's worktree and address and the SHA at which Sam granted it, **written by the
+outgoing holder and never by the session taking the seat**, in the handover commit.
+A handover has two parties; a session recording itself is the self-assertion the
+file exists to exclude. Where no outgoing session survives to write it, the row
+stays unfilled rather than being filled by its subject. It is greppable, it is in the repository, it survives every rename and
+every address rewrite, and two sessions cannot both hold the file. Standing order 8:
+this is the mechanism, and the title is the norm that points at it. **When the
+sidebar and the file disagree, the file is right.**
+
+**A caution the title inherits and the file does not.** A role changes mid-session:
+a Reviewer promoted to Lead has a silently wrong title from that instant and nothing
+fires. Read the file, not the sidebar, whenever the answer matters.
+
+**`#45`'s other observation, recorded so it is not re-derived as broken:** the
+no-role-names retirement below is sound again, on a different premise than the one
+it was written with. It rested on titles equalling unique addresses. It now rests on
+roles being confined to the title and the record, and never appearing in an address
+at all.
 
 On 2026-08-27, forty-two commits of video-editing work under `tools/rough-cut` took
 an unrelated audit to find. The session doing it was titled for one thing, sat in a
@@ -224,11 +300,14 @@ it, because a chat title is not in the repository. Per standing order 8, the par
 norm that duplicates a mechanism is the part that decays, so this rule deliberately
 claims only what no mechanism covers.
 
-- Use the directory name **verbatim, hash suffix included**:
-  `functions-typescript-build-8fa5d4`, not "Functions build". The suffix is what makes
-  it match `git worktree list`, and a tidied name defeats the whole point.
-- A session in the shared checkout at the repo root is `TAG`. There should rarely be
-  one; that checkout is usually parked.
+- Use the directory name **verbatim, hash suffix included**, after the role prefix:
+  `LEAD · functions-typescript-build-8fa5d4`, never `LEAD · Functions build`. The
+  suffix is what makes the second half match `git worktree list`, and a tidied name
+  defeats the whole point. **This bullet used to forbid the prefix** by demanding the
+  directory name alone; that was left standing six lines below the rule that
+  introduced the prefix, and a reviewer found it before this branch merged.
+- A session in the shared checkout at the repo root is `ROLE · TAG`. There should
+  rarely be one; that checkout is usually parked.
 - **Rename at the start of a session, not at the end.** A title that becomes correct
   after the work is over solves nothing.
 
