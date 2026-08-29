@@ -31,6 +31,15 @@ using and which carry the most information of any status here. **A vocabulary
 that does not describe its own corpus is worse than none, because it invites the
 next reader to add an eleventh word rather than notice the list is wrong.**
 
+**`In Review` is not a separate word, and dropping it repeated the defect this
+section fixes.** The corrected list was written from a count of all 93 story docs,
+and two of them — 3.6 and 7.7 — used `In Review` on both sides, agreeing with each
+other perfectly. They were in the count and were dropped anyway, so the new list
+failed its own corpus one turn after the old one did. Both now read `Review`,
+which is the word defined above and describes them exactly: tasks complete,
+verification partial. **Caught by a guard being validated against this file, not
+by re-reading it.**
+
 **`Review` does not mean shipped, and two stories say so in their own status
 text.** 11.6's backfill and 15.0's migration `011` are both written and both
 never run. If you need "the code exists and has been executed against real data",
