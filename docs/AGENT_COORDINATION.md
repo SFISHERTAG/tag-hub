@@ -199,8 +199,21 @@ action by either, `peer-session-prompt-docs-5dd173-6f [2202da]` to `-66 [103fe9]
 and `postgres-stack-replacement-202d6e-37 [11ea02]` to `-25 [0e438b]`. **The `[ref]`
 moved too**, so the claim above that `[ref]` is the only disambiguator is true only
 of a single moment. The worktree half of each address was unchanged, which is the
-one stable component. The window coincided with two sessions leaving `ListAgents`;
-that is a correlation and nobody has identified the mechanism.
+one stable component. The window appeared to coincide with two sessions leaving
+`ListAgents`. **That reading was wrong and is corrected here rather than removed.**
+Neither session had ended: Sam, reading from the iOS app, confirmed one of them was
+live at a moment when this session's `ListAgents` did not list it and `SendMessage`
+to its last known address was refused as unreachable.
+
+**So `ListAgents` is not a complete roster. It is one client's view of one moment.**
+A session absent from it may be running, reachable by someone else, and committing.
+This is a stronger constraint than anything else in this section, because every
+addressing rule here is built on that listing, including the one below: an
+instruction to find a row can fail by the row not being shown. Where the listing and
+a human disagree about who is alive, the human is right.
+
+The mechanism that moves an address is still unidentified, and the leaving-sessions
+explanation is now withdrawn rather than merely unproven.
 
 A separate experiment the same day, 2026-08-29: `ListAgents`, then `set_session_title`, then
 `ListAgents` again returned an identical address and ref. **Renaming is not what

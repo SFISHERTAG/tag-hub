@@ -208,7 +208,12 @@ Then run `ListAgents` and find the row **whose worktree half matches the file's
 suffix and `[ref]` both move on their own, so a row reading `...-5dd173-7a` and a
 file reading `...-5dd173-66` are the same session. Send with
 `SendMessage({to: "<name exactly as the row prints it>"})`,
-appending the ` [ref]` only if two rows collide. **The file says who. `ListAgents`
+appending the ` [ref]` only if two rows collide.
+
+**If the row is not there, the session may still be alive.** `ListAgents` is one
+client's view and has been observed omitting a live, working session that was
+visible elsewhere. An absent row is not evidence that anyone has finished. Say you
+could not find them and ask; never conclude a seat is empty from a listing alone. **The file says who. `ListAgents`
 says how to reach them, and only at the moment you send.** If the file is
 unfilled, say so to whoever spawned you rather than guessing.
 
