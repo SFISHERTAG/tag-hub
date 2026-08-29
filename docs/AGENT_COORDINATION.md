@@ -209,8 +209,20 @@ to its last known address was refused as unreachable.
 A session absent from it may be running, reachable by someone else, and committing.
 This is a stronger constraint than anything else in this section, because every
 addressing rule here is built on that listing, including the one below: an
-instruction to find a row can fail by the row not being shown. Where the listing and
-a human disagree about who is alive, the human is right.
+instruction to find a row can fail by the row not being shown.
+
+**And no client is the authority either.** An earlier version of this paragraph said
+that where the listing and a human disagree, the human is right. That was wrong
+within the hour: the same session was invisible to this session's `ListAgents` *and*
+to Sam's iPhone, while it was alive, working, and sending messages that arrived.
+Two independent views showed absent and both were wrong.
+
+**The only positive evidence that a session is alive is a message from it.** An
+inbound message carries a `from` that routed, which is proof of both liveness and
+address at the same instant. Everything else — a listing, a sidebar, another
+client — can show absent for a session that is committing right now. **Absence is
+never evidence.** Reply to the `from` you were given; do not reconstruct an address
+from anything else.
 
 **A third observation, and it settles the shape if not the cause.** In a later
 window one session's address moved again, `postgres-stack-replacement-202d6e-25
