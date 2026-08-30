@@ -69,8 +69,14 @@ jobs:
       #   check:migrations   - needs tsx, which is not on PATH outside npm ci, so
       #                        it could not be observed green locally. Add it once
       #                        someone has watched it pass under a real install.
-      #   check:story-parity - the script is not on main yet. Add it in the same
-      #                        commit that lands guard/story-status-parity.
+      #   check:migrations   - still unverified locally, same reason as above.
+      #
+      # check:story-parity was in this list as "not on main yet, add it in the
+      # commit that lands its script". It landed in #48 as its own PR, so that
+      # never happened and the guard sat in package.json and .githooks/ while
+      # CI ignored it. Wired below, and the note corrected rather than deleted:
+      # a follow-up written into a comment is only as good as someone re-reading
+      # the comment.
       - name: Story index
         run: npm run check:story-index
 
@@ -79,6 +85,9 @@ jobs:
 
       - name: Firestore seam
         run: npm run check:firestore-seam
+
+      - name: Story status parity
+        run: npm run check:story-parity
 
       # Aggregate repo state, not this change's state, which is why it does not
       # use TAG_DIFF_BASE like the two steps above. Deliberately here and not in
