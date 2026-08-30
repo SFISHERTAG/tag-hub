@@ -555,7 +555,7 @@ and their internal cross-references moved with them.
 | 12.1 | Knowledge Base view — read-only, TAG-side staff | Ready | `12.1-knowledge-base-view.md` |
 | 12.2 | Knowledge Base admin edit — versioned, not overwritten | Ready | `12.2-knowledge-base-admin-edit.md` |
 | 12.3 | Course multi-video and doc links — schema plus Angular player and editor | Review | `12.3-course-multi-video-and-doc-links.md` |
-| 12.4 | Legacy Skool course import — 4 courses, post-consolidation shape | In Progress | `12.4-legacy-skool-course-import.md` |
+| 12.4 | Legacy Skool course import — 4 courses, post-consolidation shape | Review — import run against the live database 2026-08-22, row counts verified | `12.4-legacy-skool-course-import.md` |
 | 12.5 | CSM course authored lessons — the 5 with no Skool source | Review | `12.5-csm-course-authored-lessons.md` |
 
 **12.3 through 12.5 are the legacy Skool training migration.** 12.3 is the
