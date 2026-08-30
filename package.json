@@ -14,6 +14,7 @@
     "check:story-status": "node scripts/check-story-status.mjs",
     "check:story-regression": "node scripts/check-story-regression.mjs",
     "check:story-index": "node scripts/check-story-index.mjs",
+    "check:story-parity": "node scripts/check-story-status-parity.mjs",
     "check:agent-isolation": "node scripts/check-agent-isolation.mjs",
     "check:main-ownership": "node scripts/check-main-ownership.mjs",
     "check:branch-freshness": "node scripts/check-branch-freshness.mjs",
