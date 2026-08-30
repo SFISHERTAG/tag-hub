@@ -4,11 +4,57 @@ Story files for Epics 1–7 and 10–12 live in `docs/stories/`. Epics 8 and 9 s
 when they come up; splitting them now would freeze decisions that earlier epics
 will inform.
 
-Status values: `Done` · `In progress` · `In review` · `Ready` · `Blocked` · `Draft`
+## Status vocabulary — closed, and matched case-insensitively
+
+A status is **one of these words**, optionally followed by ` — ` and free
+commentary. The word is what a mechanism reads; everything after the dash is for
+people. Nothing else is a status.
+
+| Word | Means |
+| --- | --- |
+| `Draft` | Written as an intention. No commitment that it is next. |
+| `Backlog` | Shipped without a story. Real state unverified. |
+| `Ready` | Specified and unblocked. Nobody has started. |
+| `In Progress` | Someone is building it now. |
+| `Review` | Code is complete. **Not a claim that it has been run.** |
+| `Blocked` | Cannot proceed. The blocker is named after the dash. |
+| `Not implemented` | Code exists and nothing invokes it. |
+| `Done` | Built, verified, and in use. |
+| `Superseded` | Replaced. The replacement is named after the dash. |
+| `Retired` | Its purpose no longer exists. Not replaced. |
+
+**This list was corrected 2026-08-29 to the words actually in use.** The previous
+one read `Done · In progress · In review · Ready · Blocked · Draft` — it declared
+`In review` where every story doc says `Review`, and it omitted `Backlog`,
+`Not implemented`, `Superseded` and `Retired`, which nine stories were already
+using and which carry the most information of any status here. **A vocabulary
+that does not describe its own corpus is worse than none, because it invites the
+next reader to add an eleventh word rather than notice the list is wrong.**
+
+**`In Review` is not a separate word, and dropping it repeated the defect this
+section fixes.** The corrected list was written from a count of all 93 story docs,
+and two of them — 3.6 and 7.7 — used `In Review` on both sides, agreeing with each
+other perfectly. They were in the count and were dropped anyway, so the new list
+failed its own corpus one turn after the old one did. Both now read `Review`,
+which is the word defined above and describes them exactly: tasks complete,
+verification partial. **Caught by a guard being validated against this file, not
+by re-reading it.**
+
+**`Review` does not mean shipped, and two stories say so in their own status
+text.** 11.6's backfill and 15.0's migration `011` are both written and both
+never run. If you need "the code exists and has been executed against real data",
+that is `Done`, and the burden is on the person writing it.
 
 **The story doc is the source of truth for status.** Where a story has a file in
 `docs/stories/`, the `**Status:**` line in that file wins and the table below is
-a summary of it. Reconciled against the story docs on 2026-08-21.
+a summary of it. When the two disagree, the table is corrected, never the doc —
+unless the doc's word is outside this list, in which case the doc is normalised
+and its meaning preserved after the dash.
+
+**Reconciled against the story docs on 2026-08-29**, when ten rows disagreed with
+their own docs. Nine were the table lagging behind. One, 4.4, read `Done` against
+a doc reading `Ready — blocked on 4.2`, which is the direction that removes work
+from the board silently.
 
 Ideas raised mid-build that are not yet promoted into an epic live in
 [`docs/scope-creep-queue.md`](scope-creep-queue.md). Nothing enters the table
@@ -65,7 +111,7 @@ account to work in it — auditably.
 | 3.3 | Enter a client tenant | Done |
 | 3.4 | Impersonation banner and read-only default | Done |
 | 3.5 | Audit log of tenant access | Done |
-| 3.6 | Escalation view — ascension and risk | In review — AC3/AC5 gaps pending live GHL data |
+| 3.6 | Escalation view — ascension and risk | Review — AC3/AC5 gaps pending live GHL data |
 
 **No blocker.** 1.4 is Done and 1.6 is in progress; the impersonation half of
 this epic (3.3–3.5) has landed. Remaining work is Phase 2 of 3.1/3.2 and
@@ -82,10 +128,10 @@ GoHighLevel.
 
 | ID | Story | Status |
 | --- | --- | --- |
-| 4.1 | Meta System User and ad account access | Unblocked — System User + token live, client ad accounts assigned (2026-08-16) |
+| 4.1 | Meta System User and ad account access | Done — System User + token live, client ad accounts assigned (2026-08-16) |
 | 4.2 | Spend and delivery by ad | Blocked — Meta credentials not present in this environment |
 | 4.3 | Funnel counts — leads, booked, showed, closed | Done |
-| 4.4 | ROAS joined on `utmAdId` | Done |
+| 4.4 | ROAS joined on `utmAdId` | Ready — blocked on 4.2; all six AC hold in code, but `getAdSpend()` cannot make a live call |
 | 4.5 | "As of" freshness indicator | Done |
 | 4.6 | Owner's own calendar view | Done |
 | 4.7 | Creatives to campaigns linking | **Backlog — shipped without a story** |
@@ -108,7 +154,7 @@ one auditable action.
 | 5.3 | Launch preview | Ready |
 | 5.4 | Create paused via Marketing API | Done |
 | 5.5 | Explicit activation, advancing to `AP 2 - Ads Launched` | Done |
-| 5.6 | Budget ceilings and idempotency | In progress — implemented and unit-tested, held from Done pending live Meta verification |
+| 5.6 | Budget ceilings and idempotency | Review — implemented and unit-tested, held from Done pending live Meta verification |
 | 5.7 | Stage SLA deadlines | Superseded by 13.5 |
 | 5.8 | SLA breach sweep and escalation | Superseded by 13.5/13.6 |
 | 5.9 | Adjustable stage SLA baselines | Superseded by 13.5 |
@@ -177,7 +223,7 @@ founders and the CSM lead actually open the Hub to ask.
 | 7.4 | Client-visibility allowlist at the query layer | In progress — allowlist and catalog landed, fetcher adoption outstanding |
 | 7.5 | Sales-enablement upgrade lever — GHL tag, not a Hub action | Draft |
 | 7.6 | Data scope at the query layer — whose rows, per hat | In progress — enforcement layer and metric registry landed, route wiring outstanding |
-| 7.7 | Write scope and team to the claim | In Review — all tasks complete; AC9 verified by inspection only, see Completion Notes |
+| 7.7 | Write scope and team to the claim | Review — all tasks complete; AC9 verified by inspection only, see Completion Notes |
 | 7.8 | Map uids to GHL users | Draft |
 | 7.9 | Admin: users, groups and role assignment | **Backlog — shipped without a story** |
 
@@ -318,7 +364,7 @@ Angular, so a screen exists in exactly one place and no defect gets fixed twice.
 | --- | --- | --- | --- |
 | 10.1 | Contract hardening and boundary enforcement | Done | `10.1-angular-contract-hardening.md` |
 | 10.2 | Real session wiring and the auth surface | In Progress | `10.2-real-session-wiring-and-the-auth-surface.md` |
-| 10.3 | Responsive shell and navigation | Review — theme toggle rejected, see story | `10.3-responsive-shell-and-navigation.md` |
+| 10.3 | Responsive shell and navigation | In Progress — theme toggle rejected, see story | `10.3-responsive-shell-and-navigation.md` |
 | 10.4 | Shared M3 primitives, portfolio and bug reports | In Progress | `10.4-shared-m3-primitives-portfolio-and-bug-reports.md` |
 | 10.5 | GHL integration module | In Progress | `10.5-ghl-integration-module.md` |
 | 10.6 | Widget dashboard and the clients book | In Progress | `10.6-widget-dashboard-and-clients-book.md` |
@@ -422,7 +468,7 @@ is measurable or guesswork.
 | 11.3 | Verified doc claims — checks over prose | In Progress | `11.3-verified-doc-claims.md` |
 | 11.4 | Calibration instrumentation on 10.4 | **Retired 2026-08-26 — no timeline to defend** | `11.4-calibration-instrumentation-on-10.4.md` |
 | 11.5 | Endpoint inventory ahead of each feature story | Review — re-run 2026-08-23, metric reached zero |
-| 11.6 | Resolve the courses store split | Ready — Option A decided 2026-08-22 | `11.6-resolve-the-courses-store-split.md` |
+| 11.6 | Resolve the courses store split | Review — Option A decided 2026-08-22; code complete, backfill **not yet run** | `11.6-resolve-the-courses-store-split.md` |
 | 11.7 | The root build script masks a failure | Draft | `11.7-the-root-build-script-masks-a-failure.md` |
 | 11.8 | Triage the unmerged branches | Draft |
 
@@ -508,9 +554,9 @@ and their internal cross-references moved with them.
 | --- | --- | --- | --- |
 | 12.1 | Knowledge Base view — read-only, TAG-side staff | Ready | `12.1-knowledge-base-view.md` |
 | 12.2 | Knowledge Base admin edit — versioned, not overwritten | Ready | `12.2-knowledge-base-admin-edit.md` |
-| 12.3 | Course multi-video and doc links — schema plus Angular player and editor | Ready | `12.3-course-multi-video-and-doc-links.md` |
-| 12.4 | Legacy Skool course import — 4 courses, post-consolidation shape | Ready | `12.4-legacy-skool-course-import.md` |
-| 12.5 | CSM course authored lessons — the 5 with no Skool source | Ready | `12.5-csm-course-authored-lessons.md` |
+| 12.3 | Course multi-video and doc links — schema plus Angular player and editor | Review | `12.3-course-multi-video-and-doc-links.md` |
+| 12.4 | Legacy Skool course import — 4 courses, post-consolidation shape | In Progress | `12.4-legacy-skool-course-import.md` |
+| 12.5 | CSM course authored lessons — the 5 with no Skool source | Review | `12.5-csm-course-authored-lessons.md` |
 
 **12.3 through 12.5 are the legacy Skool training migration.** 12.3 is the
 schema and UI change that makes multi-video lessons possible, 12.4 imports the
@@ -799,8 +845,8 @@ today" is the pattern that just proved unreliable, and nobody has checked them.
 
 | ID | Story | Status |
 | --- | --- | --- |
-| 15.0 | Migration ledger | Draft |
-| 15.A | Grants on the session; delete the dead switcher | Draft |
+| 15.0 | Migration ledger | Review — migration `011` written and **not yet run** |
+| 15.A | Grants on the session; delete the dead switcher | Review — AC5 and AC6 deferred to 15.D |
 | 15.A2 | Registry truth: scope, kpi_summary split, sales widgets | Draft |
 | 15.C | Union reachability | Draft — **moved ahead of 15.B** |
 | 15.B | Per-location entitlement; close the cross-tenant leak | Draft — **moved after 15.C** |
