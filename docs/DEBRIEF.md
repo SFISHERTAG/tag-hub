@@ -360,6 +360,34 @@ references to the thing you changed. Trap 20 finds references out of a set. This
 one is about assertions elsewhere that were true only because the set was
 capped.
 
+**22. A three-dot diffstat read as what a merge would bring.**
+Presents as the correct command, because it is: trap 12 is right that
+`main...branch` is the PR and `main..branch` is not. The newer half is that
+three dots diff from the *merge base*, so content that landed on `main` and on a
+stale branch independently still reads as a branch addition. A branch's diffstat
+claimed 793 lines of new code; `git rev-parse branch:<path>` and
+`git rev-parse origin/main:<path>` returned the same blob for all three files
+and a merge would have brought none of it. It ran the other way too: three files
+showed as additions that were *resurrections* of files `main` had deleted, and a
+diffstat renders those identically. *Check:* for every path in the three-dot
+diff, compare the two blob SHAs, and test existence with `git cat-file -e` on
+both sides before comparing. Identical blob means the branch contributes nothing
+there whatever the stat says. This corrected two of five branch dispositions.
+
+**23. A shell fallback that never fires, because the command prints on
+failure.**
+Presents as a defensive one-liner. `x=$(git rev-parse origin/main:$f || echo
+ABSENT)` does not yield `ABSENT` for a missing path: `git rev-parse` exits
+non-zero *and* echoes its argument to stdout, so `x` holds the literal string
+`origin/main:missing.ts` and every downstream test reads it as a real value. An
+absent file was reported as present-and-differing across a whole branch table,
+and the check had already been recommended to another session as the one that
+works. *Check:* before trusting a fallback, run the command on a case you know
+fails and look at stdout, not only at the exit code. **A command that prints
+something on failure defeats `||` silently**, and the wrong answer it produces
+is the safe-sounding one. Same shape as trap 6, applied to a one-liner rather
+than to a test suite.
+
 ---
 
 ## Why this worked, which is not what it looks like
@@ -398,6 +426,73 @@ who does not yet trust the file.
 ---
 
 ## Entries
+
+### 2026-08-29, REVIEWER seat, on a night of documents and one guard
+
+**Supposed to happen.** Spawn from `PEER_SESSION_PROMPT.md`, review what the
+Lead handed over, and get to code.
+
+**Actually happened.** Twenty-six findings across six documents and a branch
+table, then one guard shipped. `scripts/check-story-status-parity.mjs` is on
+`main`, wired at `ci.yml:90` and `.githooks/pre-commit:80`, and green. **Eight
+hours produced one file of software.** Sam said so before either session did,
+and he was right: the loop is not the product.
+
+**My errors first, and the first one poisoned other sessions' work.**
+
+- **I built a broken instrument, recommended it, and it was adopted before I
+  found the bug.** My blob-comparison loop used `git rev-parse ... || echo
+  ABSENT`, which never fires, so a file absent on `main` read as
+  present-and-differing. I had called it "the check that works" in a report the
+  Lead acted on. Promoted as trap 23. **Found because two of my own commands
+  disagreed ten minutes apart, not by re-reading anything.**
+- **Three parsers wrong before one was right**, surveying `docs/epics.md`. The
+  first read the last column, which is `Doc` in five four-column tables and
+  `Status` in twelve three-column ones — trap 14 — and returned filenames as
+  statuses. The second used `\b` in `sed -E`, unsupported here, giving 41 false
+  positives against a true 10. Only the third was validated by planting.
+- **I hardcoded the status vocabulary into the guard, one turn after diagnosing
+  that exact defect elsewhere.** I had just reported that `web/`'s widget
+  registry mirrors `lib/`'s with nothing enforcing it. Then I wrote a second
+  copy of the status list into a script. It was already stale when I pushed
+  it — it carried `Unblocked`, which the vocabulary branch had removed. The
+  guard now reads the list out of `docs/epics.md`.
+- **I reported a severity I had not measured**, saying a finding's harm "might
+  be nil" where one command showed it total.
+- **I was wrong about sequencing and the Lead was right.** I argued a rule
+  removal must land before its replacement; landing both together was correct,
+  and the defect I predicted appeared by a different route I had not seen.
+- **I nearly filed a survey against a `main` that had moved under me** mid-pass,
+  and caught it only because `git for-each-ref --contains` listed a branch I
+  expected to be unmerged as already on `origin/main`.
+
+**What went right, kept because a debrief of only errors trains the next session
+to hide them.** A claim that `locations` was a Postgres schema gap had reached
+Sam twice and was false — `003_migrate_firestore_to_postgres.sql:9-11` says it
+migrated to `tenants`. A branch that looked like new work would have resurrected
+three files `main` deliberately deleted. The NATO callsign scheme could not have
+worked, because it needed a name's history and a session title is mutable state
+with no history. And the thing I am most sure of: **three times I declined —
+declined to edit a section I had found the defect in, declined to open its
+tracking issue, declined to judge two traps I had authored.** Standing order 9
+held every time, and it cost nothing.
+
+**Why the difference.** Every document finding was real and none of it was
+software. The Lead named this correctly: it set seven document units and one
+code unit, and stopped the code one after three commands. **But a Reviewer that
+never says "this is meta-work" is also part of it, and I did not say it until
+Sam did.**
+
+**What the next session should do differently.** **Say what a unit is for before
+you start it, not after.** Every unit tonight was well-scoped and correctly
+executed, and the aggregate was eight hours of documents about documents. The
+scoping question — *does this produce software* — was never asked by either
+seat until the principal asked it. Ask it at the top of each unit and be
+willing to answer no out loud.
+
+Traps 22 and 23 are promoted from this entry: a three-dot diffstat read as what
+a merge brings, and a shell fallback that never fires. Both are mine and both
+changed real dispositions.
 
 ### 2026-08-28, LEAD seat, fourth holder, on taking it and clearing the fleet
 
