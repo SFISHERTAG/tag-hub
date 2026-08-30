@@ -203,8 +203,14 @@ should gate on.
 - A story's code and its `docs/stories/*.md` Status/Tasks are one unit of work. Never land
   the code in a commit without updating Status and checking off Tasks in the same commit,
   and never flip Status to Done without the code actually being in that commit.
-- Implement stories via the `bmad-dev-story` skill, not ad hoc edits or `bmad-quick-dev`,
-  when the work is scoped to a story doc.
+- Implement stories via the `bmad-build` skill, not ad hoc edits, when the work is scoped
+  to a story doc. **Renamed in BMAD 6.11.0**, which made Build the one official
+  implementation path and deprecated `bmad-dev-story` and `bmad-create-story`. This rule
+  previously mandated `bmad-dev-story` and forbade `bmad-quick-dev` — that is, it required
+  the skill that was deprecated and banned, under its old name, the one that replaced it.
+  Retired IDs still forward through shims until the v7 cut, so name the new one.
+- `bmad-build` requires `uv` and Python 3.11+ and **halts** without them; rendered skills
+  have no interpreter fallback. `uv --version` before assuming a green install.
 - A pre-commit hook (`.git/hooks/pre-commit` calling `scripts/check-story-status.mjs`, also
   runnable as `npm run check:story-status`) blocks commits where a story's Status
   contradicts its own Tasks checklist, or where a commit touches a story's referenced files
