@@ -226,11 +226,33 @@ function readRows(csvText) {
 /* ghl                                                               */
 /* ---------------------------------------------------------------- */
 
-async function listCustomFields() {
+async function listCustomFields(model = "contact") {
   const data = await request(`/locations/${LOCATION_ID}/customFields`, {
-    searchParams: { model: "contact" },
+    searchParams: { model },
   });
   return data.customFields ?? [];
+}
+
+/**
+ * List BOTH models, because scoping this to contacts once cost real work.
+ *
+ * An earlier run of --list-fields queried `model=contact` only, found no intake
+ * link among 116 fields, and reported "the field does not exist on this
+ * location". True as scoped and false as read: `opportunity.intake_form_url`
+ * already existed and was the field actually wanted. A second session then
+ * created a duplicate contact field on a production account off the back of
+ * that report. The listing is the thing people reason from, so it shows
+ * everything and labels which model each entry belongs to.
+ */
+async function listAllCustomFields() {
+  const [contact, opportunity] = await Promise.all([
+    listCustomFields("contact"),
+    listCustomFields("opportunity"),
+  ]);
+  return [
+    ...contact.map((f) => ({ ...f, model: "contact" })),
+    ...opportunity.map((f) => ({ ...f, model: "opportunity" })),
+  ];
 }
 
 /** Exact-email lookup. Returns every match, so ambiguity is visible. */
@@ -270,18 +292,25 @@ async function setField(contactId, fieldId, value) {
 /* ---------------------------------------------------------------- */
 
 async function main() {
-  const fields = await listCustomFields();
-
   if (LIST_FIELDS) {
-    console.log(`Contact custom fields on location ${LOCATION_ID}:\n`);
-    for (const f of fields) {
+    const all = await listAllCustomFields();
+    console.log(`Custom fields on location ${LOCATION_ID}:\n`);
+    for (const f of all) {
       console.log(
-        `  ${f.id}  ${f.fieldKey ?? ""}  ${JSON.stringify(f.name)}  (${f.dataType})`,
+        `  ${f.model.padEnd(11)} ${f.id}  ${f.fieldKey ?? ""}  ${JSON.stringify(f.name)}  (${f.dataType})`,
       );
     }
-    console.log(`\n${fields.length} field(s). Pass one id as --field.`);
+    const c = all.filter((f) => f.model === "contact").length;
+    console.log(
+      `\n${all.length} field(s): ${c} contact, ${all.length - c} opportunity.\n` +
+        `This script writes CONTACT fields only, so only a contact id is valid as\n` +
+        `--field. An opportunity field listed here needs a different writer -- but\n` +
+        `check whether one already holds what you are about to add.`,
+    );
     return;
   }
+
+  const fields = await listCustomFields("contact");
 
   // --match-only answers "do these people exist in this location, exactly
   // once each" without naming a destination field. That question has to be
