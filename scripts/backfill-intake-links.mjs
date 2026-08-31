@@ -10,13 +10,34 @@
  * row that resolves to two contacts, or to the wrong one, is invisible in a
  * success count and obvious in a plan.
  *
- * Source tab: "TDC CLIENT TRACKING" of the TAG CLIENT TRACKING sheet. That is
- * the only tab whose Intake Form column holds URLs. The "CLIENT TRACKING" tab
- * (the tax firms) holds intake doc TITLES, not links, so it cannot be a source
- * for this script until those links exist somewhere.
+ * NAME THE EXPORT YOU FED IT, in the commit or the run notes. There is more
+ * than one export of the TAG CLIENT TRACKING sheet in circulation and they do
+ * not agree with each other. This header previously asserted that only the
+ * "TDC CLIENT TRACKING" tab holds URLs and that the "CLIENT TRACKING" tab holds
+ * doc TITLES and therefore could not drive this script. That was true of the
+ * xlsx export in front of me and false of the repo of exports as a whole: a
+ * "Copy of TAG CLIENT TRACKING  - CLIENT TRACKING.csv" carries real
+ * docs.google.com URLs on 25 of 27 rows of the same tab. Seventeen contacts on
+ * rb6hPt8Ue77L4abghRMc were backfilled from it while this comment said it was
+ * impossible.
  *
- * Export the tab with File > Download > CSV, which yields a file named like
+ * The two exports also disagree on which clients are Active. So the same script
+ * against the other file writes a DIFFERENT SET OF PEOPLE, and neither the
+ * filename nor the tab name distinguishes them. Check that the Intake Form
+ * column actually contains `https://` before assuming which file you have; the
+ * dry run prints NO-LINK per row, and a surprising number of them means you are
+ * holding the wrong export rather than that the links do not exist.
+ *
+ * Export a tab with File > Download > CSV, which yields a file named like
  * "TAG CLIENT TRACKING - TDC CLIENT TRACKING.csv".
+ *
+ * ONE GHL SHAPE NOTE, if this ever grows an opportunity writer: custom field
+ * values come back under DIFFERENT KEYS per endpoint. Contacts use `value`,
+ * which is what currentValue() reads. Opportunity search uses
+ * `fieldValueString`. An idempotency check that reads the wrong key reports
+ * "unset" for every row, so nothing ever registers as SKIP or CONFLICT and
+ * every write looks like a fresh SET. That is a check that can only return one
+ * answer, which is not a check.
  *
  * Usage:
  *   # 1. see which custom fields exist on the location
