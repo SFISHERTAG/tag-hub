@@ -112,6 +112,63 @@ const git = (...args) =>
     .split("\n")
     .filter(Boolean);
 
+/**
+ * `ls-files -z`, split on NUL.
+ *
+ * Without this, a path containing a newline is C-quoted by git — the guard hands
+ * `check-ignore` the literal `"we\nird.ts"`, which matches no path, and the file
+ * is reported as "an unreadable source". `core.quotepath=false` does not help:
+ * it governs non-ASCII bytes, not control characters. Absurd input, real
+ * behaviour, and the old output told the reader nothing.
+ */
+/**
+ * Attribute one path with `check-ignore`, reading the source NUL-separated.
+ *
+ * `-v` prints `<source>:<line>:<pattern>\t<path>`, and parsing that by splitting
+ * on `:` breaks on **a colon in a directory name** — legal on macOS and Linux,
+ * no absurd input required. `we:ird/.gitignore` parsed as `we`, which resolves
+ * to nothing, so `tracked` came back false and a genuinely committed hit was
+ * filed as machine-local with the do-not-untrack advice. The false-safe class
+ * again, in a new location. Newline paths broke the same parse a second way,
+ * since git C-quotes them.
+ *
+ * `-z` makes the fields NUL-separated, and it requires `--stdin`: `check-ignore
+ * -vz` alone fails with `fatal: -z only makes sense with --stdin`.
+ *
+ * AND THE PATH IS PREFIXED `./`. Git reads a leading `:` as pathspec magic, so
+ * a directory named `:magic/` made the pathspec match nothing and check-ignore
+ * exited 1 with **empty stdout and empty stderr** — reported exactly as a
+ * legitimately unignored file would be. The catch below cannot tell those
+ * apart, so it took the safe direction and filed a committed hit as someone's
+ * local problem. `./` makes the colon ordinary and git strips the prefix
+ * itself. `--literal-pathspecs` is not the shortcut: check-ignore rejects it
+ * with `pathspec magic not supported by this command: 'literal'`.
+ */
+const attribute = (path) => {
+  const out = execFileSync(
+    "git",
+    ["-c", "core.quotepath=false", "check-ignore", "-vz", "--no-index", "--stdin"],
+    { cwd: TOP, input: `./${path}\0`, encoding: "utf8" },
+  );
+  return out.split("\0")[0] ?? "";
+};
+
+/**
+ * Render a path for the report. A path containing a control character otherwise
+ * breaks across lines, so the count in the heading stops matching the lines a
+ * reader sees — in a guard whose whole argument is that its output is
+ * trustworthy at the worst moment.
+ */
+const show = (p) => (/[\u0000-\u001f]/.test(p) ? JSON.stringify(p) : p);
+
+const gitZ = (...args) =>
+  execFileSync("git", ["-c", "core.quotepath=false", ...args, "-z"], {
+    cwd: TOP,
+    encoding: "utf8",
+  })
+    .split("\0")
+    .filter(Boolean);
+
 const failures = [];
 
 // --- Rule 1: tracked, and ignored by committed repo state ------------------
@@ -134,7 +191,7 @@ const failures = [];
 // is itself tracked and unmodified — i.e. every other clone has the same rule.
 // This is source-agnostic by construction: a source nobody has thought of still
 // has to be committed to count, so the enumeration cannot be incomplete again.
-const candidates = git("ls-files", "--cached", "--ignored", "--exclude-standard");
+const candidates = gitZ("ls-files", "--cached", "--ignored", "--exclude-standard");
 
 // Paths whose ignore rule is not committed repo state. Reported separately,
 // because the remediation is the opposite one: fix your local setup, never
@@ -151,7 +208,7 @@ for (const path of candidates) {
   // been a committed hit and came back local-only.
   let source = "";
   try {
-    source = git("check-ignore", "-v", "--no-index", "--", path)[0]?.split(":")[0] ?? "";
+    source = attribute(path);
   } catch {
     source = "";
   }
@@ -160,7 +217,10 @@ for (const path of candidates) {
     insideRepo &&
     (() => {
       try {
-        git("ls-files", "--error-unmatch", "--", source);
+        // `./` for the same pathspec-magic reason as `attribute()`. Prefixing
+        // only the check-ignore call parses the source correctly and then still
+        // reports tracked=false here, so all three sites move together.
+        git("ls-files", "--error-unmatch", "--", `./${source}`);
         return true;
       } catch {
         return false;
@@ -168,10 +228,18 @@ for (const path of candidates) {
     })();
   // A tracked-but-modified source is not repo state either: the rule that fired
   // is the one on this disk, not the one everyone else has.
-  const dirty = tracked && git("status", "--porcelain", "--", source).length > 0;
+  //
+  // `status --porcelain` REPORTS THE INDEX COLUMN AS WELL AS THE WORKTREE ONE,
+  // and that is load-bearing. A source staged with content differing from HEAD
+  // shows as `M ` — M in column 1, space in column 2 — so it is caught. **Do not
+  // swap this for `git diff --quiet`**, which compares worktree against index
+  // only: that case would silently start producing `git rm --cached` advice on a
+  // source that is not committed yet, which is the exact defect two rewrites of
+  // this rule already had.
+  const dirty = tracked && git("status", "--porcelain", "--", `./${source}`).length > 0;
 
-  if (tracked && !dirty) committedIgnored.push(`${path}  (ignored by ${source})`);
-  else localOnly.push(`${path}  (ignored by ${source || "an unreadable source"})`);
+  if (tracked && !dirty) committedIgnored.push(`${show(path)}  (ignored by ${show(source)})`);
+  else localOnly.push(`${show(path)}  (ignored by ${source ? show(source) : "an unreadable source"})`);
 }
 
 if (committedIgnored.length > 0) {
@@ -195,7 +263,13 @@ if (localOnly.length > 0) {
       "  uncommitted .gitignore, .git/info/exclude, or a global excludesFile. The\n" +
       "  repository has no opinion about them and other clones see nothing.\n" +
       "  DO NOT run `git rm --cached` here: it would untrack a file the repo\n" +
-      "  legitimately holds. Fix the local ignore rule, or commit it if it is real.",
+      "  legitimately holds. Fix the local ignore rule, or commit it if it is real.\n" +
+      "\n" +
+      "  THEN RE-RUN THIS CHECK. Only the highest-precedence match is reported, and\n" +
+      "  a deeper .gitignore outranks a shallower one — so an uncommitted rule can\n" +
+      "  mask a genuine committed one underneath it. A path listed here may ALSO be\n" +
+      "  ignored by committed state, and that finding only surfaces once the local\n" +
+      "  rule is gone.",
   });
 }
 
@@ -206,8 +280,8 @@ if (localOnly.length > 0) {
 // file and watching this rule stay green, which is the only reason it is not
 // still wrong. `ls-files` lists index paths, so the first segment of each is a
 // top-level entry, staged additions included.
-const rootEntries = [...new Set(git("ls-files").map((p) => p.split("/")[0]))];
-const undeclared = rootEntries.filter((e) => !ROOT_ALLOWLIST.has(e));
+const rootEntries = [...new Set(gitZ("ls-files").map((p) => p.split("/")[0]))];
+const undeclared = rootEntries.filter((e) => !ROOT_ALLOWLIST.has(e)).map(show);
 if (undeclared.length > 0) {
   failures.push({
     rule: "undeclared top-level entry",
