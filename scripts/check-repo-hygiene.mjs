@@ -134,12 +134,21 @@ const git = (...args) =>
  *
  * `-z` makes the fields NUL-separated, and it requires `--stdin`: `check-ignore
  * -vz` alone fails with `fatal: -z only makes sense with --stdin`.
+ *
+ * AND THE PATH IS PREFIXED `./`. Git reads a leading `:` as pathspec magic, so
+ * a directory named `:magic/` made the pathspec match nothing and check-ignore
+ * exited 1 with **empty stdout and empty stderr** — reported exactly as a
+ * legitimately unignored file would be. The catch below cannot tell those
+ * apart, so it took the safe direction and filed a committed hit as someone's
+ * local problem. `./` makes the colon ordinary and git strips the prefix
+ * itself. `--literal-pathspecs` is not the shortcut: check-ignore rejects it
+ * with `pathspec magic not supported by this command: 'literal'`.
  */
 const attribute = (path) => {
   const out = execFileSync(
     "git",
     ["-c", "core.quotepath=false", "check-ignore", "-vz", "--no-index", "--stdin"],
-    { cwd: TOP, input: `${path}\0`, encoding: "utf8" },
+    { cwd: TOP, input: `./${path}\0`, encoding: "utf8" },
   );
   return out.split("\0")[0] ?? "";
 };
@@ -208,7 +217,10 @@ for (const path of candidates) {
     insideRepo &&
     (() => {
       try {
-        git("ls-files", "--error-unmatch", "--", source);
+        // `./` for the same pathspec-magic reason as `attribute()`. Prefixing
+        // only the check-ignore call parses the source correctly and then still
+        // reports tracked=false here, so all three sites move together.
+        git("ls-files", "--error-unmatch", "--", `./${source}`);
         return true;
       } catch {
         return false;
@@ -224,7 +236,7 @@ for (const path of candidates) {
   // only: that case would silently start producing `git rm --cached` advice on a
   // source that is not committed yet, which is the exact defect two rewrites of
   // this rule already had.
-  const dirty = tracked && git("status", "--porcelain", "--", source).length > 0;
+  const dirty = tracked && git("status", "--porcelain", "--", `./${source}`).length > 0;
 
   if (tracked && !dirty) committedIgnored.push(`${show(path)}  (ignored by ${show(source)})`);
   else localOnly.push(`${show(path)}  (ignored by ${source ? show(source) : "an unreadable source"})`);
