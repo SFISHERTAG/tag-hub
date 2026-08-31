@@ -74,6 +74,7 @@ run_check "check:branch-freshness"  scripts/check-branch-freshness.mjs
 run_check "check:secret-scan"      scripts/check-secret-scan.mjs
 run_check "check:story-status"    scripts/check-story-status.mjs
 run_check "check:story-index"     scripts/check-story-index.mjs
+run_check "check:repo-hygiene"    scripts/check-repo-hygiene.mjs
 # check:story-status compares a doc to its own Tasks; check:story-index catches a
 # story with no row. Neither compares the row to the doc, which is how ten rows
 # drifted from their own docs unnoticed.

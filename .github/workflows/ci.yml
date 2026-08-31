@@ -89,6 +89,9 @@ jobs:
       - name: Story status parity
         run: npm run check:story-parity
 
+      - name: Repo hygiene
+        run: npm run check:repo-hygiene
+
       # Aggregate repo state, not this change's state, which is why it does not
       # use TAG_DIFF_BASE like the two steps above. Deliberately here and not in
       # pre-commit: blocking a commit because some *other* branch is stale trains
