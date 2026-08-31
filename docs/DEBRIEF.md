@@ -72,7 +72,7 @@ checked.
   this said to read the first five, on the grounds that the traps are ordered by
   how much they change what you do. They are not, and have not been since at
   least trap 14: new traps are appended chronologically.** Only the first block
-  was ever ranked. So read **1-5, 7, 9, 15-21, 23 and 24**, by number and not
+  was ever ranked. So read **1-5, 7, 9, 15-24**, by number and not
   as a window. **Corrected again the same day: this said "the first five and the
   last five", and adding trap 20 slid that window off trap 15 with no edit to
   this line and nothing in the diff.** Trap 15 is title-versus-address, the
