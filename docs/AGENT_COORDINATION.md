@@ -604,7 +604,34 @@ epic owns it either.** Two bodies of running code, one name, zero stories.
 
 ## Message shape
 
-Address it, then answer the four questions the recipient actually has.
+**The first line is your own address, read from `ListAgents` line 1 at the moment
+of sending.** Sam's ruling, 2026-08-30. Not the recipient's — yours, so a reply
+has somewhere to go.
+
+```
+peer-session-prompt-docs-5dd173-e2 · BLUF in one clause
+```
+
+**Why it is the first line and not a footer.** An address here goes stale inside a
+single conversation, and twice on 2026-08-30 it went stale inside a single
+*message*: one send was refused because the target had moved between composing and
+sending, and the sender's own address had moved too. A reply routes off whatever
+the last message carried, so an address buried at the bottom of a long message is
+an address the recipient scrolls past and then reconstructs from memory. Four
+address changes were observed on one session in one evening. **In every one the
+worktree half held and only the trailing hex and the `[ref]` moved**, which is why
+the address is worth stating in full rather than abbreviating to the stable part.
+
+**Put a BLUF clause on the same line.** The receiving human sees only the first
+line as a preview until they expand it, so an address alone turns every preview
+into an opaque identifier. The address first satisfies the rule; the clause after
+it keeps the preview readable. If you must choose, the address wins.
+
+**It is a record, not a routing target.** The recipient still runs `ListAgents`
+before replying, because your address may have moved while they read. What the
+line buys is a starting point and a timestamped claim, not a guarantee.
+
+Then answer the four questions the recipient actually has.
 
 ```
 1. WHAT CHANGED     new SHA, what is in it, what you verified (with the commit)
