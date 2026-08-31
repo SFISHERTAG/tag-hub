@@ -87,7 +87,21 @@ const ROOT_ALLOWLIST = new Set([
  * running the script by hand while diagnosing something does, and that is the
  * worst moment to be lied to.
  */
-const TOP = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+let TOP;
+try {
+  TOP = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
+} catch {
+  // Run outside a repository this used to die with git's fatal plus twenty
+  // lines of Node stack. It failed closed, so CI was never at risk — but a
+  // guard whose whole argument is that its output is trustworthy at the worst
+  // moment should not answer with a stack trace.
+  console.error("✗ Repo hygiene: not inside a git repository, so there is nothing to check.");
+  console.error("  Run this from anywhere inside the working tree.");
+  process.exit(1);
+}
 
 // `core.quotepath=false` so a non-ASCII path prints as its name rather than as
 // escaped octal. The rule was already correct on those paths; the report was
@@ -100,39 +114,88 @@ const git = (...args) =>
 
 const failures = [];
 
-// --- Rule 1: tracked but ignored -------------------------------------------
-// Committed AND matched by a `.gitignore` in the repository — and by nothing
-// else. `--exclude-standard` reads THREE sources: `.gitignore`, the untracked
-// `.git/info/exclude`, and the committer's global `core.excludesFile`. The last
-// two are machine-local, so the guard would not be the same guard on two
-// machines: a personal global ignore entry becomes a repo rule for one person,
-// red on their laptop and green in CI, which is precisely what teaches someone
-// that a guard is broken.
+// --- Rule 1: tracked, and ignored by committed repo state ------------------
+// The invariant this rule needs is "ignored by rules that are IN the repository".
+// Two attempts to get there by enumerating ignore sources both failed, and the
+// second failed in a way that would have deleted someone's work:
 //
-// Worse, the failure text below says "matched by .gitignore" and advises
-// `git rm --cached`. Under `--exclude-standard` that sentence could be false and
-// the advice would then untrack a file that legitimately belongs in the repo,
-// after which the guard goes green because the content is gone. A blocking guard
-// whose remediation deletes real work is worse than the false positive.
+//   `--exclude-standard` reads .gitignore, the untracked .git/info/exclude, AND
+//   the committer's global core.excludesFile. Machine-local rules became repo
+//   rules for one person: red on their laptop, green in CI.
 //
-// So: per-directory `.gitignore` only, with the global file pointed at nothing.
-// There is no flag that keeps `--exclude-standard` while suppressing
-// `info/exclude`, so this is a substitution rather than an addition. Verified in
-// a synthetic repo: a tracked path placed in `.git/info/exclude`, and separately
-// in a global excludes file, each produced a hit under the old flag and none
-// under this form, while a force-added `node_modules/` path still fails.
-const trackedIgnored = git(
-  "-c", "core.excludesFile=/dev/null",
-  "ls-files", "--cached", "--ignored", "--exclude-per-directory=.gitignore",
-);
-if (trackedIgnored.length > 0) {
+//   `--exclude-per-directory=.gitignore` with core.excludesFile=/dev/null closed
+//   those, and reintroduced the same defect through the working tree — it does
+//   not care whether a .gitignore is committed. An UNTRACKED `feat/.gitignore`,
+//   or a tracked `.gitignore` with uncommitted edits, both produce hits that
+//   exist on exactly one machine. Reproduced; see story 22.1.
+//
+// So stop enumerating sources and ATTRIBUTE each hit instead. `check-ignore -v`
+// names the file and line that did the ignoring; a hit counts only if that file
+// is itself tracked and unmodified — i.e. every other clone has the same rule.
+// This is source-agnostic by construction: a source nobody has thought of still
+// has to be committed to count, so the enumeration cannot be incomplete again.
+const candidates = git("ls-files", "--cached", "--ignored", "--exclude-standard");
+
+// Paths whose ignore rule is not committed repo state. Reported separately,
+// because the remediation is the opposite one: fix your local setup, never
+// `git rm --cached` a file the repository has no opinion about.
+const localOnly = [];
+const committedIgnored = [];
+
+for (const path of candidates) {
+  // `check-ignore -v --no-index` prints `<source>:<line>:<pattern>\t<path>`.
+  // `--no-index` is REQUIRED: check-ignore skips tracked paths by default, and
+  // every path here is tracked by definition, so without it the command exits 1
+  // on all of them and the catch below silently reclassified every real hit as
+  // "unreadable". Found by testing a tracked nested .gitignore that should have
+  // been a committed hit and came back local-only.
+  let source = "";
+  try {
+    source = git("check-ignore", "-v", "--no-index", "--", path)[0]?.split(":")[0] ?? "";
+  } catch {
+    source = "";
+  }
+  const insideRepo = source && !source.startsWith("/") && !source.includes(".git/info/");
+  const tracked =
+    insideRepo &&
+    (() => {
+      try {
+        git("ls-files", "--error-unmatch", "--", source);
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+  // A tracked-but-modified source is not repo state either: the rule that fired
+  // is the one on this disk, not the one everyone else has.
+  const dirty = tracked && git("status", "--porcelain", "--", source).length > 0;
+
+  if (tracked && !dirty) committedIgnored.push(`${path}  (ignored by ${source})`);
+  else localOnly.push(`${path}  (ignored by ${source || "an unreadable source"})`);
+}
+
+if (committedIgnored.length > 0) {
   failures.push({
     rule: "tracked but ignored",
-    items: trackedIgnored,
+    items: committedIgnored,
     why:
-      "These are committed AND matched by .gitignore. .gitignore does not apply to\n" +
-      "  paths already in the index, so this never resolves on its own. Untrack with:\n" +
+      "Committed AND ignored by a committed .gitignore, so every clone agrees.\n" +
+      "  .gitignore does not apply to paths already in the index, so this never\n" +
+      "  resolves on its own. Untrack with:\n" +
       "    git rm --cached <path>",
+  });
+}
+
+if (localOnly.length > 0) {
+  failures.push({
+    rule: "ignored only on this machine",
+    items: localOnly,
+    why:
+      "These are ignored by a rule that is NOT committed — an untracked or\n" +
+      "  uncommitted .gitignore, .git/info/exclude, or a global excludesFile. The\n" +
+      "  repository has no opinion about them and other clones see nothing.\n" +
+      "  DO NOT run `git rm --cached` here: it would untrack a file the repo\n" +
+      "  legitimately holds. Fix the local ignore rule, or commit it if it is real.",
   });
 }
 
