@@ -60,15 +60,22 @@ const FIELD = arg("field");
 const TOKEN = process.env.GHL_TOKEN;
 
 const LIST_FIELDS = process.argv.includes("--list-fields");
+const MATCH_ONLY = process.argv.includes("--match-only");
 const APPLY = process.argv.includes("--apply");
 const OVERWRITE = process.argv.includes("--overwrite");
 
-if (!TOKEN || !LOCATION_ID || (!LIST_FIELDS && (!CSV_PATH || !FIELD))) {
+if (
+  !TOKEN ||
+  !LOCATION_ID ||
+  (!LIST_FIELDS && !CSV_PATH) ||
+  (!LIST_FIELDS && !MATCH_ONLY && !FIELD)
+) {
   console.error(
     "Missing input.\n" +
       "  GHL_TOKEN env var is required.\n" +
       "  --location is always required.\n" +
-      "  --csv and --field are required unless --list-fields.\n" +
+      "  --csv is required unless --list-fields.\n" +
+      "  --field is required unless --list-fields or --match-only.\n" +
       "See the header of this file for an example.",
   );
   process.exit(1);
@@ -273,6 +280,52 @@ async function main() {
       );
     }
     console.log(`\n${fields.length} field(s). Pass one id as --field.`);
+    return;
+  }
+
+  // --match-only answers "do these people exist in this location, exactly
+  // once each" without naming a destination field. That question has to be
+  // settled before a field is created to hold the answer, and it is pure GET.
+  if (MATCH_ONLY) {
+    const { rows, skipped } = readRows(readFileSync(CSV_PATH, "utf8"));
+    console.log(
+      `Location: ${LOCATION_ID}\n` +
+        `Rows:     ${rows.length} with a link, ${skipped.length} without\n` +
+        `Mode:     MATCH ONLY (no field named, writes nothing)\n`,
+    );
+    const counts = {};
+    for (const row of rows) {
+      let matches;
+      try {
+        matches = await findContactsByEmail(row.email);
+      } catch (error) {
+        counts.ERROR = (counts.ERROR ?? 0) + 1;
+        console.log(
+          `  ${"ERROR".padEnd(10)} ${row.email.padEnd(38)} ${error.message.split("\n")[0]}`,
+        );
+        continue;
+      }
+      const action =
+        matches.length === 0
+          ? "NO-MATCH"
+          : matches.length > 1
+            ? "AMBIGUOUS"
+            : "MATCH";
+      counts[action] = (counts[action] ?? 0) + 1;
+      const detail =
+        matches.length === 1
+          ? `${matches[0].id}  ${matches[0].firstName ?? ""} ${matches[0].lastName ?? ""}`.trim()
+          : matches.length > 1
+            ? matches.map((c) => c.id).join(", ")
+            : "no contact with this email";
+      console.log(`  ${action.padEnd(10)} ${row.email.padEnd(38)} ${detail}`);
+    }
+    for (const s of skipped) {
+      console.log(
+        `  ${"NO-LINK".padEnd(10)} ${s.email.padEnd(38)} ${s.reason}`,
+      );
+    }
+    console.log(`\n${JSON.stringify(counts)}  no-link: ${skipped.length}`);
     return;
   }
 
