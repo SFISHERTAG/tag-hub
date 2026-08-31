@@ -959,3 +959,41 @@ Opened 2026-08-23. Phases 1–3 (provisioning, intake+Gemini copy, Meta setup) a
 5. How does scheduling work (Cloud Scheduler, Pub/Sub, Firestore triggers)?
 6. Which KPIs trigger alerts, and to whom?
 7. What signal drives budget scaling (ROAS, daily spend trend, cost-per-lead)?
+
+---
+
+## Epic 22 — The guard suite
+
+**Goal:** the enforcement mechanism is itself a thing that can break, and
+something owns it.
+
+Opened 2026-08-30. Thirteen guards existed before this epic and **not one was
+owned by a story.** They are mentioned across story docs; none is the subject of
+one. That is not bookkeeping. §11's test is whether something can silently stop
+running, and a guard is the clearest case in the repository — work with no story
+cannot regress, because it has no Status to move.
+
+**The evidence that it is not hypothetical, all inside two days.**
+`check-story-parity` landed on `main` wired into `package.json` and
+`.githooks/pre-commit` and invoked by nothing, because a follow-up written into a
+CI comment expired unread. A check added to `.githooks/pre-commit` did not run on
+the very next commit, because the installed copy in `.git/hooks` was stale. A
+separate container had no installed hook at all — only samples — so every gate
+was off and nothing said so. Each of those is green meaning "did not run", which
+is the failure shape this repository has now recorded at four layers.
+
+**Scope:** the guards as a system — that they exist, are invoked, are armed, and
+have been observed failing. **Not** a retroactive story for each of the thirteen.
+Writing twelve documents about scripts that already work would produce no
+software and is the pattern two after-action reviews warned about. They have a
+home in this epic now; they get a story when someone touches one.
+
+**Numbered 22 and not 18.** Epics 18 through 21 are scoped in
+`docs/stories/epics-18-21-scoping-retro-2026-08-26.md` and have **no rows in this
+table**, so they are claimed in prose and invisible to the index. Minting onto
+one is exactly the collision `check-story-index` exists to prevent.
+
+| ID | Story | Status |
+| --- | --- | --- |
+| 22.1 | Repo hygiene as an exit code | Review — both rules validated red-then-green; not merged |
+| 22.2 | Arming is not installing | Draft — hole measured, no fix designed |
