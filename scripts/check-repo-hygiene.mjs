@@ -121,6 +121,37 @@ const git = (...args) =>
  * it governs non-ASCII bytes, not control characters. Absurd input, real
  * behaviour, and the old output told the reader nothing.
  */
+/**
+ * Attribute one path with `check-ignore`, reading the source NUL-separated.
+ *
+ * `-v` prints `<source>:<line>:<pattern>\t<path>`, and parsing that by splitting
+ * on `:` breaks on **a colon in a directory name** — legal on macOS and Linux,
+ * no absurd input required. `we:ird/.gitignore` parsed as `we`, which resolves
+ * to nothing, so `tracked` came back false and a genuinely committed hit was
+ * filed as machine-local with the do-not-untrack advice. The false-safe class
+ * again, in a new location. Newline paths broke the same parse a second way,
+ * since git C-quotes them.
+ *
+ * `-z` makes the fields NUL-separated, and it requires `--stdin`: `check-ignore
+ * -vz` alone fails with `fatal: -z only makes sense with --stdin`.
+ */
+const attribute = (path) => {
+  const out = execFileSync(
+    "git",
+    ["-c", "core.quotepath=false", "check-ignore", "-vz", "--no-index", "--stdin"],
+    { cwd: TOP, input: `${path}\0`, encoding: "utf8" },
+  );
+  return out.split("\0")[0] ?? "";
+};
+
+/**
+ * Render a path for the report. A path containing a control character otherwise
+ * breaks across lines, so the count in the heading stops matching the lines a
+ * reader sees — in a guard whose whole argument is that its output is
+ * trustworthy at the worst moment.
+ */
+const show = (p) => (/[\u0000-\u001f]/.test(p) ? JSON.stringify(p) : p);
+
 const gitZ = (...args) =>
   execFileSync("git", ["-c", "core.quotepath=false", ...args, "-z"], {
     cwd: TOP,
@@ -168,7 +199,7 @@ for (const path of candidates) {
   // been a committed hit and came back local-only.
   let source = "";
   try {
-    source = git("check-ignore", "-v", "--no-index", "--", path)[0]?.split(":")[0] ?? "";
+    source = attribute(path);
   } catch {
     source = "";
   }
@@ -195,8 +226,8 @@ for (const path of candidates) {
   // this rule already had.
   const dirty = tracked && git("status", "--porcelain", "--", source).length > 0;
 
-  if (tracked && !dirty) committedIgnored.push(`${path}  (ignored by ${source})`);
-  else localOnly.push(`${path}  (ignored by ${source || "an unreadable source"})`);
+  if (tracked && !dirty) committedIgnored.push(`${show(path)}  (ignored by ${show(source)})`);
+  else localOnly.push(`${show(path)}  (ignored by ${source ? show(source) : "an unreadable source"})`);
 }
 
 if (committedIgnored.length > 0) {
@@ -238,7 +269,7 @@ if (localOnly.length > 0) {
 // still wrong. `ls-files` lists index paths, so the first segment of each is a
 // top-level entry, staged additions included.
 const rootEntries = [...new Set(gitZ("ls-files").map((p) => p.split("/")[0]))];
-const undeclared = rootEntries.filter((e) => !ROOT_ALLOWLIST.has(e));
+const undeclared = rootEntries.filter((e) => !ROOT_ALLOWLIST.has(e)).map(show);
 if (undeclared.length > 0) {
   failures.push({
     rule: "undeclared top-level entry",
