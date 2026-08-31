@@ -72,7 +72,7 @@ checked.
   this said to read the first five, on the grounds that the traps are ordered by
   how much they change what you do. They are not, and have not been since at
   least trap 14: new traps are appended chronologically.** Only the first block
-  was ever ranked. So read **1-5, 7, 9, and 15-21**, by number and not
+  was ever ranked. So read **1-5, 7, 9, 15-21, 23 and 24**, by number and not
   as a window. **Corrected again the same day: this said "the first five and the
   last five", and adding trap 20 slid that window off trap 15 with no edit to
   this line and nothing in the diff.** Trap 15 is title-versus-address, the
@@ -388,6 +388,26 @@ something on failure defeats `||` silently**, and the wrong answer it produces
 is the safe-sounding one. Same shape as trap 6, applied to a one-liner rather
 than to a test suite.
 
+**24. A branch delete that leaves its undo reachable only by a local ref.**
+Presents as a closed loop, correctly closed, with the undo written down. The
+four outcomes in `CLAUDE.md` treat "delete it" as terminal, and a session that
+deletes a reviewed branch and records its SHA has done everything the rule asks.
+**The SHA is then held by nothing that anyone will ever look at again.** After
+`git push origin --delete`, the commit survives locally as
+`refs/heads/<branch>` with `track=[gone]`, and: `npm run loops --remote` is
+remote-scoped and does not report it, `git branch -r --contains <sha>` is empty,
+and `git branch -D` on a `[gone]`-tracking branch is the ordinary tidy-up
+gesture every session performs without thinking. One of those drops the last
+name and the commit is reflog-only until gc. **Writing the SHA in a message or a
+handover is not a mitigation: a transcript is not a ref**, and the session
+holding that transcript is the one about to be replaced. *Check:* if a deleted
+branch's history is worth an undo at all, the undo is `git tag closed/<branch>`
+**pushed to origin**, verified with `git ls-remote --tags origin` and its `^{}`
+dereference, not `git tag --contains`, which reads identically for a
+local-only tag. If it is not worth a tag, say the undo is disposable rather than
+recording a SHA that implies otherwise. Observed 2026-08-31 on
+`claude/product-polish-assessment-d53e4e`; the tag now holds `e0f96fc`.
+
 ---
 
 ## Why this worked, which is not what it looks like
@@ -426,6 +446,108 @@ who does not yet trust the file.
 ---
 
 ## Entries
+
+### 2026-08-31, REVIEWER seat, one branch disposition and a trap I had been warned about
+
+**Supposed to happen.** Spawn from `PEER_SESSION_PROMPT.md`, take a unit from
+the Lead, review it, report. The unit was the disposition of
+`claude/product-polish-assessment-d53e4e` @ `e0f96fc`: three questions, auth
+first.
+
+**Actually happened.** The auth question answered and held, the branch closed by
+deletion rather than merge, and two of the three questions dropped by the Lead
+once the first settled it. **One finding of mine came after the verdict and was
+worth more than the verdict**: the delete left the undo reachable only by a
+local ref, which is now trap 24 and now a pushed tag.
+
+**My errors first.**
+
+- **I fell into trap 23 after being warned about it by name, in the message that
+  assigned me the work.** The Lead's own hand-over said, in terms, do not use
+  `git rev-parse ... || echo ABSENT` to test for a missing path, use
+  `git cat-file -e`. I wrote `bb=$(git rev-parse "$B:$f" 2>/dev/null) || bb=MISSING`
+  in my first blob-compare anyway, inside a loop that also mis-split a path
+  containing `[clientId]`. It returned `identical=0 differing=1 total=53`.
+  **I caught it because that arithmetic is impossible, not because I checked
+  the instrument**, and if the numbers had been plausible I would have sent the
+  Lead a false 38/15 split as my first substantive finding. The rewrite used
+  `git rev-parse --verify --quiet` and a `while IFS= read -r` loop. **The lesson
+  is not that trap 23 needs writing down. It was already written down, and it
+  had been said to me in a sentence I had read minutes earlier.** A trap you
+  have been warned about is not thereby a trap you will avoid, and this is the
+  argument for adding 23 to the reading list rather than leaving it in the tail.
+- **I cited a defect by a range that did not contain its own line.** I reported
+  the bare `"tag_exec"` literal at `lib/auth/admin.ts:176-178`; the line is
+  `:177`. My range contained it, so nobody was misled, but it is trap 11's
+  shape and I produced it in the same message where I was correcting someone
+  else's coordinates. Conceded the range only, not the finding, per Step 4.
+- **I overstated a risk and had to retract the framing while the finding
+  stood.** I told the Lead the residual `[gone]` ref would "never" be reported
+  and framed the exposure as permanent. It was one `git tag --push` from
+  closed, and the Lead closed it in minutes. The gap was real; my account of
+  its permanence was not. **Retracted explicitly rather than letting the good
+  outcome cover it**, which is trap 4 pointed at my own framing.
+
+**What went right, kept because a debrief of only errors trains the next session
+to hide them.**
+
+- **Re-derived the Lead's two unchecked findings before reading its reasoning**,
+  per standing order 9. The 38/15 split and the 15-file list were both exactly
+  right, which is a real result and is reported as one rather than folded into
+  agreement.
+- **The auth answer survived `main` moving 21 commits under it.** Seven hours
+  passed mid-unit. Rather than assume nothing had moved, I compared the six
+  relevant blob hashes at the old and new `main` and re-ran the whole split.
+  All six identical, split unchanged, zero delta. **That is the check that
+  would have caught it had auth moved**, and it is why a seven-hour-old finding
+  was still actionable.
+- **Reproduced the Lead's guard result instead of accepting it.** It told me
+  `check-role-strings` exits 1 on the branch's `admin.ts`. A confirmation is a
+  claim, so I planted the file, watched the guard exit 1 naming
+  `lib/auth/admin.ts:177`, and restored. **Seen going red, not only green.**
+  That also produced the off-by-one correction above, against myself.
+- **Held the scope statement when it would have been easy to widen it.** Two of
+  the fifteen files were `app/api` callers I never read. The auth conclusion is
+  `lib/auth/*`-only and says so, on a branch nobody will reopen.
+- **Refused three things and said so each time.** Did not execute the branch
+  delete (Step 6, not my branch); did not open `#56`/`#57` once the Lead ruled
+  a guard question leaves my unit; did not resolve the AAR-versus-no-push
+  conflict myself, and put it back as three named options rather than picking
+  one quietly.
+
+**Why the difference.** The unit shrank because the first question answered the
+other two, which is the Lead sequencing correctly rather than anything I did.
+The one thing I added past the assignment came from verifying that the verdict
+had been *executed* rather than accepting that it had, and that is the general
+form: **the check after the close found more than the review did.**
+
+**What the next session should do differently.**
+
+1. **Validate the loop before the finding.** Every error above is an instrument
+   error, not a reasoning error. The blob-compare, the citation range, the
+   permanence claim: three instruments, none checked before use, one caught by
+   luck. Trap 6 says this and I still shipped a matcher whose totals did not add
+   up.
+2. **Treat "I was told about this trap" as no protection at all.** See the first
+   error. The warning arrived in the assigning message and did not fire when the
+   moment came.
+3. **Check that a close actually closed.** After a branch delete, run
+   `git branch -r --contains <sha>` and `git ls-remote --tags origin`. The
+   four outcomes in `CLAUDE.md` do not distinguish a delete that preserved its
+   undo from one that stranded it, and both render identically in
+   `npm run loops`.
+
+**Promoted upward:** trap 24, the branch delete that strands its own undo. I
+also **added 23 to the reading list**, on the first-hand evidence in my first
+error rather than on my judgement of its importance.
+
+**Left for someone else to rule on, not decided by me: trap 22 is not in the
+reading list either.** Traps 22 and 23 were both appended without the list being
+extended, which is the file's own rule going unapplied twice. I have direct
+evidence for 23 and none for 22, so adding 22 would be me asserting importance
+for a finding I did not make. **Flagging it rather than fixing it, and naming
+that this is exactly trap 8's shape**: one instance of a class fixed, its
+neighbour left. Whoever authored 22 should rule.
 
 ### 2026-08-29, REVIEWER seat, on a night of documents and one guard
 
