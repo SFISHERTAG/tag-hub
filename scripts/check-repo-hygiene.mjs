@@ -42,6 +42,18 @@ import { execFileSync } from "node:child_process";
  * top-level entry should be a decision someone made on purpose and can defend
  * in review, rather than a file that appeared because it had nowhere else to
  * go. Remove a line when the entry goes.
+ *
+ * THE ONE WAY TO MAKE THIS GUARD GREEN ON A TREE THAT SHOULD FAIL: stage a
+ * stray root file and add its name to this list in the same commit. Exit 0, and
+ * nothing here or in CI notices that the declaration grew in the same diff as
+ * the thing it permits. That is how the rule quietly becomes "whatever the tree
+ * already is".
+ *
+ * It is deliberately not mechanised. A rule cannot tell a legitimate new root
+ * entry from an illegitimate one — that is the judgement the allowlist exists to
+ * force. **So it is a review-surface problem, and this paragraph is the fix: a
+ * commit that both adds a root entry and adds its allowlist line is the thing a
+ * reviewer must look at, and now it has a name.**
  */
 const ROOT_ALLOWLIST = new Set([
   // Agent and tooling configuration
@@ -64,16 +76,55 @@ const ROOT_ALLOWLIST = new Set([
   "TAG_Client_Onboarding_Canvas.md",
 ]);
 
+/**
+ * Resolve the working tree's top level once, and run every git call there.
+ *
+ * `execFileSync` inherits the process cwd, and `git ls-files` reports only paths
+ * beneath it — so invoking this script from `docs/` reported the contents of
+ * `docs/` as undeclared *root* entries: a confident, specific, entirely
+ * fabricated failure list. Neither real invocation path hits it (git runs hooks
+ * at the top level, and Actions runs steps at the repo root), but a session
+ * running the script by hand while diagnosing something does, and that is the
+ * worst moment to be lied to.
+ */
+const TOP = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+
+// `core.quotepath=false` so a non-ASCII path prints as its name rather than as
+// escaped octal. The rule was already correct on those paths; the report was
+// unreadable at exactly the moment someone needed to read it.
 const git = (...args) =>
-  execFileSync("git", args, { encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  execFileSync("git", ["-c", "core.quotepath=false", ...args], { cwd: TOP, encoding: "utf8" })
+    .trim()
+    .split("\n")
+    .filter(Boolean);
 
 const failures = [];
 
 // --- Rule 1: tracked but ignored -------------------------------------------
-// `--cached --ignored --exclude-standard` lists exactly the paths that are in
-// the index AND matched by an ignore rule. It cannot report a file that is
-// merely untracked, so a hit here is always a real one.
-const trackedIgnored = git("ls-files", "--cached", "--ignored", "--exclude-standard");
+// Committed AND matched by a `.gitignore` in the repository — and by nothing
+// else. `--exclude-standard` reads THREE sources: `.gitignore`, the untracked
+// `.git/info/exclude`, and the committer's global `core.excludesFile`. The last
+// two are machine-local, so the guard would not be the same guard on two
+// machines: a personal global ignore entry becomes a repo rule for one person,
+// red on their laptop and green in CI, which is precisely what teaches someone
+// that a guard is broken.
+//
+// Worse, the failure text below says "matched by .gitignore" and advises
+// `git rm --cached`. Under `--exclude-standard` that sentence could be false and
+// the advice would then untrack a file that legitimately belongs in the repo,
+// after which the guard goes green because the content is gone. A blocking guard
+// whose remediation deletes real work is worse than the false positive.
+//
+// So: per-directory `.gitignore` only, with the global file pointed at nothing.
+// There is no flag that keeps `--exclude-standard` while suppressing
+// `info/exclude`, so this is a substitution rather than an addition. Verified in
+// a synthetic repo: a tracked path placed in `.git/info/exclude`, and separately
+// in a global excludes file, each produced a hit under the old flag and none
+// under this form, while a force-added `node_modules/` path still fails.
+const trackedIgnored = git(
+  "-c", "core.excludesFile=/dev/null",
+  "ls-files", "--cached", "--ignored", "--exclude-per-directory=.gitignore",
+);
 if (trackedIgnored.length > 0) {
   failures.push({
     rule: "tracked but ignored",
