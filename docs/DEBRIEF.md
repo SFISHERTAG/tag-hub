@@ -72,7 +72,7 @@ checked.
   this said to read the first five, on the grounds that the traps are ordered by
   how much they change what you do. They are not, and have not been since at
   least trap 14: new traps are appended chronologically.** Only the first block
-  was ever ranked. So read **1-5, 7, 9, 15, 16, 17, 18, 19, 20, 21, 22, 23 and 24**, by number and not
+  was ever ranked. So read **1-5, 7, 9, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 and 25**, by number and not
   as a window. **Corrected again the same day: this said "the first five and the
   last five", and adding trap 20 slid that window off trap 15 with no edit to
   this line and nothing in the diff.** Trap 15 is title-versus-address, the
@@ -408,6 +408,26 @@ local-only tag. If it is not worth a tag, say the undo is disposable rather than
 recording a SHA that implies otherwise. Observed 2026-08-31 on
 `claude/product-polish-assessment-d53e4e`; the tag now holds `e0f96fc`.
 
+**25. Checking whether a commit is pushed by asking about its branch name.**
+Presents as the correct command, run for the right reason, returning a true
+answer to the wrong question. `git push <local>:<remote>` sends a branch to a
+destination of a different name, so a commit can be on origin while
+`git ls-remote --heads origin <local-name>` is legitimately empty. A session
+warned another that its work-in-progress reintroduced a known defect, checked
+the source branch name, found nothing on origin, and reported it as *local
+only, not pushed, still free to amend*. The commit was already on origin, on a
+third branch, under an open pull request. **The finding was right and the
+remedy it licensed was a force-push over a PR branch.** *Check:* a question
+about a *commit* is answered by `git branch -r --contains <sha>` or
+`git ls-remote origin` read whole, never by looking up a name. The name is what
+you pushed *from*; it says nothing about what you pushed *to*. Sharper still,
+and the reason this is its own trap rather than an instance of trap 7: the
+session that got this wrong **had used `git branch -r --contains` correctly
+earlier the same session**, on a different commit, for exactly this purpose. It
+had the right instrument and reached for the wrong one when the question
+arrived wearing a branch name. Recorded 2026-08-31; caught only because the
+receiving session re-derived a fact it had been told it did not need to check.
+
 ---
 
 ## Why this worked, which is not what it looks like
@@ -487,6 +507,18 @@ local ref, which is now trap 24 and now a pushed tag.
   closed, and the Lead closed it in minutes. The gap was real; my account of
   its permanence was not. **Retracted explicitly rather than letting the good
   outcome cover it**, which is trap 4 pointed at my own framing.
+- **I told the Lead a fact was safe to act on without re-deriving, and it was
+  wrong.** Catching that its trap-22 fix reproduced trap 20, I checked
+  `git ls-remote --heads origin add-trap-22`, found it empty, and reported the
+  branch as local only and still free to amend. It had been pushed as
+  `add-trap-22:docs/debrief-reviewer-f16108`, so the commit was on origin, on
+  **my own PR branch**, while the query I ran was correctly returning nothing.
+  **The remedy I licensed was a force-push over an open PR.** It did not happen
+  only because the Lead re-derived the one thing I had told it not to need to.
+  Promoted as trap 25. The part worth the next reader's time: **I had run
+  `git branch -r --contains` correctly earlier in the same session**, on
+  `e0f96fc`, for precisely this question. I owned the right instrument and
+  reached for the wrong one because the question arrived wearing a branch name.
 
 **What went right, kept because a debrief of only errors trains the next session
 to hide them.**
@@ -537,7 +569,8 @@ form: **the check after the close found more than the review did.**
    undo from one that stranded it, and both render identically in
    `npm run loops`.
 
-**Promoted upward:** trap 24, the branch delete that strands its own undo. I
+**Promoted upward:** trap 24, the branch delete that strands its own undo, and
+trap 25, the pushed-ness check aimed at a branch name. I
 also **added 23 to the reading list**, on the first-hand evidence in my first
 error rather than on my judgement of its importance.
 
@@ -548,6 +581,16 @@ evidence for 23 and none for 22, so adding 22 would be me asserting importance
 for a finding I did not make. **Flagging it rather than fixing it, and naming
 that this is exactly trap 8's shape**: one instance of a class fixed, its
 neighbour left. Whoever authored 22 should rule.
+
+**Corrected on this same branch, before it landed, and the correction is the
+point.** The Lead ruled, added 22 on first-hand evidence, and wrote the list as
+`15-24`. That is a relative window ending at the last trap that exists, so trap
+25 would have fallen outside it with no edit to the line and nothing in any
+diff: **trap 20 reproduced four lines above trap 20's own check, in the commit
+fixing my omission.** I caught the form; it had the standing I lacked. The list
+is now enumerated. **Three moves, none of which one session makes alone**, and
+the sentences above are left standing rather than rewritten because the record
+of a wrong call is worth more than a tidy paragraph.
 
 ### 2026-08-29, REVIEWER seat, on a night of documents and one guard
 
