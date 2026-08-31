@@ -206,30 +206,56 @@ function parseCsv(text) {
  * whose link is missing (Crystal Bean, at time of writing) drops out here
  * rather than writing an empty string over a real value later.
  */
+/** Header names, lowercased, that each tab uses for the same two columns. */
+const NAME_HEADERS = ["name", "full name"];
+const EMAIL_HEADERS = ["email", "email address"];
+
 function readRows(csvText) {
   const rows = parseCsv(csvText);
+  const has = (row, names) =>
+    row.some((c) => names.includes(c.trim().toLowerCase()));
   const headerIndex = rows.findIndex(
-    (r) =>
-      r.some((c) => c.trim().toLowerCase() === "name") &&
-      r.some((c) => c.trim().toLowerCase() === "email"),
+    (r) => has(r, NAME_HEADERS) && has(r, EMAIL_HEADERS),
   );
   if (headerIndex === -1) {
     throw new Error(
-      "No header row with both Name and Email. Is this the TDC CLIENT TRACKING tab?",
+      "No header row pairing a name column with an email column.\n" +
+        `  Looked for one of ${NAME_HEADERS.join(" / ")} alongside one of ` +
+        `${EMAIL_HEADERS.join(" / ")}.\n` +
+        "  The TDC tab uses Name/Email; the CLIENT TRACKING tab uses FULL NAME/\n" +
+        "  EMAIL ADDRESS. A file matching neither is probably not a tracking export.",
     );
   }
 
   const header = rows[headerIndex].map((c) => c.trim().toLowerCase());
-  const nameCol = header.indexOf("name");
-  const emailCol = header.indexOf("email");
+  const pick = (names) => header.findIndex((c) => names.includes(c));
+  const nameCol = pick(NAME_HEADERS);
+  const emailCol = pick(EMAIL_HEADERS);
 
   const out = [];
   const skipped = [];
+  const seen = new Set();
 
   for (const row of rows.slice(headerIndex + 1)) {
     const name = (row[nameCol] ?? "").trim();
     const email = (row[emailCol] ?? "").trim().toLowerCase();
     if (!email) continue;
+
+    // The CLIENT TRACKING tab has a row whose email cell holds TWO addresses
+    // separated by whitespace. Writing to a contact keyed on that string would
+    // match nothing, and silently: it would land in NO-MATCH looking like an
+    // absent client rather than a malformed cell.
+    if (/\s/.test(email)) {
+      skipped.push({
+        name,
+        email,
+        reason: "email cell holds more than one address",
+      });
+      continue;
+    }
+    // Both tabs repeat their header block further down the sheet.
+    if (seen.has(email)) continue;
+    seen.add(email);
 
     const link = row.map((c) => c.trim()).find((c) => /^https?:\/\//i.test(c));
 
