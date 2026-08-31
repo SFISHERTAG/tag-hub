@@ -82,6 +82,15 @@ const TOKEN = process.env.GHL_TOKEN;
 
 const LIST_FIELDS = process.argv.includes("--list-fields");
 const MATCH_ONLY = process.argv.includes("--match-only");
+/**
+ * Backfill the standard `companyName` field from the sheet's COMPANY NAME
+ * column instead of a custom field.
+ *
+ * The sheet's unit is the CLIENT, which is a company. GHL's unit is a person.
+ * Two active accounts have two people each, and with companyName unset there is
+ * nothing in GHL saying those people belong to the same client.
+ */
+const COMPANY_MODE = process.argv.includes("--company");
 const APPLY = process.argv.includes("--apply");
 const OVERWRITE = process.argv.includes("--overwrite");
 
@@ -89,7 +98,7 @@ if (
   !TOKEN ||
   !LOCATION_ID ||
   (!LIST_FIELDS && !CSV_PATH) ||
-  (!LIST_FIELDS && !MATCH_ONLY && !FIELD)
+  (!LIST_FIELDS && !MATCH_ONLY && !COMPANY_MODE && !FIELD)
 ) {
   console.error(
     "Missing input.\n" +
@@ -209,6 +218,7 @@ function parseCsv(text) {
 /** Header names, lowercased, that each tab uses for the same two columns. */
 const NAME_HEADERS = ["name", "full name"];
 const EMAIL_HEADERS = ["email", "email address"];
+const COMPANY_HEADERS = ["company name", "company"];
 
 function readRows(csvText) {
   const rows = parseCsv(csvText);
@@ -231,6 +241,7 @@ function readRows(csvText) {
   const pick = (names) => header.findIndex((c) => names.includes(c));
   const nameCol = pick(NAME_HEADERS);
   const emailCol = pick(EMAIL_HEADERS);
+  const companyCol = pick(COMPANY_HEADERS);
 
   const out = [];
   const skipped = [];
@@ -238,32 +249,40 @@ function readRows(csvText) {
 
   for (const row of rows.slice(headerIndex + 1)) {
     const name = (row[nameCol] ?? "").trim();
-    const email = (row[emailCol] ?? "").trim().toLowerCase();
-    if (!email) continue;
+    const cell = (row[emailCol] ?? "").trim().toLowerCase();
+    if (!cell) continue;
 
-    // The CLIENT TRACKING tab has a row whose email cell holds TWO addresses
-    // separated by whitespace. Writing to a contact keyed on that string would
-    // match nothing, and silently: it would land in NO-MATCH looking like an
-    // absent client rather than a malformed cell.
-    if (/\s/.test(email)) {
-      skipped.push({
-        name,
-        email,
-        reason: "email cell holds more than one address",
-      });
+    const value = COMPANY_MODE
+      ? (row[companyCol] ?? "").trim()
+      : row.map((c) => c.trim()).find((c) => /^https?:\/\//i.test(c));
+
+    // One sheet row can name a whole account: "Chris middleton/ tyler Buechler"
+    // carries BOTH addresses in a single cell. Treating that string as one
+    // email matched nothing and reported NO-MATCH, which reads as an absent
+    // client rather than as two people sharing a row. Split it and let each
+    // address resolve on its own -- the row is the CLIENT, and a client is
+    // allowed more than one contact.
+    const addresses = cell.split(/[\s,;]+/).filter((a) => a.includes("@"));
+    if (addresses.length === 0) {
+      skipped.push({ name, email: cell, reason: "no usable email address" });
       continue;
     }
-    // Both tabs repeat their header block further down the sheet.
-    if (seen.has(email)) continue;
-    seen.add(email);
 
-    const link = row.map((c) => c.trim()).find((c) => /^https?:\/\//i.test(c));
+    for (const email of addresses) {
+      // Both tabs repeat their header block further down the sheet.
+      if (seen.has(email)) continue;
+      seen.add(email);
 
-    if (!link) {
-      skipped.push({ name, email, reason: "no link in row" });
-      continue;
+      if (!value) {
+        skipped.push({
+          name,
+          email,
+          reason: COMPANY_MODE ? "no company name in row" : "no link in row",
+        });
+        continue;
+      }
+      out.push({ name, email, value });
     }
-    out.push({ name, email, link });
   }
 
   return { rows: out, skipped };
@@ -321,6 +340,9 @@ async function findContactsByEmail(email) {
 }
 
 function currentValue(contact, fieldId) {
+  // `companyName` is a standard contact field, not a custom one, so it is read
+  // off the contact directly rather than out of the customFields array.
+  if (COMPANY_MODE) return String(contact.companyName ?? "").trim();
   const fields = contact.customFields ?? contact.customField ?? [];
   const hit = fields.find((f) => f.id === fieldId);
   if (!hit) return "";
@@ -330,7 +352,9 @@ function currentValue(contact, fieldId) {
 async function setField(contactId, fieldId, value) {
   await request(`/contacts/${contactId}`, {
     method: "PUT",
-    body: { customFields: [{ id: fieldId, value }] },
+    body: COMPANY_MODE
+      ? { companyName: value }
+      : { customFields: [{ id: fieldId, value }] },
   });
 }
 
@@ -366,7 +390,7 @@ async function main() {
     const { rows, skipped } = readRows(readFileSync(CSV_PATH, "utf8"));
     console.log(
       `Location: ${LOCATION_ID}\n` +
-        `Rows:     ${rows.length} with a link, ${skipped.length} without\n` +
+        `Rows:     ${rows.length} resolvable, ${skipped.length} skipped\n` +
         `Mode:     MATCH ONLY (no field named, writes nothing)\n`,
     );
     const counts = {};
@@ -405,7 +429,13 @@ async function main() {
     return;
   }
 
-  const target = fields.find((f) => f.id === FIELD || f.fieldKey === FIELD);
+  const target = COMPANY_MODE
+    ? {
+        id: "companyName",
+        name: "Company Name (standard field)",
+        dataType: "TEXT",
+      }
+    : fields.find((f) => f.id === FIELD || f.fieldKey === FIELD);
   if (!target) {
     throw new Error(
       `No contact custom field matches ${JSON.stringify(FIELD)} on location ` +
@@ -419,7 +449,7 @@ async function main() {
   console.log(
     `Field:    ${target.id} ${JSON.stringify(target.name)} (${target.dataType})\n` +
       `Location: ${LOCATION_ID}\n` +
-      `Rows:     ${rows.length} with a link, ${skipped.length} without\n` +
+      `Rows:     ${rows.length} resolvable, ${skipped.length} skipped\n` +
       `Mode:     ${APPLY ? "APPLY (will write)" : "DRY RUN (writes nothing)"}` +
       `${OVERWRITE ? " --overwrite" : ""}\n`,
   );
@@ -459,7 +489,7 @@ async function main() {
     const contact = matches[0];
     const existing = currentValue(contact, target.id);
 
-    if (existing === row.link) {
+    if (existing === row.value) {
       plan.push({
         ...row,
         contactId: contact.id,
@@ -509,7 +539,7 @@ async function main() {
   const failed = [];
   for (const p of writable) {
     try {
-      await setField(p.contactId, target.id, p.link);
+      await setField(p.contactId, target.id, p.value);
       written++;
     } catch (error) {
       failed.push({ email: p.email, message: error.message.split("\n")[0] });
